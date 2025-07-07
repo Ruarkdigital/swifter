@@ -134,12 +134,40 @@ export const RoleBasedDashboard: React.FC = () => {
         DashboardDataTransformer.transformCompanyRoleDistribution(
           companyRoleDistribution
         );
+      const transformedCompanyAdminGeneralUpdates =
+        DashboardDataTransformer.transformCompanyAdminGeneralUpdates(
+          generalUpdates
+        );
 
       return {
         ...dashboardConfig,
         stats: transformedSolicitationStatus,
         rows: dashboardConfig.rows.map((row) => {
-          if (row.type === "chart" || row.type === "mixed") {
+          if (row.type === "mixed") {
+            return {
+              ...row,
+              properties: row.properties.map((property) => {
+                if (property.id === "vendors-distribution") {
+                  return {
+                    ...property,
+                    centerText: {
+                      label: property?.centerText?.label ?? "Vendors",
+                      value: vendorsDistribution?.total ?? 0
+                    },
+                    data: transformedVendorsDistribution,
+                  };
+                }
+                if (property.title === "Recent Activity") {
+                  return {
+                    ...property,
+                    items: transformedCompanyAdminGeneralUpdates,
+                  };
+                }
+                return property;
+              }),
+            };
+          }
+          if (row.type === "chart") {
             return {
               ...row,
               properties: row.properties.map((chart) => {
@@ -148,15 +176,6 @@ export const RoleBasedDashboard: React.FC = () => {
                     return {
                       ...chart,
                       data: transformedBidIntent,
-                    };
-                  case "vendors-distribution":
-                    return {
-                      ...chart,
-                      centerText: {
-                        label: chart?.centerText?.label ?? "Vendors",
-                        value: vendorsDistribution?.total ?? 0
-                      },
-                      data: transformedVendorsDistribution,
                     };
                   case "proposal-submission":
                     return {
