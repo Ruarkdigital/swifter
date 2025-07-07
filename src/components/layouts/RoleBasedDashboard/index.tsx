@@ -1,0 +1,526 @@
+import React, { useState, useMemo } from "react";
+// import { ExportReportSheet } from "@/components/layouts/ExportReportSheet";
+import { useUserRole } from "@/hooks/useUserRole";
+import { useDashboardData } from "@/hooks/useDashboardData";
+import { DashboardDataTransformer } from "@/lib/dashboardDataTransformer";
+import { ChartComponent } from "./components/ChartCard";
+import { ActivityComponent } from "./components/ActivityCard";
+import { CardStats } from "./components/StatsCard";
+import { cn } from "@/lib/utils";
+import { DashboardConfig } from "@/config/dashboardConfig";
+import { PageLoader } from "@/components/ui/PageLoader";
+
+// Main Role-Based Dashboard Component
+export const RoleBasedDashboard: React.FC = () => {
+  const { dashboardConfig, userRole } = useUserRole();
+  const [selectedFilter, setSelectedFilter] = useState("12months");
+
+  // Fetch dashboard data based on user role
+  const {
+    dashboardCount,
+    roleDistribution,
+    weeklyActivities,
+    subDistribution,
+    companyStatus,
+    moduleUsage,
+    solicitationStatus,
+    bidIntent,
+    vendorsDistribution,
+    proposalSubmission,
+    companyRoleDistribution,
+    generalUpdates,
+    procurementDashboard,
+    procurementMyActions,
+    procurementGeneralUpdates,
+    procurementSolicitationStatus,
+    procurementBidIntent,
+    procurementVendorsDistribution,
+    procurementProposalSubmission,
+    procurementWeeklyActivities,
+    procurementTotalEvaluations,
+    evaluatorDashboard,
+    evaluatorMyActions,
+    evaluatorEvaluationUpdates,
+    vendorDashboard,
+    vendorMyActions,
+    vendorGeneralUpdates,
+    isLoading,
+  } = useDashboardData(userRole, selectedFilter);
+
+  // Transform API data into dashboard configuration format
+  const enhancedDashboardConfig: DashboardConfig = useMemo(() => {
+    if (userRole === "super_admin") {
+      // Transform SuperAdmin data
+      const transformedStats =
+        DashboardDataTransformer.transformSuperAdminStats(dashboardCount);
+      const transformedWeeklyData =
+        DashboardDataTransformer.transformWeeklyActivities(weeklyActivities);
+      const transformedSubData =
+        DashboardDataTransformer.transformSubDistribution(subDistribution);
+      const transformedStatusData =
+        DashboardDataTransformer.transformCompanyStatus(companyStatus?.[0]);
+      const transformedModuleData =
+        DashboardDataTransformer.transformModuleUsage(moduleUsage?.[0]);
+      const transformedRoleData =
+        DashboardDataTransformer.transformRoleDistribution(roleDistribution);
+
+      return {
+        ...dashboardConfig,
+        stats: transformedStats,
+        rows: dashboardConfig.rows.map((row) => {
+          if (row.type === "chart") {
+            return {
+              ...row,
+              properties: row.properties.map((chart) => {
+                switch (chart.id) {
+                  case "weekly-activities":
+                    return {
+                      ...chart,
+                      data: transformedWeeklyData,
+                    };
+                  case "solicitation-distribution":
+                    return {
+                      ...chart,
+                      data: transformedSubData,
+                      centerText: {
+                        value:
+                          subDistribution?.totalActive?.toString?.() ?? "0",
+                        label: "Active Subscriptions",
+                      },
+                    };
+                  case "company-status":
+                    return {
+                      ...chart,
+                      data: transformedStatusData,
+                    };
+                  case "module-usage":
+                    return {
+                      ...chart,
+                      data: transformedModuleData,
+                    };
+                  case "portal-role-distribution":
+                    return {
+                      ...chart,
+                      data: transformedRoleData,
+                    };
+                  default:
+                    return chart;
+                }
+              }),
+            };
+          }
+          return row;
+        }),
+      };
+    }
+
+    if (userRole === "company_admin") {
+      // Transform Company Admin data
+      const transformedSolicitationStatus =
+        DashboardDataTransformer.transformSolicitationStatus(
+          solicitationStatus
+        );
+      const transformedBidIntent =
+        DashboardDataTransformer.transformBidIntent(bidIntent);
+      const transformedVendorsDistribution =
+        DashboardDataTransformer.transformVendorsDistribution(
+          vendorsDistribution
+        );
+      const transformedProposalSubmission =
+        DashboardDataTransformer.transformProposalSubmission(
+          proposalSubmission
+        );
+      const transformedCompanyRoleDistribution =
+        DashboardDataTransformer.transformCompanyRoleDistribution(
+          companyRoleDistribution
+        );
+
+      return {
+        ...dashboardConfig,
+        stats: transformedSolicitationStatus,
+        rows: dashboardConfig.rows.map((row) => {
+          if (row.type === "chart" || row.type === "mixed") {
+            return {
+              ...row,
+              properties: row.properties.map((chart) => {
+                switch (chart.id) {
+                  case "bid-intent":
+                    return {
+                      ...chart,
+                      data: transformedBidIntent,
+                    };
+                  case "vendors-distribution":
+                    return {
+                      ...chart,
+                      centerText: {
+                        label: chart?.centerText?.label ?? "Vendors",
+                        value: vendorsDistribution?.total ?? 0
+                      },
+                      data: transformedVendorsDistribution,
+                    };
+                  case "proposal-submission":
+                    return {
+                      ...chart,
+                      data: transformedProposalSubmission,
+                    };
+                  case "company-role-distribution":
+                    return {
+                      ...chart,
+                      data: transformedCompanyRoleDistribution,
+                    };
+                  default:
+                    return chart;
+                }
+              }),
+            };
+          }
+          return row;
+        }),
+      };
+    }
+
+    if (userRole === "evaluator") {
+      // Transform Evaluator data
+      const transformedEvaluatorMyActions =
+        DashboardDataTransformer.transformEvaluatorMyActions(
+          evaluatorMyActions
+        );
+      const transformedEvaluatorEvaluationUpdates =
+          DashboardDataTransformer.transformEvaluatorEvaluationUpdates(
+            evaluatorEvaluationUpdates
+          );
+
+      return {
+        ...dashboardConfig,
+        stats: DashboardDataTransformer.transformEvaluatorStats(
+          evaluatorDashboard
+        ),
+        rows: dashboardConfig.rows.map((row) => {
+          if (row.type === "activity") {
+            return {
+              ...row,
+              properties: row.properties.map((activity) => {
+                if (activity.id === "my-actions") {
+                  return {
+                    ...activity,
+                    items: transformedEvaluatorMyActions,
+                  };
+                }
+                if (activity.id === "evaluation-updates") {
+                  return {
+                    ...activity,
+                    items: transformedEvaluatorEvaluationUpdates,
+                  };
+                }
+                return activity;
+              }),
+            };
+          }
+          return row;
+        }),
+      };
+    }
+
+    if (userRole === "vendor") {
+      // Transform Vendor data
+      const transformedVendorMyActions =
+        DashboardDataTransformer.transformVendorMyActions(
+          vendorMyActions
+        );
+      const transformedVendorGeneralUpdates =
+        DashboardDataTransformer.transformVendorGeneralUpdates(
+          vendorGeneralUpdates
+        );
+
+      return {
+        ...dashboardConfig,
+        stats: DashboardDataTransformer.transformVendorStats(
+          vendorDashboard
+        ),
+        rows: dashboardConfig.rows.map((row) => {
+          if (row.type === "activity") {
+            return {
+              ...row,
+              properties: row.properties.map((activity) => {
+                if (activity.id === "my-actions") {
+                  return {
+                    ...activity,
+                    items: transformedVendorMyActions,
+                  };
+                }
+                if (activity.id === "general-updates") {
+                  return {
+                    ...activity,
+                    items: transformedVendorGeneralUpdates,
+                  };
+                }
+                return activity;
+              }),
+            };
+          }
+          return row;
+        }),
+      };
+    }
+
+    if (userRole === "procurement") {
+      // Transform Procurement data
+      const transformedProcurementStats =
+        DashboardDataTransformer.transformProcurementStats(
+          procurementDashboard
+        );
+      const transformedSolicitationStatus =
+        DashboardDataTransformer.transformProcurementSolicitationStatus(
+          procurementSolicitationStatus
+        );
+      const transformedBidIntent =
+        DashboardDataTransformer.transformProcurementBidIntent(procurementBidIntent);
+      const transformedVendorsDistribution =
+        DashboardDataTransformer.transformProcurementVendorsDistribution(
+          procurementVendorsDistribution
+        );
+      const transformedProposalSubmission =
+        DashboardDataTransformer.transformProcurementProposalSubmission(
+          procurementProposalSubmission
+        );
+      const transformedWeeklyData =
+        DashboardDataTransformer.transformProcurementWeeklyActivities(procurementWeeklyActivities);
+      const transformedTotalEvaluations =
+        DashboardDataTransformer.transformProcurementTotalEvaluations(procurementTotalEvaluations);
+      const transformedProcurementMyActions =
+        DashboardDataTransformer.transformProcurementMyActions(
+          procurementMyActions
+        );
+      const transformedProcurementGeneralUpdates =
+        DashboardDataTransformer.transformProcurementGeneralUpdates(
+          procurementGeneralUpdates
+        );
+
+      return {
+        ...dashboardConfig,
+        stats: transformedProcurementStats,
+        rows: dashboardConfig.rows.map((row) => {
+
+          if (row.type === "activity") {
+            return {
+              ...row,
+              properties: row.properties.map((activity) => {
+                if (activity.id === "my-actions") {
+                  return {
+                    ...activity,
+                    items: transformedProcurementMyActions,
+                  };
+                }
+                if (activity.id === "general-updates") {
+                  return {
+                    ...activity,
+                    items: transformedProcurementGeneralUpdates,
+                  };
+                }
+                return activity;
+              }),
+            };
+          }
+
+          if (row.type === "chart") {
+            return {
+              ...row,
+              properties: row.properties.map((chart) => {
+                switch (chart.id) {
+                  case "solicitation-status":
+                    return {
+                      ...chart,
+                      data: transformedSolicitationStatus,
+                    };
+                  case "vendors-bid-intent-status":
+                    return {
+                      ...chart,
+                      data: transformedBidIntent,
+                    };
+                  case "vendors-distribution":
+                    return {
+                      ...chart,
+                      centerText: {
+                        label: "Vendors",
+                        value: procurementVendorsDistribution?.total.toString() || '0'
+                      },
+                      data: transformedVendorsDistribution,
+                    };
+                  case "proposal-submission":
+                    return {
+                      ...chart,
+                      data: transformedProposalSubmission,
+                    };
+                  case "weekly-activities":
+                    return {
+                      ...chart,
+                      data: transformedWeeklyData,
+                    };
+                  case "total-evaluation":
+                    return {
+                      ...chart,
+                      data: transformedTotalEvaluations,
+                    };
+                  default:
+                    return chart;
+                }
+              }),
+            };
+          }
+
+          return row;
+        }),
+      };
+    }
+
+    // For other roles, return the original config
+    // This can be extended to handle other role-specific data transformations
+    return dashboardConfig;
+  }, [
+    dashboardConfig,
+    userRole,
+    dashboardCount,
+    roleDistribution,
+    weeklyActivities,
+    subDistribution,
+    companyStatus,
+    moduleUsage,
+    solicitationStatus,
+    bidIntent,
+    vendorsDistribution,
+    proposalSubmission,
+    companyRoleDistribution,
+    generalUpdates,
+    procurementDashboard,
+    procurementMyActions,
+    procurementGeneralUpdates,
+    procurementSolicitationStatus,
+    procurementBidIntent,
+    procurementVendorsDistribution,
+    procurementProposalSubmission,
+    procurementWeeklyActivities,
+    procurementTotalEvaluations,
+    evaluatorDashboard,
+    evaluatorMyActions,
+    evaluatorEvaluationUpdates,
+    vendorDashboard,
+    vendorMyActions,
+    vendorGeneralUpdates,
+  ]);
+
+  const handleFilterChange = (filter: string) => {
+    setSelectedFilter(filter);
+  };
+
+  // Show loading state if data is being fetched
+  if (
+    isLoading &&
+    (["super_admin", "company_admin", "evaluator", "vendor", "procurement"].includes(userRole))
+  ) {
+    return (
+      <PageLoader 
+        title="Dashboard" 
+        // headerContent={<ExportReportSheet />}
+      />
+    );
+  }
+
+  return (
+    <div className="p-6 space-y-6">
+      {/* Header */}
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-medium text-gray-900 dark:text-gray-100">
+            Dashboard
+          </h1>
+        </div>
+        {/* <ExportReportSheet /> */}
+      </div>
+
+      {/* Stats Cards */}
+      <div
+        className={cn(`grid grid-cols-1 md:grid-cols-2 gap-6`, {
+          "lg:grid-cols-2": enhancedDashboardConfig.stats.length === 8,
+          "lg:grid-cols-3": enhancedDashboardConfig.stats.length === 6,
+          "lg:grid-cols-4":
+            enhancedDashboardConfig.stats.length === 4 ||
+            enhancedDashboardConfig.stats.length > 8,
+        })}
+      >
+        {enhancedDashboardConfig.stats?.map?.((stat, index) => (
+          <CardStats key={index} {...stat} />
+        ))}
+      </div>
+
+      {/* Activities and Charts Section */}
+      {enhancedDashboardConfig.rows?.map?.((item, rowIndex) => {
+        if (item.type === "activity") {
+          return (
+            <div
+              key={`activity-row-${rowIndex}`}
+              className={cn(
+                "grid grid-cols-1 lg:grid-cols-2 gap-6",
+                item.className
+              )}
+            >
+              {item.properties.map((activity, index) => (
+                <ActivityComponent key={index} activity={activity} />
+              ))}
+            </div>
+          );
+        } else if (item.type === "chart") {
+          return (
+            <div
+              key={`chart-row-${rowIndex}`}
+              className={cn(
+                "grid grid-cols-1 lg:grid-cols-2 gap-6",
+                item.className
+              )}
+            >
+              {item.properties?.map?.((chart) => (
+                <ChartComponent
+                  key={chart.id}
+                  chart={chart}
+                  selected={selectedFilter}
+                  onFilterChange={handleFilterChange}
+                />
+              ))}
+            </div>
+          );
+        } else if (item.type === "mixed") {
+          return (
+            <div
+              key={`mixed-row-${rowIndex}`}
+              className={cn(
+                "grid grid-cols-1 lg:grid-cols-2 gap-6",
+                item.className
+              )}
+            >
+              {item.properties?.map?.((component, index) => {
+                // Check if component has activity-specific properties
+                if (component.items) {
+                  return (
+                    <ActivityComponent key={`activity-${index}`} activity={component} />
+                  );
+                } else {
+                  // Assume it's a chart component
+                  return (
+                    <ChartComponent
+                      key={`chart-${component.id || index}`}
+                      chart={component}
+                      selected={selectedFilter}
+                      onFilterChange={handleFilterChange}
+                    />
+                  );
+                }
+              })}
+            </div>
+          );
+        }
+        return null;
+      })}
+    </div>
+  );
+};
+
+export default RoleBasedDashboard;

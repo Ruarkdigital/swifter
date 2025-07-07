@@ -1,0 +1,541 @@
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Search,
+  Users,
+  UserCheck,
+  UserX,
+  Clock,
+  MoreHorizontal,
+  Shield,
+  Briefcase,
+  Star,
+} from "lucide-react";
+import { format } from "date-fns";
+import { useState, useMemo, useEffect } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { getRequest, putRequest } from "@/lib/axiosInstance";
+import { ApiResponse, ApiResponseError } from "@/types";
+import { useToastHandler } from "@/hooks/useToaster";
+import { StatCard } from "../CompaniesPage/components/StatCard";
+import { DataTable } from "@/components/layouts/DataTable";
+import { ColumnDef, PaginationState } from "@tanstack/react-table";
+import { Badge } from "@/components/ui/badge";
+import { ConfirmAlert } from "@/components/layouts/ConfirmAlert";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import CreateUserDialog from "./components/CreateUserDialog";
+import EditUserDialog from "./components/EditUserDialog";
+import UserDetailsSheet from "./components/UserDetailsSheet";
+import { DropdownFilters } from "@/components/layouts/SolicitationFilters";
+
+// TODO: User details
+// TODO:
+
+// Dashboard statistics type
+type UserDashboard = {
+  allUsers: number;
+  activeUsers: number;
+  suspendedUsers: number;
+  inactiveUsers: number;
+  admins: number;
+  procurementLeads: number;
+  evaluators: number;
+};
+
+// User type definition
+type User = {
+  _id: string;
+  name: string;
+  email: string;
+  role:"Admin" | "Procurement Lead" | "Evaluator" | "User";
+  status: "active"| "accepted" | "suspended" | "inactive" | "pending";
+  lastActivity: string;
+  createdAt: string;
+  phone?: string;
+  department?: string;
+  userId?: string;
+};
+
+// API response types
+type UsersListResponse = {
+  data: User[];
+  total: number;
+  page: number;
+  limit: number;
+};
+
+// Status badge component
+const StatusBadge = ({ status }: { status: User["status"] }) => {
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "active":
+        return "bg-green-100 text-green-800 hover:bg-green-100 dark:bg-green-900/30 dark:text-green-400 dark:hover:bg-green-900/30";
+      case "accepted":
+        return "bg-green-100 text-green-800 hover:bg-green-100 dark:bg-green-900/30 dark:text-green-400 dark:hover:bg-green-900/30";
+      case "suspended":
+        return "bg-red-100 text-red-800 hover:bg-red-100 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-900/30";
+      case "inactive":
+        return "bg-yellow-100 text-yellow-800 hover:bg-yellow-100 dark:bg-yellow-900/30 dark:text-yellow-400 dark:hover:bg-yellow-900/30";
+      case "pending":
+        return "bg-blue-100 text-blue-800 hover:bg-blue-100 dark:bg-blue-900/30 dark:text-blue-400 dark:hover:bg-blue-900/30";
+      default:
+        return "bg-gray-100 text-gray-800 hover:bg-gray-100 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-800";
+    }
+  };
+
+  return (
+    <Badge className={`${getStatusColor(status)} border-0 p-2 px-4`}>
+      {status}
+    </Badge>
+  );
+};
+
+// Role badge component
+const RoleBadge = ({ role }: { role: string }) => {
+  return (
+    <span className={``}>
+      {/* {getRoleIcon(role.name)} */}
+      {role?.replace("_", " ").toUpperCase() || "N/A"}
+    </span>
+  );
+};
+
+// Empty state component
+const EmptyState = () => {
+  return (
+    <div className="flex flex-col items-center justify-center py-16 px-4 h-full">
+      <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center mb-6">
+        <Users className="h-8 w-8 text-gray-400 dark:text-gray-500" />
+      </div>
+      <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-200 mb-2">
+        No Users Added Yet
+      </h3>
+      <p className="text-gray-500 dark:text-gray-400 text-center mb-6 max-w-md">
+        Manage your users easily by adding them here. Start by creating a new
+        user profile.
+      </p>
+      <CreateUserDialog />
+    </div>
+  );
+};
+
+const UserManagementPage = () => {
+  const toast = useToastHandler();
+  const queryClient = useQueryClient();
+  const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [isUserDetailsOpen, setIsUserDetailsOpen] = useState(false);
+  const [editUserId, setEditUserId] = useState<string | null>(null);
+  const [isEditUserOpen, setIsEditUserOpen] = useState(false);
+  const [isDeactivateUserOpen, setIsDeactivateUserOpen] = useState(false);
+  const [pagination, setPagination] = useState<PaginationState>({
+    pageIndex: 0,
+    pageSize: 10,
+  });
+
+  // Debounce search query
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // Reset pagination when search changes
+  useEffect(() => {
+    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+  }, [debouncedSearchQuery]);
+
+  // Fetch users dashboard statistics
+  useQuery<
+    ApiResponse<UserDashboard>,
+    ApiResponseError
+  >({
+    queryKey: ["userDashboard"],
+    queryFn: async () => await getRequest({ url: "/users/dashboard" }),
+    enabled: false, // Disable since endpoint doesn't exist
+  });
+
+  // Calculate dashboard stats from users list since no dashboard endpoint exists
+  const calculateDashboardStats = (users: any[]) => {
+    return {
+      allUsers: users.length,
+      activeUsers: users.filter((u: any) => u.status === "active").length,
+      suspendedUsers: users.filter((u: any) => u.status === "inactive").length,
+      inactiveUsers: users.filter((u: any) => u.status === "pending").length,
+      admins: users.filter((u: any) => u.role === "company_admin").length,
+      procurementLeads: users.filter((u: any) => u.role === "procurement")
+        .length,
+      evaluators: users.filter((u: any) => u.role === "evaluator").length,
+    };
+  };
+
+  // Fetch users list
+  const { data: usersData, isLoading } = useQuery<
+    ApiResponse<UsersListResponse>,
+    ApiResponseError
+  >({
+    queryKey: [
+      "users",
+      pagination.pageIndex,
+      pagination.pageSize,
+      debouncedSearchQuery,
+    ],
+    queryFn: async () =>
+      await getRequest({
+        url: "/users",
+        config: {
+          params: {
+            page: pagination.pageIndex + 1,
+            limit: pagination.pageSize,
+            search: debouncedSearchQuery || undefined,
+          },
+        },
+      }),
+  });
+
+  // Update user status mutation (since there's no delete endpoint, we'll use status update)
+  const { mutateAsync: updateUserStatus } = useMutation<
+    ApiResponse<any>,
+    ApiResponseError,
+    { userId: string; status: string }
+  >({
+    mutationKey: ["updateUserStatus"],
+    mutationFn: async ({ userId, status }) =>
+      await putRequest({ url: `/users/${userId}/status`, payload: { status } }),
+    onSuccess: () => {
+      toast.success("Success", "User status updated successfully");
+      setSelectedUserId(null)
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+    },
+    onError: (error) => {
+      console.log(error);
+      setSelectedUserId(null)
+      const err = error as ApiResponseError;
+      toast.error(
+        "Error",
+        err?.response?.data?.message ?? "Failed to update user status"
+      );
+    },
+  });
+
+  // Handle user status update (deactivate user)
+  const handleDeactivateUser = async (userId: string) => {
+    try {
+      await updateUserStatus({ userId, status: "inactive" });
+    } catch (error) {
+      // Error is already handled in onError callback
+    }
+  };
+
+  // Extract data from API responses
+  const users = usersData?.data?.data?.data || [];
+  const totalUsers = usersData?.data?.data?.total || 0;
+
+  // Calculate dashboard statistics from users list
+  const userStats =
+    users.length > 0
+      ? calculateDashboardStats(users)
+      : {
+          allUsers: 0,
+          activeUsers: 0,
+          suspendedUsers: 0,
+          inactiveUsers: 0,
+          admins: 0,
+          procurementLeads: 0,
+          evaluators: 0,
+        };
+
+  // Filter data based on search query (for client-side filtering if needed)
+  const filteredData = useMemo(() => {
+    return users;
+  }, [users]);
+
+  // Define table columns
+  const columns: ColumnDef<User>[] = [
+    {
+      accessorKey: "name",
+      header: "User",
+      cell: ({ row }) => (
+        <div className="flex flex-col">
+          <span className="font-medium text-gray-900 dark:text-gray-100">
+            {row.original.name}
+          </span>
+          <span className="text-sm text-blue-500 dark:text-blue-400 underline underline-offset-2">
+            {row.original.email}
+          </span>
+        </div>
+      ),
+    },
+    {
+      accessorKey: "role",
+      header: "Role",
+      cell: ({ row }) => <RoleBadge role={row.original.role} />,
+    },
+    {
+      accessorKey: "department",
+      header: "Department",
+      cell: ({ row }) => (
+        <span className="text-xs text-gray-700 dark:text-gray-300">
+          {row.original.department || "N/A"}
+        </span>
+      ),
+    },
+    {
+      accessorKey: "status",
+      header: "Status",
+      cell: ({ row }) => <StatusBadge status={row.original.status} />,
+    },
+    {
+      accessorKey: "lastLoginAt",
+      header: "Last Activity",
+      cell: ({ row }) => (
+        <div className="flex flex-col text-sm">
+          <span className="text-gray-700 dark:text-gray-300">
+            {row.original.lastActivity
+              ? format(
+                  new Date(row.original.lastActivity),
+                  "MMM dd, yyyy pppp"
+                )
+              : "Never"}
+          </span>
+        </div>
+      ),
+    },
+    {
+      id: "actions",
+      header: "Actions",
+      cell: ({ row }) => {
+        // Hide actions for users with pending status
+        if (row.original.status === "pending") {
+          return null;
+        }
+        
+        return (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="h-8 w-8 p-0">
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-44 rounded-2xl">
+              <DropdownMenuItem
+                onClick={() => {
+                  setSelectedUserId(row.original?.userId ?? "");
+                  setIsUserDetailsOpen(true);
+                }}
+                className="p-3"
+              >
+                View User
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => {
+                  setEditUserId(row.original?.userId ?? "");
+                  setIsEditUserOpen(true);
+                }}
+                className="p-3"
+              >
+                Edit User
+              </DropdownMenuItem>
+
+              <DropdownMenuItem
+                onClick={() => {
+                  setSelectedUserId(row.original?._id)
+                  setIsDeactivateUserOpen(true)
+                }}
+                className="p-3 text-red-600 dark:text-red-40"
+              >
+                Deactivate User
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        );
+      },
+    },
+  ];
+
+  const roles = [
+    { label: "Admin", value: "admin" },
+    { label: "Procurement Lead", value: "procurement_lead" },
+    { label: "Evaluator", value: "evaluator" },
+    { label: "Vendor", value: "vendor" },
+  ];
+
+  return (
+    <div className="p-6 min-h-full">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-1">
+            Users
+          </h1>
+        </div>
+        <div className="flex items-center gap-3">
+          <CreateUserDialog />
+        </div>
+      </div>
+
+      {/* Statistics Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <StatCard
+          title="All Users"
+          value={userStats.allUsers}
+          icon={Users}
+          iconColor="text-gray-600"
+          iconBgColor="bg-gray-100"
+        />
+        <StatCard
+          title="Active Users"
+          value={userStats.activeUsers}
+          icon={UserCheck}
+          iconColor="text-green-600"
+          iconBgColor="bg-green-100"
+        />
+        <StatCard
+          title="Suspended Users"
+          value={userStats.suspendedUsers}
+          icon={UserX}
+          iconColor="text-red-600"
+          iconBgColor="bg-red-100"
+        />
+        <StatCard
+          title="Inactive Users"
+          value={userStats.inactiveUsers}
+          icon={Clock}
+          iconColor="text-yellow-600"
+          iconBgColor="bg-yellow-100"
+        />
+      </div>
+
+      {/* Role Statistics */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <StatCard
+          title="Admins"
+          value={userStats.admins}
+          icon={Shield}
+          iconColor="text-purple-600"
+          iconBgColor="bg-purple-100"
+        />
+        <StatCard
+          title="Procurement Leads"
+          value={userStats.procurementLeads}
+          icon={Briefcase}
+          iconColor="text-blue-600"
+          iconBgColor="bg-blue-100"
+        />
+        <StatCard
+          title="Evaluators"
+          value={userStats.evaluators}
+          icon={Star}
+          iconColor="text-orange-600"
+          iconBgColor="bg-orange-100"
+        />
+      </div>
+
+      {/* Users Table */}
+      <DataTable
+        data={filteredData}
+        columns={columns}
+        header={() => (
+          <div className="p-6 py-3 w-full border-b border-gray-200 dark:border-gray-700">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              <div className="relative w-full md:w-96">
+                <Search
+                  className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500"
+                  size={18}
+                />
+                <Input
+                  placeholder="Search users..."
+                  className="pl-10 w-full"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+              <div className="flex items-center gap-3">
+                <DropdownFilters
+                  filters={[
+                    {
+                      title: "Role",
+                      showIcon: true,
+                      options: roles,
+                    },
+                    {
+                      title: "Status",
+                      showIcon: true,
+                      options: [
+                        {
+                          label: "Active",
+                          value: "active",
+                        },
+                        {
+                          label: "Inactive",
+                          value: "inactive",
+                        },
+                      ],
+                    },
+                  ]}
+                />
+              </div>
+            </div>
+          </div>
+        )}
+        classNames={{
+          container:
+            "bg-white dark:bg-slate-950 rounded-xl px-3 border border-gray-300 dark:border-slate-600",
+          tCell: "text-center",
+          tHead: "text-center",
+        }}
+        options={{
+          manualPagination: true,
+          setPagination: setPagination,
+          pagination: pagination,
+          totalCounts: totalUsers * 10,
+          isLoading: isLoading,
+        }}
+        emptyPlaceholder={<EmptyState />}
+      />
+
+      {/* User Details Sheet */}
+      <UserDetailsSheet
+        open={isUserDetailsOpen}
+        onOpenChange={setIsUserDetailsOpen}
+        userId={selectedUserId || undefined}
+        onStatusUpdate={() => {
+          // Refetch users data to reflect status changes
+          queryClient.invalidateQueries({ queryKey: ["users"] });
+          queryClient.invalidateQueries({ queryKey: ["user-dashboard"] });
+        }}
+        onDelete={() => {
+          // Refetch users data to reflect deletion
+          queryClient.invalidateQueries({ queryKey: ["users"] });
+          queryClient.invalidateQueries({ queryKey: ["user-dashboard"] });
+          setSelectedUserId(null);
+        }}
+      />
+
+      {/* Edit User Dialog */}
+      <EditUserDialog
+        open={isEditUserOpen}
+        onOpenChange={setIsEditUserOpen}
+        userId={editUserId || ""}
+      />
+
+      <ConfirmAlert
+        open={isDeactivateUserOpen}
+        onClose={setIsDeactivateUserOpen}
+        text="Are you sure you want to deactivate this user? They will no longer be able to access the system."
+        title="Deactivate User"
+        onPrimaryAction={() => handleDeactivateUser(selectedUserId ?? "")}
+      ></ConfirmAlert>
+    </div>
+  );
+};
+
+export default UserManagementPage;

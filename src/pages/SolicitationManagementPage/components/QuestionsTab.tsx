@@ -1,0 +1,307 @@
+import React, { useState } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { HelpCircle, Info } from "lucide-react";
+import { getRequest, postRequest } from "@/lib/axiosInstance";
+import { useParams } from "react-router-dom";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useToastHandler } from "@/hooks/useToaster";
+import { useUserRole } from "@/hooks/useUserRole";
+import { Button } from "@/components/ui/button";
+import MessageThread from "./MessageThread";
+import MessageComposer from "./MessageComposer";
+
+// Question type definition
+export interface Question {
+  _id:          string;
+  solicitation: string;
+  user:         User;
+  note:         string;
+  responses:    QuestionResponse[];
+  isAnswered:   boolean;
+  createdAt:    string;
+  updatedAt:    string;
+  __v:          number;
+}
+
+export interface User {
+  _id:  string;
+  name: string;
+  role: Role;
+  avatar: string;
+}
+
+export interface Role {
+  _id:  string;
+  name: string;
+  __v:  number;
+}
+
+export interface QuestionResponse {
+  _id:          string;
+  solicitation: string;
+  user:         User;
+  note:         string;
+  responses:    QuestionResponse[];
+  isAnswered:   boolean;
+  createdAt:    Date;
+  updatedAt:    Date;
+  __v:          number;
+}
+type QuestionsResponse = {
+  message: string;
+  data: {
+    totalAnswer: number;
+    questionCount: number;
+    questions: Question[];
+  };
+};
+
+const QuestionsTab: React.FC = () => {
+  const { id: solicitationId } = useParams<{ id: string }>();
+  const queryClient = useQueryClient();
+  const toastHandler = useToastHandler();
+  const { isVendor, isProcurement, isEvaluator } = useUserRole();
+  const [replyToQuestion, setReplyToQuestion] = useState<Question | null>(null);
+  const [sendType, setSendType] = useState<"reply" | "addendum" | null>(null);
+  const [showCreateQuestion, setShowCreateQuestion] = useState(false);
+
+  // Fetch questions
+  const { data: questionsData, isLoading } = useQuery<QuestionsResponse>({
+    queryKey: ["solicitation-questions", solicitationId],
+    queryFn: async () => {
+      const response = await getRequest({
+        url: isVendor
+          ? `/vendor/solicitations/${solicitationId}/questions`
+          : `/procurement/solicitations/${solicitationId}/questions`,
+      });
+      return response.data;
+    },
+    enabled: !!solicitationId,
+  });
+
+  // Create question mutation (for vendors)
+  const createQuestionMutation = useMutation({
+    mutationFn: async ({ note }: { note: string }) => {
+      if (!solicitationId) throw new Error("Solicitation ID is required");
+      return await postRequest({
+        url: isVendor
+          ? `/vendor/solicitations/${solicitationId}/questions`
+          : `/procurement/solicitations/${solicitationId}/questions`,
+        payload: { note },
+      });
+    },
+    onSuccess: () => {
+      toastHandler.success("Success", "Question submitted successfully");
+      setShowCreateQuestion(false);
+      queryClient.invalidateQueries({
+        queryKey: ["solicitation-questions", solicitationId],
+      });
+    },
+    onError: (error: any) => {
+      toastHandler.error(
+        "Error",
+        error?.response?.data?.message || "Failed to submit question"
+      );
+    },
+  });
+
+  // Reply mutation (for procurement and evaluators)
+  const replyMutation = useMutation({
+    mutationFn: async ({
+      questionId,
+      note,
+    }: {
+      questionId: string;
+      note: string;
+    }) => {
+      if (!solicitationId) throw new Error("Solicitation ID is required");
+      return await postRequest({
+        url: isVendor
+          ? `/vendor/solicitations/${solicitationId}/questions/${questionId}`
+          : `/procurement/solicitations/${solicitationId}/questions/${questionId}`,
+        payload: { note },
+      });
+    },
+    onSuccess: () => {
+      toastHandler.success("Success", "Reply sent successfully");
+      setReplyToQuestion(null);
+      setSendType(null);
+      queryClient.invalidateQueries({
+        queryKey: ["solicitation-questions", solicitationId],
+      });
+    },
+    onError: (error: any) => {
+      toastHandler.error(
+        "Error",
+        error?.response?.data?.message || "Failed to send reply"
+      );
+    },
+  });
+
+  const questions: Question[] = questionsData?.data?.questions || [];
+  const unansweredQuestions = questions.filter((q: Question) => !q.isAnswered);
+  const answeredQuestions = questions.filter((q: Question) => q.isAnswered);
+
+  const handleSendMessage = (content: string) => {
+    if (!replyToQuestion && !sendType) {
+      // Handle creating new question (vendors only)
+      if (!content.trim()) return;
+      createQuestionMutation.mutate({
+        note: content.trim(),
+      });
+    } else {
+      // Handle replying to existing question (procurement/evaluators only)
+      if (!replyToQuestion || !content.trim()) return;
+      replyMutation.mutate({
+        questionId: replyToQuestion._id,
+        note: content.trim(),
+      });
+    }
+  };
+
+  const handleReplyClick = (questionId: string, type: "reply" | "addendum" | null) => {
+    const question = questions.find((q: Question) => q._id === questionId);
+    if (question) {
+      setReplyToQuestion(question);
+      setSendType(type);
+      setShowCreateQuestion(false);
+    }
+  };
+
+  const handleCancelCreateQuestion = () => {
+    setShowCreateQuestion(false);
+    setReplyToQuestion(null);
+  };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6 pt-4">
+        <div className="grid grid-cols-2 gap-4 max-md:grid-cols-1">
+          <Card>
+            <CardContent className="p-6">
+              <div className="animate-pulse">
+                <div className="h-4 bg-gray-200 rounded w-1/3 mb-2"></div>
+                <div className="h-8 bg-gray-200 rounded w-1/4 mb-1"></div>
+                <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-6">
+              <div className="animate-pulse">
+                <div className="h-4 bg-gray-200 rounded w-1/3 mb-2"></div>
+                <div className="h-8 bg-gray-200 rounded w-1/4 mb-1"></div>
+                <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6 pt-4">
+      {/* Header Cards */}
+      <div className="grid grid-cols-2 gap-4 max-md:grid-cols-1">
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-sm font-medium text-gray-500 mb-1">
+                  Questions
+                </h3>
+                <p className="text-3xl font-bold text-gray-900 dark:text-gray-200">
+                  {unansweredQuestions.length}
+                </p>
+                <p className="text-sm text-gray-500 mt-1">
+                  {unansweredQuestions.length === 1
+                    ? "1 Unanswered"
+                    : `${unansweredQuestions.length} Unanswered`}
+                </p>
+              </div>
+              <div className="p-3 rounded-full bg-red-50 dark:bg-slate-900">
+                <HelpCircle className="h-6 w-6 text-red-600 dark:text-gray-500" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className={``}>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-sm font-medium text-gray-500 mb-1">
+                  Answered Questions
+                </h3>
+                <p className="text-3xl font-bold text-gray-900 dark:text-gray-200">
+                  {answeredQuestions.length}
+                </p>
+              </div>
+              <div className="p-3 rounded-full bg-blue-50 dark:bg-slate-900">
+                <Info className="h-6 w-6 text-blue-600 dark:text-gray-500" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Questions List */}
+      <div className="space-y-4 mb-5">
+        {questions.map((question: Question) => (
+          <MessageThread
+            key={question._id}
+            question={question}
+            sendType={sendType}
+            onReply={
+              !question.isAnswered 
+                ? handleReplyClick
+                : undefined
+            }
+          />
+        ))}
+      </div>
+
+      {/* Message Composer - Conditional Visibility */}
+      {((isVendor) ||
+        ((isProcurement || isEvaluator) &&
+          (replyToQuestion || questions.length > 0))) && (
+        <div className="mt-6">
+          <div className="flex justify-between items-center mb-4">
+            {showCreateQuestion && (
+              <Button
+                variant="outline"
+                onClick={handleCancelCreateQuestion}
+                size="sm"
+              >
+                Cancel
+              </Button>
+            )}
+          </div>
+          <MessageComposer
+            onSend={handleSendMessage}
+            isNewChat={questions.length === 0}
+            isLoading={
+              createQuestionMutation.isPending || replyMutation.isPending
+            }
+            replyToUser={
+              replyToQuestion
+                ? {
+                    name: replyToQuestion.user.name,
+                    avatar: "https://i.pravatar.cc/300", //replyToQuestion.user.avatar,
+                  }
+                : showCreateQuestion
+                ? { name: "Procurement Team" }
+                : undefined
+            }
+            currentUser={{ name: "You" }}
+            sendType={sendType}
+            onSendTypeChange={setSendType}
+          />
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default QuestionsTab;

@@ -1,0 +1,1143 @@
+import {
+  SuperAdminDashboardCount,
+  RoleDistribution,
+  TimeStats,
+  SubDistribution,
+  ModuleUsage,
+  WeeklyActivities,
+  EvaluatorDashboardData,
+  EvaluatorMyActions,
+  EvaluatorEvaluationActivity,
+  VendorMyActions,
+  VendorsDistributionData,
+} from "@/hooks/useDashboardData";
+import { DashboardConfig } from "@/config/dashboardConfig";
+import { applyConsistentColors } from "./chartColorUtils";
+import { format } from "date-fns";
+
+/**
+ * Transforms API data into dashboard configuration format
+ * This ensures compatibility with existing UI components
+ */
+export class DashboardDataTransformer {
+  /**
+   * Transform SuperAdmin dashboard count data into stats cards
+   */
+  static transformSuperAdminStats(
+    data: SuperAdminDashboardCount | undefined
+  ): DashboardConfig["stats"] {
+    const stats = data?.company;
+    const userStats = data?.users;
+
+    if (typeof stats === "undefined") {
+      // Return default/loading state
+      return [
+        {
+          title: "All Companies",
+          value: 0,
+          icon: "building-clock",
+          color: "text-gray-800",
+          bgColor: "bg-gray-500/20",
+        },
+        {
+          title: "Active Companies",
+          value: 0,
+          icon: "building-clock",
+          color: "text-green-800",
+          bgColor: "bg-green-500/20",
+        },
+        {
+          title: "Suspended Companies",
+          value: 0,
+          icon: "building-clock",
+          color: "text-red-800",
+          bgColor: "bg-red-500/30",
+        },
+        {
+          title: "All Admins",
+          value: 0,
+          icon: "users",
+          color: "text-gray-800",
+          bgColor: "bg-gray-500/30",
+        },
+        {
+          title: "Super Admins",
+          value: 0,
+          icon: "user",
+          color: "text-gray-800",
+          bgColor: "bg-gray-500/30",
+        },
+        {
+          title: "Organisation Admins",
+          value: 0,
+          icon: "user",
+          color: "text-gray-800",
+          bgColor: "bg-gray-500/30",
+        },
+      ];
+    }
+
+    return [
+      {
+        title: "All Companies",
+        value: stats.allCompanies,
+        icon: "building-clock",
+        color: "text-gray-800",
+        bgColor: "bg-gray-500/20",
+      },
+      {
+        title: "Active Companies",
+        value: stats.activeCompanies || 0,
+        icon: "building-clock",
+        color: "text-green-800",
+        bgColor: "bg-green-500/20",
+      },
+      {
+        title: "Suspended Companies",
+        value: stats.suspendedCompanies || 0,
+        icon: "building-clock",
+        color: "text-red-800",
+        bgColor: "bg-red-500/30",
+      },
+      {
+        title: "All Admins",
+        value: (userStats?.super_admin ?? 0) + (userStats?.company_admin ?? 0),
+        icon: "users",
+        color: "text-gray-800",
+        bgColor: "bg-gray-500/30",
+      },
+      {
+        title: "Super Admins",
+        value: userStats?.super_admin || 0,
+        icon: "user",
+        color: "text-gray-800",
+        bgColor: "bg-gray-500/30",
+      },
+      {
+        title: "Organisation Admins",
+        value: userStats?.company_admin || 0,
+        icon: "user",
+        color: "text-gray-800",
+        bgColor: "bg-gray-500/30",
+      },
+    ];
+  }
+
+  /**
+   * Transform weekly activities data for area chart
+   */
+  static transformWeeklyActivities(data: WeeklyActivities | undefined) {
+    if (!data || (!data.solicitations && !data.evaluations)) {
+      // Return default data structure
+      return Array.from({ length: 7 }, (_, i) => ({
+        day: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"][i],
+        activities: 0,
+      }));
+    }
+
+    // Transform API data to chart format
+    // Combine solicitations and evaluations data
+    const totalActivities =
+      (data.solicitations?.length || 0) + (data.evaluations?.length || 0);
+
+    // For now, distribute activities across the week
+    // This can be enhanced based on actual date data from the API
+    return Array.from({ length: 7 }, (_, i) => ({
+      day: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"][i],
+      activities:
+        Math.floor(totalActivities / 7) + (i < totalActivities % 7 ? 1 : 0),
+    }));
+  }
+
+  /**
+   * Transform subscription distribution data for donut chart
+   */
+  static transformSubDistribution(data: SubDistribution | undefined) {
+    if (
+      !data ||
+      !data.distribution ||
+      !Array.isArray(data.distribution) ||
+      data.distribution.length === 0
+    ) {
+      return applyConsistentColors([
+        { name: "Basic", value: 0 },
+        { name: "Pro", value: 0 },
+        { name: "Enterprise", value: 0 },
+      ]);
+    }
+
+    const chartData = data.distribution.map((item) => ({
+      name: item.plan,
+      value: item.count,
+    }));
+
+    return applyConsistentColors(chartData);
+  }
+
+  /**
+   * Transform company status data for bar chart
+   */
+  static transformCompanyStatus(data: TimeStats | undefined) {
+    if (
+      !data ||
+      !data.timeStats ||
+      !Array.isArray(data.timeStats) ||
+      data.timeStats.length === 0
+    ) {
+      return Array.from({ length: 12 }, (_, i) => ({
+        month: [
+          "Jan",
+          "Feb",
+          "Mar",
+          "Apr",
+          "May",
+          "Jun",
+          "Jul",
+          "Aug",
+          "Sep",
+          "Oct",
+          "Nov",
+          "Dec",
+        ][i],
+        active: 0,
+        suspended: 0,
+        pending: 0,
+      }));
+    }
+
+    return data.timeStats.map((item, index) => {
+      const month = [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun",
+        "Jul",
+        "Aug",
+        "Sep",
+        "Oct",
+        "Nov",
+        "Dec",
+      ][index % 12];
+
+      return {
+        month,
+        active: item.active || 0,
+        suspended: Math.floor((item.total || 0) * 0.1), // Estimated based on typical ratios
+        pending: Math.floor((item.expiring || 0) * 0.5),
+      };
+    });
+  }
+
+  /**
+   * Transform role distribution data for pie chart
+   */
+  static transformRoleDistribution(data: RoleDistribution[] | undefined) {
+    if (!data || !Array.isArray(data) || data.length === 0) {
+      return applyConsistentColors([
+        { name: "Admin", value: 0 },
+        { name: "Procurement Lead", value: 0 },
+        { name: "Vendor", value: 0 },
+      ]);
+    }
+
+    const roleTitle = {
+      procurement: "Procurement Lead",
+      super_admin: "Super Admin",
+      company_admin: "Company Admin",
+      evaluator: "Evaluator",
+      vendor: "Vendor",
+    }
+
+    const chartData = data.map((item) => ({
+      name: roleTitle[item.roleName as keyof typeof roleTitle] || 'Unknown Role',
+      value: parseInt(item.count) || 0,
+    }));
+
+    return applyConsistentColors(chartData);
+  }
+
+  /**
+   * Calculate total active subscriptions for center text
+   */
+  static calculateTotalSubscriptions(
+    data: SubDistribution | undefined
+  ): number {
+    if (!data) return 0;
+    return data.totalActive || 0;
+  }
+
+  /**
+   * Transform module usage data for pie chart
+   */
+  static transformModuleUsage(data: ModuleUsage | undefined) {
+    if (!data) {
+      return [
+        { name: "Procurement", value: 0, percentage: 0 },
+        { name: "Evaluation", value: 0, percentage: 0 },
+        { name: "Vendor Management", value: 0, percentage: 0 },
+        { name: "Addendum", value: 0, percentage: 0 },
+      ];
+    }
+
+    const total =
+      data.solicitationUsage +
+      data.evaluationUsage +
+      data.vendorUage +
+      data.adendumUsage;
+
+    return [
+      {
+        name: "Solicitation",
+        value: data.solicitationUsage || 0,
+        percentage:
+          total > 0 ? Math.round((data.solicitationUsage / total) * 100) : 0,
+      },
+      {
+        name: "Evaluation",
+        value: data.evaluationUsage || 0,
+        percentage:
+          total > 0 ? Math.round((data.evaluationUsage / total) * 100) : 0,
+      },
+      {
+        name: "Vendor Management",
+        value: data.vendorUage || 0,
+        percentage: total > 0 ? Math.round((data.vendorUage / total) * 100) : 0,
+      },
+      {
+        name: "Addendum",
+        value: data.adendumUsage || 0,
+        percentage:
+          total > 0 ? Math.round((data.adendumUsage / total) * 100) : 0,
+      },
+    ];
+  }
+
+  /**
+   * Transform Company Admin solicitation status data into stats cards
+   */
+  static transformSolicitationStatus(data: any): DashboardConfig["stats"] {
+    if (!data) {
+      return [
+        {
+          title: "Total Solicitations",
+          value: 0,
+          icon: "file-text",
+          color: "text-blue-800",
+          bgColor: "bg-blue-500/20",
+        },
+        {
+          title: "Active Solicitations",
+          value: 0,
+          icon: "activity",
+          color: "text-green-800",
+          bgColor: "bg-green-500/20",
+        },
+        {
+          title: "Awarded Solicitations",
+          value: 0,
+          icon: "award",
+          color: "text-yellow-800",
+          bgColor: "bg-yellow-500/20",
+        },
+        {
+          title: "Closed Solicitations",
+          value: 0,
+          icon: "x-circle",
+          color: "text-red-800",
+          bgColor: "bg-red-500/20",
+        },
+      ];
+    }
+
+    return [
+      {
+        title: "Total Solicitations",
+        value: data.total || 0,
+        icon: "file-text",
+        color: "text-blue-800",
+        bgColor: "bg-blue-500/20",
+      },
+      {
+        title: "Active Solicitations",
+        value: data.active || 0,
+        icon: "activity",
+        color: "text-green-800",
+        bgColor: "bg-green-500/20",
+      },
+      {
+        title: "Awarded Solicitations",
+        value: data.awarded || 0,
+        icon: "award",
+        color: "text-yellow-800",
+        bgColor: "bg-yellow-500/20",
+      },
+      {
+        title: "Closed Solicitations",
+        value: data.closed || 0,
+        icon: "x-circle",
+        color: "text-red-800",
+        bgColor: "bg-red-500/20",
+      },
+    ];
+  }
+
+  /**
+   * Transform Company Admin bid intent data
+   */
+  static transformBidIntent(data: any) {
+    if (!data) {
+      return applyConsistentColors([
+        { name: "Invited", value: 0, percentage: 0 },
+        { name: "Confirmed", value: 0, percentage: 0 },
+        { name: "Declined", value: 0, percentage: 0 },
+      ]);
+    }
+
+    const total =
+      (data.invited || 0) + (data.confirmed || 0) + (data.declined || 0);
+
+    const chartData = [
+      {
+        name: "Invited",
+        value: data.invited || 0,
+        percentage: total > 0 ? Math.round((data.invited / total) * 100) : 0,
+      },
+      {
+        name: "Confirmed",
+        value: data.confirmed || 0,
+        percentage: total > 0 ? Math.round((data.confirmed / total) * 100) : 0,
+      },
+      {
+        name: "Declined",
+        value: data.declined || 0,
+        percentage: total > 0 ? Math.round((data.declined / total) * 100) : 0,
+      },
+    ];
+
+    return applyConsistentColors(chartData);
+  }
+
+  /**
+   * Transform Company Admin vendors distribution data
+   */
+  static transformVendorsDistribution(data: any) {
+    if (!data) {
+      return applyConsistentColors([
+        { name: "Active", value: 0, percentage: 0 },
+        { name: "Pending", value: 0, percentage: 0 },
+        { name: "Inactive", value: 0, percentage: 0 },
+      ]);
+    }
+
+    const chartData = [
+      {
+        name: "Active",
+        value: data.active?.percentage || 0,
+        percentage: data?.active?.percentage ?? 0,
+      },
+      {
+        name: "Pending",
+        value: data.pending?.percentage || 0,
+        percentage: data?.pending?.percentage ?? 0,
+      },
+      {
+        name: "Inactive",
+        value: data.inactive?.percentage || 0,
+        percentage: data?.inactive?.percentage ?? 0,
+      },
+    ];
+
+    return applyConsistentColors(chartData);
+  }
+
+  /**
+   * Transform Company Admin proposal submission data
+   */
+  static transformProposalSubmission(data: any) {
+    if (!data || !Array.isArray(data)) {
+      return [];
+    }
+
+    return data.map((item: any) => ({
+      date: item.date || "",
+      count: item.count || 0,
+      ...item,
+    }));
+  }
+
+  /**
+   * Transform Procurement dashboard stats
+   */
+  static transformProcurementStats(data: any): DashboardConfig["stats"] {
+    if (!data) {
+      return [
+        {
+          title: "All Solicitations",
+          value: 0,
+          icon: "file-text",
+          color: "text-blue-800",
+          bgColor: "bg-blue-500/20",
+        },
+        {
+          title: "Active Solicitations",
+          value: 0,
+          icon: "activity",
+          color: "text-green-800",
+          bgColor: "bg-green-500/20",
+        },
+        {
+          title: "Pending Evaluations",
+          value: 0,
+          icon: "clock",
+          color: "text-yellow-800",
+          bgColor: "bg-yellow-500/20",
+        },
+        {
+          title: "Awarded",
+          value: 0,
+          icon: "award",
+          color: "text-purple-800",
+          bgColor: "bg-purple-500/20",
+        },
+      ];
+    }
+
+    return [
+      {
+        title: "All Solicitations",
+        value: data.total || 0,
+        icon: "file-text",
+        color: "text-blue-800",
+        bgColor: "bg-blue-500/20",
+      },
+      {
+        title: "Active Solicitations",
+        value: data.Active || 0,
+        icon: "activity",
+        color: "text-green-800",
+        bgColor: "bg-green-500/20",
+      },
+      {
+        title: "Pending Evaluations",
+        value: data.underEvaluating || 0,
+        icon: "clock",
+        color: "text-yellow-800",
+        bgColor: "bg-yellow-500/20",
+      },
+      {
+        title: "Awarded",
+        value: data.awarded || 0,
+        icon: "award",
+        color: "text-purple-800",
+        bgColor: "bg-purple-500/20",
+      },
+    ];
+  }
+
+  /**
+   * Transform Company Admin role distribution data
+   */
+  static transformCompanyRoleDistribution(data: any) {
+    if (!data || !Array.isArray(data)) {
+      return [
+        { name: "Admin", value: 0, percentage: 0 },
+        { name: "User", value: 0, percentage: 0 },
+        { name: "Viewer", value: 0, percentage: 0 },
+      ];
+    }
+
+    const total = data.reduce(
+      (sum: number, item: any) => sum + (item.count || 0),
+      0
+    );
+
+    return data.map((item: any) => ({
+      name: item.roleName || "Unknown",
+      value: item.count || 0,
+      percentage: total > 0 ? Math.round((item.count / total) * 100) : 0,
+    }));
+  }
+
+  /**
+   * Transform Procurement Solicitation Status data for pie chart
+   */
+  static transformProcurementSolicitationStatus(data: any) {
+    if (!data) {
+      return applyConsistentColors([
+        { name: "Active", value: 0 },
+        { name: "Under Evaluation", value: 0 },
+        { name: "Closed", value: 0 },
+        { name: "Draft", value: 0 },
+        { name: "Awarded", value: 0 },
+      ]);
+    }
+
+    const chartData = [
+      { name: "Active", value: data.active || 0 },
+      { name: "Under Evaluation", value: data.evaluating || 0 },
+      { name: "Closed", value: data.closed || 0 },
+      { name: "Draft", value: data.draft || 0 },
+      { name: "Awarded", value: data.awarded || 0 },
+    ];
+
+    return applyConsistentColors(chartData);
+  }
+
+  /**
+   * Transform Procurement Bid Intent data for donut chart
+   */
+  static transformProcurementBidIntent(data: any) {
+    if (!data) {
+      return applyConsistentColors([
+        { name: "Confirmed", value: 0, percentage: 0 },
+        { name: "Declined", value: 0, percentage: 0 },
+        { name: "Invited", value: 0, percentage: 0 },
+      ]);
+    }
+
+    const total = (data.confirmed || 0) + (data.declined || 0) + (data.invited || 0);
+    
+    const chartData = [
+      { 
+        name: "Confirmed", 
+        value: data.confirmed || 0, 
+        percentage: total > 0 ? Math.round((data.confirmed / total) * 100) : 0, 
+      },
+      { 
+        name: "Declined", 
+        value: data.declined || 0, 
+        percentage: total > 0 ? Math.round((data.declined / total) * 100) : 0, 
+      },
+      { 
+        name: "Invited", 
+        value: data.invited || 0, 
+        percentage: total > 0 ? Math.round((data.invited / total) * 100) : 0, 
+      },
+    ];
+
+    return applyConsistentColors(chartData);
+  }
+
+  /**
+   * Transform Procurement Vendors Distribution data for donut chart
+   */
+  static transformProcurementVendorsDistribution(data?: VendorsDistributionData) {
+    if (!data) {
+      return applyConsistentColors([
+        { name: "Active", value: 0, percentage: 0 },
+        { name: "Inactive", value: 0, percentage: 0 },
+        { name: "Pending", value: 0, percentage: 0 },
+      ]);
+    }
+    
+    const chartData = [
+      { 
+        name: "Active", 
+        value: data.active.count || 0, 
+        percentage: data.active.percentage || 0, 
+      },
+      { 
+        name: "Inactive", 
+        value: data.inactive.count || 0, 
+        percentage: data.inactive.percentage || 0, 
+      },
+      { 
+        name: "Pending", 
+        value: data.pending.count || 0, 
+        percentage: data.pending.percentage ||  0, 
+      },
+    ];
+
+    return applyConsistentColors(chartData);
+  }
+
+  /**
+   * Transform Procurement Weekly Activities data for area chart
+   */
+  static transformProcurementWeeklyActivities(data: any) {
+    if (!data || !data.solicitations || !data.evaluations) {
+      return Array.from({ length: 7 }, (_, i) => ({
+        day: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"][i],
+        solicitations: 0,
+        evaluations: 0,
+      }));
+    }
+
+    // Create a map for easy lookup
+    const solicitationsMap = new Map();
+    const evaluationsMap = new Map();
+    
+    data.solicitations.forEach((item: any) => {
+      solicitationsMap.set(item.label, item.value);
+    });
+    
+    data.evaluations.forEach((item: any) => {
+      evaluationsMap.set(item.label, item.value);
+    });
+
+    // Generate the combined data
+    return data.solicitations.map((item: any) => ({
+      day: item.label,
+      solicitations: item.value || 0,
+      evaluations: evaluationsMap.get(item.label) || 0,
+    }));
+  }
+
+  /**
+   * Transform Procurement Proposal Submission data for line chart
+   */
+  static transformProcurementProposalSubmission(data: any) {
+    if (!data || !Array.isArray(data)) {
+      return Array.from({ length: 7 }, (_, i) => ({
+        day: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"][i],
+        submissions: 0,
+        evaluations: 0,
+      }));
+    }
+
+    return data.map((item: any) => ({
+      day: item.label || item.day || "Unknown",
+      submissions: item.submissions || item.value || 0,
+      evaluations: item.evaluations || 0,
+    }));
+  }
+
+  /**
+   * Transform Procurement Total Evaluations data for bar chart
+   */
+  static transformProcurementTotalEvaluations(data: any) {
+    if (!data || !Array.isArray(data)) {
+      return Array.from({ length: 12 }, (_, i) => ({
+        month: [
+          "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+          "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+        ][i],
+        onTime: 0,
+        late: 0,
+        pending: 0,
+        completed: 0,
+      }));
+    }
+
+    return data.map((item: any) => ({
+      month: item.label || item.month || "Unknown",
+      onTime: item.onTime || 0,
+      late: item.late || 0,
+      pending: item.pending || 0,
+      completed: item.completed || 0,
+    }));
+  }
+
+  /**
+   * Transform Evaluator dashboard data into stats cards
+   */
+  static transformEvaluatorStats(
+    data: EvaluatorDashboardData | undefined
+  ): DashboardConfig["stats"] {
+    if (!data) {
+      // Return default/loading state
+      return [
+        {
+          title: "All Evaluations",
+          value: 0,
+          icon: "file",
+          color: "text-gray-500",
+          bgColor: "bg-gray-500/10",
+        },
+        {
+          title: "Active Evaluations",
+          value: 0,
+          icon: "file",
+          color: "text-green-500",
+          bgColor: "bg-green-500/10",
+        },
+        {
+          title: "Pending Evaluations",
+          value: 0,
+          icon: "file",
+          color: "text-yellow-500",
+          bgColor: "bg-yellow-500/10",
+        },
+        {
+          title: "Completed Evaluations",
+          value: 0,
+          icon: "file",
+          color: "text-blue-500",
+          bgColor: "bg-blue-500/10",
+        },
+      ];
+    }
+
+    return [
+      {
+        title: "All Evaluations",
+        value: data.total || 0,
+        icon: "file",
+        color: "text-gray-500",
+        bgColor: "bg-gray-500/10",
+      },
+      {
+        title: "Active Evaluations",
+        value: data.Active || 0,
+        icon: "file",
+        color: "text-green-500",
+        bgColor: "bg-green-500/10",
+      },
+      {
+        title: "Pending Evaluations",
+        value: data.Pending || 0,
+        icon: "file",
+        color: "text-yellow-500",
+        bgColor: "bg-yellow-500/10",
+      },
+      {
+        title: "Completed Evaluations",
+        value: data.Completed || 0,
+        icon: "file",
+        color: "text-blue-500",
+        bgColor: "bg-blue-500/10",
+      },
+    ];
+  }
+
+  /**
+   * Transform Evaluator My Actions data for activity component
+   */
+  static transformEvaluatorMyActions(data: EvaluatorMyActions | undefined) {
+    if (!data || !Array.isArray(data)) {
+      return [];
+    }
+    console.log({ data })
+
+    const actionDescriptions = {
+      vendor_invitation: "You've been invited to bid on",
+      vendor_accept: "You've accepted to bid on",
+      vendor_reminder: "Reminder to respond to solicitation",
+      vendor_feedback: "You've received feedback on",
+      evaluation: "Evaluation has been updated",
+      update: "Evaluation updated",
+      vendor_declined: "Vendor declined",
+      vendor_submitted: "Vendor submitted",
+      proposal_submitted: "Proposal submitted",
+      proposal_draft: "Proposal draft",
+      proporsal_updated: "You're proposal has been updated on",
+      scored: "You've received a score on",
+      awarded: "You've been awarded the",
+      question: "You've received a question on",
+      response: "You've received a response on",
+      invite: "You've been invited to bid on",
+      addendum: "You've received an addendum on",
+      created: "A new solicitation has been created",
+    };
+
+    return data.map((action: any, index: number) => ({
+      id: action.id || `action-${index}`,
+      title: action.solicitation.name,
+      to: `/dashboard/solicitation/${action.solicitation._id}`,
+      action: actionDescriptions[action.action as keyof typeof actionDescriptions] || 'Unknown Action',
+      type: action.type || "unknown",
+      date:
+        action.date || action.createdAt
+          ? format(
+              new Date(action.date || action.createdAt),
+              "MMM d, yyyy h:mm a"
+            )
+          : format(new Date(), "MMM d, yyyy h:mm a"),
+    }));
+  }
+
+  /**
+   * Transform Evaluator Evaluation Updates data for activity component
+   */
+  static transformEvaluatorEvaluationUpdates(
+    data: EvaluatorEvaluationActivity | undefined
+  ) {
+    if (!data || !Array.isArray(data)) {
+      return [];
+    }
+
+    const actionDescriptions = {
+      vendor_invitation: "A vendor has been invited to bid on",
+      vendor_accept: "A vendor has accepted to bid on",
+      vendor_reminder: "Reminder to respond to solicitation",
+      vendor_feedback: "You've received feedback on",
+      evaluation: "Evaluation has been updated",
+      update: "Evaluation updated",
+      vendor_declined: "A vendor declined on",
+      vendor_submitted: "A vendor submitted on",
+      proposal_submitted: "A proposal submitted on",
+      proposal_draft: "A proposal draft on",
+      proporsal_updated: "A proposal has been updated on",
+      scored: "A score has been received on",
+      awarded: "You've been awarded the",
+      question: "A question has been received on",
+      response: "A a response has been received on",
+      invite: "An invitation has been sent on",
+      addendum: "An addendum has been received on",
+      created: "A new solicitation has been created",
+    };
+
+    return data.map((update: any, index: number) => ({
+      id: update.id || `update-${index}`,
+      title: update.solicitation.name,
+      to: `/dashboard/solicitation/${update.solicitation._id}`,
+      action: actionDescriptions[update.action as keyof typeof actionDescriptions] || 'Unknown Action',
+      type: update.type || "evaluation",
+      date:
+        update.date || update.updatedAt
+          ? format(
+              new Date(update.date || update.updatedAt),
+              "MMM d, yyyy h:mm a"
+            )
+          : format(new Date(), "MMM d, yyyy h:mm a"),
+    }));
+  }
+
+  /**
+   * Transform Vendor dashboard data into stats cards
+   */
+  static transformVendorStats(
+    data: any | undefined
+  ): DashboardConfig["stats"] {
+    if (!data) {
+      // Return default/loading state
+      return [
+        {
+          title: "All Invitations",
+          value: 0,
+          icon: "folder-open",
+          color: "text-gray-500",
+          bgColor: "bg-gray-500/20",
+        },
+        {
+          title: "Confirmed Invitations",
+          value: 0,
+          icon: "folder-open",
+          color: "text-green-600",
+          bgColor: "bg-green-500/20",
+        },
+        {
+          title: "Declined Invitations",
+          value: 0,
+          icon: "folder-open",
+          color: "text-red-500",
+          bgColor: "bg-red-500/20",
+        },
+        {
+          title: "Pending Invitations",
+          value: 0,
+          icon: "folder-open",
+          color: "!text-yellow-500",
+          bgColor: "bg-yellow-500/20",
+        },
+      ];
+    }
+
+    // Transform API data into stats format
+    // const statsMap = data.reduce((acc: any, item: any) => {
+    //   acc[item.status] = item.count || 0;
+    //   return acc;
+    // }, {});
+
+    return [
+      {
+        title: "All Invitations",
+        value: data.all,
+        icon: "folder-open",
+        color: "text-gray-500",
+        bgColor: "bg-gray-500/20",
+      },
+      {
+        title: "Confirmed Invitations",
+        value: data?.active|| 0,
+        icon: "folder-open",
+        color: "text-green-600",
+        bgColor: "bg-green-500/20",
+      },
+      {
+        title: "Declined Invitations",
+        value: data.declined || 0,
+        icon: "folder-open",
+        color: "text-red-500",
+        bgColor: "bg-red-500/20",
+      },
+      {
+        title: "Pending Invitations",
+        value: data.pending || 0,
+        icon: "folder-open",
+        color: "!text-yellow-500",
+        bgColor: "bg-yellow-500/20",
+      },
+    ];
+  }
+
+  /**
+   * Transform Vendor My Actions data for activity component
+   * Based on VendorAction schema: array of objects with action and solicitation properties
+   */
+  static transformVendorMyActions(data: VendorMyActions[] | undefined) {
+    if (!data || !Array.isArray(data)) {
+      return [];
+    }
+
+    const actionDescriptions = {
+      vendor_invitation: "You've been invited to bid on",
+      vendor_accept: "You've accepted to bid on",
+      vendor_reminder: "Reminder to evaluate",
+      vendor_feedback: "Feedback received",
+    };
+
+    return data.map((action, index) => ({
+      id: action._id || `vendor-action-${index}`,
+      action:
+        actionDescriptions[action.action as keyof typeof actionDescriptions] ||
+        "You've been invited to bid",
+      status: action.solicitation?.vendors?.[0].status || "Pending",
+      type: action.action?.replace("_", " ") || "Invitation",
+      date: action.createdAt
+        ? format(new Date(action.createdAt), "MMM d, yyyy h:mm a")
+        : null,
+      title: action.solicitation?.name || "Unknown Solicitation",
+      to: `/dashboard/solicitation/${action.solicitation._id}`,
+    }));
+  }
+
+  /**
+   * Transform Vendor General Updates data for activity component
+   */
+  static transformVendorGeneralUpdates(data: any | undefined) {
+    if (!data || !Array.isArray(data)) {
+      return [];
+    }
+
+    const actionDescriptions = {
+      vendor_invitation: "A vendor has been invited to bid on",
+      vendor_accept: "A vendor has accepted to bid on",
+      vendor_reminder: "Reminder to respond to solicitation",
+      vendor_feedback: "You've received feedback on",
+      evaluation: "Evaluation has been updated",
+      update: "Evaluation updated",
+      vendor_declined: "A vendor declined on",
+      vendor_submitted: "A vendor submitted on",
+      proposal_submitted: "A proposal submitted on",
+      proposal_draft: "A proposal draft on",
+      proporsal_updated: "A proposal has been updated on",
+      scored: "A score has been received on",
+      awarded: "You've been awarded the",
+      question: "A question has been received on",
+      response: "A a response has been received on",
+      invite: "An invitation has been sent on",
+      addendum: "An addendum has been received on",
+      created: "A new solicitation has been created",
+    };
+
+    return data.map((update: any, index: number) => ({
+      id: update.id || `vendor-update-${index}`,
+      action: actionDescriptions[update.action as keyof typeof actionDescriptions] || 'Unknown Action',
+      title: update.solicitation.name,
+      to: `/dashboard/solicitation/${update.solicitation._id}`,
+      time:
+        update.time ||
+        (update.date
+          ? format(new Date(update.date), "MMM d, yyyy") +
+            " • " +
+            format(new Date(update.date), "HH:mm")
+          : format(new Date(), "MMM d, yyyy") +
+            " • " +
+            format(new Date(), "h:mm a")),
+    }));
+  }
+
+  /**
+   * Transform Procurement My Actions data for activity component
+   */
+  static transformProcurementMyActions(data: any[] | undefined) {
+    if (!data || !Array.isArray(data)) {
+      return [];
+    }
+
+    const actionDescriptions = {
+      vendor_invitation: "You've been invited to bid on",
+      vendor_accept: "You've accepted to bid on",
+      vendor_reminder: "Reminder to respond to solicitation",
+      vendor_feedback: "You've received feedback on",
+      evaluation: "Evaluation has been updated",
+      update: "Evaluation updated",
+      vendor_declined: "Vendor declined",
+      vendor_submitted: "Vendor submitted",
+      proposal_submitted: "Proposal submitted",
+      proposal_draft: "Proposal draft",
+      proporsal_updated: "You're proposal has been updated on",
+      scored: "You've received a score on",
+      awarded: "You've been awarded the",
+      question: "You've received a question on",
+      response: "You've received a response on",
+      invite: "You've been invited to bid on",
+      addendum: "You've received an addendum on",
+      created: "A new solicitation has been created",
+    };
+
+    return data.map((action: any, index: number) => ({
+      id: action._id || action.id || `action-${index}`,
+      action: actionDescriptions[action.type as keyof typeof actionDescriptions] ||
+        "",
+      type: action.type.replace("_", " ") || "",
+      title: action.solicitation,
+      date:
+        action.createdAt || action.date
+          ? format(
+              new Date(action.createdAt || action.date),
+              "MMM d, yyyy h:mm a"
+            )
+          : format(new Date(), "MMM d, yyyy h:mm a"),
+      status: action.status || "active",
+    }));
+  }
+
+  /**
+   * Transform Procurement General Updates data for activity component
+   */
+  static transformProcurementGeneralUpdates(data: any[] | undefined) {
+    if (!data || !Array.isArray(data)) {
+      return [];
+    }
+
+    const actionDescriptions = {
+      vendor_invitation: "A vendor has been invited to bid on",
+      vendor_accept: "A vendor has accepted to bid on",
+      vendor_reminder: "Reminder to respond to solicitation",
+      vendor_feedback: "You've received feedback on",
+      evaluation: "Evaluation has been updated",
+      update: "Evaluation updated",
+      vendor_declined: "A vendor declined on",
+      vendor_submitted: "A vendor submitted on",
+      proposal_submitted: "A proposal submitted on",
+      proposal_draft: "A proposal draft on",
+      proporsal_updated: "A proposal has been updated on",
+      scored: "A score has been received on",
+      awarded: "You've been awarded the",
+      question: "A question has been received on",
+      response: "A a response has been received on",
+      invite: "An invitation has been sent on",
+      addendum: "An addendum has been received on",
+      created: "A new solicitation has been created",
+    };
+
+    return data.map((update: any, index: number) => ({
+      id: update._id || update.id || `update-${index}`,
+      title: update.solicitation.name,
+      to: `/dashboard/solicitation/${update.solicitation._id}`,
+      action: actionDescriptions[update.action as keyof typeof actionDescriptions] || 'Unknown Action',
+      date:
+        update.updatedAt || update.date
+          ? format(
+              new Date(update.updatedAt || update.date),
+              "MMM d, yyyy h:mm a"
+            )
+          : format(new Date(), "MMM d, yyyy h:mm a"),
+      status: update.status || "active",
+    }));
+  }
+}
