@@ -4,13 +4,26 @@ interface StatCardProps {
   title: string;
   value: number;
   icon: LucideIcon;
-  iconColor: string;
-  iconBgColor: string;
+  iconColor?: string;
+  iconBgColor?: string;
+  onClick?: () => void;
 }
 
-export const StatCard = ({ title, value, icon: Icon, iconColor, iconBgColor }: StatCardProps) => {
+export const StatCard = ({
+  title,
+  value,
+  icon: Icon,
+  iconColor = "text-gray-600",
+  iconBgColor = "bg-gray-100",
+  onClick,
+}: StatCardProps) => {
   return (
-    <div className="bg-white dark:bg-slate-950 p-6 rounded-lg border border-gray-200 dark:border-gray-700">
+    <div 
+      className={`bg-white dark:bg-slate-950 p-6 rounded-lg border border-gray-200 dark:border-gray-700 transition-all duration-200 ${
+        onClick ? 'cursor-pointer hover:shadow-md hover:border-gray-300 dark:hover:border-gray-600 hover:scale-[1.02]' : ''
+      }`}
+      onClick={onClick}
+    >
       <div className="flex items-center justify-between">
         <div>
           <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">{title}</p>

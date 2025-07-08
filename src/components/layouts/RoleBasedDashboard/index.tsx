@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from "react";
 // import { ExportReportSheet } from "@/components/layouts/ExportReportSheet";
+import { useNavigate } from "react-router-dom";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useDashboardData } from "@/hooks/useDashboardData";
 import { DashboardDataTransformer } from "@/lib/dashboardDataTransformer";
@@ -14,6 +15,7 @@ import { PageLoader } from "@/components/ui/PageLoader";
 export const RoleBasedDashboard: React.FC = () => {
   const { dashboardConfig, userRole } = useUserRole();
   const [selectedFilter, setSelectedFilter] = useState("12months");
+  const navigate = useNavigate();
 
   // Fetch dashboard data based on user role
   const {
@@ -431,6 +433,49 @@ export const RoleBasedDashboard: React.FC = () => {
     setSelectedFilter(filter);
   };
 
+  const handleStatCardClick = (title: string) => {
+    // Route to appropriate pages based on user role and card title
+    switch (userRole) {
+      case "super_admin":
+        if (title.toLowerCase().includes("companies") || title.toLowerCase().includes("company")) {
+          navigate("/dashboard/companies");
+        } else if (title.toLowerCase().includes("admin") || title.toLowerCase().includes("user")) {
+          navigate("/dashboard/admin-management");
+        }
+        break;
+      case "company_admin":
+        if (title.toLowerCase().includes("solicitation") || title.toLowerCase().includes("rfp")) {
+          navigate("/dashboard/solicitation");
+        } else if (title.toLowerCase().includes("evaluation")) {
+          navigate("/dashboard/evaluation");
+        }
+        break;
+      case "procurement":
+        if (title.toLowerCase().includes("solicitation") || title.toLowerCase().includes("rfp")) {
+          navigate("/dashboard/solicitation");
+        } else if (title.toLowerCase().includes("evaluation")) {
+          navigate("/dashboard/evaluation");
+        } else if (title.toLowerCase().includes("vendor")) {
+          navigate("/dashboard/vendor");
+        }
+        break;
+      case "evaluator":
+        if (title.toLowerCase().includes("evaluation")) {
+          navigate("/dashboard/evaluation");
+        }
+        break;
+      case "vendor":
+        if (title.toLowerCase().includes("invitation") || title.toLowerCase().includes("bid")) {
+          navigate("/dashboard/invitations");
+        } else if (title.toLowerCase().includes("proposal") || title.toLowerCase().includes("submission")) {
+          navigate("/dashboard/invitations");
+        }
+        break;
+      default:
+        break;
+    }
+  };
+
   // Show loading state if data is being fetched
   if (
     isLoading &&
@@ -467,7 +512,11 @@ export const RoleBasedDashboard: React.FC = () => {
         })}
       >
         {enhancedDashboardConfig.stats?.map?.((stat, index) => (
-          <CardStats key={index} {...stat} />
+          <CardStats 
+            key={index} 
+            {...stat} 
+            onClick={() => handleStatCardClick(stat.title)}
+          />
         ))}
       </div>
 

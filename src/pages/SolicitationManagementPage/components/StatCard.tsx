@@ -7,7 +7,8 @@ export type StatCardProps = {
   icon: any;
   iconColor?: string;
   iconBgColor?: string;
-  className?: string
+  className?: string;
+  onClick?: () => void;
 };
 
 export const StatCard = ({
@@ -16,10 +17,18 @@ export const StatCard = ({
   icon: Icon,
   iconColor = "text-gray-500",
   iconBgColor = "bg-gray-100",
-  className
+  className,
+  onClick
 }: StatCardProps) => {
   return (
-    <Card className={cn("p-6 border border-gray-200 rounded-lg", className)}>
+    <Card 
+      className={cn(
+        "p-6 border border-gray-200 rounded-lg transition-all duration-200",
+        onClick ? "cursor-pointer hover:shadow-md hover:border-gray-300 dark:hover:border-gray-600 hover:scale-[1.02]" : "",
+        className
+      )}
+      onClick={onClick}
+    >
       <CardContent className="p-0">
         <div className="flex items-center justify-between">
           <div>

@@ -953,6 +953,10 @@ export const SolicitationManagementPage = () => {
           className="col"
           iconColor="text-gray-600"
           iconBgColor="bg-gray-100"
+          onClick={() => {
+            setFilters(prev => ({ ...prev, status: undefined, page: 1 }));
+            setPagination({ pageIndex: 0, pageSize: 10 });
+          }}
         />
         <StatCard
           title="Active Solicitations"
@@ -960,6 +964,10 @@ export const SolicitationManagementPage = () => {
           icon={IconMap["folder-open"] as any}
           iconColor="text-green-600"
           iconBgColor="bg-green-100"
+          onClick={() => {
+            setFilters(prev => ({ ...prev, status: "active", page: 1 }));
+            setPagination({ pageIndex: 0, pageSize: 10 });
+          }}
         />
         {isProcurement && (
           <StatCard
@@ -968,6 +976,10 @@ export const SolicitationManagementPage = () => {
             icon={IconMap["folder-open"] as any}
             iconColor="text-yellow-600"
             iconBgColor="bg-yellow-100"
+            onClick={() => {
+              setFilters(prev => ({ ...prev, status: "evaluating", page: 1 }));
+              setPagination({ pageIndex: 0, pageSize: 10 });
+            }}
           />
         )}
         <StatCard
@@ -976,6 +988,10 @@ export const SolicitationManagementPage = () => {
           icon={IconMap["folder-open"] as any}
           iconColor="text-gray-600"
           iconBgColor="bg-gray-100"
+          onClick={() => {
+            setFilters(prev => ({ ...prev, status: "draft", page: 1 }));
+            setPagination({ pageIndex: 0, pageSize: 10 });
+          }}
         />
         <StatCard
           title="Awarded"
@@ -983,6 +999,10 @@ export const SolicitationManagementPage = () => {
           icon={IconMap["folder-open"] as any}
           iconColor="text-blue-600"
           iconBgColor="bg-blue-100"
+          onClick={() => {
+            setFilters(prev => ({ ...prev, status: "awarded", page: 1 }));
+            setPagination({ pageIndex: 0, pageSize: 10 });
+          }}
         />
         <StatCard
           title="Closed Evaluations"
@@ -990,6 +1010,10 @@ export const SolicitationManagementPage = () => {
           icon={IconMap["folder-open"] as any}
           iconColor="text-red-600"
           iconBgColor="bg-red-100"
+          onClick={() => {
+            setFilters(prev => ({ ...prev, status: "closed", page: 1 }));
+            setPagination({ pageIndex: 0, pageSize: 10 });
+          }}
         />
       </div>
 

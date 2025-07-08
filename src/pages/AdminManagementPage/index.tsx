@@ -505,6 +505,10 @@ const AdminManagementPage = () => {
           icon={IconMap?.users as any}
           iconColor="text-gray-600"
           iconBgColor="bg-gray-100"
+          onClick={() => {
+            setFilters(prev => ({ ...prev, Role: "" }));
+            setPagination({ pageIndex: 0, pageSize: 10 });
+          }}
         />
         <StatCard
           title="Super Admins"
@@ -512,6 +516,10 @@ const AdminManagementPage = () => {
           icon={IconMap?.user as any}
           iconColor="text-gray-600"
           iconBgColor="bg-gray-100"
+          onClick={() => {
+            setFilters(prev => ({ ...prev, Role: "super_admin" }));
+            setPagination({ pageIndex: 0, pageSize: 10 });
+          }}
         />
         <StatCard
           title="Company Admins"
@@ -519,6 +527,10 @@ const AdminManagementPage = () => {
           icon={IconMap?.user as any}
           iconColor="text-gray-600"
           iconBgColor="bg-gray-100"
+          onClick={() => {
+            setFilters(prev => ({ ...prev, Role: "company_admin" }));
+            setPagination({ pageIndex: 0, pageSize: 10 });
+          }}
         />
       </div>
 

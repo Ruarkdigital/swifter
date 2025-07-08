@@ -539,6 +539,10 @@ const CompaniesPage = () => {
           icon={IconMap["building-clock"] as any}
           iconColor="text-gray-600"
           iconBgColor="bg-gray-100"
+          onClick={() => {
+            setFilters(prev => ({ ...prev, status: "" }));
+            setPagination({ pageIndex: 0, pageSize: 10 });
+          }}
         />
         <StatCard
           title="Active Companies"
@@ -546,6 +550,10 @@ const CompaniesPage = () => {
           icon={IconMap["building-clock"] as any}
           iconColor="text-green-600"
           iconBgColor="bg-green-100"
+          onClick={() => {
+            setFilters(prev => ({ ...prev, status: "active" }));
+            setPagination({ pageIndex: 0, pageSize: 10 });
+          }}
         />
         <StatCard
           title="Suspended Companies"
@@ -553,6 +561,10 @@ const CompaniesPage = () => {
           icon={IconMap["building-clock"] as any}
           iconColor="text-red-600"
           iconBgColor="bg-red-100"
+          onClick={() => {
+            setFilters(prev => ({ ...prev, status: "inactive" }));
+            setPagination({ pageIndex: 0, pageSize: 10 });
+          }}
         />
         {/* <StatCard
           title="Pending Companies"

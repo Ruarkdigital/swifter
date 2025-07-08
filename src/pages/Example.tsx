@@ -18,7 +18,7 @@ function Example() {
 
   return (
     <div className="grid place-items-center h-screen">
-      <Forge control={control} onSubmit={() => {}} debug />
+      <Forge control={control} onSubmit={() => {}} />
       <Button onClick={() => setValue('name', 'John Doe')}>Update field</Button>
     </div>
   );

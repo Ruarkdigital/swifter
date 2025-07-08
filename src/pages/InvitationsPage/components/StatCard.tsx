@@ -8,6 +8,7 @@ interface StatCardProps {
   icon: LucideIcon;
   iconColor?: string;
   bgColor?: string;
+  onClick?: () => void;
 }
 
 export function StatCard({
@@ -16,9 +17,16 @@ export function StatCard({
   icon: Icon,
   iconColor = "text-gray-600",
   bgColor = "bg-gray-50",
+  onClick,
 }: StatCardProps) {
   return (
-    <Card className="border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm hover:shadow-md transition-shadow">
+    <Card 
+      className={cn(
+        "border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm transition-all duration-200",
+        onClick ? "cursor-pointer hover:shadow-md hover:border-gray-300 dark:hover:border-gray-600 hover:scale-[1.02]" : "hover:shadow-md"
+      )}
+      onClick={onClick}
+    >
       <CardContent className="p-6">
         <div className="flex items-center justify-between">
           <div>

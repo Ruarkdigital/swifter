@@ -292,6 +292,11 @@ const InvitationsPage = () => {
           icon={IconMap["folder-open"] as any}
           iconColor="text-gray-600 dark:text-gray-400"
           bgColor="bg-gray-500/20 dark:bg-gray-500/30"
+          onClick={() => {
+            setStatusFilter("all");
+            setFilterValues(prev => ({ ...prev, Status: "all" }));
+            setPagination({ pageIndex: 0, pageSize: 10 });
+          }}
         />
         <StatCard
           title="Confirmed Invitations"
@@ -299,6 +304,11 @@ const InvitationsPage = () => {
           icon={IconMap["folder-open"] as any}
           iconColor="text-green-600 dark:text-green-400"
           bgColor="bg-green-500/20 dark:bg-green-500/30"
+          onClick={() => {
+            setStatusFilter("active");
+            setFilterValues(prev => ({ ...prev, Status: "active" }));
+            setPagination({ pageIndex: 0, pageSize: 10 });
+          }}
         />
         <StatCard
           title="Declined Invitations"
@@ -306,6 +316,11 @@ const InvitationsPage = () => {
           icon={IconMap["folder-open"] as any}
           iconColor="text-red-600 dark:text-red-400"
           bgColor="bg-red-500/20 dark:bg-red-500/30"
+          onClick={() => {
+            setStatusFilter("closed");
+            setFilterValues(prev => ({ ...prev, Status: "closed" }));
+            setPagination({ pageIndex: 0, pageSize: 10 });
+          }}
         />
         <StatCard
           title="Pending Invitations"
@@ -313,6 +328,11 @@ const InvitationsPage = () => {
           icon={IconMap["folder-open"] as any}
           iconColor="text-yellow-600 dark:text-yellow-400"
           bgColor="bg-yellow-500/20 dark:bg-yellow-500/30"
+          onClick={() => {
+            setStatusFilter("draft");
+            setFilterValues(prev => ({ ...prev, Status: "draft" }));
+            setPagination({ pageIndex: 0, pageSize: 10 });
+          }}
         />
       </div>
 

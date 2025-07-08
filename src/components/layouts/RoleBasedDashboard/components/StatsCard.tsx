@@ -9,6 +9,7 @@ interface CardStatsProps {
   icon: string;
   color: string;
   bgColor: string;
+  onClick?: () => void;
 }
 
 type IconMapKey =
@@ -406,11 +407,18 @@ export const CardStats: React.FC<CardStatsProps> = ({
   icon,
   color,
   bgColor,
+  onClick,
 }) => {
   const IconComponent = IconMap[icon as IconMapKey] || IconMap.folder;
 
   return (
-    <Card className="bg-white dark:bg-slate-950">
+    <Card 
+      className={cn(
+        "bg-white dark:bg-slate-950",
+        onClick && "cursor-pointer transition-all duration-200 hover:shadow-md hover:scale-[1.02]"
+      )}
+      onClick={onClick}
+    >
       <CardContent className="p-6">
         <div className="flex items-center justify-between">
           <div className="space-y-2">
