@@ -41,17 +41,17 @@ const StatusBadge = ({
 }) => {
   const getStatusColor = (status: string, isSuspended?: boolean) => {
     if (isSuspended) {
-      return "bg-gray-100 text-gray-800 hover:bg-gray-100";
+      return "bg-gray-100 text-gray-800";
     }
     switch (status?.toLowerCase()) {
       case "active":
-        return "bg-green-100 text-green-800 hover:bg-green-100";
+        return "bg-green-100 text-green-800";
       case "inactive":
-        return "bg-red-100 text-red-800 hover:bg-red-100";
+        return "bg-red-100 text-red-800";
       case "pending":
-        return "bg-yellow-100 text-yellow-800 hover:bg-yellow-100";
+        return "bg-yellow-100 text-yellow-800";
       default:
-        return "bg-gray-100 text-gray-800 hover:bg-gray-100";
+        return "bg-gray-100 text-gray-800";
     }
   };
 

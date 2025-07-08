@@ -77,11 +77,11 @@ const AddendumStatusBadge = ({ status }: { status: Addendum["status"] }) => {
   const getStatusColor = (status: string) => {
     switch (status) {
       case "Published":
-        return "bg-blue-100 text-blue-800 hover:bg-blue-100";
+        return "bg-blue-100 text-blue-800";
       case "Draft":
-        return "bg-gray-100 text-gray-800 hover:bg-gray-100";
+        return "bg-gray-100 text-gray-800";
       default:
-        return "bg-gray-100 text-gray-800 hover:bg-gray-100";
+        return "bg-gray-100 text-gray-800";
     }
   };
 
