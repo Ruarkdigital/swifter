@@ -116,7 +116,7 @@ const MessageComposer: React.FC<MessageComposerProps> = ({
                 Sending...
               </div>
             ) : (
-              "Send Response"
+              "Send Question"
             )}
           </Button>
         </div>
