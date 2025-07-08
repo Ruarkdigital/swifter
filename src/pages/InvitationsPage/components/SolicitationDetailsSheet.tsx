@@ -15,7 +15,7 @@ import { getRequest, putRequest } from "@/lib/axiosInstance";
 import { ApiResponse, ApiResponseError } from "@/types";
 import { ConfirmAlert } from "@/components/layouts/ConfirmAlert";
 import { useToastHandler } from "@/hooks/useToaster";
-import { useUser } from "@/store/authSlice";
+// import { useUser } from "@/store/authSlice";
 import { format } from "date-fns";
 import { PageLoader } from "@/components/ui/PageLoader";
 
@@ -67,7 +67,7 @@ type SolicitationDetails = {
   estimatedCost?: number;
   description: string;
   visibility: "public" | "private";
-  status: "draft" | "active" | "closed" | "awarded" | "evaluating";
+  status: "invited" | "confirmed" | "declined";
   questionDeadline?: string;
   bidIntentDeadline?: string;
   timezone: string;
@@ -106,7 +106,7 @@ const SolicitationDetailsSheet: React.FC<SolicitationDetailsSheetProps> = ({
 }) => {
   const queryClient = useQueryClient();
   const toastHandlers = useToastHandler();
-  const user = useUser();
+  // const user = useUser();
 
   // Fetch solicitation details from API
   const {
@@ -199,16 +199,15 @@ const SolicitationDetailsSheet: React.FC<SolicitationDetailsSheetProps> = ({
   const files = solicitationData?.data?.data.requiredFiles || [];
 
   // Find current vendor's status
-  const currentVendor = details?.vendors?.find(
-    (vendor) => vendor.email === user?.email
-  );
-  const currentVendorStatus = currentVendor?.status;
+  // const currentVendor = details?.vendors?.find(
+  //   (vendor) => vendor.email === user?.email
+  // );
+  // const currentVendorStatus = currentVendor?.status;
 
   // Determine if buttons should be hidden
   const shouldHideButtons =
-    details?.status === "active" ||
-    currentVendorStatus === "confirmed" ||
-    currentVendorStatus === "declined";
+    details?.status === "confirmed" ||
+    details?.status === "declined";
 
   // Helper function to format date
   const formatDate = (dateString: string): string => {
@@ -565,7 +564,7 @@ const SolicitationDetailsSheet: React.FC<SolicitationDetailsSheetProps> = ({
               </Tabs>
 
               {/* Footer */}
-              {!shouldHideButtons && (
+              {shouldHideButtons && (
                 <div className="px-6 py-4 mb-5">
                   <div className="flex space-x-3">
                     <ConfirmAlert
