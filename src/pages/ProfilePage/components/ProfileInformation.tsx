@@ -41,6 +41,7 @@ type FormValues = {
   businessType?: string;
   location: string;
   category: string;
+  name: string
 }
 
 
@@ -50,7 +51,6 @@ const ProfileInformation: React.FC = () => {
   const toast = useToastHandler();
   const userRole = user?.role?.name?.toLowerCase()?.replace("_", " ");
   const [selectedFiles, setSelectedFiles] = useState<File[] | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
 
   // Query to fetch user data
   const {
@@ -76,8 +76,8 @@ const ProfileInformation: React.FC = () => {
     onSuccess: (response) => {
       toast.success("Success", "Profile updated successfully");
       // Update the auth store with the new user data
-      if (response.data?.data && user) {
-        setUser({ ...user, ...response.data.data });
+      if (response.data?.data?.user) {
+        setUser(response.data.data.user);
       }
       refetch();
     },
@@ -134,7 +134,7 @@ const ProfileInformation: React.FC = () => {
     phoneNumber: ["super admin", "company admin", "vendor", "procurement", 
       "evaluator",],
     department: ["super admin", "evaluator", "procurement"],
-    companyName: ["vendor"],
+    companyName: ["vendor", "company admin"],
     name: ["company admin"],
     website: ["company admin"],
     businessType: ["vendor"],
@@ -157,8 +157,6 @@ const ProfileInformation: React.FC = () => {
     // },
   });
 
-  console.log({ userRole, user: userData?.data?.data?.user })
-
   useEffect(() => {
     if(isSuccess) {
       const _user = userData?.data?.data?.user;
@@ -169,11 +167,12 @@ const ProfileInformation: React.FC = () => {
         role: _user?.role.name,
         phone: _user?.phone,
         department: _user?.department,
-        companyName: _vendor?.companyName,
+        companyName: _vendor?.companyName || _user?.companyId?.name,
         website: _vendor?.website,
         businessType: _vendor?.businessType,
         location: _vendor?.location,
         category: _vendor?.category,
+        name: _user?.name 
       })
     }
 
@@ -181,40 +180,36 @@ const ProfileInformation: React.FC = () => {
 
   const handleSubmit = async (data: any) => {
     try {
+      // Validate website URL if provided
+      if (data.website && data.website.trim() && !data.website.startsWith('https://')) {
+        toast.error("Error", "Website URL must start with https://");
+        return;
+      }
+      
+      // Handle avatar upload if there are selected files
+      if (selectedFiles && selectedFiles.length > 0) {
+        const formData = new FormData();
+        formData.append("file", selectedFiles[0]);
+        
+        const uploadResponse = await uploadFile(formData);
+        const fileUrl = uploadResponse.data?.data?.[0]?.url;
+        
+        if (fileUrl) {
+          data.avatar = fileUrl;
+          setSelectedFiles(null);
+        } else {
+          toast.error("Error", "Failed to get file URL from upload response");
+          return;
+        }
+      }
+      
       await updateProfile(data);
     } catch (error) {
       // Error handling is done in the mutation's onError callback
     }
   };
 
-  const handleAvatarUpload = async () => {
-    if (!selectedFiles || selectedFiles.length === 0) {
-      toast.error("Error", "Please select a file to upload");
-      return;
-    }
 
-    setIsUploading(true);
-    try {
-      const formData = new FormData();
-      formData.append("file", selectedFiles[0]);
-
-      const uploadResponse = await uploadFile(formData);
-      const fileUrl = uploadResponse.data?.data?.[0]?.url;
-
-      if (fileUrl) {
-        const res = await updateProfile({ avatar: fileUrl });
-        setUser({ ...(res?.data?.data?.user ?? {}) });
-        setSelectedFiles(null);
-        toast.success("Success", "Avatar updated successfully");
-      } else {
-        toast.error("Error", "Failed to get file URL from upload response");
-      }
-    } catch (error) {
-      console.error("Avatar upload error:", error);
-    } finally {
-      setIsUploading(false);
-    }
-  };
 
   const handleAvatarUpdate = async (avatarUrl: string | null) => {
     try {
@@ -266,23 +261,9 @@ const ProfileInformation: React.FC = () => {
               size="sm"
               className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100"
               onClick={() => handleAvatarUpdate(null)}
-              disabled={isUploading || isPending}
+              disabled={isPending}
             >
               Delete
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100"
-              onClick={handleAvatarUpload}
-              disabled={
-                !selectedFiles ||
-                selectedFiles.length === 0 ||
-                isUploading ||
-                isPending
-              }
-            >
-              {isUploading ? "Uploading..." : "Update"}
             </Button>
           </div>
         </div>
@@ -355,6 +336,8 @@ const ProfileInformation: React.FC = () => {
             component={TextInput}
             name="website"
             label="Website"
+            placeholder="https://example.com"
+            helperText="Please include https:// at the beginning of your website URL"
             containerClass="space-y-2"
           />
         )}
@@ -383,7 +366,7 @@ const ProfileInformation: React.FC = () => {
           {isFieldVisible("phoneNumber") && (
             <Forger
               component={TextInput}
-              name="phoneNumber"
+              name="phone"
               label="Phone Number"
               containerClass="space-y-2"
             />

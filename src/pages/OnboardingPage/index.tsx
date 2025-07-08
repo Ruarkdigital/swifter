@@ -342,7 +342,7 @@ const OnboardingPage = () => {
           <p className="text-xs text-gray-500 dark:text-gray-400">
             Powered by{" "}
             <span className="font-medium text-[#2A4467] dark:text-[#4A90E2]">
-              AG_Pro Inc
+              AIG PRO Inc
             </span>
           </p>
         </div>
