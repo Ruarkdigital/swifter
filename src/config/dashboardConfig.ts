@@ -330,7 +330,7 @@ const companyAdminConfig: DashboardConfig = {
             declined: faker.number.int({ min: 18, max: 42 }),
           })),
           visible: true,
-          filters: ["12 months", "6 months", "30 days", "7 days"],
+          filters: ["12 months", "6 months", "3 months", "30 days", "7 days"],
         },
         {
           id: "vendors-intent-status",
@@ -365,7 +365,7 @@ const companyAdminConfig: DashboardConfig = {
             { name: "Draft", value: 103 },
           ]),
           visible: true,
-          filters: ["12 months", "6 months", "30 days", "7 days"],
+          filters: ["12 months", "6 months", "3 months", "30 days", "7 days"],
           legendIconType: 'circle'
         },
         {
@@ -380,7 +380,7 @@ const companyAdminConfig: DashboardConfig = {
             { role: "Admin", value: 35 },
           ],
           visible: true,
-          filters: ["12 months", "6 months", "30 days", "7 days"],
+          filters: ["12 months", "6 months", "3 months", "30 days", "7 days"],
           showLegend: false,
           colors: {
             value: "#2A4467"
@@ -454,7 +454,7 @@ const superAdminConfig: DashboardConfig = {
             evaluations: faker.number.int({ min: 18, max: 42 }),
           })),
           visible: true,
-          filters: ["12 months", "6 months", "30 days", "7 days"],
+          filters: ["12 months", "6 months", "3 months", "30 days", "7 days"],
         },
         {
           id: "solicitation-distribution",
@@ -472,7 +472,7 @@ const superAdminConfig: DashboardConfig = {
             { name: "Enterprise", value: 33 },
           ]),
           visible: true,
-          filters: ["12 months", "6 months", "30 days", "7 days"],
+          filters: ["12 months", "6 months", "3 months", "30 days", "7 days"],
         },
         
       ],
@@ -486,7 +486,7 @@ const superAdminConfig: DashboardConfig = {
           title: "Company Status Overview",
           type: "bar",
           className: "col-span-2",
-          filters: ["12 months", "6 months", "30 days", "7 days"],
+          filters: ["12 months", "6 months", "3 months", "30 days", "7 days"],
           data: Array.from({ length: 12 }, (_, i) => ({
             month: [
               "Jan",
@@ -528,7 +528,7 @@ const superAdminConfig: DashboardConfig = {
             { name: "Draft", value: 103 },
           ]),
           visible: true,
-          filters: ["12 months", "6 months", "30 days", "7 days"],
+          filters: ["12 months", "6 months", "3 months", "30 days", "7 days"],
           legendIconType: 'circle'
         },
         {
@@ -542,7 +542,7 @@ const superAdminConfig: DashboardConfig = {
             { name: "Module D", value: 25 },
           ],
           visible: true,
-          filters: ["12 months", "6 months", "30 days", "7 days"],
+          filters: ["12 months", "6 months", "3 months", "30 days", "7 days"],
           legendIconType: 'circle'
         }
       ]
@@ -617,7 +617,7 @@ const procurementConfig: DashboardConfig = {
             { name: "Draft", value: 103 },
           ]),
           visible: true,
-          filters: ["12 months", "6 months", "30 days", "7 days"],
+          filters: ["12 months", "6 months", "3 months", "30 days", "7 days"],
         },
         {
           id: "weekly-activities",
@@ -630,7 +630,7 @@ const procurementConfig: DashboardConfig = {
             evaluations: faker.number.int({ min: 18, max: 42 }),
           })),
           visible: true,
-          filters: ["12 months", "6 months", "30 days", "7 days"],
+          filters: ["12 months", "6 months", "3 months", "30 days", "7 days"],
         },
       ],
     },
@@ -643,7 +643,7 @@ const procurementConfig: DashboardConfig = {
           title: "Proposal Submission",
           type: "line",
           className: "col-span-2",
-          filters: ["12 months", "6 months", "30 days", "7 days"],
+          filters: ["12 months", "6 months", "3 months", "30 days", "7 days"],
           data: Array.from({ length: 7 }, (_, i) => ({
             day: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"][i],
             submissions: faker.number.int({ min: 25, max: 65 }),
@@ -697,7 +697,7 @@ const procurementConfig: DashboardConfig = {
           title: "Total Evaluation",
           type: "bar",
           className: "col-span-2",
-          filters: ["12 months", "6 months", "30 days", "7 days"],
+          filters: ["12 months", "6 months", "3 months", "30 days", "7 days"],
           data: Array.from({ length: 12 }, (_, i) => ({
             month: [
               "Jan",
