@@ -341,9 +341,14 @@ const OnboardingPage = () => {
         <div className="text-center pt-2">
           <p className="text-xs text-gray-500 dark:text-gray-400">
             Powered by{" "}
-            <span className="font-medium text-[#2A4467] dark:text-[#4A90E2]">
+            <a 
+              href="https://aigproinc.ca/" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="font-medium text-[#2A4467] dark:text-[#4A90E2] hover:underline cursor-pointer"
+            >
               AIG PRO Inc
-            </span>
+            </a>
           </p>
         </div>
       </div>

@@ -364,9 +364,14 @@ const VendorOnboardingPage = () => {
       <div className="text-center mt-6 absolute bottom-10 mx-auto w-fit right-[47%]">
         <p className="text-xs text-gray-500 dark:text-gray-400">
           Powered by{" "}
-          <span className="font-medium text-[#2A4467] dark:text-[#4A90E2]">
+          <a 
+            href="https://aigproinc.ca/" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="font-medium text-[#2A4467] dark:text-[#4A90E2] hover:underline cursor-pointer"
+          >
             AIG PRO Inc
-          </span>
+          </a>
         </p>
       </div>
     </div>
