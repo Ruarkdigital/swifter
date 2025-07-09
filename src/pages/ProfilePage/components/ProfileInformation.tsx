@@ -181,10 +181,10 @@ const ProfileInformation: React.FC = () => {
   const handleSubmit = async (data: any) => {
     try {
       // Validate website URL if provided
-      if (data.website && data.website.trim() && !data.website.startsWith('https://')) {
-        toast.error("Error", "Website URL must start with https://");
-        return;
-      }
+      // if (data.website && data.website.trim() && !data.website.startsWith('https://')) {
+      //   toast.error("Error", "Website URL must start with https://");
+      //   return;
+      // }
       
       // Handle avatar upload if there are selected files
       if (selectedFiles && selectedFiles.length > 0) {
