@@ -9,7 +9,10 @@ export const getUser = (roleName?: UserRole): User => {
   const selectedRole = roleName || faker.helpers.arrayElement(roles) as UserRole;
   return {
     _id: faker.string.uuid(),
-    companyId: faker.string.uuid(),
+    companyId: {
+      name: faker.string.uuid(),
+      _id: faker.string.uuid()
+    },
     createdAt: faker.date.past().toISOString(),
     email: faker.internet.email(),
     name: faker.person.fullName(),

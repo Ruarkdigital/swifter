@@ -94,7 +94,7 @@ const CreateUserDialog = () => {
 
   const handleSingleUserSubmit = async (data: SingleUserFormValues) => {
     try {
-      await createUser({...data, companyId: user?.companyId ?? "" });
+      await createUser({...data, companyId: user?.companyId as any  ?? "" });
     } catch (error) {
       // Error is handled by onError
     }
