@@ -105,26 +105,40 @@ const CreateUserDialog = () => {
       toast.error("Error", "Please upload a file for multiple users.");
       return;
     }
-    // TODO: Implement file processing and batch user creation logic
-    // For now, simulate success or show a message
-    // toast.info("Info", `File "${file.name}" selected for role "${data.role}". Backend integration pending.`);
-    // Example: Create a FormData object for file upload if API supports it
-    // const formData = new FormData();
-    // formData.append('file', file);
-    // formData.append('role', data.role);
-    // await someBatchCreateUserMutation(formData);
-    // For now, let's just close the dialog and show success as if one user was created (for demo)
-    // This part needs actual implementation based on backend capabilities
-    console.log("Multiple users submission: ", {
-      role: data.role,
-      fileName: file.name,
-    });
-    // Simulating a successful action for UI purposes until backend is ready
-    toast.success(
-      "Success",
-      "Multiple user invitation process initiated (mocked)."
-    );
-    handleCancel();
+
+    try {
+      // Create FormData object for file upload
+      const formData = new FormData();
+      formData.append('doc', file);
+
+      // Call the bulk user creation API
+      const response = await postRequest({
+        url: "/onboarding/add-many-user",
+        payload: formData,
+        config: {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        },
+      });
+
+      if (response.data) {
+        toast.success(
+          "Success",
+          "Multiple users have been successfully created and invited."
+        );
+        handleCancel();
+        // Refresh the user list
+        queryClient.invalidateQueries({ queryKey: ["users"] });
+      }
+    } catch (error) {
+      console.error("Bulk user creation error:", error);
+      const err = error as any;
+      toast.error(
+        "Upload Failed",
+        err?.response?.data?.message ?? "Failed to create multiple users"
+      );
+    }
   };
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
