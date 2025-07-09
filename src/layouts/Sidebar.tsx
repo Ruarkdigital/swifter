@@ -22,7 +22,7 @@ import {
   BarChart3,
   Mail,
 } from "lucide-react";
-import SwiftProLogo from "../assets/image 9.png";
+import SwiftProLogo from "../assets/image9.png";
 import SwiftProWhiteLogo from "../assets/swiftpro-white.svg";
 import { cn } from "@/lib/utils";
 import { useUserRole } from "@/hooks/useUserRole";

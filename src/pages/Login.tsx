@@ -76,7 +76,7 @@ const Login = () => {
       {/* Header with logo */}
       <div className="w-full flex justify-start p-6">
         <img
-          src="/src/assets/image 9.png"
+          src="/src/assets/image9.png"
           alt="SwiftPro Logo"
           className="h-8"
         />

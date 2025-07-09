@@ -12,7 +12,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useSetToken, useSetUser } from "@/store/authSlice";
 import { Eye, EyeOff } from "lucide-react";
 import { useState, useEffect, useCallback, useMemo } from "react";
-import swiftproLogo from "@/assets/image 9.png";
+import swiftproLogo from "@/assets/image9.png";
 import timezones from "@/assets/timezones.json";
 import CryptoJS from "crypto-js";
 
