@@ -6,7 +6,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { postRequest } from "@/lib/axiosInstance";
 import { useNavigate, useParams } from "react-router-dom";
 import { useState, useEffect, useCallback } from "react";
-import swiftproLogo from "@/assets/image 9.png";
+import swiftproLogo from "@/assets/image9.png";
 import VendorStep1Form from "./components/VendorStep1Form";
 import VendorStep2Form from "./components/VendorStep2Form";
 import VendorStep3Form from "./components/VendorStep3Form";
