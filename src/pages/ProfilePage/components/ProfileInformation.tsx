@@ -59,9 +59,9 @@ const ProfileInformation: React.FC = () => {
     refetch,
     isSuccess
   } = useQuery<ApiResponse<{ user: User, vendor: Vendor }>, ApiResponseError>({
-    queryKey: ["getUserProfile"],
+    queryKey: ["getUserProfile", user?._id],
     queryFn: async () => await getRequest({ url: "/users/me" }),
-    
+    retryOnMount: true
   });
 
   // Mutation to update user profile
@@ -120,9 +120,9 @@ const ProfileInformation: React.FC = () => {
 
   // Field visibility configuration based on roles
   const fieldVisibility = {
-    firstName: ["super admin", "evaluator", "procurement"],
-    lastName: ["super admin", "evaluator", "procurement"],
-    middleName: ["super admin", "evaluator", "procurement"],
+    // firstName: [],
+    // lastName: [],
+    // middleName: [],
     email: [
       "super admin",
       "vendor",
@@ -135,7 +135,7 @@ const ProfileInformation: React.FC = () => {
       "evaluator",],
     department: ["super admin", "evaluator", "procurement"],
     companyName: ["vendor", "company admin"],
-    name: ["company admin"],
+    name: ["company admin", "procurement", "super admin", "evaluator",],
     website: ["company admin"],
     businessType: ["vendor"],
     location: ["vendor"],
@@ -147,21 +147,14 @@ const ProfileInformation: React.FC = () => {
     return fieldVisibility[fieldName].includes(userRole || "");
   };
 
-  const { control, reset } = useForge<FormValues>({
-    // defaultValues: {
-    //   firstName: user?.name,
-    //   // middleName: userData?.data?.data?.middleName,
-    //   // lastName: userData?.data?.data?.lastName,
-    //   email:user?.email,
-    //   role: userRole,
-    // },
-  });
+  const { control, setValue } = useForge<FormValues>({});
 
   useEffect(() => {
     if(isSuccess) {
       const _user = userData?.data?.data?.user;
       const _vendor = userData?.data?.data?.vendor;
-      reset({
+      
+      const payload = {
         firstName: _user?.name,
         email: _user?.email,
         role: _user?.role.name,
@@ -173,6 +166,10 @@ const ProfileInformation: React.FC = () => {
         location: _vendor?.location,
         category: _vendor?.category,
         name: _user?.name 
+      }
+      
+      Object.entries(payload).forEach(([key, value]) => {
+        setValue(key as keyof FormValues, value)
       })
     }
 
@@ -270,9 +267,9 @@ const ProfileInformation: React.FC = () => {
       </div>
 
       {/* Form Fields */}
-      <Forge {...{ control, onSubmit: handleSubmit }} className="space-y-6" debug>
+      <Forge {...{ control, onSubmit: handleSubmit }} className="space-y-6">
         {/* First Name */}
-        {isFieldVisible("firstName") && (
+        {/* {isFieldVisible("firstName") && (
           <Forger
             component={TextInput}
             name="firstName"
@@ -280,27 +277,27 @@ const ProfileInformation: React.FC = () => {
             defaultValue={userData?.data?.data?.user?.name || user?.name || ""}
             containerClass="space-y-2"
           />
-        )}
+        )} */}
 
         {/* Middle Name */}
-        {isFieldVisible("middleName") && (
+        {/* {isFieldVisible("middleName") && (
           <Forger
             component={TextInput}
             name="middleName"
             label="Middle Name"
             containerClass="space-y-2"
           />
-        )}
+        )} */}
 
         {/* Last Name */}
-        {isFieldVisible("lastName") && (
+        {/* {isFieldVisible("lastName") && (
           <Forger
             component={TextInput}
             name="lastName"
             label="Last Name"
             containerClass="space-y-2"
           />
-        )}
+        )} */}
 
         {/* Company Name - Vendor only */}
         {isFieldVisible("companyName") && (
