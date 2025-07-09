@@ -100,7 +100,7 @@ const CreateUserDialog = () => {
     }
   };
 
-  const handleMultipleUsersSubmit = async (data: MultipleUserFormValues) => {
+  const handleMultipleUsersSubmit = async () => {
     if (!file) {
       toast.error("Error", "Please upload a file for multiple users.");
       return;

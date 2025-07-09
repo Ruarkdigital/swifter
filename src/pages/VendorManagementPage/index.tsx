@@ -128,6 +128,7 @@ export const VendorManagementPage = () => {
     status: "",
     plan: "",
   });
+  const [activeStatCard, setActiveStatCard] = useState<string | null>(null);
 
   // Debounce search query
   useEffect(() => {
@@ -227,7 +228,12 @@ export const VendorManagementPage = () => {
 
       // Add status filter if selected
       if (filters.status && filters.status !== "all_status") {
-        params.status = filters.status;
+        if (filters.status === "Suspended") {
+          params.isSuspended = true;
+        } else {
+          params.status = filters.status;
+          params.isSuspended = false;
+        }
       }
 
       // Add plan filter if selected
@@ -322,6 +328,33 @@ export const VendorManagementPage = () => {
   const vendors = vendorsData?.data?.data?.vendors || [];
   const totalVendors = vendorsData?.data?.data?.total || 0;
 
+  // Handle StatCard clicks for filtering
+  const handleStatCardClick = (cardType: string) => {
+    // Reset pagination when filter changes
+    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+    
+    // Set active card and update filters
+    setActiveStatCard(cardType);
+    
+    switch (cardType) {
+      case "all":
+        setFilters((prev) => ({ ...prev, status: "" }));
+        break;
+      case "active":
+        setFilters((prev) => ({ ...prev, status: "Active" }));
+        break;
+      case "inactive":
+        setFilters((prev) => ({ ...prev, status: "Inactive" }));
+        break;
+      case "suspended":
+        setFilters((prev) => ({ ...prev, status: "Suspended" }));
+        break;
+      default:
+        setFilters((prev) => ({ ...prev, status: "" }));
+        break;
+    }
+  };
+
   // Handle filter changes from dropdown
   const handleFilterChange = (
     filterType: string,
@@ -330,6 +363,11 @@ export const VendorManagementPage = () => {
   ) => {
     // Reset to first page when filters change
     setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+    
+    // Clear active stat card when using dropdown filters
+    if (filterType === "Status") {
+      setActiveStatCard(null);
+    }
 
     // Update filters based on the filter type
     if (filterType === "Date") {
@@ -501,6 +539,8 @@ export const VendorManagementPage = () => {
           icon={IconMap?.users as any}
           iconColor="text-gray-600"
           iconBgColor="bg-gray-100"
+          onClick={() => handleStatCardClick("all")}
+          isActive={activeStatCard === "all"}
         />
         <StatCard
           title="Active Vendors"
@@ -508,6 +548,8 @@ export const VendorManagementPage = () => {
           icon={IconMap?.users as any}
           iconColor="text-green-600"
           iconBgColor="bg-green-100"
+          onClick={() => handleStatCardClick("active")}
+          isActive={activeStatCard === "active"}
         />
         <StatCard
           title="Inactive Vendors"
@@ -515,6 +557,8 @@ export const VendorManagementPage = () => {
           icon={IconMap?.users as any}
           iconColor="text-red-600"
           iconBgColor="bg-red-100"
+          onClick={() => handleStatCardClick("inactive")}
+          isActive={activeStatCard === "inactive"}
         />
         <StatCard
           title="Suspended Vendors"
@@ -522,6 +566,8 @@ export const VendorManagementPage = () => {
           icon={IconMap?.users as any}
           iconColor="text-yellow-600"
           iconBgColor="bg-yellow-100"
+          onClick={() => handleStatCardClick("suspended")}
+          isActive={activeStatCard === "suspended"}
         />
       </div>
 

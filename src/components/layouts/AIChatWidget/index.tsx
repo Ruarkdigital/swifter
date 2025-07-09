@@ -373,9 +373,6 @@ const AIChatWidget: React.FC<AIChatWidgetProps> = ({
                   onChange={(e) => handleFileSelect(e.target.files)}
                   className="hidden"
                 />
-                <div className="mt-2 text-center">
-                  <p className="text-xs text-slate-500">Powered by Google AI</p>
-                </div>
               </div>
             </CardContent>
           )}

@@ -33,8 +33,6 @@ import EditUserDialog from "./components/EditUserDialog";
 import UserDetailsSheet from "./components/UserDetailsSheet";
 import { DropdownFilters } from "@/components/layouts/SolicitationFilters";
 
-// TODO: User details
-// TODO:
 
 // Dashboard statistics type
 type UserDashboard = {

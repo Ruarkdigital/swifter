@@ -7,6 +7,7 @@ import Loading from "@/components/ui/Spinner";
 import AIChatWidget from "./components/layouts/AIChatWidget";
 import { useAuthentication } from "@/hooks/useAuthentication";
 import { useUserRole } from "@/hooks/useUserRole";
+import { useToken } from "@/store/authSlice";
 import * as Sentry from "@sentry/react";
 import { routes } from "./routes";
 import { Suspense } from "react";
@@ -27,23 +28,27 @@ const queryClient = new QueryClient();
 function App() {
   const isAuthenticated = useAuthentication();
   const { isVendor } = useUserRole();
+  const token = useToken();
   
   // Custom function to handle AI chat messages
   const handleAIChatMessage = async (message: string): Promise<string> => {
     try {
-      // TODO: Replace with actual API call to your custom backend
-      // Example API call structure:
-      // const response = await fetch('/api/chat', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ message })
-      // });
-      // const data = await response.json();
-      // return data.response;
+      const response = await fetch('https://dev.swiftpro.tech/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userToken: token,
+          messages: [
+            {
+              role: "user",
+              content: message
+            }
+          ]
+        })
+      });
       
-      // Simulated response for demo purposes
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      return `I received your message: "${message}". This is a demo response from the AI assistant. Please integrate with your custom backend API.`;
+      const data = await response.json();
+      return data.response;
     } catch (error) {
       console.error('AI Chat Error:', error);
       throw new Error('Failed to get AI response');

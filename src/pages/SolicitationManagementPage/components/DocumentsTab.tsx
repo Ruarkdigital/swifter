@@ -1,7 +1,7 @@
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { File, Eye, Edit, Download, Trash2 } from "lucide-react";
+import { File, Eye, Download } from "lucide-react";
 import { InvitedVendorCard } from "../SolicitationDetailPage";
 import { cn } from "@/lib/utils";
 import { DocSVG } from "@/assets/icons/Doc";
@@ -124,14 +124,14 @@ const DocumentsTab: React.FC<DocumentsTabProps> = ({ files = [] }) => {
                          >
                            <Eye className="w-4 h-4 text-gray-500" />
                          </Button>
-                         <Button
+                         {/* <Button
                            variant="ghost"
                            size="icon"
                            className="h-8 w-8 p-0 bg-green-100 dark:bg-slate-900 rounded-full"
                            title="Edit"
                          >
                            <Edit className="w-4 h-4 text-green-500 dark:text-gray-500" />
-                         </Button>
+                         </Button> */}
                          <Button
                            variant="ghost"
                            size="icon"
@@ -148,14 +148,14 @@ const DocumentsTab: React.FC<DocumentsTabProps> = ({ files = [] }) => {
                          >
                            <Download className="w-4 h-4 text-blue-500 dark:text-gray-500" />
                          </Button>
-                         <Button
+                         {/* <Button
                            variant="ghost"
                            size="icon"
                            className="h-8 w-8 p-0 bg-red-100 dark:bg-slate-900 rounded-full"
                            title="Delete"
                          >
                            <Trash2 className="w-4 h-4 text-red-500 dark:text-gray-500" />
-                         </Button>
+                         </Button> */}
                        </div>
                      </div>
                    </CardContent>

@@ -1,47 +1,88 @@
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { ChevronLeft, Share2, X } from "lucide-react";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { getRequest } from "@/lib/axiosInstance";
-import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  Sheet,
+  SheetContent,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import { ChevronLeft, X, Share2 } from "lucide-react";
+import { DataTable } from "@/components/layouts/DataTable";
+import { ColumnDef } from "@tanstack/react-table";
+import { BidComparisonItem } from "../hooks/useEvaluationDetailApi";
 
-type ProposalPriceAction = {
-  component: string;
-  description: string;
-  quantity: number;
-  unitOfMeasurement: string;
-  unitPrice: number;
-  subtotal: number;
-  subItems?: ProposalPriceAction[];
-};
-
-type ProposalData = {
-  vendorName?: string;
-  vendorEmail?: string;
-  total?: number;
-  score?: number;
-  submission?: string;
-  rank?: string;
-  priceAction?: ProposalPriceAction[];
-};
 
 interface BidComparisonSheetProps {
+  evaluationId: string;
   proposalId: string;
   vendorName?: string;
 }
 
-export const BidComparisonSheet = ({ proposalId }: BidComparisonSheetProps) => {
+export const BidComparisonSheet = ({ evaluationId, proposalId, vendorName }: BidComparisonSheetProps) => {
   const [isOpen, setIsOpen] = useState(false);
 
-  const {  } = useQuery({
-    queryKey: ["proposal-details", proposalId],
+  const { data: bidComparisonData, isLoading, error } = useQuery({
+    queryKey: ["bid-comparison", evaluationId],
     queryFn: async () => {
-      const response = await getRequest({ url: `/procurement/evaluations/proposal/${proposalId}` });
-      return response.data as ProposalData;
+      const response = await getRequest({ url: `/procurement/evaluations/${evaluationId}/bid-comparison` });
+      return response.data.data as BidComparisonItem[];
     },
-    enabled: isOpen && !!proposalId,
+    enabled: isOpen && !!evaluationId,
   });
+
+  // Find the specific proposal data
+  const proposalData = bidComparisonData?.find(item => item.proposalId === proposalId);
+  const totalAmount = proposalData?.total || 0;
+
+  // Define table columns for bid comparison summary
+  const columns: ColumnDef<BidComparisonItem>[] = [
+    {
+      accessorKey: "vendorName",
+      header: "Vendor Name",
+      cell: ({ row }) => (
+        <div className="text-gray-900 font-medium">
+          {row.original.vendorName || "-"}
+        </div>
+      ),
+    },
+    {
+      accessorKey: "vendorEmail",
+      header: "Vendor Email",
+      cell: ({ row }) => (
+        <div className="text-gray-600">
+          {row.original.vendorEmail || "-"}
+        </div>
+      ),
+    },
+    {
+      accessorKey: "total",
+      header: "Total Amount",
+      cell: ({ row }) => (
+        <div className="text-gray-900 font-medium">
+          ${row.original.total?.toFixed(2) || "0.00"}
+        </div>
+      ),
+    },
+    {
+      accessorKey: "score",
+      header: "Score",
+      cell: ({ row }) => (
+        <div className="text-gray-900">
+          {row.original.score?.toFixed(1) || "-"}
+        </div>
+      ),
+    },
+    {
+      accessorKey: "rank",
+      header: "Rank",
+      cell: ({ row }) => (
+        <div className="text-gray-900 font-medium">
+          {row.original.rank || "-"}
+        </div>
+      ),
+    },
+  ];
 
 
 
@@ -73,7 +114,7 @@ export const BidComparisonSheet = ({ proposalId }: BidComparisonSheetProps) => {
           {/* Title and Export */}
           <div className="flex items-center justify-between mb-8">
             <h1 className="text-2xl font-semibold text-gray-900">
-              Zenith Solutions Price Breakdown
+              {vendorName} Price Breakdown
             </h1>
             <Button
               variant="ghost"
@@ -86,124 +127,66 @@ export const BidComparisonSheet = ({ proposalId }: BidComparisonSheetProps) => {
           </div>
 
           {/* Company and Submission Info */}
-          <div className="grid grid-cols-2 gap-8 mb-8">
+          <div className="grid grid-cols-3 gap-8 mb-8">
             <div>
-              <p className="text-sm text-gray-500 mb-1">Submitted by</p>
+              <p className="text-sm text-gray-500 mb-1">Selected Vendor</p>
               <p className="text-base font-medium text-gray-900">
-                Zenith Solutions
+                {proposalData?.vendorName || vendorName || "Vendor"}
               </p>
             </div>
             <div>
-              <p className="text-sm text-gray-500 mb-1">Submission Date</p>
-              <p className="text-base text-gray-900">April 30, 2025</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500 mb-1">Evaluation Score</p>
-              <p className="text-base font-semibold text-gray-900">87%</p>
+              <p className="text-sm text-gray-500 mb-1">Total Amount</p>
+              <p className="text-base font-semibold text-gray-900">
+                ${totalAmount.toFixed(2)}
+              </p>
             </div>
             <div>
               <p className="text-sm text-gray-500 mb-1">Rank</p>
-              <Badge className="bg-gray-100 text-gray-700 hover:bg-gray-100 font-medium px-3 py-1">
-                Best Price
-              </Badge>
+              <p className="text-base font-medium text-gray-900">
+                {proposalData?.rank || "-"}
+              </p>
             </div>
           </div>
 
-          {/* Price Breakdown Table */}
-          <div className="border rounded-lg overflow-hidden">
-            {/* Table Header */}
-            <div className="bg-gray-50 border-b">
-              <div className="grid grid-cols-12 gap-4 px-4 py-3 text-sm font-medium text-gray-700">
-                <div className="col-span-3">Line Item / Component</div>
-                <div className="col-span-3">Description (Optional)</div>
-                <div className="col-span-2">Quantity</div>
-                <div className="col-span-2">Unit Price</div>
-                <div className="col-span-2">Subtotal</div>
-              </div>
+          {/* Bid Comparison Table */}
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="text-gray-500">Loading bid comparison data...</div>
             </div>
-
-            {/* Table Body */}
-            <div className="bg-white">
-              <div className="grid grid-cols-12 gap-4 px-4 py-4 border-b text-sm">
-                <div className="col-span-3 text-gray-900">Hardware Supply</div>
-                <div className="col-span-3 text-gray-600">
-                  50 laptops, Dell Inspiron
-                </div>
-                <div className="col-span-2 text-gray-900">50</div>
-                <div className="col-span-2 text-gray-900">$600.00</div>
-                <div className="col-span-2 text-gray-900 font-medium">
-                  $30,000.00
-                </div>
-              </div>
-              <div className="grid grid-cols-12 gap-4 px-4 py-4 border-b text-sm">
-                <div className="col-span-3 text-gray-900">
-                  Software Licenses
-                </div>
-                <div className="col-span-3 text-gray-600">
-                  Annual licenses for MS 365
-                </div>
-                <div className="col-span-2 text-gray-900">50</div>
-                <div className="col-span-2 text-gray-900">$120.00</div>
-                <div className="col-span-2 text-gray-900 font-medium">
-                  $6,000.00
-                </div>
-              </div>
-              <div className="grid grid-cols-12 gap-4 px-4 py-4 border-b text-sm">
-                <div className="col-span-3 text-gray-900">
-                  Installation Services
-                </div>
-                <div className="col-span-3 text-gray-600">
-                  Onsite setup across 3 locations
-                </div>
-                <div className="col-span-2 text-gray-900">3</div>
-                <div className="col-span-2 text-gray-900">$1,200.00</div>
-                <div className="col-span-2 text-gray-900 font-medium">
-                  $3,600.00
-                </div>
-              </div>
-              <div className="grid grid-cols-12 gap-4 px-4 py-4 border-b text-sm">
-                <div className="col-span-3 text-gray-900">Training</div>
-                <div className="col-span-3 text-gray-600">
-                  2-day training for staff
-                </div>
-                <div className="col-span-2 text-gray-900">2</div>
-                <div className="col-span-2 text-gray-900">$2,500.00</div>
-                <div className="col-span-2 text-gray-900 font-medium">
-                  $5,000.00
-                </div>
-              </div>
-              <div className="grid grid-cols-12 gap-4 px-4 py-4 text-sm">
-                <div className="col-span-3 text-gray-900">
-                  Support & Maintenance
-                </div>
-                <div className="col-span-3 text-gray-600">
-                  12-month support package
-                </div>
-                <div className="col-span-2 text-gray-900">1</div>
-                <div className="col-span-2 text-gray-900">$1,200.00</div>
-                <div className="col-span-2 text-gray-900 font-medium">
-                  $1,200.00
-                </div>
-              </div>
+          ) : error ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="text-red-500">Failed to load bid comparison data</div>
             </div>
-
-            {/* Total Row */}
-            <div className="bg-white border-t">
-              <div className="grid grid-cols-12 gap-4 px-4 py-4">
-                <div className="col-span-10"></div>
-                <div className="col-span-2">
-                  <div className="flex justify-between items-center">
-                    <span className="text-base font-semibold text-gray-900">
-                      Total
-                    </span>
-                    <span className="text-lg font-bold text-gray-900">
-                      45,800.00
-                    </span>
+          ) : (
+            <>
+              <DataTable
+                data={bidComparisonData || []}
+                columns={columns}
+                classNames={{
+                  container: "border rounded-lg overflow-hidden",
+                  table: "border-separate border-spacing-0",
+                  tHeader: "bg-gray-50",
+                  tHead: "text-sm font-medium text-gray-700 px-4 py-3 text-left",
+                  tRow: "bg-white border-b last:border-b-0",
+                  tCell: "px-4 py-4 text-sm",
+                }}
+                options={{
+                  disablePagination: true,
+                  disableSelection: true,
+                  isLoading: false,
+                  totalCounts: bidComparisonData?.length || 0,
+                  manualPagination: false,
+                  setPagination: () => {},
+                  pagination: { pageIndex: 0, pageSize: 100 },
+                }}
+                emptyPlaceholder={
+                  <div className="flex items-center justify-center py-12">
+                    <div className="text-gray-500">No bid comparison data available</div>
                   </div>
-                </div>
-              </div>
-            </div>
-          </div>
+                }
+              />
+            </>
+          )}
 
           {/* Action Buttons */}
           <div className="flex justify-end gap-3 mt-8">

@@ -31,7 +31,7 @@ import { useMutation } from "@tanstack/react-query";
 import { getRequest } from "@/lib/axiosInstance";
 // TODO: integrate below api
 // import EvaluationScorecardSheet from "./components/EvaluationScorecardSheet";
-// import { BidComparisonSheet } from "./components/BidComparisonBreakdownSheet";
+import { BidComparisonSheet } from "./components/BidComparisonBreakdownSheet";
 import {
   useEvaluationDetail,
   useEvaluationEvaluators,
@@ -474,6 +474,22 @@ const EvaluationDetailPage: React.FC = () => {
         <RankBadge rankType={row.original.rankType} rank={row.original.rank} />
       ),
     },
+    {
+      id: "actions",
+      header: "Actions",
+      cell: ({ row }) => {
+        const proposalId = row.original.id; // This maps to proposalId from the bid comparison data
+        const vendorName = row.original.vendorName;
+        
+        return (
+          <BidComparisonSheet 
+            evaluationId={id}
+            proposalId={proposalId} 
+            vendorName={vendorName}
+          />
+        );
+      },
+    },
   ];
 
   // Define evaluators table columns
@@ -503,6 +519,7 @@ const EvaluationDetailPage: React.FC = () => {
       header: "Status",
       cell: ({ row }) => <EvaluatorStatusBadge status={row.original.status} />,
     },
+
   ];
 
   return (
@@ -1130,24 +1147,7 @@ const EvaluationDetailPage: React.FC = () => {
                       Price Comparison
                     </span>
                   </div>
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm text-gray-600 dark:text-gray-400">
-                        Date
-                      </span>
-                      <Button variant="ghost" size="sm" className="p-0 h-auto">
-                        <ChevronRight className="h-4 w-4" />
-                      </Button>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm text-gray-600 dark:text-gray-400">
-                        Rank
-                      </span>
-                      <Button variant="ghost" size="sm" className="p-0 h-auto">
-                        <ChevronRight className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
+                  
                 </div>
               )}
               options={{

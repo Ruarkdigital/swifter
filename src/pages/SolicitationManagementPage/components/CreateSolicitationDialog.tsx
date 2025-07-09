@@ -197,7 +197,12 @@ const CreateSolicitationDialog = () => {
 
   // File upload mutation
   const { mutateAsync: uploadFiles } = useMutation<
-    ApiResponse<string[]>,
+    ApiResponse<{
+      name: string;
+      url: string;
+      size: string;
+      type: string;
+    }[]>,
     ApiResponseError,
     FormData
   >({
@@ -240,20 +245,15 @@ const CreateSolicitationDialog = () => {
         type: string;
       }> = [];
 
-      if (completeData.files && completeData.files.length > 0) {
+      if (completeData.documents && completeData.documents.length > 0) {
         const fileFormData = new FormData();
-        completeData.files.forEach((file: File) => {
+        completeData.documents.forEach((file: File) => {
           fileFormData.append("file", file);
         });
 
         const uploadResponse = await uploadFiles(fileFormData);
         if (uploadResponse?.data?.data) {
-          uploadedFiles = completeData.files.map((file: File, index: number) => ({
-            name: file.name,
-            url: uploadResponse.data.data[index],
-            size: file.size.toString(),
-            type: file.type,
-          }));
+          uploadedFiles = uploadResponse.data.data;
         }
       }
 
@@ -455,7 +455,7 @@ const CreateSolicitationDialog = () => {
         </div>
 
         {/* Form Content */}
-        <Forge control={forge.control} onSubmit={onSubmit}>
+        <Forge control={forge.control} onSubmit={onSubmit} debug>
           {currentStep === 1 && (
             <Step1Form
               solicitationTypes={solicitationTypes}

@@ -124,7 +124,8 @@ export const EvaluationManagementPage = () => {
   const manageEvaluationMutation = useManageEvaluation();
   const { success: successToast, error: errorToast } = useToastHandler();
   const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter] = useState<string>("");
+  const [statusFilter, setStatusFilter] = useState<string>("");
+  const [activeStatCard, setActiveStatCard] = useState<string>("");
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
     pageSize: 10,
@@ -193,6 +194,29 @@ export const EvaluationManagementPage = () => {
     };
   }, [dashboardStats]);
 
+  // Handle stat card click for filtering
+  const handleStatCardClick = (cardType: string) => {
+    setActiveStatCard(cardType);
+    setPagination(prev => ({ ...prev, pageIndex: 0 }));
+    
+    switch (cardType) {
+      case "all":
+        setStatusFilter("");
+        break;
+      case "active":
+        setStatusFilter("Active");
+        break;
+      case "pending":
+        setStatusFilter("Pending");
+        break;
+      case "completed":
+        setStatusFilter("Completed");
+        break;
+      default:
+        setStatusFilter("");
+    }
+  };
+
   // Handle manage evaluation
   const handleManageEvaluation = async (evaluationId: string) => {
     try {
@@ -202,6 +226,13 @@ export const EvaluationManagementPage = () => {
       errorToast("Failed to take over evaluation management");
     }
   };
+
+  // Clear active stat card when search is used
+  useEffect(() => {
+    if (searchQuery) {
+      setActiveStatCard("");
+    }
+  }, [searchQuery]);
 
   // Debounced search effect
   useEffect(() => {
@@ -425,6 +456,8 @@ export const EvaluationManagementPage = () => {
           icon={FileText}
           iconColor="text-gray-600"
           iconBgColor="bg-gray-100"
+          onClick={() => handleStatCardClick("all")}
+          isActive={activeStatCard === "all"}
         />
         <StatCard
           title="Active Evaluations"
@@ -432,6 +465,8 @@ export const EvaluationManagementPage = () => {
           icon={FileText}
           iconColor="text-green-600"
           iconBgColor="bg-green-100"
+          onClick={() => handleStatCardClick("active")}
+          isActive={activeStatCard === "active"}
         />
         <StatCard
           title="Pending Evaluations"
@@ -439,6 +474,8 @@ export const EvaluationManagementPage = () => {
           icon={FileText}
           iconColor="text-yellow-600"
           iconBgColor="bg-yellow-100"
+          onClick={() => handleStatCardClick("pending")}
+          isActive={activeStatCard === "pending"}
         />
         <StatCard
           title="Completed Evaluations"
@@ -446,6 +483,8 @@ export const EvaluationManagementPage = () => {
           icon={FileText}
           iconColor="text-blue-600"
           iconBgColor="bg-blue-100"
+          onClick={() => handleStatCardClick("completed")}
+          isActive={activeStatCard === "completed"}
         />
       </div>
 
