@@ -38,6 +38,7 @@ function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           userToken: token,
+           "model": "mistralai/mistral-small-3.2-24b-instruct:free",
           messages: [
             {
               role: "user",
@@ -48,7 +49,26 @@ function App() {
       });
       
       const data = await response.json();
-      return data.response;
+      
+      if (!response.ok) {
+        throw new Error(`API Error: ${response.status} - ${data.message || 'Unknown error'}`);
+      }
+      
+      // Extract the actual message content from the API response
+      let aiResponse;
+      if (data.choices && data.choices.length > 0 && data.choices[0].message) {
+        aiResponse = data.choices[0].message.content;
+      } else if (data.response) {
+        aiResponse = data.response;
+      } else if (data.content) {
+        aiResponse = data.content;
+      } else if (data.message) {
+        aiResponse = data.message;
+      } else {
+         aiResponse = 'No response received from AI';
+       }
+       
+       return aiResponse;
     } catch (error) {
       console.error('AI Chat Error:', error);
       throw new Error('Failed to get AI response');
