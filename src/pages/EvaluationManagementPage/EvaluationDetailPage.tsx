@@ -30,7 +30,7 @@ import { format } from "date-fns";
 import { useMutation } from "@tanstack/react-query";
 import { getRequest } from "@/lib/axiosInstance";
 // TODO: integrate below api
-// import EvaluationScorecardSheet from "./components/EvaluationScorecardSheet";
+import EvaluationScorecardSheet from "./components/EvaluationScorecardSheet";
 import { BidComparisonSheet } from "./components/BidComparisonBreakdownSheet";
 import {
   useEvaluationDetail,
@@ -171,7 +171,7 @@ const EvaluationDetailPage: React.FC = () => {
   >({
     mutationFn: async ({ evaluatorId, type }) => {
       const response = await getRequest({
-        url: `/procurement/solicitations/${evaluation?.solicitation}/evaluator-score-card/${evaluatorId}/export?type=${type}`,
+        url: `/procurement/solicitations/${evaluation?.solicitation?._id}/evaluator-score-card/${evaluatorId}/export?type=${type}`,
         config: { responseType: "blob" },
       });
       return response.data;
@@ -519,7 +519,18 @@ const EvaluationDetailPage: React.FC = () => {
       header: "Status",
       cell: ({ row }) => <EvaluatorStatusBadge status={row.original.status} />,
     },
-
+    {
+      id: "actions",
+      header: "Actions",
+      cell({ row }) {
+        return (
+          <EvaluationScorecardSheet 
+            evaluatorId={row.original._id}
+            solicitationId={evaluation?.solicitation?._id || ""}
+          />
+        )
+      },
+    }
   ];
 
   return (

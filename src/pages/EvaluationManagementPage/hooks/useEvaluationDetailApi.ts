@@ -7,6 +7,7 @@ import { useMutation } from "@tanstack/react-query";
 type EvaluationDetail = {
   _id: string;
   solicitation: {
+    _id: string;
     name: string;
     type: string;
   };

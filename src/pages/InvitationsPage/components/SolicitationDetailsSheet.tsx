@@ -117,6 +117,7 @@ const SolicitationDetailsSheet: React.FC<SolicitationDetailsSheetProps> = ({
     ApiResponse<{
       details: SolicitationDetails;
       requiredFiles: SolicitationFile[];
+      status: "invited" | "confirmed" | "declined";
     }>,
     ApiResponseError
   >({
@@ -144,7 +145,7 @@ const SolicitationDetailsSheet: React.FC<SolicitationDetailsSheetProps> = ({
         queryKey: ["solicitation-details", solicitation?.id],
       });
       queryClient.invalidateQueries({ queryKey: ["vendor-invitations"] });
-      queryClient.invalidateQueries({ queryKey: ["vendor-solicitations"] });
+      // queryClient.invalidateQueries({ queryKey: ["vendor-solicitations"] });
       // Close the sheet
       onOpenChange?.(false);
     },
@@ -205,9 +206,7 @@ const SolicitationDetailsSheet: React.FC<SolicitationDetailsSheetProps> = ({
   // const currentVendorStatus = currentVendor?.status;
 
   // Determine if buttons should be hidden
-  const shouldHideButtons =
-    details?.status === "confirmed" ||
-    details?.status === "declined";
+  const shouldHideButtons = solicitationData?.data?.data?.status === "invited";
 
   // Helper function to format date
   const formatDate = (dateString: string): string => {
@@ -521,8 +520,7 @@ const SolicitationDetailsSheet: React.FC<SolicitationDetailsSheetProps> = ({
                                   {doc.title}
                                 </h3>
                                 <p className="text-xs text-gray-500 dark:text-gray-400">
-                                  {doc.type.toUpperCase()} •{" "}
-                                  {doc.size}
+                                  {doc.type.toUpperCase()} • {doc.size}
                                 </p>
                               </div>
                             </div>

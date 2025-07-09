@@ -38,7 +38,7 @@ function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           userToken: token,
-           "model": "mistralai/mistral-small-3.2-24b-instruct:free",
+           "model": "mistralai/mistral-7b-instruct:free",
           messages: [
             {
               role: "user",
