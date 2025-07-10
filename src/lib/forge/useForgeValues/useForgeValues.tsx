@@ -403,7 +403,7 @@ export const useForgeValues = <TFieldValues extends FieldValues = FieldValues>({
             : value;
 
         if (isMultipleSelect(fieldReference.ref)) {
-          [...fieldReference.ref.options].forEach(
+          [...(fieldReference.ref as HTMLSelectElement).options].forEach(
             (optionRef) =>
               (optionRef.selected = (
                 fieldValue as InternalFieldName[]

@@ -18,40 +18,63 @@ import { useToastHandler } from "@/hooks/useToaster";
 import { useWatch } from "react-hook-form";
 import { useUserRole } from "@/hooks/useUserRole";
 
-const schema = yup.object().shape({
+// Base schema for form validation
+const baseSchema = {
   title: yup.string().required("Title is required"),
   description: yup.string().required("Description is required"),
-  documents: yup.array().nullable(),
   submissionDeadline: yup.string().required("Submission deadline is required"),
   questionAcceptanceDeadline: yup
     .string()
     .required("Question acceptance deadline is required"),
-});
+  documents: yup.array().nullable().default(null),
+};
 
-type FormValues = yup.InferType<typeof schema>;
+// Create conditional schema based on reply mode
+const createSchema = (isReplyMode: boolean) => {
+  if (isReplyMode) {
+    return yup.object().shape({
+      ...baseSchema,
+      question: yup.string().required("Question is required"),
+    });
+  }
+  return yup.object().shape(baseSchema);
+};
+
+type FormValues = {
+  title: string;
+  description: string;
+  submissionDeadline: string;
+  questionAcceptanceDeadline: string;
+  documents: any[] | null;
+  question?: string;
+};
 
 interface CreateAddendumDialogProps {
   solicitationId: string;
+  questionId?: string; // Optional questionId for reply mode
   onClose: () => void;
 }
 
 const CreateAddendumDialog: React.FC<CreateAddendumDialogProps> = ({
   solicitationId,
+  questionId,
   onClose,
 }) => {
+  const isReplyMode = !!questionId;
   const formRef = useRef<any>(null);
   const toast = useToastHandler();
   const queryClient = useQueryClient();
   const { isVendor } = useUserRole();
 
   const { control } = useForge<FormValues>({
-    resolver: yupResolver(schema),
+    resolver: yupResolver(createSchema(isReplyMode)),
     defaultValues: {
       title: "",
       description: "",
       documents: null,
       submissionDeadline: "",
       questionAcceptanceDeadline: "",
+      question: "",
     },
   });
 
@@ -144,12 +167,79 @@ const CreateAddendumDialog: React.FC<CreateAddendumDialogProps> = ({
     },
   });
 
+  // Reply addendum to question mutation
+  const replyAddendumMutation = useMutation<
+    ApiResponse<any>,
+    ApiResponseError,
+    { data: FormValues; status: "draft" | "publish" }
+  >({
+    mutationFn: async ({ data, status }) => {
+      let uploadedFiles: any[] = [];
+      
+      // Upload files first if any
+      if (data.documents && data.documents.length > 0) {
+        const uploadResponse = await uploadFilesMutation.mutateAsync(data.documents);
+        uploadedFiles = uploadResponse.data?.data || [];
+      }
+      
+      const payload = {
+        title: data.title,
+        description: data.description,
+        submissionDeadline: new Date(data.submissionDeadline).toISOString(),
+        questionDeadline: new Date(data.questionAcceptanceDeadline).toISOString(),
+        question: data.question,
+        status: status,
+        files: uploadedFiles.map(file => ({
+          name: file.name,
+          url: file.url,
+          size: file.size.toString(),
+          type: file.type
+        })),
+      };
+      
+      // Reply addendum to question endpoint
+      const endpoint = `/procurement/solicitations/${solicitationId}/addendums/${questionId}`;
+      
+      return await postRequest({
+        url: endpoint,
+        payload,
+      });
+    },
+    onSuccess: (_, variables) => {
+      const action =
+        variables.status === "draft" ? "saved as draft" : "published";
+      toast.success("Success", `Reply addendum ${action} successfully`);
+      queryClient.invalidateQueries({
+        queryKey: ["addendums", solicitationId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["questions", solicitationId],
+      });
+      onClose();
+    },
+    onError: (error) => {
+      console.error("Reply addendum error:", error);
+      toast.error(
+        "Error",
+        error?.response?.data?.message ?? "Failed to reply with addendum"
+      );
+    },
+  });
+
   const handleSaveAsDraft = async (data: FormValues) => {
-    await createAddendumMutation.mutateAsync({ data, status: "draft" });
+    if (isReplyMode) {
+      await replyAddendumMutation.mutateAsync({ data, status: "draft" });
+    } else {
+      await createAddendumMutation.mutateAsync({ data, status: "draft" });
+    }
   };
 
   const handlePublishAddendum = async (data: FormValues) => {
-    await createAddendumMutation.mutateAsync({ data, status: "publish" });
+    if (isReplyMode) {
+      await replyAddendumMutation.mutateAsync({ data, status: "publish" });
+    } else {
+      await createAddendumMutation.mutateAsync({ data, status: "publish" });
+    }
   };
 
   const handleBack = () => {
@@ -199,7 +289,7 @@ const CreateAddendumDialog: React.FC<CreateAddendumDialogProps> = ({
       {/* Header */}
       <DialogHeader className="flex flex-row items-center justify-between p-6">
         <DialogTitle className="text-lg font-semibold text-gray-900 dark:text-gray-200">
-          Create Addendum
+          {isReplyMode ? "Response with Addendum" : "Create Addendum"}
         </DialogTitle>
       </DialogHeader>
 
@@ -227,6 +317,17 @@ const CreateAddendumDialog: React.FC<CreateAddendumDialogProps> = ({
               <Users className="h-5 w-5 text-blue-500" />
             </div>
           </div>
+
+          {/* Question field - only show in reply mode */}
+          {isReplyMode && (
+            <Forger
+              name="question"
+              component={TextArea}
+              label="Question"
+              placeholder="Enter the question or clarification"
+              rows={3}
+            />
+          )}
 
           {/* Upload Documents */}
           <Forger
@@ -269,9 +370,9 @@ const CreateAddendumDialog: React.FC<CreateAddendumDialogProps> = ({
               variant="outline"
               onClick={() => formRef.current?.onSubmit(handleSaveAsDraft)}
               className="text-gray-700 border-gray-300"
-              disabled={createAddendumMutation.isPending || uploadFilesMutation.isPending}
+              disabled={createAddendumMutation.isPending || replyAddendumMutation.isPending || uploadFilesMutation.isPending}
             >
-              {createAddendumMutation.isPending || uploadFilesMutation.isPending ? "Saving..." : "Save as Draft"}
+              {createAddendumMutation.isPending || replyAddendumMutation.isPending || uploadFilesMutation.isPending ? "Saving..." : "Save as Draft"}
             </Button>
           <div className="flex items-center space-x-3">
             <Button
@@ -279,18 +380,18 @@ const CreateAddendumDialog: React.FC<CreateAddendumDialogProps> = ({
               variant="outline"
               onClick={handleBack}
               className="text-gray-700 border-gray-300"
-              disabled={createAddendumMutation.isPending || uploadFilesMutation.isPending}
+              disabled={createAddendumMutation.isPending || replyAddendumMutation.isPending || uploadFilesMutation.isPending}
             >
               Back
             </Button>
             <Button
               type="submit"
               className="bg-[#2A4467] hover:bg-[#1e3252] text-white"
-              disabled={createAddendumMutation.isPending || uploadFilesMutation.isPending}
+              disabled={createAddendumMutation.isPending || replyAddendumMutation.isPending || uploadFilesMutation.isPending}
             >
-              {createAddendumMutation.isPending || uploadFilesMutation.isPending
-                ? uploadFilesMutation.isPending ? "Uploading files..." : "Publishing..."
-                : "Publish Addendum"}
+              {createAddendumMutation.isPending || replyAddendumMutation.isPending || uploadFilesMutation.isPending
+                ? uploadFilesMutation.isPending ? "Uploading files..." : isReplyMode ? "Publishing Reply..." : "Publishing..."
+                : isReplyMode ? "Publish Reply" : "Publish Addendum"}
             </Button>
           </div>
         </div>

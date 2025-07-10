@@ -9,6 +9,8 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { Button } from "@/components/ui/button";
 import MessageThread from "./MessageThread";
 import MessageComposer from "./MessageComposer";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import CreateAddendumDialog from "./CreateAddendumDialog";
 
 // Question type definition
 export interface Question {
@@ -57,13 +59,14 @@ type QuestionsResponse = {
 };
 
 const QuestionsTab: React.FC = () => {
-  const { id: solicitationId } = useParams<{ id: string }>();
   const queryClient = useQueryClient();
   const toastHandler = useToastHandler();
+  const { id: solicitationId } = useParams<{ id: string }>();
   const { isVendor, isProcurement, isEvaluator } = useUserRole();
   const [replyToQuestion, setReplyToQuestion] = useState<Question | null>(null);
   const [sendType, setSendType] = useState<"reply" | "addendum" | null>(null);
   const [showCreateQuestion, setShowCreateQuestion] = useState(false);
+  const [isCreateAddendumDialogOpen, setIsCreateAddendumDialogOpen] = useState(false);
 
   // Fetch questions
   const { data: questionsData, isLoading } = useQuery<QuestionsResponse>({
@@ -142,13 +145,16 @@ const QuestionsTab: React.FC = () => {
   const unansweredQuestions = questions.filter((q: Question) => !q.isAnswered);
   const answeredQuestions = questions.filter((q: Question) => q.isAnswered);
 
-  const handleSendMessage = (content: string) => {
+  const handleSendMessage = (content: string, type?: "reply" | "addendum" | null) => {
     if (!replyToQuestion && !sendType) {
       // Handle creating new question (vendors only)
       if (!content.trim()) return;
       createQuestionMutation.mutate({
         note: content.trim(),
       });
+    } else if ((type === "addendum" || sendType === "addendum") && replyToQuestion) {
+      // Handle replying with addendum - open CreateAddendumDialog
+      setIsCreateAddendumDialogOpen(true);
     } else {
       // Handle replying to existing question (procurement/evaluators only)
       if (!replyToQuestion || !content.trim()) return;
@@ -164,6 +170,7 @@ const QuestionsTab: React.FC = () => {
     if (question) {
       setReplyToQuestion(question);
       setSendType(type);
+      setIsCreateAddendumDialogOpen(true)
       setShowCreateQuestion(false);
     }
   };
@@ -261,6 +268,24 @@ const QuestionsTab: React.FC = () => {
           />
         ))}
       </div>
+
+      {/* Create Addendum Dialog */}
+      <Dialog
+        open={isCreateAddendumDialogOpen}
+        onOpenChange={setIsCreateAddendumDialogOpen}
+      >
+        <DialogContent className="max-w-2xl sm:max-h-[min(640px,90vh)] overflow-auto">
+          <CreateAddendumDialog
+            solicitationId={solicitationId!}
+            questionId={replyToQuestion?._id}
+            onClose={() => {
+              setIsCreateAddendumDialogOpen(false);
+              setReplyToQuestion(null);
+              setSendType(null);
+            }}
+          />
+        </DialogContent>
+      </Dialog>
 
       {/* Message Composer - Conditional Visibility */}
       {((isVendor) ||

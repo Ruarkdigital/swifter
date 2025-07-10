@@ -437,7 +437,7 @@ export const SolicitationDetailPage = () => {
       const response = await getRequest({
         url: `/procurement/solicitations/${id}/export?type=${type}`,
         config: {
-          responseType: 'blob',
+          responseType: "blob",
         },
       });
       return response;
@@ -445,17 +445,22 @@ export const SolicitationDetailPage = () => {
     onSuccess: (response, variables) => {
       // Create blob and download file
       const blob = new Blob([response.data], {
-        type: variables.type === 'pdf' ? 'application/pdf' : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        type:
+          variables.type === "pdf"
+            ? "application/pdf"
+            : "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
       });
       const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
+      const link = document.createElement("a");
       link.href = url;
-      link.download = `${solicitation?.name || 'solicitation'}.${variables.type}`;
+      link.download = `${solicitation?.name || "solicitation"}.${
+        variables.type
+      }`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
-      
+
       toastHandlers.success(
         "Export Successful",
         `Solicitation exported as ${variables.type.toUpperCase()} successfully`
@@ -785,7 +790,7 @@ export const SolicitationDetailPage = () => {
   ];
 
   return (
-    <div className="p-6 min-h-full">
+    <div className="p-6 min-h-full pb-10">
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-200 mb-6">
         <span
@@ -857,9 +862,7 @@ export const SolicitationDetailPage = () => {
 
           {solicitation?.status?.toLowerCase() !== "awarded" && isOwner && (
             <Link to={`/dashboard/solicitations/${id}/submit-proposal`}>
-              <Button className="text-white px-6 py-2">
-                Submit Proposal
-              </Button>
+              <Button className="text-white px-6 py-2">Submit Proposal</Button>
             </Link>
           )}
         </div>
@@ -948,7 +951,9 @@ export const SolicitationDetailPage = () => {
                         disabled={exportSolicitationMutation.isPending}
                       >
                         <Share2 className="h-4 w-4 mr-3" />
-                        {exportSolicitationMutation.isPending ? "Exporting..." : "Export"}
+                        {exportSolicitationMutation.isPending
+                          ? "Exporting..."
+                          : "Export"}
                         <ChevronDown className="h-4 w-4 ml-2" />
                       </Button>
                     </DropdownMenuTrigger>
@@ -1225,9 +1230,9 @@ export const SolicitationDetailPage = () => {
                 )}
                 data={filteredProposals}
                 classNames={{
-                container:
-                  "bg-white dark:bg-slate-950 rounded-xl px-3 border border-gray-300 dark:border-slate-600",
-              }}
+                  container:
+                    "bg-white dark:bg-slate-950 rounded-xl px-3 border border-gray-300 dark:border-slate-600",
+                }}
                 columns={proposalColumns}
                 options={{
                   disableSelection: true,
@@ -1412,7 +1417,8 @@ export const SolicitationDetailPage = () => {
                       No Documents Required
                     </h3>
                     <p className="text-gray-500 dark:text-gray-400 text-center max-w-md">
-                      This solicitation does not require any specific documents to be submitted.
+                      This solicitation does not require any specific documents
+                      to be submitted.
                     </p>
                   </div>
                 }
@@ -1435,6 +1441,7 @@ export const SolicitationDetailPage = () => {
           <AddendumsTab solicitationId={id} />
         </TabsContent>
       </Tabs>
+      <div className="h-10" />
     </div>
   );
 };

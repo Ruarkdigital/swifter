@@ -24,7 +24,6 @@ import {
   ValidateResult,
   Message,
   ValidationRule,
-  FieldElement,
 } from "react-hook-form";
 import { isUndefined, isObject, isString, isNumber } from "lodash";
 
@@ -101,6 +100,8 @@ export const isWeb =
   typeof window !== "undefined" &&
   typeof window.HTMLElement !== "undefined" &&
   typeof document !== "undefined";
+export const isReactNative = !isWeb && typeof navigator !== "undefined" && navigator.product === "ReactNative";
+export const isMobile = isReactNative || (isWeb && /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent));
 
 export const get = <T>(
   object: T,
@@ -206,7 +207,10 @@ export function cloneObject<T>(data: T): T {
   } else if (data instanceof Set) {
     copy = new Set(data);
   } else if (
+    // Handle web-specific objects only in web environment
     !(isWeb && (data instanceof Blob || data instanceof FileList)) &&
+    // Handle React Native specific objects
+    !(isReactNative && data && typeof data === 'object' && ('uri' in data || '_dispatchInstances' in data)) &&
     (isArray || isObject(data))
   ) {
     copy = isArray ? [] : {};
@@ -348,10 +352,7 @@ export const getValueAndMessage = (validationData?: ValidationRule) =>
       };
 
 export const isHTMLElement = (value: unknown): value is HTMLElement => {
-  if (!isWeb) {
-    return false;
-  }
-
+  if (!isWeb) return false;
   const owner = value ? ((value as HTMLElement).ownerDocument as Document) : 0;
   return (
     value instanceof
@@ -359,17 +360,48 @@ export const isHTMLElement = (value: unknown): value is HTMLElement => {
   );
 };
 
-export const isFileInput = (
-  element: FieldElement
-): element is HTMLInputElement => element.type === "file";
+// React Native compatible element type checking
+export const isTextInput = (element: any): boolean => {
+  if (isReactNative) {
+    return element && (element.displayName === 'TextInput' || element.type === 'TextInput');
+  }
+  return isWeb && element && (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA');
+};
 
-export const isCheckBoxInput = (
-  element: FieldElement
-): element is HTMLInputElement => element.type === "checkbox";
+export const isFileInput = (element: any): boolean => {
+  if (!isWeb) return false;
+  return element && element.type === "file";
+};
 
-export const isRadioInput = (
-  element: FieldElement
-): element is HTMLInputElement => element.type === "radio";
+export const isCheckBoxInput = (element: any): boolean => {
+  if (isReactNative) {
+    return element && (element.displayName === 'CheckBox' || element.type === 'CheckBox');
+  }
+  return isWeb && element && element.type === "checkbox";
+};
+
+export const isRadioInput = (element: any): boolean => {
+  if (isReactNative) {
+    return element && (element.displayName === 'RadioButton' || element.type === 'RadioButton');
+  }
+  return isWeb && element && element.type === "radio";
+};
+
+// React Native specific component checks
+export const isPicker = (element: any): boolean => {
+  if (!isReactNative) return false;
+  return element && (element.displayName === 'Picker' || element.type === 'Picker');
+};
+
+export const isSwitch = (element: any): boolean => {
+  if (!isReactNative) return false;
+  return element && (element.displayName === 'Switch' || element.type === 'Switch');
+};
+
+export const isSlider = (element: any): boolean => {
+  if (!isReactNative) return false;
+  return element && (element.displayName === 'Slider' || element.type === 'Slider');
+};
 
 type SlotProps = {
   children?: React.ReactNode;
@@ -479,7 +511,9 @@ export const objectHasFunction = <T>(data: T): boolean => {
   return false;
 };
 
-export const isMultipleSelect = (element: FieldElement): element is HTMLSelectElement =>
-  element.type === `select-multiple`;
+export const isMultipleSelect = (element: any): boolean => {
+  if (!isWeb) return false;
+  return element && element.type === "select-multiple";
+};
 
 

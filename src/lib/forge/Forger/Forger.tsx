@@ -2,7 +2,14 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { isEqual } from "lodash";
-import { isWeb, Slot } from "../utils";
+import {
+  Slot,
+  isReactNative,
+  isTextInput,
+  isPicker,
+  isSwitch,
+  isSlider,
+} from "../utils";
 import { memo } from "react";
 import {
   FieldValues,
@@ -31,17 +38,32 @@ const ForgerController = <TFieldValues extends FieldValues = FieldValues>(
     return typeof transform === "undefined" ? text : transform.input?.(text);
   };
 
-  const handleTrigger = handler
-    ? {
-        [handler]: (value: string) => onChange(getTextTransform(value)),
-        onChange: () => {},
+  // Platform-specific event handlers
+  const getEventHandlers = () => {
+    const handlers: any = {};
+    
+    if (handler) {
+      handlers[handler] = (value: string) => onChange(getTextTransform(value));
+      handlers.onChange = () => {};
+    } else if (isReactNative) {
+      // React Native components use different event handlers
+      if (isTextInput(component) || (component as any)?.displayName === 'TextInput') {
+        handlers.onChangeText = (value: string) => onChange(getTextTransform(value));
+        handlers.onChange = () => {};
+      } else if (isSwitch(component) || isPicker(component) || isSlider(component)) {
+        handlers.onValueChange = (value: string) => onChange(getTextTransform(value));
+      } else {
+        handlers.onChange = (value: string) => onChange(getTextTransform(value));
       }
-    : isWeb
-    ? { onChange: (value: string) => onChange(getTextTransform(value)) }
-    : {
-        onChangeText: (value: string) => onChange(getTextTransform(value)),
-        onChange: () => {},
-      };
+    } else {
+      // Web components use standard onChange
+      handlers.onChange = (value: string) => onChange(getTextTransform(value));
+    }
+    
+    return handlers;
+  };
+  
+  const handleTrigger = getEventHandlers();
 
   return (
     <Component

@@ -110,5 +110,23 @@ export type ForgeProps<
   control: ForgeControl<TFieldValues, TFieldProps>;
   ref?: RefObject<FormPropsRef | null>;
   isNative?: boolean;
-  debug?: boolean
+  debug?: boolean;
+  platform?: 'web' | 'react-native' | 'auto';
 };
+
+// React Native specific types
+export type ReactNativeInputProps = {
+  onChangeText?: (text: string) => void;
+  onValueChange?: (value: any) => void;
+  selected?: boolean;
+  error?: string;
+  setNativeProps?: (props: any) => void;
+};
+
+export type PlatformSpecificProps = {
+  web?: Record<string, any>;
+  reactNative?: ReactNativeInputProps;
+};
+
+export type CrossPlatformForgerProps<TFieldValues extends FieldValues = FieldValues> = 
+  ForgerProps<TFieldValues> & PlatformSpecificProps;

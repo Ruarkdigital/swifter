@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+
 
 export const Footer = () => {
   return (
@@ -9,34 +9,42 @@ export const Footer = () => {
         </div>
         
         <div className="flex items-center gap-6">
-          <Link 
-            to="/terms-conditions" 
+          <a 
+            href="/terms-conditions" 
+            target="_blank"
+            rel="noopener noreferrer"
             className="text-base font-semibold text-[#2A4467] dark:text-blue-400 hover:underline transition-colors"
             style={{ fontFamily: 'Quicksand' }}
           >
             Terms & Conditions
-          </Link>
-          <Link 
-            to="/privacy-policy" 
+          </a>
+          <a 
+            href="/privacy-policy" 
+            target="_blank"
+            rel="noopener noreferrer"
             className="text-base font-semibold text-[#2A4467] dark:text-blue-400 hover:underline transition-colors"
             style={{ fontFamily: 'Quicksand' }}
           >
             Privacy Policy
-          </Link>
-          <Link 
-            to="/contact-us" 
+          </a>
+          <a 
+            href="/contact-us" 
+            target="_blank"
+            rel="noopener noreferrer"
             className="text-base font-semibold text-[#2A4467] dark:text-blue-400 hover:underline transition-colors"
             style={{ fontFamily: 'Quicksand' }}
           >
             Contact Us
-          </Link>
-          <Link 
-            to="/disclaimer" 
+          </a>
+          <a 
+            href="/disclaimer" 
+            target="_blank"
+            rel="noopener noreferrer"
             className="text-base font-semibold text-[#2A4467] dark:text-blue-400 hover:underline transition-colors"
             style={{ fontFamily: 'Quicksand' }}
           >
             Disclaimer
-          </Link>
+          </a>
         </div>
       </div>
     </footer>

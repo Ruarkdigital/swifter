@@ -12382,6 +12382,239 @@
         }
       }
     },
+    "/procurement/solicitations/{solicitationId}/addendums/{questionId}": {
+      "post": {
+        "summary": "Reply addendum to a question",
+        "description": "Create a new addendum for a question",
+        "tags": [
+          "Procurement-Solicitations"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "solicitationId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "The ID of the solicitation to add the addendum to"
+            }
+          },
+          {
+            "in": "path",
+            "name": "questionId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "The ID of the question to add the addendum to"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Addendum creation data.\n\nRequirements:\n- Title is required\n- Submission and question deadlines must be valid ISO 8601 datetime strings\n- Description is required\n- Files array must contain valid file objects\n- Status drafft | publish\n\nOptional:\n- Timezone is optional\n",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "description": "Title of the addendum",
+                    "example": "Addendum #1 - Updated Specifications",
+                    "minLength": 5,
+                    "maxLength": 200
+                  },
+                  "description": {
+                    "type": "string",
+                    "description": "Optional detailed description of the addendum",
+                    "example": "This addendum updates section 3.2 of the technical specifications",
+                    "maxLength": 2000
+                  },
+                  "submissionDeadline": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "New deadline for submission after addendum",
+                    "example": "2024-12-31T23:59:59Z"
+                  },
+                  "questionDeadline": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "Deadline for questions related to this addendum",
+                    "example": "2024-12-15T23:59:59Z"
+                  },
+                  "question": {
+                    "type": "string",
+                    "description": "Questions or clarification provided in this addendum",
+                    "example": "Clarification on minimum technical requirements",
+                    "minLength": 10
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "draft",
+                      "publish"
+                    ],
+                    "description": "Publication status of the addendum (defaults to draft if not provided)",
+                    "example": "publish"
+                  },
+                  "timezone": {
+                    "type": "string",
+                    "description": "Timezone of the addendum",
+                    "example": "America/Toronto"
+                  },
+                  "files": {
+                    "type": "array",
+                    "description": "Attached files for the addendum",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string",
+                          "description": "Original file name",
+                          "example": "technical_specs.pdf"
+                        },
+                        "url": {
+                          "type": "string",
+                          "format": "uri",
+                          "description": "URL to access the file",
+                          "example": "https://storage.example.com/files/specs.pdf"
+                        },
+                        "size": {
+                          "type": "string",
+                          "description": "File size in bytes",
+                          "example": "1024000"
+                        },
+                        "type": {
+                          "type": "string",
+                          "description": "MIME type of the file",
+                          "example": "application/pdf"
+                        }
+                      }
+                    },
+                    "minItems": 0,
+                    "maxItems": 10
+                  }
+                },
+                "required": [
+                  "title",
+                  "submissionDeadline",
+                  "questionDeadline",
+                  "question",
+                  "files"
+                ],
+                "example": {
+                  "title": "Addendum #1 - Updated Requirements",
+                  "description": "Updated technical requirements for Section 4.5",
+                  "submissionDeadline": "2024-12-31T23:59:59Z",
+                  "questionDeadline": "2024-12-15T23:59:59Z",
+                  "question": "questionId",
+                  "status": "publish",
+                  "files": [
+                    {
+                      "name": "updated_specs.pdf",
+                      "url": "https://storage.example.com/files/updated_specs.pdf",
+                      "size": "2048000",
+                      "type": "application/pdf"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Addendum created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Addendum created successfully"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "message": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated user",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Unauthorized user",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizeError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Solicitation not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Duplicate",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DuplicateError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/procurement/solicitations/{solicitationId}/addendums/{addendumId}": {
       "get": {
         "summary": "View addendum details",

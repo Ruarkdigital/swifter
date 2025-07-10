@@ -34,6 +34,7 @@ import { useToastHandler } from "@/hooks/useToaster";
 import { ConfirmAlert } from "@/components/layouts/ConfirmAlert";
 import EditSolicitationDialog from "./components/EditSolicitationDialog";
 import { truncate } from "lodash";
+import { putRequest } from "@/lib/axiosInstance";
 // import ExportReportSheet from "@/components/layouts/ExportReportSheet";
 
 // Safe date formatting utility
@@ -79,6 +80,7 @@ type SolicitationFile = {
 
 type SolicitationVendor = {
   _id: string;
+  id: string;
   email: string;
   name?: string;
   status: "invited" | "confirmed" | "declined";
@@ -87,6 +89,7 @@ type SolicitationVendor = {
 type Solicitation = {
   _id: string;
   name: string;
+  owner: boolean;
   typeId: SolicitationType;
   type?: SolicitationType;
   categoryIds: Category[];
@@ -260,6 +263,60 @@ const useDeleteSolicitation = () => {
   });
 };
 
+// Mutation for confirming public solicitation
+const useConfirmPublicSolicitation = () => {
+  const queryClient = useQueryClient();
+  const toast = useToastHandler();
+
+  return useMutation<ApiResponse<any>, ApiResponseError, string>({
+    mutationFn: (solicitationId: string) =>
+      putRequest({ url: `/vendor/solicitations/${solicitationId}/confirm` }),
+    onSuccess: (result) => {
+      toast.success(
+        "Solicitation Confirmed",
+        result.data.message || "Successfully confirmed interest in solicitation"
+      );
+      // Invalidate and refetch related queries
+      queryClient.invalidateQueries({ queryKey: ["vendor-solicitations"] });
+      queryClient.invalidateQueries({ queryKey: ["vendor-my-solicitations"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard-stats"] });
+    },
+    onError: (error) => {
+      toast.error(
+        "Confirmation Failed",
+        error.message || "Failed to confirm interest in solicitation"
+      );
+    },
+  });
+};
+
+// Mutation for declining public solicitation
+const useDeclinePublicSolicitation = () => {
+  const queryClient = useQueryClient();
+  const toast = useToastHandler();
+
+  return useMutation<ApiResponse<any>, ApiResponseError, string>({
+    mutationFn: (solicitationId: string) =>
+      putRequest({ url: `/vendor/solicitations/${solicitationId}/decline` }),
+    onSuccess: (result) => {
+      toast.success(
+        "Solicitation Declined",
+        result.data.message || "Successfully declined solicitation"
+      );
+      // Invalidate and refetch related queries
+      queryClient.invalidateQueries({ queryKey: ["vendor-solicitations"] });
+      queryClient.invalidateQueries({ queryKey: ["vendor-my-solicitations"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard-stats"] });
+    },
+    onError: (error) => {
+      toast.error(
+        "Decline Failed",
+        error.message || "Failed to decline solicitation"
+      );
+    },
+  });
+};
+
 // Status badge component
 const StatusBadge = ({
   status,
@@ -353,6 +410,11 @@ export const SolicitationManagementPage = () => {
   }>({});
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedSolicitationId, setSelectedSolicitationId] = useState<
+    string | null
+  >(null);
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [declineDialogOpen, setDeclineDialogOpen] = useState(false);
+  const [selectedSolicitationForAction, setSelectedSolicitationForAction] = useState<
     string | null
   >(null);
   // const [activeTab, setActiveTab] = useState<string>("all");
@@ -521,6 +583,8 @@ export const SolicitationManagementPage = () => {
 
   // Mutation hooks
   const deleteSolicitationMutation = useDeleteSolicitation();
+  const confirmPublicSolicitationMutation = useConfirmPublicSolicitation();
+  const declinePublicSolicitationMutation = useDeclinePublicSolicitation();
 
   // Get current data based on active tab
   const currentData = useMemo(() => {
@@ -555,6 +619,43 @@ export const SolicitationManagementPage = () => {
   const handleDeleteCancel = () => {
     setDeleteDialogOpen(false);
     setSelectedSolicitationId(null);
+  };
+
+  // Handler functions for confirmation and decline
+  const handleConfirmClick = (id: string) => {
+    setSelectedSolicitationForAction(id);
+    setConfirmDialogOpen(true);
+  };
+
+  const handleDeclineClick = (id: string) => {
+    setSelectedSolicitationForAction(id);
+    setDeclineDialogOpen(true);
+  };
+
+  const handleConfirmSolicitation = () => {
+    if (selectedSolicitationForAction) {
+      confirmPublicSolicitationMutation.mutate(selectedSolicitationForAction);
+      setConfirmDialogOpen(false);
+      setSelectedSolicitationForAction(null);
+    }
+  };
+
+  const handleDeclineSolicitation = () => {
+    if (selectedSolicitationForAction) {
+      declinePublicSolicitationMutation.mutate(selectedSolicitationForAction);
+      setDeclineDialogOpen(false);
+      setSelectedSolicitationForAction(null);
+    }
+  };
+
+  const handleConfirmCancel = () => {
+    setConfirmDialogOpen(false);
+    setSelectedSolicitationForAction(null);
+  };
+
+  const handleDeclineCancel = () => {
+    setDeclineDialogOpen(false);
+    setSelectedSolicitationForAction(null);
   };
 
   // Get current loading state
@@ -661,7 +762,8 @@ export const SolicitationManagementPage = () => {
         {
           id: "actions",
           header: "Actions",
-          cell: ({ row }) => (
+          cell: ({ row }) => {
+            return (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="h-8 w-8 p-0">
@@ -677,17 +779,26 @@ export const SolicitationManagementPage = () => {
                 >
                   View Details
                 </DropdownMenuItem>
-                {/* <DropdownMenuItem
-              className="py-3 px-4"
-              onClick={() =>
-                navigate(`/dashboard/proposal/${row.original._id}`)
-              }
-            >
-              Complete Proposal
-            </DropdownMenuItem> */}
+                {/* Show confirmation options for public solicitations */}
+                {row.original.visibility === "public" && !row.original.owner && (
+                  <>
+                    <DropdownMenuItem
+                      className="py-3 px-4 text-green-600 hover:text-green-700 hover:bg-green-50 dark:hover:bg-green-900/20"
+                      onClick={() => handleConfirmClick(row.original._id)}
+                    >
+                      Confirm Interest
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className="py-3 px-4 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+                      onClick={() => handleDeclineClick(row.original._id)}
+                    >
+                      Decline
+                    </DropdownMenuItem>
+                  </>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
-          ),
+          )},
         },
       ]
     : isProcurement
@@ -931,7 +1042,7 @@ export const SolicitationManagementPage = () => {
       ];
 
   return (
-    <div className="p-6 min-h-full">
+    <div className="p-6 min-h-full pb-10">
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
@@ -1318,6 +1429,35 @@ export const SolicitationManagementPage = () => {
         onSecondaryAction={handleDeleteCancel}
         showSecondaryButton={true}
       />
+
+      {/* Confirm Interest Dialog */}
+      <ConfirmAlert
+        open={confirmDialogOpen}
+        onClose={setConfirmDialogOpen}
+        type="success"
+        title="Confirm Interest"
+        text="Are you sure you want to confirm your interest in this public solicitation? This will notify the procurement team of your intent to participate."
+        primaryButtonText="Confirm Interest"
+        secondaryButtonText="Cancel"
+        onPrimaryAction={handleConfirmSolicitation}
+        onSecondaryAction={handleConfirmCancel}
+        showSecondaryButton={true}
+      />
+
+      {/* Decline Interest Dialog */}
+      <ConfirmAlert
+        open={declineDialogOpen}
+        onClose={setDeclineDialogOpen}
+        type="warning"
+        title="Decline Interest"
+        text="Are you sure you want to decline this public solicitation? You can change your decision later if needed."
+        primaryButtonText="Decline"
+        secondaryButtonText="Cancel"
+        onPrimaryAction={handleDeclineSolicitation}
+        onSecondaryAction={handleDeclineCancel}
+        showSecondaryButton={true}
+      />
+      <div className="h-10" />
     </div>
   );
 };

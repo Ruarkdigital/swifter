@@ -328,7 +328,7 @@ const SubmitProposalPage: React.FC<SubmitProposalPageProps> = () => {
 
         return (
           <div className="flex flex-col gap-2">
-            {doc.type === "pricing" ? (
+            {doc.type?.toLowerCase?.() === "pricing" ? (
               <>
                 <Button
                   variant="outline"
@@ -518,6 +518,7 @@ const SubmitProposalPage: React.FC<SubmitProposalPageProps> = () => {
           acceptedTypes={[".pdf", ".doc", ".docx", ".xls", ".xlsx"]}
         />
       </div>
+      <div className="h-10" />
     </div>
   );
 };

@@ -14,7 +14,15 @@ import {
   isElementSlot,
   isInputSlot,
   isNestedSlot,
+  isReactNative,
+  // isWeb,
 } from "../utils";
+import {
+  getComponentType,
+  getEventHandlerName,
+  // mergePlatformProps,
+  // REACT_NATIVE_COMPONENTS,
+} from "../reactNative";
 import { Forger } from "../Forger";
 import { DevTool } from "@hookform/devtools";
 
@@ -26,7 +34,14 @@ export const Forge = <TFieldValues extends FieldValues = FieldValues>({
   ref,
   isNative,
   debug,
+  platform = 'auto',
 }: ForgeProps<TFieldValues>) => {
+  // Determine the actual platform to use
+  const actualPlatform = platform === 'auto' 
+    ? (isReactNative ? 'react-native' : 'web')
+    : platform;
+  
+  const isRNMode = actualPlatform === 'react-native' || (isNative && isReactNative);
   // Recursive function to traverse and process the entire nested tree of children
   const processChildrenRecursively = (children: any, depth = 0): any => {
     // Prevent infinite recursion with a reasonable depth limit
@@ -47,14 +62,25 @@ export const Forge = <TFieldValues extends FieldValues = FieldValues>({
         } as any);
       }
 
-      // Handle input elements in native mode - register with form control
-      if (isInputSlot(child) && isNative) {
+      // Handle input elements in native/React Native mode - register with form control
+      if (isInputSlot(child) && (isNative || isRNMode)) {
+        const childProps = (child as any).props as any;
+        const componentType = getComponentType(child);
+        const eventHandlerName = getEventHandlerName(componentType);
+        const registrationProps = control.register(childProps.name);
+        
+        // Merge platform-specific props
+        const platformProps = isRNMode ? {
+          [eventHandlerName]: registrationProps.onChange,
+          onBlur: registrationProps.onBlur,
+          ref: registrationProps.ref,
+          name: registrationProps.name,
+        } : registrationProps;
+        
         return createElement((child as any).type, {
-          ...{
-            ...((child as any).props as any),
-            ...control.register(((child as any).props as any).name),
-            key: ((child as any).props as any).name,
-          },
+          ...childProps,
+          ...platformProps,
+          key: childProps.name,
         });
       }
 

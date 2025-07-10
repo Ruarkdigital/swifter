@@ -1,7 +1,8 @@
-import React from "react";
+import React, { useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Question } from "./QuestionsTab";
+import { useUserRole } from "@/hooks/useUserRole";
 
 type User = Question["user"];
 
@@ -58,9 +59,11 @@ const MessageComponent: React.FC<MessageComponentProps> = ({
   onReply,
   showReplyButtons = false,
   depth = 0,
-  sendType
+  sendType,
 }) => {
+  const [isClicked, setIsClicked] = useState<string | null>(null);
   const { date, time } = formatDateTime(createdAt);
+  const { isVendor } = useUserRole();
   const maxDepth = 3; // Limit nesting depth
 
   return (
@@ -72,7 +75,12 @@ const MessageComponent: React.FC<MessageComponentProps> = ({
       }`}
     >
       {/* Message Header */}
-      <MessageHeader user={user} isQuestion={isQuestion} date={date} time={time} />
+      <MessageHeader
+        user={user}
+        isQuestion={isQuestion}
+        date={date}
+        time={time}
+      />
 
       {/* Message Content */}
       <div
@@ -83,15 +91,30 @@ const MessageComponent: React.FC<MessageComponentProps> = ({
       {/* Reply Buttons */}
       {showReplyButtons && onReply && (
         <div className="flex justify-end gap-2 mb-4">
-          <Button
-            variant={sendType !== "addendum" ? "outline" : "default"}
+         {!isVendor && <Button
+            variant={
+              sendType === "addendum" && isClicked === id
+                ? "default"
+                : "outline"
+            }
             size="sm"
-
-            onClick={() => onReply(id, "addendum")}
+            onClick={() => {
+              setIsClicked(id);
+              onReply(id, "addendum");
+            }}
           >
             Respond With Addendum
-          </Button>
-          <Button size="sm" variant={sendType !== "reply" ? "outline" : "default"} onClick={() => onReply(id, "reply")}>
+          </Button>}
+          <Button
+            size="sm"
+            variant={
+              sendType === "reply" && isClicked === id ? "default" : "outline"
+            }
+            onClick={() => {
+              setIsClicked(id);
+              onReply(id, "reply")
+            }}
+          >
             Reply
           </Button>
         </div>
@@ -122,7 +145,17 @@ const MessageComponent: React.FC<MessageComponentProps> = ({
 
 export default MessageComponent;
 
-const MessageHeader = ({ user, isQuestion, date, time }: { user: User; isQuestion: boolean; date: string; time: string }) => {
+const MessageHeader = ({
+  user,
+  isQuestion,
+  date,
+  time,
+}: {
+  user: User;
+  isQuestion: boolean;
+  date: string;
+  time: string;
+}) => {
   return (
     <div className="flex items-center gap-2 mb-3">
       <Avatar className="h-14 w-14">

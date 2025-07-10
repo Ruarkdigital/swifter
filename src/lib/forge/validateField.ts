@@ -24,6 +24,12 @@ import {
   isNullOrUndefined,
   isRadioInput,
   isRegex,
+  isWeb,
+  isReactNative,
+  // isTextInput,
+  // isPicker,
+  // isSwitch,
+  // isSlider,
 } from "./utils";
 import { isBoolean, isFunction, isObject, isString, isUndefined } from "lodash";
 
@@ -37,19 +43,35 @@ const defaultReturn: RadioFieldResult = {
   value: null,
 };
 
-export const getRadioValue = (options?: HTMLInputElement[]): RadioFieldResult =>
-  Array.isArray(options)
-    ? options.reduce(
-        (previous, option): RadioFieldResult =>
-          option && option.checked && !option.disabled
-            ? {
-                isValid: true,
-                value: option.value,
-              }
-            : previous,
-        defaultReturn
-      )
-    : defaultReturn;
+export const getRadioValue = (options?: any[]): RadioFieldResult => {
+  if (!Array.isArray(options)) return defaultReturn;
+  
+  if (isReactNative) {
+    // React Native radio button handling
+    return options.reduce(
+      (previous, option): RadioFieldResult =>
+        option && option.selected && !option.disabled
+          ? {
+              isValid: true,
+              value: option.value,
+            }
+          : previous,
+      defaultReturn
+    );
+  }
+  
+  // Web radio button handling
+  return options.reduce(
+    (previous, option): RadioFieldResult =>
+      option && option.checked && !option.disabled
+        ? {
+            isValid: true,
+            value: option.value,
+          }
+        : previous,
+    defaultReturn
+  );
+};
 
 type CheckboxFieldResult = {
   isValid: boolean;
@@ -64,27 +86,42 @@ const defaultResult: CheckboxFieldResult = {
 const validResult = { value: true, isValid: true };
 
 const getCheckboxValue = (
-  options?: HTMLInputElement[]
+  options?: any[]
 ): CheckboxFieldResult => {
-  if (Array.isArray(options)) {
+  if (!Array.isArray(options)) return defaultResult;
+  
+  if (isReactNative) {
+    // React Native checkbox handling
     if (options.length > 1) {
       const values = options
-        .filter((option) => option && option.checked && !option.disabled)
+        .filter((option) => option && option.selected && !option.disabled)
         .map((option) => option.value);
       return { value: values, isValid: !!values.length };
     }
-
-    return options[0].checked && !options[0].disabled
-      ? // @ts-expect-error expected to work in the browser
-        options[0].attributes && !isUndefined(options[0].attributes.value)
-        ? isUndefined(options[0].value) || options[0].value === ""
-          ? validResult
-          : { value: options[0].value, isValid: true }
-        : validResult
+    
+    return options[0]?.selected && !options[0]?.disabled
+      ? isUndefined(options[0].value) || options[0].value === ""
+        ? validResult
+        : { value: options[0].value, isValid: true }
       : defaultResult;
   }
+  
+  // Web checkbox handling
+  if (options.length > 1) {
+    const values = options
+      .filter((option) => option && option.checked && !option.disabled)
+      .map((option) => option.value);
+    return { value: values, isValid: !!values.length };
+  }
 
-  return defaultResult;
+  return options[0]?.checked && !options[0]?.disabled
+    ?
+      options[0].attributes && !isUndefined(options[0].attributes.value)
+      ? isUndefined(options[0].value) || options[0].value === ""
+        ? validResult
+        : { value: options[0].value, isValid: true }
+      : validResult
+    : defaultResult;
 };
 
 export default async <T extends FieldValues>(
@@ -114,11 +151,18 @@ export default async <T extends FieldValues>(
   if (!mount || disabled || disabledFieldNames?.has(name)) {
     return {};
   }
-  const inputRef: HTMLInputElement = refs ? refs[0] : (ref as HTMLInputElement);
+  const inputRef: any = refs ? refs[0] : ref;
   const setCustomValidity = (message?: string | boolean) => {
-    if (shouldUseNativeValidation && inputRef.reportValidity) {
-      inputRef.setCustomValidity(isBoolean(message) ? "" : message || "");
-      inputRef.reportValidity();
+    if (shouldUseNativeValidation) {
+      if (isWeb && inputRef?.reportValidity) {
+        inputRef.setCustomValidity(isBoolean(message) ? "" : message || "");
+        inputRef.reportValidity();
+      } else if (isReactNative && inputRef?.setNativeProps) {
+        // React Native validation - set error state on component
+        inputRef.setNativeProps({
+          error: isBoolean(message) ? undefined : message || undefined
+        });
+      }
     }
   };
   const error: InternalFieldErrors = {};
@@ -188,9 +232,9 @@ export default async <T extends FieldValues>(
     const minOutput = getValueAndMessage(min);
 
     if (!isNullOrUndefined(inputValue) && !isNaN(inputValue as number)) {
-      const valueNumber =
-        (ref as HTMLInputElement).valueAsNumber ||
-        (inputValue ? +inputValue : inputValue);
+      const valueNumber = isWeb && (ref as any)?.valueAsNumber
+        ? (ref as any).valueAsNumber
+        : (inputValue ? +inputValue : inputValue);
       if (!isNullOrUndefined(maxOutput.value)) {
         exceedMax = valueNumber > maxOutput.value;
       }
@@ -198,12 +242,13 @@ export default async <T extends FieldValues>(
         exceedMin = valueNumber < minOutput.value;
       }
     } else {
-      const valueDate =
-        (ref as HTMLInputElement).valueAsDate || new Date(inputValue as string);
+      const valueDate = isWeb && (ref as any)?.valueAsDate
+        ? (ref as any).valueAsDate
+        : new Date(inputValue as string);
       const convertTimeToDate = (time: unknown) =>
         new Date(new Date().toDateString() + " " + time);
-      const isTime = ref.type == "time";
-      const isWeek = ref.type == "week";
+      const isTime = isWeb && (ref as any)?.type === "time";
+      const isWeek = isWeb && (ref as any)?.type === "week";
 
       if (isString(maxOutput.value) && inputValue) {
         exceedMax = isTime
