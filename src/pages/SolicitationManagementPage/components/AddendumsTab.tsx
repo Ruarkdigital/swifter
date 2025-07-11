@@ -297,7 +297,7 @@ const AddendumsTab: React.FC<AddendumsTabProps> = ({ solicitationId }) => {
                       Create Addendum
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="max-w-2xl">
+                  <DialogContent className="max-w-2xl sm:max-h-[min(640px,90vh)] overflow-auto">
                     <CreateAddendumDialog
                       solicitationId={solicitationId}
                       onClose={() => setIsCreateDialogOpen(false)}
