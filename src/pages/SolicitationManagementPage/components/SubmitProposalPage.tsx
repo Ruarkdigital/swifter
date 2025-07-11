@@ -143,9 +143,6 @@ const SubmitProposalPage: React.FC<SubmitProposalPageProps> = () => {
     },
   });
 
-  // const watch = useWatch({ control: forge.control })
-  console.log({ err: forge.formState.errors });
-
   // Fetch solicitation details from API
   const { data: solicitationData, isLoading } = useQuery<
     ApiResponse<{
@@ -250,7 +247,6 @@ const SubmitProposalPage: React.FC<SubmitProposalPageProps> = () => {
   };
 
   const handleSubmit = async (data: FormValues) => {
-    console.log("Proposal data:", data);
     try {
       const submissionData = {
         ...data,
@@ -431,7 +427,7 @@ const SubmitProposalPage: React.FC<SubmitProposalPageProps> = () => {
 
           <Forge
             control={forge.control}
-            debug
+            // debug
             ref={formRef}
             onSubmit={handleSubmit}
           >

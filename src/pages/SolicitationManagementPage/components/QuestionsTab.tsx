@@ -167,12 +167,12 @@ const QuestionsTab: React.FC = () => {
 
   const handleReplyClick = (questionId: string, type: "reply" | "addendum" | null) => {
     const question = questions.find((q: Question) => q._id === questionId);
-    if (question) {
-      setReplyToQuestion(question);
-      setSendType(type);
-      setIsCreateAddendumDialogOpen(true)
-      setShowCreateQuestion(false);
-    }
+    if (!question) return;
+
+    setReplyToQuestion(question);
+    setSendType(type);
+    if (type === "addendum") setIsCreateAddendumDialogOpen(true)
+    setShowCreateQuestion(false);
   };
 
   const handleCancelCreateQuestion = () => {

@@ -40,6 +40,7 @@ const CompleteProposalDialog: React.FC<CompleteProposalDialogProps> = ({
     control,
     name: "priceAction",
     inputProps: {},
+    shouldUnregister: true,
   });
 
   const [totalAmount, setTotalAmount] = useState("0.00");
@@ -107,7 +108,7 @@ const CompleteProposalDialog: React.FC<CompleteProposalDialogProps> = ({
   const handleComplete = () => {
     setValue("document", [
       ...(getValue().document ?? []),
-      { requiredDocumentId: id ?? '', files: [] },
+      { requiredDocumentId: id ?? "", files: [] },
     ]);
     onOpenChange(false);
   };
@@ -125,7 +126,32 @@ const CompleteProposalDialog: React.FC<CompleteProposalDialogProps> = ({
   };
 
   const removeItem = (index: number) => {
+    const currentItems = getValue().priceAction || [];
+    // Remove the item using the remove function from useFieldArray
     remove(index);
+    // check if there's subItems then delete also
+    if (currentItems[index]?.subItems) {
+      currentItems[index].subItems.forEach((_subItem: any, subItemIndex: number) => {
+        control.unregister(`priceAction.${index}.subItems.${subItemIndex}.component`);
+        control.unregister(`priceAction.${index}.subItems.${subItemIndex}.description`);
+        control.unregister(`priceAction.${index}.subItems.${subItemIndex}.quantity`);
+        control.unregister(`priceAction.${index}.subItems.${subItemIndex}.unitOfmeasurement`);
+        control.unregister(`priceAction.${index}.subItems.${subItemIndex}.unitPrice`);
+        control.unregister(`priceAction.${index}.subItems.${subItemIndex}.subtotal`);
+      });
+    }
+    control.unregister(`priceAction.${index}.component`);
+    control.unregister(`priceAction.${index}.description`);
+    control.unregister(`priceAction.${index}.quantity`);
+    control.unregister(`priceAction.${index}.unitOfmeasurement`);
+    control.unregister(`priceAction.${index}.unitPrice`);
+    control.unregister(`priceAction.${index}.subtotal`);
+
+    // Recalculate total after removal
+    const currentFormValues = getValue();
+    const total = calculateTotal(currentFormValues);
+    setTotalAmount(total.toFixed(2));
+    setValue("total", total);
   };
 
   const addSubItem = (itemIndex: number) => {
@@ -150,11 +176,44 @@ const CompleteProposalDialog: React.FC<CompleteProposalDialogProps> = ({
   };
 
   const removeSubItem = (itemIndex: number, subItemIndex: number) => {
-    const currentItems = control._formState.defaultValues?.priceAction || [];
+    const currentItems = getValue().priceAction || [];
     const updatedItems = [...currentItems];
-    if (updatedItems[itemIndex]?.subItems) {
-      updatedItems[itemIndex].subItems!.splice(subItemIndex, 1);
-      control._formState.defaultValues = { priceAction: updatedItems };
+
+    if (
+      updatedItems[itemIndex]?.subItems &&
+      Array.isArray(updatedItems[itemIndex].subItems) &&
+      updatedItems[itemIndex].subItems.length > subItemIndex
+    ) {
+      // Remove the sub-item from the array
+      updatedItems[itemIndex].subItems.splice(subItemIndex, 1);
+
+      // Defensive: Ensure subItems is always an array
+      updatedItems[itemIndex].subItems = updatedItems[itemIndex].subItems || [];
+
+      // Recalculate the main item's subtotal
+      const mainSubtotal =
+        (updatedItems[itemIndex].quantity || 0) *
+        (updatedItems[itemIndex].unitPrice || 0);
+      const subItemsTotal = updatedItems[itemIndex].subItems.reduce(
+        (sum: number, subItem: any) => {
+          return sum + ((subItem?.quantity || 0) * (subItem?.unitPrice || 0));
+        },
+        0
+      );
+      updatedItems[itemIndex].subtotal = mainSubtotal + subItemsTotal;
+
+      setValue("priceAction", updatedItems);
+      control.unregister(`priceAction.${itemIndex}.subItems.${subItemIndex}.component`);
+      control.unregister(`priceAction.${itemIndex}.subItems.${subItemIndex}.description`);
+      control.unregister(`priceAction.${itemIndex}.subItems.${subItemIndex}.quantity`);
+      control.unregister(`priceAction.${itemIndex}.subItems.${subItemIndex}.unitOfmeasurement`);
+      control.unregister(`priceAction.${itemIndex}.subItems.${subItemIndex}.unitPrice`);
+      control.unregister(`priceAction.${itemIndex}.subItems.${subItemIndex}.subtotal`);
+
+      // Recalculate total
+      const total = calculateTotal({ priceAction: updatedItems });
+      setTotalAmount(total.toFixed(2));
+      setValue("total", total);
     }
   };
 
@@ -260,10 +319,6 @@ const CompleteProposalDialog: React.FC<CompleteProposalDialogProps> = ({
                                 <Forger
                                   name={`priceAction.${index}.subItems.${subIndex}.subtotal`}
                                   component={TextInput}
-                                  // value={`$${(
-                                  //   (subItem.quantity || 0) *
-                                  //   (subItem.unitPrice || 0)
-                                  // ).toFixed(2)}`}
                                   placeholder="Subtotal"
                                   className="h-8"
                                   disabled

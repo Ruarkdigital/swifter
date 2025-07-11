@@ -88,7 +88,7 @@ const ProposalItemRow: React.FC<ProposalItemRowProps> = ({
         >
           <Plus className="h-3 w-3" />
         </Button>
-        <Button
+       {index !== 0 && <Button
           type="button"
           variant="outline"
           size="sm"
@@ -96,7 +96,7 @@ const ProposalItemRow: React.FC<ProposalItemRowProps> = ({
           className="h-8 px-2 text-red-600 hover:text-red-700"
         >
           <Trash2 className="h-3 w-3" />
-        </Button>
+        </Button>}
       </div>
     </div>
   );

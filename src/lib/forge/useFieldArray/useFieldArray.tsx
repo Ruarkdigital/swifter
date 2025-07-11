@@ -99,6 +99,23 @@ export const useFieldArray = <
     subject: control._subjects.array,
   });
 
+  React.useEffect(() => {
+    !get(control._formValues, name) && control._setFieldArray(name);
+
+    return () => {
+      const updateMounted = (name: InternalFieldName, value: boolean) => {
+        const field: Field = get(control._fields, name);
+        if (field && field._f) {
+          field._f.mount = value;
+        }
+      };
+
+      control._options.shouldUnregister || props.shouldUnregister
+        ? control.unregister(name as FieldPath<TFieldValues>)
+        : updateMounted(name, false);
+    };
+  }, [name, props.shouldUnregister]);
+
   const updateValues = React.useCallback(
     <
       T extends Partial<
@@ -173,11 +190,11 @@ export const useFieldArray = <
     const tempValue = updatedFieldArrayValues[indexA];
     updatedFieldArrayValues[indexA] = updatedFieldArrayValues[indexB];
     updatedFieldArrayValues[indexB] = tempValue;
-    
+
     const tempId = ids.current[indexA];
     ids.current[indexA] = ids.current[indexB];
     ids.current[indexB] = tempId;
-    
+
     updateValues(updatedFieldArrayValues);
     setFields(updatedFieldArrayValues);
   };
