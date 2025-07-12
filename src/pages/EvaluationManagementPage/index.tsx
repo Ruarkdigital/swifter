@@ -405,15 +405,15 @@ export const EvaluationManagementPage = () => {
         </div>
       ),
     },
-    {
-      accessorKey: "progress",
-      header: "Progress",
-      cell: ({ row }) => (
-        <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-          {row.original.progress}%
-        </span>
-      ),
-    },
+    // {
+    //   accessorKey: "progress",
+    //   header: "Progress",
+    //   cell: ({ row }) => (
+    //     <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+    //       {row.original.progress}%
+    //     </span>
+    //   ),
+    // },
     {
       id: "actions",
       header: "Actions",
