@@ -1,4 +1,4 @@
-import React, { CSSProperties, ComponentType, RefObject } from "react";
+import React, { CSSProperties, ComponentType } from "react";
 import classNames from "clsx";
 import { CgSpinner } from "react-icons/cg";
 
@@ -10,9 +10,8 @@ type SpinnerProps = {
   size?: number;
   style?: CSSProperties;
 };
-type SpinnerRef = RefObject<unknown>;
 
-const Spinner = React.forwardRef<SpinnerRef, SpinnerProps>((props) => {
+const Spinner = React.forwardRef<HTMLDivElement, SpinnerProps>((props, ref) => {
   const {
     className,
     color,
@@ -38,7 +37,13 @@ const Spinner = React.forwardRef<SpinnerRef, SpinnerProps>((props) => {
     className
   );
 
-  return <Component style={spinnerStyle} className={spinnerClass} {...rest} />;
+  return (
+    <div ref={ref} style={spinnerStyle} className={spinnerClass}>
+      <Component {...rest} />
+    </div>
+  );
 });
+
+Spinner.displayName = "Spinner";
 
 export default Spinner;

@@ -67,8 +67,6 @@ const useEvaluationGroupVendors = (evaluationId: string, evaluationGroupId: stri
 const AssignedEvaluationDetailPage: React.FC = () => {
   const { id, groupId } = useParams<{ id: string; groupId: string }>();
   const navigate = useNavigate();
-
-  console.log({ id, groupId })
   
   // API call to get vendors in evaluation group
   const { data: evaluationGroupData, isLoading, error } = useEvaluationGroupVendors(

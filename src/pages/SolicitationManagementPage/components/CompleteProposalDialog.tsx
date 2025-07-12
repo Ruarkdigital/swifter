@@ -95,8 +95,6 @@ const CompleteProposalDialog: React.FC<CompleteProposalDialogProps> = ({
         // });
         setValue("priceAction", updatedItems);
 
-        console.log({ updatedItems });
-
         // Calculate and set total
         const total = calculateTotal({ priceAction: updatedItems });
         setTotalAmount(total.toFixed(2));

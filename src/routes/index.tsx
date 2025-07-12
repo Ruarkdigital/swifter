@@ -30,6 +30,7 @@ import PortalSettingsPage from "@/pages/PortalSettingsPage";
 import OnboardingPage from "@/pages/OnboardingPage";
 import VendorOnboardingPage from "@/pages/OnboardingPage/VendorOnboardingPage";
 import SubmitProposalPage from "@/pages/SolicitationManagementPage/components/SubmitProposalPage";
+import EditProposalPage from "@/pages/SolicitationManagementPage/components/EditProposalPage";
 import ProposalDetailsPage from "@/pages/SolicitationManagementPage/ProposalDetailsPage";
 import PrivacyPolicyPage from "@/pages/PrivacyPolicyPage";
 import TermsConditionsPage from "@/pages/TermsConditionsPage";
@@ -151,6 +152,14 @@ export const routes = [
         element: (
           <ProtectedRoute>
             <ProposalDetailsPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "/dashboard/solicitations/:id/edit-proposal/:proposalId",
+        element: (
+          <ProtectedRoute>
+            <EditProposalPage />
           </ProtectedRoute>
         ),
       },

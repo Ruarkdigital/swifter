@@ -867,7 +867,7 @@ export const SolicitationDetailPage = () => {
           )}
 
           {solicitation?.status?.toLowerCase() !== "awarded" && viewProposal && isOwner && (
-            <Link to={`/dashboard/solicitations/${id}/submit-proposal`}>
+            <Link to={`/dashboard/solicitations/${id}/edit-proposal/${viewProposal._id}`}>
               <Button className="text-white px-6 py-2">Edit Proposal</Button>
             </Link>
           )}

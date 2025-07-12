@@ -11,7 +11,11 @@
       "desription": "Local server testing"
     },
     {
-      "url": "https://api.swiftpro.tech/api/v1/dev",
+      "url": "https://dev.swiftpro.tech/api/v1/dev",
+      "description": "Development server for testing and integration"
+    },
+    {
+      "url": "http://16.52.78.142/api/v1/dev",
       "description": "Development server for testing and integration"
     }
   ],
