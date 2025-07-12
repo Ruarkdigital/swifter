@@ -52,7 +52,15 @@ type EvaluatorCriteria = {
     pass_fail: string;
     weight: number;
   };
-  scoring: any;
+  scoring: {
+    _id: string;
+    progress: number;
+    scoring: {
+      pass_fail: "pass" | "fail";
+      weight: number;
+    };
+    comment: string;
+  };
 };
 
 type EvaluatorEvaluationDetail = {
@@ -116,6 +124,7 @@ const useSubmittedDocuments = (evaluationId: string, vendorId: string) => {
 type EvaluationCriteriaResponse = {
   criteria: EvaluatorCriteria[];
   info: EvaluatorEvaluationDetail;
+  submissionStatus: "Submitted" | "In Progress";
 };
 
 const useEvaluationCriteria = (evaluationId: string) => {
@@ -242,7 +251,7 @@ const SubmittedDocumentPage: React.FC = () => {
   >({
     mutationFn: async () => {
       const response = await postRequest({
-        url: `/evaluator/${id}/submit-evaluation`,
+        url: `/evaluator/${id}/submit-evaluation/vendor/${vendorId}`,
         payload: {},
       });
       return response;
@@ -253,7 +262,7 @@ const SubmittedDocumentPage: React.FC = () => {
         response.data?.message || "Evaluation submitted successfully"
       );
       setShowSubmitDialog(false);
-      navigate(`/dashboard/evaluation/assigned/${groupId}`);
+      // navigate(`/dashboard/evaluation/assigned/${groupId}`);
     },
     onError: (error) => {
       toast.error("Error", error.message || "Failed to submit evaluation");
@@ -301,10 +310,26 @@ const SubmittedDocumentPage: React.FC = () => {
 
     setActiveCriteriaId(criteriaId);
 
-    // Load saved form state for this criteria or use defaults
+    // Find the criteria item to get existing scoring data
+    const criteriaItem = criteria.find((item) => item._id === criteriaId);
+    const existingScoring = criteriaItem?.scoring;
+
+    // Load saved form state for this criteria or use existing scoring data or defaults
     const savedState = criteriaFormStates[criteriaId];
     if (savedState) {
       reset(savedState);
+    } else if (existingScoring) {
+      // Pre-populate with existing scoring data from API
+      const scoreValue =
+        criteriaType === "pass_fail"
+          ? existingScoring.scoring.pass_fail
+          : existingScoring.scoring.weight?.toString() || "";
+
+      reset({
+        comment: existingScoring.comment || "",
+        score: scoreValue,
+        type: criteriaType as "pass_fail" | "weight",
+      });
     } else {
       reset({
         comment: "",
@@ -486,9 +511,19 @@ const SubmittedDocumentPage: React.FC = () => {
                         }
                       }}
                     >
-                      <span className="font-medium text-gray-900">
-                        {criteriaItem.title}
-                      </span>
+                      <div className="flex items-center justify-between w-full">
+                        <span className="font-medium text-gray-900">
+                          {criteriaItem.title}
+                        </span>
+                        {criteriaItem.scoring && (
+                          <Badge
+                            variant="secondary"
+                            className="bg-green-100 text-green-800 border-green-200 ml-2"
+                          >
+                            Scored
+                          </Badge>
+                        )}
+                      </div>
                     </AccordionTrigger>
                     <AccordionContent className="px-0 pt-0">
                       <div className="border-t border-gray-200">
@@ -614,6 +649,28 @@ const SubmittedDocumentPage: React.FC = () => {
                                 </span>
                               </div>
                             )}
+
+                            {/* Display current score if exists */}
+                            {criteriaItem.scoring && (
+                              <div className="mt-3 p-2 bg-blue-50 rounded-md">
+                                <h5 className="text-xs font-medium text-blue-700 mb-1">
+                                  Current Score
+                                </h5>
+                                <p className="text-sm text-blue-600">
+                                  {criteriaItem.criteria.pass_fail
+                                    ? criteriaItem.scoring.scoring.pass_fail
+                                    : criteriaItem.scoring.scoring.weight}
+                                </p>
+                                {criteriaItem.scoring.comment && (
+                                  <p
+                                    className="text-xs text-blue-500 mt-1 truncate"
+                                    title={criteriaItem.scoring.comment}
+                                  >
+                                    "{criteriaItem.scoring.comment}"
+                                  </p>
+                                )}
+                              </div>
+                            )}
                           </div>
                         </div>
 
@@ -645,27 +702,29 @@ const SubmittedDocumentPage: React.FC = () => {
                               />
                             </div>
 
-                            <div className="p-4 flex justify-end gap-2 border-t border-gray-200">
-                              <Button
-                                variant="outline"
-                                className="px-4"
-                                onClick={() => {
-                                  handleAccordionClose();
-                                  reset();
-                                }}
-                              >
-                                Cancel
-                              </Button>
-                              <Button
-                                className="text-white px-4"
-                                onClick={handleSubmit(onSubmitScore)}
-                                disabled={submitScoreMutation.isPending}
-                              >
-                                {submitScoreMutation.isPending
-                                  ? "Saving..."
-                                  : "Save Score"}
-                              </Button>
-                            </div>
+                            {!criteriaItem.scoring?._id && (
+                              <div className="p-4 flex justify-end gap-2 border-t border-gray-200">
+                                <Button
+                                  variant="outline"
+                                  className="px-4"
+                                  onClick={() => {
+                                    handleAccordionClose();
+                                    reset();
+                                  }}
+                                >
+                                  Cancel
+                                </Button>
+                                <Button
+                                  className="text-white px-4"
+                                  onClick={handleSubmit(onSubmitScore)}
+                                  disabled={submitScoreMutation.isPending}
+                                >
+                                  {submitScoreMutation.isPending
+                                    ? "Saving..."
+                                    : "Save Score"}
+                                </Button>
+                              </div>
+                            )}
                           </>
                         )}
                       </div>
@@ -681,34 +740,36 @@ const SubmittedDocumentPage: React.FC = () => {
               )}
             </Accordion>
 
-            <div className="mt-8 flex justify-end gap-2">
-              <Button variant="outline" className="px-4" onClick={handleBack}>
-                Back to Evaluation
-              </Button>
-              <Button variant="outline" className="px-4" onClick={handleBack}>
+            {criteriaData?.data.data.submissionStatus === "In Progress" && (
+              <div className="mt-8 flex justify-end gap-2">
+                <Button variant="outline" className="px-4" onClick={handleBack}>
+                  Back to Evaluation
+                </Button>
+                {/* <Button variant="outline" className="px-4" onClick={handleBack}>
                 Reset All
-              </Button>
-              <Button
-                className="text-white px-4"
-                onClick={() => setShowSubmitDialog(true)}
-              >
-                Submit Evaluation
-              </Button>
+              </Button> */}
+                <Button
+                  className="text-white px-4"
+                  onClick={() => setShowSubmitDialog(true)}
+                >
+                  Submit Evaluation
+                </Button>
 
-              <ConfirmAlert
-                open={showSubmitDialog}
-                onClose={(open) => setShowSubmitDialog(open)}
-                title="Submit Evaluation"
-                text="Are you sure you want to submit this evaluation? This action cannot be undone."
-                type="info"
-                primaryButtonText="Submit"
-                secondaryButtonText="Cancel"
-                onPrimaryAction={() => {
-                  submitEvaluationMutation.mutate();
-                }}
-                onSecondaryAction={() => setShowSubmitDialog(false)}
-              />
-            </div>
+                <ConfirmAlert
+                  open={showSubmitDialog}
+                  onClose={(open) => setShowSubmitDialog(open)}
+                  title="Submit Evaluation"
+                  text="Are you sure you want to submit this evaluation? This action cannot be undone."
+                  type="info"
+                  primaryButtonText="Submit"
+                  secondaryButtonText="Cancel"
+                  onPrimaryAction={() => {
+                    submitEvaluationMutation.mutate();
+                  }}
+                  onSecondaryAction={() => setShowSubmitDialog(false)}
+                />
+              </div>
+            )}
           </div>
         </TabsContent>
       </Tabs>
