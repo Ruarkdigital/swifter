@@ -35,7 +35,7 @@ type VendorDocument = {
   type: string;
   url: string;
   size: string;
-  uploadedAt: string
+  uploadedAt: string;
 };
 
 type EvaluatorCriteria = {
@@ -206,6 +206,11 @@ const SubmittedDocumentPage: React.FC = () => {
   const [activeCriteriaId, setActiveCriteriaId] = useState<string | null>(null);
   const [showSubmitDialog, setShowSubmitDialog] = useState(false);
 
+  // State to store form values for each criteria
+  const [criteriaFormStates, setCriteriaFormStates] = useState<
+    Record<string, CriteriaScorePayload>
+  >({});
+
   // Forge form setup for criteria scoring
   const { handleSubmit, reset, watch, setValue } =
     useForge<CriteriaScorePayload>({
@@ -239,6 +244,13 @@ const SubmittedDocumentPage: React.FC = () => {
       payload: data,
     });
 
+    // Remove the saved form state for this criteria after successful submission
+    setCriteriaFormStates((prev) => {
+      const newState = { ...prev };
+      delete newState[activeCriteriaId];
+      return newState;
+    });
+
     // Reset form and close
     reset();
     setActiveCriteriaId(null);
@@ -246,16 +258,49 @@ const SubmittedDocumentPage: React.FC = () => {
 
   // Handle criteria scoring
   const handleStartScoring = (criteriaId: string, criteriaType: string) => {
+    // Save current form state before switching
+    if (activeCriteriaId && activeCriteriaId !== criteriaId) {
+      const currentFormData = {
+        comment: watch("comment") as string,
+        score: watch("score") as string | number,
+        type: watch("type") as "pass_fail" | "weight",
+      };
+      setCriteriaFormStates((prev) => ({
+        ...prev,
+        [activeCriteriaId]: currentFormData,
+      }));
+    }
+
     setActiveCriteriaId(criteriaId);
-    setValue("type", criteriaType as "pass_fail" | "weight");
-    reset({
-      comment: "",
-      score: "",
-      type: criteriaType as "pass_fail" | "weight",
-    });
+
+    // Load saved form state for this criteria or use defaults
+    const savedState = criteriaFormStates[criteriaId];
+    if (savedState) {
+      reset(savedState);
+    } else {
+      reset({
+        comment: "",
+        score: "",
+        type: criteriaType as "pass_fail" | "weight",
+      });
+    }
   };
 
-
+  // Handle accordion close - save form state
+  const handleAccordionClose = () => {
+    if (activeCriteriaId) {
+      const currentFormData = {
+        comment: watch("comment") as string,
+        score: watch("score") as string | number,
+        type: watch("type") as "pass_fail" | "weight",
+      };
+      setCriteriaFormStates((prev) => ({
+        ...prev,
+        [activeCriteriaId]: currentFormData,
+      }));
+    }
+    setActiveCriteriaId(null);
+  };
 
   // Loading state
   if (documentsLoading || criteriaLoading) {
@@ -407,6 +452,9 @@ const SubmittedDocumentPage: React.FC = () => {
                               ? "pass_fail"
                               : "weight"
                           );
+                        } else {
+                          // If clicking on the same accordion that's already open, close it
+                          handleAccordionClose();
                         }
                       }}
                     >
@@ -574,7 +622,7 @@ const SubmittedDocumentPage: React.FC = () => {
                                 variant="outline"
                                 className="px-4"
                                 onClick={() => {
-                                  setActiveCriteriaId(null);
+                                  handleAccordionClose();
                                   reset();
                                 }}
                               >
@@ -675,7 +723,7 @@ const SubmittedDocumentPage: React.FC = () => {
 export default SubmittedDocumentPage;
 
 const Document = ({ document }: { document: VendorDocument }) => {
-    // Get file icon based on type
+  // Get file icon based on type
   const getFileIcon = (type: string) => {
     const fileType = type;
     switch (fileType) {

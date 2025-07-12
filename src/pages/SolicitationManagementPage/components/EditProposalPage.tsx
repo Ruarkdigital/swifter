@@ -6,7 +6,7 @@ import { ColumnDef } from "@tanstack/react-table";
 import { Upload } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { getRequest, postRequest } from "@/lib/axiosInstance";
+import { getRequest, putRequest } from "@/lib/axiosInstance";
 import { ApiResponse, ApiResponseError } from "@/types";
 import { Forge, FormPropsRef, useForge } from "@/lib/forge";
 import CompleteProposalDialog from "./CompleteProposalDialog";
@@ -236,7 +236,7 @@ const EditProposalPage: React.FC<EditProposalPageProps> = () => {
   >({
     mutationKey: ["updateProposal"],
     mutationFn: async (proposalData) =>
-      await postRequest({
+      await putRequest({
         url: `/vendor/proposal/${solicitationId}/proposal/${proposalId}`,
         payload: proposalData,
       }),

@@ -54,6 +54,7 @@ type EvaluationDetail = {
   evaluationGroups: {
     groupId: string;
     groupName: string;
+    status: "Release" | "Withheld"
     evaluators: {
       _id: string;
       name: string;

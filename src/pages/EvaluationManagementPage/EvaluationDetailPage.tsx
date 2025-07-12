@@ -155,6 +155,9 @@ const EvaluationDetailPage: React.FC = () => {
   const [releaseDialogOpen, setReleaseDialogOpen] = useState(false);
   const [withholdDialogOpen, setWithholdDialogOpen] = useState(false);
   const [selectedGroupId, setSelectedGroupId] = useState<string>("");
+  
+  // State for tab management
+  const [activeTab, setActiveTab] = useState("overview");
 
   // Toast handler
   const toastHandlers = useToastHandler();
@@ -412,7 +415,7 @@ const EvaluationDetailPage: React.FC = () => {
           return <span className="text-muted-foreground">-</span>;
         return (
           <Badge
-            variant={value === "Pass" ? "default" : "destructive"}
+            variant={value === "pass" ? "default" : "destructive"}
             className="text-xs"
           >
             {value}
@@ -579,7 +582,7 @@ const EvaluationDetailPage: React.FC = () => {
       </div>
 
       {/* Tabs */}
-      <Tabs defaultValue="overview" className="w-full">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="h-auto rounded-none border-b border-gray-300 dark:border-gray-600 !bg-transparent p-0 w-full justify-start">
           <TabsTrigger
             value="overview"
@@ -704,7 +707,7 @@ const EvaluationDetailPage: React.FC = () => {
                     </p>
                   </div>
 
-                  <Card className="p-4">
+                  <Card className="p-4 cursor-pointer hover:shadow-md transition-shadow" onClick={() => setActiveTab("comparison")}>
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-sm text-gray-600 dark:text-gray-400">
@@ -720,7 +723,7 @@ const EvaluationDetailPage: React.FC = () => {
                     </div>
                   </Card>
 
-                  <Card className="p-4">
+                  <Card className="p-4 cursor-pointer hover:shadow-md transition-shadow" onClick={() => setActiveTab("criteria")}>
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-sm text-gray-600 dark:text-gray-400">
@@ -736,7 +739,7 @@ const EvaluationDetailPage: React.FC = () => {
                     </div>
                   </Card>
 
-                  <Card className="p-4">
+                  <Card className="p-4 cursor-pointer hover:shadow-md transition-shadow" onClick={() => setActiveTab("documents")}>
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-sm text-gray-600 dark:text-gray-400">
@@ -769,7 +772,7 @@ const EvaluationDetailPage: React.FC = () => {
                     </p>
                   </div>
 
-                  <Card className="p-4">
+                  <Card className="p-4 cursor-pointer hover:shadow-md transition-shadow" onClick={() => setActiveTab("evaluationGroup")}>
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-sm text-gray-600 dark:text-gray-400">
@@ -785,7 +788,7 @@ const EvaluationDetailPage: React.FC = () => {
                     </div>
                   </Card>
 
-                  <Card className="p-4">
+                  <Card className="p-4 cursor-pointer hover:shadow-md transition-shadow" onClick={() => setActiveTab("evaluators")}>
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-sm text-gray-600 dark:text-gray-400">
@@ -847,7 +850,7 @@ const EvaluationDetailPage: React.FC = () => {
                     {group.groupName}
                   </h3>
                   <div className="flex gap-2">
-                    {isOwner && (
+                    {isOwner && group.status === "Withheld" && (
                       <ConfirmAlert
                         type="success"
                         title="Release Group"
@@ -876,7 +879,7 @@ const EvaluationDetailPage: React.FC = () => {
                         }
                       />
                     )}
-                    {isOwner && (
+                    {isOwner && group.status === "Withheld" && (
                       <ConfirmAlert
                         type="warning"
                         title="Withhold Group"

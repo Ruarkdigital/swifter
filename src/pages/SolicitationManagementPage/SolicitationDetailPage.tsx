@@ -46,7 +46,7 @@ type VendorProposal = {
   companyName: string;
   email: string;
   submissionDate: string;
-  status: "Submitted" | "Under Review" | "Accepted" | "Rejected" | "Pending";
+  status: "Submitted" | "Under Review" | "Accepted" | "Rejected" | "Pending" | "Confirmed";
   proposalValue: number;
   documents: number;
   evaluationScore?: number;
@@ -564,10 +564,10 @@ export const SolicitationDetailPage = () => {
         // Map vendor status to proposal status
         const statusMap: Record<
           string,
-          "Submitted" | "Under Review" | "Accepted" | "Rejected" | "Pending"
+          "Submitted" | "Under Review" | "Accepted" | "Rejected" | "Pending" | "Confirmed"
         > = {
           invited: "Pending",
-          confirmed: "Submitted",
+          confirmed: "Confirmed",
           declined: "Rejected",
         };
         return (

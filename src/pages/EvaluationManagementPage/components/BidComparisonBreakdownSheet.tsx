@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { getRequest } from "@/lib/axiosInstance";
 import { Button } from "@/components/ui/button";
 import {
@@ -7,10 +7,11 @@ import {
   SheetContent,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { ChevronLeft, X, Share2 } from "lucide-react";
+import { ChevronLeft } from "lucide-react";
 import { DataTable } from "@/components/layouts/DataTable";
 import { ColumnDef } from "@tanstack/react-table";
 import { BidComparisonItem } from "../hooks/useEvaluationDetailApi";
+import { useToastHandler } from "@/hooks/useToaster";
 
 
 interface BidComparisonSheetProps {
@@ -21,6 +22,7 @@ interface BidComparisonSheetProps {
 
 export const BidComparisonSheet = ({ evaluationId, proposalId, vendorName }: BidComparisonSheetProps) => {
   const [isOpen, setIsOpen] = useState(false);
+  const toastHandlers = useToastHandler();
 
   const { data: bidComparisonData, isLoading, error } = useQuery({
     queryKey: ["bid-comparison", evaluationId],
@@ -30,6 +32,53 @@ export const BidComparisonSheet = ({ evaluationId, proposalId, vendorName }: Bid
     },
     enabled: isOpen && !!evaluationId,
   });
+
+  // Export bid comparison mutation for download
+  const exportBidComparisonMutation = useMutation<
+    Blob,
+    Error,
+    { type: "pdf" | "docx" }
+  >({
+    mutationFn: async ({ type }) => {
+      const response = await getRequest({
+        url: `/procurement/evaluations/${evaluationId}/bid-comparison/export?type=${type}`,
+        config: { responseType: "blob" },
+      });
+      return response.data;
+    },
+    onSuccess: (data, variables) => {
+      // Create download link
+      const url = window.URL.createObjectURL(new Blob([data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute(
+        "download",
+        `bid-comparison-breakdown-${evaluationId}.${variables.type}`
+      );
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+
+      toastHandlers.success(
+        "Download Successful",
+        `Bid comparison breakdown downloaded as ${variables.type.toUpperCase()} successfully`
+      );
+    },
+    onError: (error) => {
+      toastHandlers.error("Download Failed", error.message || "An error occurred during download");
+    },
+  });
+
+  // Handle download
+  const handleDownload = () => {
+    exportBidComparisonMutation.mutate({ type: "pdf" });
+  };
+
+  // Handle print
+  const handlePrint = () => {
+    window.print();
+  };
 
   // Find the specific proposal data
   const proposalData = bidComparisonData?.find(item => item.proposalId === proposalId);
@@ -97,7 +146,7 @@ export const BidComparisonSheet = ({ evaluationId, proposalId, vendorName }: Bid
           View Breakdown
         </Button>
       </SheetTrigger>
-      <SheetContent className="w-full max-w-4xl p-0 overflow-y-auto">
+      <SheetContent className="w-full sm:max-w-4xl p-0 overflow-y-auto ">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b">
           <div className="flex items-center gap-3">
@@ -106,7 +155,6 @@ export const BidComparisonSheet = ({ evaluationId, proposalId, vendorName }: Bid
               Price Breakdown
             </h2>
           </div>
-          <X className="h-5 w-5 text-gray-400 cursor-pointer" onClick={() => setIsOpen(false)} />
         </div>
 
         {/* Content */}
@@ -116,14 +164,6 @@ export const BidComparisonSheet = ({ evaluationId, proposalId, vendorName }: Bid
             <h1 className="text-2xl font-semibold text-gray-900">
               {vendorName} Price Breakdown
             </h1>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-gray-600 hover:text-gray-800"
-            >
-              <Share2 className="h-4 w-4 mr-2" />
-              Export
-            </Button>
           </div>
 
           {/* Company and Submission Info */}
@@ -190,10 +230,18 @@ export const BidComparisonSheet = ({ evaluationId, proposalId, vendorName }: Bid
 
           {/* Action Buttons */}
           <div className="flex justify-end gap-3 mt-8">
-            <Button variant="outline" className="px-6">
-              Download
+            <Button 
+              variant="outline" 
+              className="px-6"
+              onClick={handleDownload}
+              disabled={exportBidComparisonMutation.isPending}
+            >
+              {exportBidComparisonMutation.isPending ? "Downloading..." : "Download"}
             </Button>
-            <Button className="px-6 bg-blue-900 hover:bg-blue-800">
+            <Button 
+              className="px-6 bg-blue-900 hover:bg-blue-800"
+              onClick={handlePrint}
+            >
               Print
             </Button>
           </div>

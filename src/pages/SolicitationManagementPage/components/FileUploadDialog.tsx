@@ -158,6 +158,9 @@ const FileUploadDialog: React.FC<FileUploadDialogProps> = ({
           <TextFileUploader
             value={selectedFiles}
             onChange={handleFileSelect}
+            dropzoneOptions={{
+              multiple: true
+            }}
             accept={
               acceptedTypes
                 ? acceptedTypes.reduce((acc, type) => {

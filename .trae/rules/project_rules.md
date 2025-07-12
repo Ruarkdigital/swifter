@@ -5,6 +5,7 @@
 3. **Never assume API contracts**. Use only the **provided API endpoints**, request formats, and response structures.
 4. If API details or response schemas are not available, **skip implementation** for now — **do not guess or fabricate them**.
 5. Do **not modify the UI layout** during API integration. Follow the existing UI as-is, or skip where data isn't available yet.
+6. DO NOT CHANGE THE UI LAYOUT. UNLESS SPECIFIED TO DO SO
 
 ---
 
