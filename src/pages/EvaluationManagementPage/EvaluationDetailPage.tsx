@@ -879,7 +879,7 @@ const EvaluationDetailPage: React.FC = () => {
                         }
                       />
                     )}
-                    {isOwner && group.status === "Withheld" && (
+                    {isOwner && group.status === "Release" && (
                       <ConfirmAlert
                         type="warning"
                         title="Withhold Group"
