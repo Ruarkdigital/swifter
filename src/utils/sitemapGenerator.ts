@@ -157,7 +157,7 @@ export const generateOrganizationStructuredData = () => {
     "@type": "Organization",
     "name": "SwiftPro",
     "url": BASE_URL,
-    "logo": `${BASE_URL}/src/assets/swiftpro-logo.png`,
+    "logo": "https://api.swiftpro.tech/api/v1/dev/upload/file-1752307517298-493582260/image9.png",
     "description": "SwiftPro is an eProcurement Portal designed for procurement professionals, internal and external stakeholders to streamline RFx workflows, manage end-to-end RFx process or Solicitations and track progress efficiently.",
     "foundingDate": "2024",
     "industry": "Software",

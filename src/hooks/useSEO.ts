@@ -26,7 +26,7 @@ const DEFAULT_SEO: SEOConfig = {
   author: 'SwiftPro',
   ogTitle: 'SwiftPro | Professional eProcurement Portal',
   ogDescription: 'SwiftPro is an eProcurement Portal designed for procurement professionals, internal and external stakeholders to streamline RFx workflows, manage end-to-end RFx process or Solicitations and track progress efficiently.',
-  ogImage: '/src/assets/swiftpro-logo.png',
+  ogImage: 'https://api.swiftpro.tech/api/v1/dev/upload/file-1752307517298-493582260/image9.png',
   ogUrl: 'https://swiftpro.com',
   twitterCard: 'summary_large_image',
   robots: 'index, follow',
