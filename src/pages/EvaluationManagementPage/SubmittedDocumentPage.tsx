@@ -233,6 +233,34 @@ const SubmittedDocumentPage: React.FC = () => {
       },
     });
 
+  // Add mutation for submitting final evaluation
+  const toast = useToastHandler();
+
+  const submitEvaluationMutation = useMutation<
+    ApiResponse<SubmitEvaluationResponse>,
+    ApiResponseError
+  >({
+    mutationFn: async () => {
+      const response = await postRequest({
+        url: `/evaluator/${id}/submit-evaluation`,
+        payload: {},
+      });
+      return response;
+    },
+    onSuccess: (response) => {
+      toast.success(
+        "Success",
+        response.data?.message || "Evaluation submitted successfully"
+      );
+      setShowSubmitDialog(false);
+      navigate(`/dashboard/evaluation/assigned/${groupId}`);
+    },
+    onError: (error) => {
+      toast.error("Error", error.message || "Failed to submit evaluation");
+      setShowSubmitDialog(false);
+    },
+  });
+
   // Form submission handler
   const onSubmitScore = async (data: CriteriaScorePayload) => {
     if (!activeCriteriaId || !id || !vendorId) return;
@@ -676,38 +704,6 @@ const SubmittedDocumentPage: React.FC = () => {
                 primaryButtonText="Submit"
                 secondaryButtonText="Cancel"
                 onPrimaryAction={() => {
-                  // Add mutation for submitting final evaluation
-                  const toast = useToastHandler();
-
-                  const submitEvaluationMutation = useMutation<
-                    ApiResponse<SubmitEvaluationResponse>,
-                    ApiResponseError
-                  >({
-                    mutationFn: async () => {
-                      const response = await postRequest({
-                        url: `/evaluator/${id}/submit-evaluation`,
-                        payload: {},
-                      });
-                      return response;
-                    },
-                    onSuccess: (response) => {
-                      toast.success(
-                        "Success",
-                        response.data?.message ||
-                          "Evaluation submitted successfully"
-                      );
-                      setShowSubmitDialog(false);
-                      navigate(`/dashboard/evaluation/assigned/${groupId}`);
-                    },
-                    onError: (error) => {
-                      toast.error(
-                        "Error",
-                        error.message || "Failed to submit evaluation"
-                      );
-                      setShowSubmitDialog(false);
-                    },
-                  });
-
                   submitEvaluationMutation.mutate();
                 }}
                 onSecondaryAction={() => setShowSubmitDialog(false)}

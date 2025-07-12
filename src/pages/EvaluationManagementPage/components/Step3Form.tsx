@@ -2,25 +2,38 @@ import { Button } from "@/components/ui/button";
 import { Trash2, Plus } from "lucide-react";
 import { useFieldArray, Control, useWatch } from "react-hook-form";
 import { useQuery } from "@tanstack/react-query";
-import { Forger } from "@/lib/forge";
+import { Forger, usePersist } from "@/lib/forge";
 import { TextInput } from "@/components/layouts/FormInputs/TextInput";
 import { TextSelect } from "@/components/layouts/FormInputs/TextSelect";
 import { Checkbox } from "@/components/ui/checkbox";
 import { getRequest } from "@/lib/axiosInstance";
 import { ApiResponse, ApiResponseError } from "@/types";
 import { CreateEvaluationFormData } from "./CreateEvaluationDialog";
+import { useEffect } from "react";
 
 interface Step3FormProps {
   control: Control<CreateEvaluationFormData>;
 }
 
 const Step3Form = ({ control }: Step3FormProps) => {
-  const { fields, append, remove } = useFieldArray({
+  const { fields, append, remove, update } = useFieldArray({
     control,
     name: "documents"
   });
 
   const value = useWatch({ control, name: "group" });
+  const documentsWatch = useWatch({ control, name: "documents" });
+
+  // Watch for type changes and automatically set required to true for PRICING
+  useEffect(() => {
+    if (documentsWatch) {
+      documentsWatch.forEach((doc, index) => {
+        if (doc?.type === "PRICING" && !doc?.required) {
+          update(index, { ...doc, required: true });
+        }
+      });
+    }
+  }, [documentsWatch, update]);
 
   const addDocument = () => {
     append({ 
@@ -53,6 +66,13 @@ const Step3Form = ({ control }: Step3FormProps) => {
     queryFn: async () =>
       await getRequest({ url: "/procurement/evaluations/groups" }),
   });
+
+  usePersist({
+    control,
+    handler(payload, formState) {
+      console.log({ payload, formState })
+    },
+  })
 
   // Transform API data to options format and append to static options
   const apiEvaluationGroupOptions = evaluationGroupsData?.data?.data?.map((group) => ({

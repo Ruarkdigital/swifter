@@ -494,7 +494,7 @@ const CreateEvaluationDialog = () => {
         </div>
 
         {/* Form Content */}
-        <Forge control={forge.control} onSubmit={onSubmit}>
+        <Forge control={forge.control} onSubmit={onSubmit} >
           {currentStep === 1 && (
             <Step1Form
               solicitationOptions={solicitationOptions}

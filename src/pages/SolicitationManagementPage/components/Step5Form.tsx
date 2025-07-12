@@ -23,7 +23,6 @@ function Step5Form() {
   // Transform vendor data to options format
   const vendorTags = useMemo(() => {
     if (!vendorsData?.data?.data) return [];
-    console.log({ vendorsData: vendorsData?.data?.data })
     
     return vendorsData.data.data.map((vendor) => ({
       label: vendor.email,
