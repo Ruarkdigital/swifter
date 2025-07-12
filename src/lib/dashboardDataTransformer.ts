@@ -842,9 +842,9 @@ export class DashboardDataTransformer {
         action.date || action.createdAt
           ? format(
               new Date(action.date || action.createdAt),
-              "MMM d, yyyy h:mm a"
+              "MMM d, yyyy h:mm a 'GMT'xxx"
             )
-          : format(new Date(), "MMM d, yyyy h:mm a"),
+          : format(new Date(), "MMM d, yyyy h:mm a 'GMT'xxx"),
     }));
   }
 
@@ -889,9 +889,9 @@ export class DashboardDataTransformer {
         update.date || update.updatedAt
           ? format(
               new Date(update.date || update.updatedAt),
-              "MMM d, yyyy h:mm a"
+              "MMM d, yyyy h:mm a 'GMT'xxx"
             )
-          : format(new Date(), "MMM d, yyyy h:mm a"),
+          : format(new Date(), "MMM d, yyyy h:mm a 'GMT'xxx"),
     }));
   }
 
@@ -997,7 +997,7 @@ export class DashboardDataTransformer {
       status: action.solicitation?.vendors?.[0].status || "Pending",
       type: action.action?.replace("_", " ") || "Invitation",
       date: action.createdAt
-        ? format(new Date(action.createdAt), "MMM d, yyyy h:mm a")
+        ? format(new Date(action.createdAt), "MMM d, yyyy h:mm a 'GMT'xxx")
         : null,
       title: action.solicitation?.name || "Unknown Solicitation",
       to: `/dashboard/solicitation/${action.solicitation._id}`,
@@ -1043,10 +1043,10 @@ export class DashboardDataTransformer {
         (update.date
           ? format(new Date(update.date), "MMM d, yyyy") +
             " • " +
-            format(new Date(update.date), "HH:mm")
+            format(new Date(update.date), "HH:mm 'GMT'xxx")
           : format(new Date(), "MMM d, yyyy") +
             " • " +
-            format(new Date(), "h:mm a")),
+            format(new Date(), "h:mm a 'GMT'xxx")),
     }));
   }
 
@@ -1089,9 +1089,9 @@ export class DashboardDataTransformer {
         action.createdAt || action.date
           ? format(
               new Date(action.createdAt || action.date),
-              "MMM d, yyyy h:mm a"
+              "MMM d, yyyy h:mm a 'GMT'xxx"
             )
-          : format(new Date(), "MMM d, yyyy h:mm a"),
+          : format(new Date(), "MMM d, yyyy h:mm a 'GMT'xxx"),
       status: action.status || "active",
     }));
   }
@@ -1134,9 +1134,9 @@ export class DashboardDataTransformer {
         update.updatedAt || update.date
           ? format(
               new Date(update.updatedAt || update.date),
-              "MMM d, yyyy h:mm a"
+              "MMM d, yyyy h:mm a 'GMT'xxx"
             )
-          : format(new Date(), "MMM d, yyyy h:mm a"),
+          : format(new Date(), "MMM d, yyyy h:mm a 'GMT'xxx"),
       status: update.status || "active",
     }));
   }
@@ -1181,10 +1181,10 @@ export class DashboardDataTransformer {
       time: update.createdAt
         ? format(new Date(update.createdAt), "MMM d, yyyy") +
           " • " +
-          format(new Date(update.createdAt), "h:mm a")
+          format(new Date(update.createdAt), "h:mm a 'GMT'xxx")
         : format(new Date(), "MMM d, yyyy") +
           " • " +
-          format(new Date(), "h:mm a"),
+          format(new Date(), "h:mm a 'GMT'xxx"),
       status: update.solicitation?.status || "active",
       timezone: update.solicitation?.timezone || "UTC",
     }));
