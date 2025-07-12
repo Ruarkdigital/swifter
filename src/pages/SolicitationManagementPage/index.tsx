@@ -101,7 +101,7 @@ type Solicitation = {
   status: "draft" | "active" | "closed" | "awarded" | "evaluating";
   questionDeadline?: string;
   bidIntentDeadline?: string;
-  submissionStatus: "not submitted" | "submitted";
+  submissionStatus: "not submitted" | "submit";
   timezone: string;
   events: SolicitationEvent[];
   files: SolicitationFile[];
@@ -747,7 +747,7 @@ export const SolicitationManagementPage = () => {
             // This is a simplified check - in a real implementation, you would
             // fetch proposal data from the API to determine actual submission status
             const hasSubmitted =
-              row.original.submissionStatus === "submitted" || false;
+              row.original.submissionStatus === "submit" || false;
 
             return (
               <Badge

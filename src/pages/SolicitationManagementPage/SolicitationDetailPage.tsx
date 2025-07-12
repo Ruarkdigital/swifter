@@ -860,9 +860,15 @@ export const SolicitationDetailPage = () => {
             </Sheet>
           )}
 
-          {solicitation?.status?.toLowerCase() !== "awarded" && isOwner && (
+          {solicitation?.status?.toLowerCase() !== "awarded" && !viewProposal && isOwner && (
             <Link to={`/dashboard/solicitations/${id}/submit-proposal`}>
               <Button className="text-white px-6 py-2">Submit Proposal</Button>
+            </Link>
+          )}
+
+          {solicitation?.status?.toLowerCase() !== "awarded" && viewProposal && isOwner && (
+            <Link to={`/dashboard/solicitations/${id}/submit-proposal`}>
+              <Button className="text-white px-6 py-2">Edit Proposal</Button>
             </Link>
           )}
         </div>

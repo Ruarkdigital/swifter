@@ -1,103 +1,114 @@
-## Important Notice
-1. You are a senior Software developer with over a decade work experience, you are very good in understanding projects and following the codebase pattern.
-1. Do not start the local server, the project is currently running on localhost:5173
-2. Whenever you are implementing the API integration, use the provided API endpoints and request body formats, do not assume or suggest an API that is not provided.
-3. Always stick to the information provided to you, do not make assumptions about the data you will get from the API.
-4. Do not change the UI structure while implementing the APIs, if not available, skip it.
+## General Rules & Developer Mindset
 
+1. You are a **senior software developer with 10+ years experience**. Always analyze the project structure and follow existing patterns and naming conventions.
+2. **Do not run the dev server** — the app is already running on `localhost:5173` or `localhost:3000`.
+3. **Never assume API contracts**. Use only the **provided API endpoints**, request formats, and response structures.
+4. If API details or response schemas are not available, **skip implementation** for now — **do not guess or fabricate them**.
+5. Do **not modify the UI layout** during API integration. Follow the existing UI as-is, or skip where data isn't available yet.
 
-## Implementation of the UI
-1. Follow exactly how the Image UI design provided, both to pixel perfect sizes, color and to the exact position.
-2. Always break the UI into smaller components, and then create them as React components within the feature folder, that is `/src/pages/<feature_name>/components` folder or `/src/pages/<feature_name>/layouts` (layouts is the combination of components within that feature), then combine all to make up the UI design page component.
-3. Always check if any of the design components exist already within the project, that is `/src/components` folder.
-4. Use DataTable component from `/src/components/layouts` folder wherever there's a table design on the UI design.
-5. Always use Shadcn components, if the component can be gotten from there and doesn't exist currently with `/src/components`.
-6. Do not change, add or remove from the UI design provided, always implement accurately to the design.
+---
 
-## Implementation of API 
-1. Never use the axiosInstance directly, always use the getRequest, postRequest, deleteRequest and putRequest functions from the api folder.
+## 🎨 UI Implementation Rules
 
-## SEO Implementation Guidelines
+### General
 
-### 1. SEO Component Usage
-1. **Always use SEOWrapper component** for every page that needs SEO optimization:
-   ```tsx
-   import { SEOWrapper } from '@/components/SEO';
-   
-   <SEOWrapper
-     title="Page Title - SwiftPro eProcurement Portal"
-     description="Compelling description (150-160 characters)"
-     keywords="relevant, keywords, separated, by, commas"
-     canonical="/page-url"
-     robots="index, follow" // or "noindex, nofollow" for private pages
-   />
-   ```
+1. Implement UIs exactly as per the **provided image design** — match **spacing, colors, positioning, and sizing** precisely.
+2. Do **not deviate from the design**. No creative changes, additions, or omissions.
 
-2. **Use useSEO hook** for dynamic SEO updates:
-   ```tsx
-   import { useSEO } from '@/hooks/useSEO';
-   
-   const MyComponent = () => {
-     useSEO({
-       title: 'Dynamic Title',
-       description: 'Dynamic description'
-     });
-   };
-   ```
+### Foldering & Components
 
-### 2. SEO Best Practices
+3. Break UI into **reusable components**.
 
-#### Page Titles
-- Keep titles between 50-60 characters
-- Include "SwiftPro eProcurement Portal" for brand consistency
-- Use descriptive, unique titles for each page
-- Format: "Page Name - SwiftPro eProcurement Portal"
+   * For feature-specific components:
 
-#### Meta Descriptions
-- Keep descriptions between 150-160 characters
-- Write compelling, action-oriented descriptions
-- Include relevant keywords naturally
-- Avoid duplicate descriptions across pages
+     * **React Router:** `/src/pages/<feature>/components` and `/src/pages/<feature>/layouts`
+     * **Next.js (App Router):** `/app/(Root)/<feature>/_components` or `/app/(Root)/<feature>/layout`
+4. Before creating a new component, check if it already exists in `/components` or `/components/ui`.
+5. Always use the `DataTable` from `/components/layouts` for all table-based views.
+6. Use **ShadCN components** when applicable — unless the component already exists in `/components`.
 
-#### Keywords
-- Use relevant, specific keywords
-- Include primary and secondary keywords
-- Separate keywords with commas
-- Focus on eProcurement, procurement, solicitation, vendor management terms
+---
 
-#### Robots Meta Tags
-- **Public pages**: Use `"index, follow"`
-- **Private/Dashboard pages**: Use `"noindex, nofollow"`
-- **Login/Auth pages**: Use `"noindex, nofollow"`
+## 🔌 API Integration Rules
 
-### 3. Page-Specific SEO Rules
+1. Do **not** use `axiosInstance` directly. Instead, use the following functions from the `/api` folder:
 
-#### Public Pages (index, follow)
-- Home/Landing pages
-- Privacy Policy
-- Terms & Conditions
-- Contact Us
-- About Us
-- Help/Documentation
+   * `getRequest`
+   * `postRequest`
+   * `putRequest`
+   * `deleteRequest`
 
-#### Private Pages (noindex, nofollow)
-- Dashboard pages
-- User management
-- Solicitation details
-- Vendor details
-- Evaluation pages
-- Admin panels
-- Profile pages
+2. Follow the exact API schema. **Do not send extra fields or reshape data** unless explicitly instructed.
 
-### 4. Structured Data Implementation
+---
 
-#### When to Add Structured Data
-- **Organization data**: On main pages
-- **Breadcrumbs**: On detail pages with navigation
-- **FAQ data**: On help/support pages
-- **SoftwareApplication**: On main application pages
+## 🔍 SEO Implementation
 
-#### Implementation
+### Required Components
+
+1. Use the `SEOWrapper` from `/components/SEO` for static SEO config.
+2. Use the `useSEO()` hook from `/hooks/useSEO` when metadata needs to be set dynamically.
+
+```tsx
+import { SEOWrapper } from '@/components/SEO';
+<SEOWrapper
+  title="Page Title - SwiftPro eProcurement Portal"
+  description="Compelling description (150-160 characters)"
+  keywords="relevant, keywords, comma, separated"
+  canonical="/page-url"
+  robots="index, follow"
+/>
+```
+
+### Title Format
+
+* Format: `"Page Name - SwiftPro eProcurement Portal"`
+* Length: 50–60 characters
+* Must be **unique and descriptive**
+
+### Meta Description
+
+* Length: 150–160 characters
+* Compelling, action-oriented, with **natural keywords**
+* Avoid duplicates across pages
+
+### Robots
+
+* Public pages: `"index, follow"`
+* Private/dashboard pages: `"noindex, nofollow"`
+
+### Open Graph (OG)
+
+* Use images from `/public/assets/` or CDN
+* Image size: `1200x630px`
+* Alt text required
+
+```tsx
+<SEOWrapper
+  ogImage="/assets/swiftpro-og-image.jpg"
+  ogImageAlt="SwiftPro eProcurement Portal Dashboard"
+/>
+```
+
+### Canonical URL
+
+* Use absolute paths (e.g., `"/dashboard"`)
+* Must reflect the actual route
+* Keep under 100 characters and keyword friendly
+
+---
+
+## 🧩 Structured Data
+
+### When to Use
+
+* Main brand pages: `Organization`
+* Detail or breadcrumb-enabled pages: `BreadcrumbList`
+* Help pages: `FAQPage`
+* Main app landing: `SoftwareApplication`
+
+### Example
+
 ```tsx
 <SEOWrapper
   structuredData={{
@@ -108,127 +119,23 @@
 />
 ```
 
-### 5. Image SEO Guidelines
+---
 
-#### Open Graph Images
-- Use high-quality images (1200x630px recommended)
-- Include SwiftPro branding
-- Store in `/src/assets/` or use CDN
-- Provide alt text for accessibility
+## 🧱 Project Structure (Next.js App Router)
 
-#### Implementation
-```tsx
-<SEOWrapper
-  ogImage="/src/assets/swiftpro-og-image.jpg"
-  ogImageAlt="SwiftPro eProcurement Portal Dashboard"
-/>
-```
+* Use `/app/(Root)/.../_components` for page-specific components
+* Use `layout.tsx` to wrap persistent layouts
+* Use `page.tsx` for main route content
+* Reuse common components from `/components/ui`
+* Use `/lib`, `/hooks`, or `/features` for logic abstraction
 
-### 6. URL and Canonical Guidelines
+---
 
-#### URL Structure
-- Use descriptive, readable URLs
-- Include relevant keywords
-- Use hyphens to separate words
-- Keep URLs under 100 characters
+## 🛑 Final Reminders
 
-#### Canonical URLs
-- Always provide canonical URLs
-- Use absolute paths starting with `/`
-- Ensure consistency across similar pages
-
-### 7. Performance and SEO
-
-#### Core Web Vitals
-- Optimize component loading
-- Use lazy loading for non-critical components
-- Minimize SEO component re-renders
-- Cache structured data when possible
-
-#### Implementation Tips
-```tsx
-// Good: Memoize SEO data
-const seoData = useMemo(() => ({
-  title: `${item.name} - SwiftPro`,
-  description: `Manage ${item.name} in SwiftPro eProcurement Portal`
-}), [item.name]);
-
-<SEOWrapper {...seoData} />
-```
-
-### 8. Testing and Validation
-
-#### Required Checks
-1. **Meta tags validation**: Use browser dev tools
-2. **Structured data testing**: Use Google's Rich Results Test
-3. **Open Graph testing**: Use Facebook Sharing Debugger
-4. **Twitter Card testing**: Use Twitter Card Validator
-
-#### Debug Commands
-```bash
-# Check if SEO components are working
-# Open browser dev tools > Elements > Search for "helmet"
-
-# Validate structured data
-# Visit: https://search.google.com/test/rich-results
-```
-
-### 9. Maintenance Requirements
-
-#### Regular Tasks
-- **Monthly**: Review meta descriptions for new pages
-- **Quarterly**: Update sitemap.xml with new routes
-- **When adding new pages**: Always implement SEO components
-- **When changing URLs**: Update canonical references
-
-#### Documentation Updates
-- Update `/docs/SEO_IMPLEMENTATION.md` when adding new SEO features
-- Document any custom SEO implementations
-- Keep track of SEO performance metrics
-
-### 10. Common Mistakes to Avoid
-
-#### Don't Do
-- ❌ Duplicate meta descriptions across pages
-- ❌ Missing SEO components on new pages
-- ❌ Using generic titles like "Dashboard" or "Page"
-- ❌ Indexing private/sensitive pages
-- ❌ Forgetting to update sitemap for new public pages
-
-#### Do
-- ✅ Use unique, descriptive titles and descriptions
-- ✅ Implement SEO components on every page
-- ✅ Follow the established SEO patterns
-- ✅ Test SEO implementation before deployment
-- ✅ Monitor SEO performance regularly
-
-### 11. Emergency SEO Fixes
-
-If SEO issues are discovered in production:
-
-1. **Missing meta tags**: Add SEOWrapper component immediately
-2. **Wrong robots directive**: Update robots prop in SEOWrapper
-3. **Broken structured data**: Validate and fix JSON-LD syntax
-4. **Duplicate content**: Add proper canonical URLs
-
-For urgent fixes, prioritize:
-1. Public-facing pages
-2. High-traffic pages
-3. Pages with SEO value
-
-### 12. SEO Checklist for New Features
-
-Before deploying new pages/features:
-
-- [ ] SEOWrapper component implemented
-- [ ] Unique title and description added
-- [ ] Appropriate robots directive set
-- [ ] Canonical URL provided
-- [ ] Keywords researched and added
-- [ ] Open Graph image specified
-- [ ] Structured data added (if applicable)
-- [ ] URL structure follows guidelines
-- [ ] SEO tested in development
-- [ ] Documentation updated
-
-Refer to `/docs/SEO_IMPLEMENTATION.md` for detailed technical documentation.
+* ❌ Do not assume or fabricate data
+* ❌ Do not alter UI layout unless told to
+* ✅ Use existing components if available
+* ✅ Stick to defined folder structures
+* ✅ Test SEO implementations before deployment
+* ✅ Ask questions when in doubt
