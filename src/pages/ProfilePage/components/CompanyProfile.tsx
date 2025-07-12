@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { getRequest, putRequest, postRequest } from "@/lib/axiosInstance";
 import { ApiResponse, ApiResponseError } from "@/types";
@@ -26,23 +26,38 @@ interface CompanyData {
   location: string;
   website: string;
   logo?: string;
+  companyId: {
+    _id: string;
+    name: string
+  }
+}
+
+type FormValues = {
+  name: string;
+  email: string;
+  contact: string;
+  phone: string;
+  businessType: string;
+  location: string;
+  website: string;
 }
 
 const CompanyProfile: React.FC = () => {
   const user = useUser();
   const toast = useToastHandler();
   const [selectedFiles, setSelectedFiles] = useState<File[] | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
 
   // Query to fetch company data
   const {
     data: companyData,
     isLoading,
     refetch,
-  } = useQuery<ApiResponse<CompanyData>, ApiResponseError>({
+    isSuccess
+  } = useQuery<ApiResponse<{ user: CompanyData}>, ApiResponseError>({
     queryKey: ["getCompanyProfile"],
     queryFn: async () => await getRequest({ url: "/users/me" }),
     enabled: !!user?._id,
+    retryOnMount: true
   });
 
   // Mutation to update company profile
@@ -95,51 +110,50 @@ const CompanyProfile: React.FC = () => {
     },
   });
 
-  const { control } = useForge({
-    defaultValues: {
-      name: companyData?.data?.data?.name || user?.name || "",
-      email: companyData?.data?.data?.email || user?.email || "",
-      contact: companyData?.data?.data?.contact || user?.name || "",
-      phone: companyData?.data?.data?.phone || user?.phone || "",
-      businessType: companyData?.data?.data?.businessType || user?.businessType || "",
-      location: companyData?.data?.data?.location || user?.location || "",
-      website: companyData?.data?.data?.website || user?.website || "",
-    },
-  });
+  const { control, setValue } = useForge<FormValues>({});
 
-  const handleSubmit = async (data: CompanyData) => {
+  useEffect(() => {
+    if(isSuccess) {
+      const _companyData = companyData?.data?.data?.user;
+      
+      const payload = {
+        name: _companyData?.companyId?.name || user?.name || "",
+        email: _companyData?.email || user?.email || "",
+        contact: _companyData?.contact || user?.name || "",
+        phone: _companyData?.phone || user?.phone || "",
+        businessType: _companyData?.businessType || user?.businessType || "",
+        location: _companyData?.location || user?.location || "",
+        website: _companyData?.website || user?.website || "",
+      }
+      
+      Object.entries(payload).forEach(([key, value]) => {
+        setValue(key as keyof FormValues, value)
+      })
+    }
+  }, [isSuccess, setValue]);
+
+  const handleSubmit = async (data: any) => {
     try {
+      // Handle logo upload if there are selected files
+      if (selectedFiles && selectedFiles.length > 0) {
+        const formData = new FormData();
+        formData.append("file", selectedFiles[0]);
+        
+        const uploadResponse = await uploadFile(formData);
+        const fileUrl = uploadResponse.data?.data?.[0]?.url;
+        
+        if (fileUrl) {
+          data.logo = fileUrl;
+          setSelectedFiles(null);
+        } else {
+          toast.error("Error", "Failed to get file URL from upload response");
+          return;
+        }
+      }
+      
       await updateCompanyProfile(data);
     } catch (error) {
       // Error handling is done in the mutation's onError callback
-    }
-  };
-
-  const handleLogoUpload = async () => {
-    if (!selectedFiles || selectedFiles.length === 0) {
-      toast.error("Error", "Please select a file to upload");
-      return;
-    }
-
-    setIsUploading(true);
-    try {
-      const formData = new FormData();
-      formData.append("file", selectedFiles[0]);
-
-      const uploadResponse = await uploadFile(formData);
-      const fileUrl = uploadResponse.data?.data?.[0]?.url;
-
-      if (fileUrl) {
-        await updateCompanyProfile({ logo: fileUrl });
-        setSelectedFiles(null);
-        toast.success("Success", "Company logo updated successfully");
-      } else {
-        toast.error("Error", "Failed to get file URL from upload response");
-      }
-    } catch (error) {
-      console.error("Logo upload error:", error);
-    } finally {
-      setIsUploading(false);
     }
   };
 
@@ -155,8 +169,9 @@ const CompanyProfile: React.FC = () => {
   if (isLoading) {
     return (
       <PageLoader 
-        showHeader={false}
+        title="Company Profile"
         message="Loading company profile..."
+        showHeader={false}
         className="p-6"
       />
     );
@@ -167,16 +182,16 @@ const CompanyProfile: React.FC = () => {
       <div className="flex items-center gap-6 mb-8">
         {/* Company Logo */}
         <AvatarUploader
-          currentImage={companyData?.data?.data?.logo || user?.logo}
+          currentImage={companyData?.data?.data?.user?.logo || user?.logo}
           selectedFiles={selectedFiles}
           onFilesChange={setSelectedFiles}
-          fallbackText="OR"
+          fallbackText={companyData?.data?.data?.user?.companyId?.name?.charAt(0) || "C"}
         />
 
         {/* Company Header */}
         <div className="flex-1">
           <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-1">
-            Zenith Solutions
+            {companyData?.data?.data?.user?.companyId?.name || "Company Name"}
           </h2>
           <p className="text-gray-600 dark:text-gray-400 mb-3">
             Update your logo and Company details.
@@ -187,23 +202,9 @@ const CompanyProfile: React.FC = () => {
               size="sm"
               className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100"
               onClick={handleLogoDelete}
-              disabled={isUploading || isPending}
+              disabled={isPending}
             >
               Delete
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100"
-              onClick={handleLogoUpload}
-              disabled={
-                !selectedFiles ||
-                selectedFiles.length === 0 ||
-                isUploading ||
-                isPending
-              }
-            >
-              {isUploading ? "Uploading..." : "Update"}
             </Button>
           </div>
         </div>

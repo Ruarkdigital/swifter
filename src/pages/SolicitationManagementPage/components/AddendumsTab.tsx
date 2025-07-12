@@ -1,14 +1,21 @@
-import { useState, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
-import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogTrigger,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { DataTable } from "@/components/layouts/DataTable";
 import { ColumnDef, PaginationState } from "@tanstack/react-table";
-import { Search, Plus, FileText } from "lucide-react";
+import { Search, Plus, FileText, Edit } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getRequest, deleteRequest } from "@/lib/axiosInstance";
+import { getRequest, deleteRequest, putRequest } from "@/lib/axiosInstance";
 import { ApiResponse, ApiResponseError } from "@/types";
 import { useToastHandler } from "@/hooks/useToaster";
 import { ConfirmAlert } from "@/components/layouts/ConfirmAlert";
@@ -16,6 +23,12 @@ import CreateAddendumDialog from "./CreateAddendumDialog";
 import AddendumDetailsSheet from "./AddendumDetailsSheet";
 import { format } from "date-fns";
 import { useUserRole } from "@/hooks/useUserRole";
+import { truncate } from "lodash";
+import { TextInput, TextArea, TextDatePicker } from "@/components/layouts/FormInputs/TextInput";
+import { TextSelect } from "@/components/layouts/FormInputs/TextSelect";
+import { useForge } from "@/lib/forge";
+import { yupResolver } from "@hookform/resolvers/yup";
+import * as yup from "yup";
 
 // Addendum type definition based on API schema
 type SolicitationAddendum = {
@@ -25,7 +38,7 @@ type SolicitationAddendum = {
   submissionDeadline?: string;
   questionDeadline?: string;
   questions?: string;
-  status: "Draft" | "Published";
+  status: "draft" | "published";
   files?: Array<{
     _id: string;
     name: string;
@@ -40,9 +53,11 @@ type SolicitationAddendum = {
 type Addendum = {
   id: string;
   title: string;
+  description?: string;
+  submissionDeadline?: string;
   linkedQuestion: boolean;
   datePublished: string;
-  status: "Draft" | "Published";
+  status: "draft" | "published";
 };
 
 interface AddendumsTabProps {
@@ -51,13 +66,14 @@ interface AddendumsTabProps {
 
 // Transform API addendum data to component format
 const transformAddendumData = (apiAddendum: SolicitationAddendum): Addendum => {
-  // Safely format the date, fallback to "N/A" if invalid
+  // Format the date with time and timezone
   const formatDate = (dateString: string | undefined) => {
     if (!dateString) return "N/A";
     try {
       const date = new Date(dateString);
       if (isNaN(date.getTime())) return "N/A";
-      return format(date, "MMMM d, yyyy");
+      // Format: "12 Jul 2025, 09:24 AM GMT+1"
+      return format(date, "d MMM yyyy, hh:mm a 'GMT'xxx");
     } catch {
       return "N/A";
     }
@@ -66,9 +82,11 @@ const transformAddendumData = (apiAddendum: SolicitationAddendum): Addendum => {
   return {
     id: apiAddendum._id,
     title: apiAddendum.title,
+    description: apiAddendum.description,
+    submissionDeadline: apiAddendum.submissionDeadline,
     linkedQuestion: !!apiAddendum.questions,
     datePublished: formatDate(apiAddendum.createdAt),
-    status: apiAddendum.status === "Published" ? "Published" : "Draft",
+    status: apiAddendum.status === "published" ? "published" : "draft",
   };
 };
 
@@ -101,6 +119,33 @@ const getErrorMessage = (error: ApiResponseError) => {
   return error?.response?.data?.message ?? "Failed to load addendums";
 };
 
+// Edit addendum form validation schema
+const editAddendumSchema = yup.object().shape({
+  title: yup
+    .string()
+    .required("Title is required")
+    .min(5, "Title must be at least 5 characters")
+    .max(200, "Title must not exceed 200 characters"),
+  description: yup
+    .string()
+    .optional()
+    .max(2000, "Description must not exceed 2000 characters"),
+  submissionDeadline: yup
+    .string()
+    .optional(),
+  status: yup
+    .string()
+    .oneOf(["draft", "published"], "Status must be either draft or published")
+    .optional(),
+});
+
+type EditAddendumFormValues = {
+  title: string;
+  description?: string;
+  submissionDeadline?: string;
+  status?: "draft" | "published";
+};
+
 // Create useAddendums hook
 const useAddendums = (solicitationId: string) => {
   const { isVendor } = useUserRole();
@@ -131,6 +176,8 @@ const AddendumsTab: React.FC<AddendumsTabProps> = ({ solicitationId }) => {
   );
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isDetailsSheetOpen, setIsDetailsSheetOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editingAddendum, setEditingAddendum] = useState<Addendum | null>(null);
 
   // Fetch addendums from API
   const {
@@ -168,6 +215,34 @@ const AddendumsTab: React.FC<AddendumsTabProps> = ({ solicitationId }) => {
     },
   });
 
+  // Update addendum mutation
+  const updateAddendumMutation = useMutation<
+    ApiResponse<any>,
+    ApiResponseError,
+    EditAddendumFormValues
+  >({
+    mutationFn: async (requestData: EditAddendumFormValues) => {
+        if (!editingAddendum) throw new Error('No addendum selected for editing');
+        const endpoint = `/procurement/solicitations/${solicitationId}/addendums/${editingAddendum.id}`;
+        return await putRequest({ url: endpoint, payload: requestData });
+    },
+    onSuccess: () => {
+      toast.success("Success", "Addendum updated successfully");
+      queryClient.invalidateQueries({
+        queryKey: ["addendums", solicitationId],
+      });
+      setIsEditDialogOpen(false);
+      setEditingAddendum(null);
+    },
+    onError: (error) => {
+      console.error("Update addendum error:", error);
+      toast.error(
+        "Error",
+        error?.response?.data?.message ?? "Failed to update addendum"
+      );
+    },
+  });
+
   // Transform API data to component format
   const addendums = useMemo(() => {
     if (!addendumsData?.data?.data) return [];
@@ -187,20 +262,30 @@ const AddendumsTab: React.FC<AddendumsTabProps> = ({ solicitationId }) => {
     await deleteAddendumMutation.mutateAsync(addendumId);
   };
 
+  // Handle edit addendum
+  const handleEditAddendum = (addendum: Addendum) => {
+    setEditingAddendum(addendum);
+    setIsEditDialogOpen(true);
+  };
+
+  // Handle update addendum
+  const handleUpdateAddendum = async (data: EditAddendumFormValues) => {
+    if (!editingAddendum) return;
+    await updateAddendumMutation.mutateAsync(data);
+  };
+
   // Define addendums table columns
   const addendumColumns: ColumnDef<Addendum>[] = [
     {
       accessorKey: "title",
       header: "Title",
       cell: ({ row }) => (
-        <span className="font-medium">{row.original.title}</span>
-      ),
-    },
-    {
-      accessorKey: "linkedQuestion",
-      header: "Linked Question",
-      cell: ({ row }) => (
-        <span className="">{row.original.linkedQuestion ? "Yes" : "No"}</span>
+        <span
+          className="font-medium text-ellipsis whitespace-nowrap overflow-hidden block max-w-[200px]"
+          title={row.original.title}
+        >
+          {truncate(row.original.title, { length: 50 })}
+        </span>
       ),
     },
     {
@@ -211,18 +296,46 @@ const AddendumsTab: React.FC<AddendumsTabProps> = ({ solicitationId }) => {
     {
       accessorKey: "status",
       header: "Status",
-      cell: ({ row }) => <AddendumStatusBadge status={row.original.status} />,
+      cell(props) {
+        return <AddendumStatusBadge status={props.row.original.status} />
+      },
     },
     {
       id: "actions",
       header: "Actions",
       cell: ({ row }) => (
         <div className="flex items-center gap-2">
-          {row.original.status === "Draft" ? (
+          {row.original.status === "draft" ? (
             <>
-              <Button variant="link" className="text-green-600 p-0 h-auto">
-                Edit
-              </Button>
+              <Dialog
+                open={
+                  isEditDialogOpen && editingAddendum?.id === row.original.id
+                }
+                onOpenChange={(open) => {
+                  if (!open) {
+                    setIsEditDialogOpen(false);
+                    setEditingAddendum(null);
+                  }
+                }}
+              >
+                <DialogTrigger asChild>
+                  <Button
+                    variant="link"
+                    className="text-green-600 p-0 h-auto"
+                    onClick={() => handleEditAddendum(row.original)}
+                  >
+                    <Edit className="h-4 w-4 mr-1" />
+                    Edit
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-md">
+                  <EditAddendumDialog
+                    addendum={editingAddendum}
+                    onSubmit={handleUpdateAddendum}
+                    isLoading={updateAddendumMutation.isPending}
+                  />
+                </DialogContent>
+              </Dialog>
               <ConfirmAlert
                 type="delete"
                 title="Delete Addendum"
@@ -261,7 +374,12 @@ const AddendumsTab: React.FC<AddendumsTabProps> = ({ solicitationId }) => {
   // Memoize expensive computations
   const memoizedColumns = useMemo(
     () => addendumColumns,
-    [deleteAddendumMutation.isPending]
+    [
+      deleteAddendumMutation.isPending,
+      updateAddendumMutation.isPending,
+      isEditDialogOpen,
+      editingAddendum,
+    ]
   );
 
   // Add debounced search
@@ -338,7 +456,7 @@ const AddendumsTab: React.FC<AddendumsTabProps> = ({ solicitationId }) => {
           }}
         />
       </div>
-      
+
       {/* Error State */}
       {error && (
         <div className="flex items-center justify-center py-8">
@@ -364,6 +482,113 @@ const AddendumsTab: React.FC<AddendumsTabProps> = ({ solicitationId }) => {
         </SheetContent>
       </Sheet>
     </div>
+  );
+};
+
+// Edit Addendum Dialog Component
+interface EditAddendumDialogProps {
+  addendum: Addendum | null;
+  onSubmit: (data: EditAddendumFormValues) => Promise<void>;
+  isLoading: boolean;
+}
+
+const EditAddendumDialog: React.FC<EditAddendumDialogProps> = ({
+  addendum,
+  onSubmit,
+  isLoading,
+}) => {
+  const { control, handleSubmit, reset } = useForge<EditAddendumFormValues>({
+    resolver: yupResolver(editAddendumSchema),
+    defaultValues: {
+      title: addendum?.title || "",
+      description: addendum?.description || "",
+      submissionDeadline: addendum?.submissionDeadline || "",
+      status: addendum?.status === "published" ? "published" : "draft",
+    },
+  });
+
+  // Reset form when addendum changes
+  React.useEffect(() => {
+    if (addendum) {
+      reset({
+        title: addendum.title,
+        description: addendum.description || "",
+        submissionDeadline: addendum.submissionDeadline || "",
+        status: addendum.status === "published" ? "published" : "draft",
+      });
+    }
+  }, [addendum, reset]);
+
+  const handleFormSubmit = async (data: EditAddendumFormValues) => {
+    await onSubmit(data);
+  };
+
+  if (!addendum) return null;
+
+  return (
+    <>
+      <DialogHeader>
+        <DialogTitle>Edit Addendum</DialogTitle>
+      </DialogHeader>
+
+      <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
+        <div className="space-y-4">
+          <TextInput
+            control={control as any}
+            name="title"
+            label="Title"
+            placeholder="Enter addendum title (5-200 characters)"
+            required
+          />
+          
+          <TextArea
+            control={control as any}
+            name="description"
+            label="Description"
+            placeholder="Enter addendum description (optional, max 2000 characters)"
+            rows={4}
+          />
+
+          <TextDatePicker
+            control={control as any}
+            name="submissionDeadline"
+            label="Submission Deadline"
+            placeholder="Select new submission deadline (optional)"
+          />
+
+
+
+          <TextSelect
+            control={control as any}
+            name="status"
+            label="Status"
+            placeholder="Select addendum status"
+            options={[
+              { value: "draft", label: "Draft" },
+              { value: "published", label: "Published" },
+            ]}
+          />
+        </div>
+
+        <DialogFooter>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => reset()}
+            disabled={isLoading}
+          >
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            disabled={isLoading}
+            className="bg-[#2A4467] hover:bg-[#1e3252] text-white"
+          >
+            {isLoading ? "Updating..." : "Update Addendum"}
+          </Button>
+        </DialogFooter>
+      </form>
+    </>
   );
 };
 

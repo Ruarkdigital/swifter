@@ -48,7 +48,7 @@ interface AddendumDetailsSheetProps {
     title: string;
     linkedQuestion: boolean;
     datePublished: string;
-    status: "Draft" | "Published";
+    status: "draft" | "published";
   };
   solicitationId: string;
   onClose: () => void;
