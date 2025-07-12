@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import { HelmetProvider } from "react-helmet-async";
 import { ErrorFallback } from "./components/layouts/Error";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { Toaster } from "./components/ui/toaster";
@@ -76,17 +77,19 @@ function App() {
   };
 
   return (
-    <ThemeProvider defaultTheme="system" storageKey="swiftpro-theme">
-      <Sentry.ErrorBoundary fallback={({ error }) => <ErrorFallback error={error} />}>
-        <QueryClientProvider client={queryClient}>
-          <Suspense fallback={<RenderLoader />}>
-            <RouterProvider router={router} />
-          </Suspense>
-          {isAuthenticated && !isVendor && <AIChatWidget onSendMessage={handleAIChatMessage} />}
-        </QueryClientProvider>
-        <Toaster />
-      </Sentry.ErrorBoundary>
-    </ThemeProvider>
+    <HelmetProvider>
+      <ThemeProvider defaultTheme="system" storageKey="swiftpro-theme">
+        <Sentry.ErrorBoundary fallback={({ error }) => <ErrorFallback error={error} />}>
+          <QueryClientProvider client={queryClient}>
+            <Suspense fallback={<RenderLoader />}>
+              <RouterProvider router={router} />
+            </Suspense>
+            {isAuthenticated && !isVendor && <AIChatWidget onSendMessage={handleAIChatMessage} />}
+          </QueryClientProvider>
+          <Toaster />
+        </Sentry.ErrorBoundary>
+      </ThemeProvider>
+    </HelmetProvider>
   );
 }
 

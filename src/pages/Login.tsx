@@ -12,6 +12,7 @@ import { postRequest } from "@/lib/axiosInstance";
 import { TextInput } from "@/components/layouts/FormInputs/TextInput";
 import { Link } from "react-router-dom";
 import { useSetToken, useSetUser } from "@/store/authSlice";
+import { SEOWrapper } from "@/components/SEO";
 // import { getUser } from "@/demo";
 
 type FormState = {
@@ -72,11 +73,19 @@ const Login = () => {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-[#F7F9FE] dark:bg-gray-950 transition-colors">
+    <>
+      <SEOWrapper
+        title="Login - SwiftPro eProcurement Portal"
+        description="Secure login to SwiftPro eProcurement Portal. Access your procurement dashboard, manage solicitations, vendors, and evaluations."
+        keywords="login, SwiftPro, eProcurement, procurement portal, secure access, dashboard"
+        canonical="/login"
+        robots="noindex, nofollow"
+      />
+      <div className="flex flex-col items-center justify-center min-h-screen bg-[#F7F9FE] dark:bg-gray-950 transition-colors">
       {/* Header with logo */}
       <div className="w-full flex justify-start p-6">
         <img
-          src="/src/assets/image9.png"
+          src="https://api.swiftpro.tech/api/v1/dev/upload/file-1752307517298-493582260/image9.png"
           alt="SwiftPro Logo"
           className="h-8"
         />
@@ -131,7 +140,8 @@ const Login = () => {
           Powered by AIG Pro Inc
         </p>
       </div>
-    </div>
+      </div>
+    </>
   );
 };
 
