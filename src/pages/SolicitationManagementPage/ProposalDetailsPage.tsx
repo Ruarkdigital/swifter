@@ -413,14 +413,7 @@ const ProposalDetailsPage: React.FC = () => {
         return (
           <div className="flex items-center space-x-2">
             {status === "Completed" ? (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 p-0 h-auto font-normal"
-                onClick={() => handleViewEvaluator(row.original.id)}
-              >
-                View
-              </Button>
+              <></>
             ) : (
               <Button
                 variant="ghost"
