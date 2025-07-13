@@ -30,6 +30,7 @@ type SubItem = {
   component: string;
   description: string;
   quantity: number;
+  unitOfmeasurement: string;
   unitPrice: number;
   subtotal: number;
   subItems: SubItem[];
@@ -120,54 +121,16 @@ const schema = yup.object().shape({
 export type FormValues = yup.InferType<typeof schema>;
 
 const EditProposalPage: React.FC<EditProposalPageProps> = () => {
-  const navigate = useNavigate();
-  const toast = useToastHandler();
-  const [type, setType] = useState("");
-  const formRef = useRef<FormPropsRef>(null);
   const { id: solicitationId, proposalId } = useParams<{
     id: string;
     proposalId: string;
   }>();
-  const [isCompleteDialogOpen, setIsCompleteDialogOpen] = useState(false);
-  const [isFileUploadDialogOpen, setIsFileUploadDialogOpen] = useState(false);
-  const [selectedDocumentId, setSelectedDocumentId] = useState<string | null>(
-    null
-  );
-
-  // Initialize useForge for proposal form
-  const forge = useForge<FormValues>({
-    resolver: yupResolver(schema),
-    defaultValues: {
-      total: 0,
-      status: "submit",
-      document: [],
-      priceAction: [
-        {
-          component: "",
-          description: "",
-          quantity: 0,
-          unitOfmeasurement: "",
-          unitPrice: 0,
-          subtotal: 0,
-          subItems: [],
-        },
-      ],
-    },
-  });
 
   // Fetch existing proposal data
-  const { data: proposalData, isLoading: isLoadingProposal, isSuccess } = useQuery<
+  const { data: proposalData, isLoading: isLoadingProposal } = useQuery<
     ApiResponse<{
       _id: string;
-      action: {
-        _id: string;
-        component: string;
-        description: string;
-        quantity: number;
-        unitPrice: number;
-        subtotal: number;
-        subItems: SubItem[];
-      };
+      action: SubItem[];
       solicitation: {
         _id: string;
         status: string;
@@ -228,6 +191,182 @@ const EditProposalPage: React.FC<EditProposalPageProps> = () => {
     enabled: !!solicitationId,
   });
 
+  // Extract solicitation data from API response
+  const solicitation = solicitationData?.data?.data?.solicitation;
+  const solicitationName = solicitation?.name || "Loading...";
+  const solicitationStatus = solicitation?.status || "Unknown";
+  const requiredFiles = solicitationData?.data?.data?.documents || [];
+
+  const formatFormData = () => {
+    const existingProposal = proposalData?.data?.data;
+
+    // Map existing documents to form format
+    const existingDocuments =
+      existingProposal?.requiredDoc?.map((doc) => ({
+        requiredDocumentId: doc.id,
+        files:
+          doc.files?.map((file) => ({
+            name: file.name,
+            url: file.url,
+            type: file.type,
+            size: file.size,
+            uploadedAt: file.uploadedAt,
+          })) || [],
+      })) || [];
+
+    // Calculate total from existing action data
+    const calculateTotal = () => {
+      if (
+        existingProposal?.action &&
+        typeof existingProposal?.action === "object"
+      ) {
+        const action = Array.isArray(existingProposal.action)
+          ? existingProposal.action[0]
+          : existingProposal.action;
+        return (action?.quantity || 0) * (action?.unitPrice || 0);
+      }
+      return 0;
+    };
+
+    // Prepare price action data with proper mapping
+    const priceActionData = existingProposal?.action?.map?.((action: any) => ({
+      component: action.component || "",
+      description: action.description || "",
+      quantity: action.quantity || 0,
+      unitOfmeasurement: action.unitOfmeasurement || "",
+      unitPrice: action.unitPrice || 0,
+      subtotal:
+        action.subtotal || (action.quantity || 0) * (action.unitPrice || 0),
+      subItems: action.subItems || [],
+    }));
+
+    // Reset form with existing data
+    const formData = {
+      total: calculateTotal(),
+      document: existingDocuments,
+      priceAction: priceActionData,
+    };
+
+    return formData;
+  };
+
+  if (isLoadingProposal || isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 dark:border-gray-100 mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-400">
+            Loading proposal data...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <SEOWrapper
+        title={`Edit Proposal - ${solicitationName} - SwiftPro eProcurement Portal`}
+        description="Edit and update your proposal submission for the solicitation with document uploads and pricing details."
+        keywords="edit proposal, update proposal, solicitation, procurement, vendor portal"
+        canonical={`/dashboard/solicitations/${solicitationId}/edit-proposal/${proposalId}`}
+        robots="noindex, nofollow"
+      />
+      <div className="min-h-screen">
+        {/* Breadcrumb */}
+        <div className="px-6 py-4">
+          <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
+            <span>Solicitations</span>
+            <span className="mx-2">→</span>
+            <span>Solicitation Details</span>
+            <span className="mx-2">→</span>
+            <span>{isLoading ? "Loading..." : solicitationName}</span>
+            <span className="mx-2">→</span>
+            <span className="text-gray-900 dark:text-gray-100 font-medium">
+              Edit Proposal
+            </span>
+          </div>
+        </div>
+
+        {/* Main Content */}
+        <div className="px-6 py-8">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+                Edit Proposal - {isLoading ? "Loading..." : solicitationName}
+              </h1>
+              <p className="text-gray-600 dark:text-gray-400">
+                {solicitation?.solId || "Loading..."} • {solicitationStatus}
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <Badge
+                variant="secondary"
+                className={`${
+                  solicitationStatus?.toLowerCase() === "active"
+                    ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300"
+                    : "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300"
+                }`}
+              >
+                {solicitationStatus || "Unknown"}
+              </Badge>
+            </div>
+          </div>
+
+          {/* Proposal Form  */}
+          <ProposalForm
+            {...{
+              requiredFiles,
+              values: formatFormData(),
+              solicitationId,
+              proposalId,
+            }}
+          />
+        </div>
+        <div className="h-10" />
+      </div>
+    </>
+  );
+};
+
+export default EditProposalPage;
+
+type ProposalFormProps = {
+  values: {
+    total: number;
+    document: any[];
+    priceAction?: any[];
+  };
+  solicitationId?: string;
+  proposalId?: string;
+  requiredFiles: {
+    title: string;
+    link: string;
+    _id: string;
+    size: string;
+    required: boolean;
+    type: string;
+  }[];
+};
+
+const ProposalForm = ({
+  values,
+  proposalId,
+  solicitationId,
+  requiredFiles,
+}: ProposalFormProps) => {
+  const navigate = useNavigate();
+  const toast = useToastHandler();
+  const [type, setType] = useState("");
+  const formRef = useRef<FormPropsRef>(null);
+  const [shouldUnregister, setShouldUnregister] = useState(false);
+  const [isCompleteDialogOpen, setIsCompleteDialogOpen] = useState(false);
+  const [isFileUploadDialogOpen, setIsFileUploadDialogOpen] = useState(false);
+  const [selectedDocumentId, setSelectedDocumentId] = useState<string | null>(
+    null
+  );
+
   // Update proposal mutation
   const { mutateAsync: updateProposal, isPending: isSubmitting } = useMutation<
     ApiResponse<any>,
@@ -242,67 +381,38 @@ const EditProposalPage: React.FC<EditProposalPageProps> = () => {
       }),
   });
 
-  // Extract solicitation data from API response
-  const solicitation = solicitationData?.data?.data?.solicitation;
-  const solicitationName = solicitation?.name || "Loading...";
-  const solicitationStatus = solicitation?.status || "Unknown";
-  const requiredFiles = solicitationData?.data?.data?.documents || [];
-
-  // Populate form with existing proposal data
   useEffect(() => {
-    if (isSuccess && proposalData?.data?.data) {
-      const existingProposal = proposalData.data.data;
+    setTimeout(() => {
+      setShouldUnregister(true);
+    }, 3000);
+  }, []);
 
-      // Map existing documents to form format
-      const existingDocuments = existingProposal.requiredDoc?.map((doc) => ({
-        requiredDocumentId: doc.id,
-        files: doc.files?.map((file) => ({
-          name: file.name,
-          url: file.url,
-          type: file.type,
-          size: file.size,
-          uploadedAt: file.uploadedAt,
-        })) || [],
-      })) || [];
+  // Initialize useForge for proposal form
+  const forge = useForge<FormValues>({
+    resolver: yupResolver(schema),
+    defaultValues: {
+      total: values.total || 0,
+      status: "submit",
+      document: [],
+      priceAction: values.priceAction || [
+        {
+          component: "",
+          description: "",
+          quantity: 0,
+          unitOfmeasurement: "",
+          unitPrice: 0,
+          subtotal: 0,
+          subItems: [],
+        },
+      ],
+    },
+    mode: "onChange",
+  });
 
-      // Calculate total from existing action data
-      const calculateTotal = () => {
-        if (existingProposal.action && typeof existingProposal.action === 'object') {
-          const action = Array.isArray(existingProposal.action) 
-            ? existingProposal.action[0] 
-            : existingProposal.action;
-          return (action?.quantity || 0) * (action?.unitPrice || 0);
-        }
-        return 0;
-      };
-
-      // Prepare price action data
-      const priceActionData = existingProposal.action 
-        ? (Array.isArray(existingProposal.action) 
-            ? existingProposal.action 
-            : [existingProposal.action])
-        : [{
-            component: "",
-            description: "",
-            quantity: 0,
-            unitOfmeasurement: "",
-            unitPrice: 0,
-            subtotal: 0,
-            subItems: [],
-          }];
-
-      // Reset form with existing data
-      const formData = {
-        total: calculateTotal(),
-        status: "submit" as const,
-        document: existingDocuments,
-        priceAction: priceActionData,
-      };
-
-      console.log('Resetting form with data:', formData);
-      forge.reset(formData);
-    }
-  }, [proposalData, isSuccess, forge.reset]);
+  // Handle back navigation
+  const handleBack = () => {
+    navigate(-1);
+  };
 
   // Handle file upload completion
   const handleFilesUploaded = (
@@ -330,11 +440,6 @@ const EditProposalPage: React.FC<EditProposalPageProps> = () => {
       };
       forge.setValue("document", [...currentDocuments, newDocument]);
     }
-  };
-
-  // Handle back navigation
-  const handleBack = () => {
-    navigate(-1);
   };
 
   const handleSubmit = async (data: FormValues) => {
@@ -474,160 +579,89 @@ const EditProposalPage: React.FC<EditProposalPageProps> = () => {
     },
   ];
 
-  if (isLoadingProposal || isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 dark:border-gray-100 mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">
-            Loading proposal data...
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <>
-      <SEOWrapper
-        title={`Edit Proposal - ${solicitationName} - SwiftPro eProcurement Portal`}
-        description="Edit and update your proposal submission for the solicitation with document uploads and pricing details."
-        keywords="edit proposal, update proposal, solicitation, procurement, vendor portal"
-        canonical={`/dashboard/solicitations/${solicitationId}/edit-proposal/${proposalId}`}
-        robots="noindex, nofollow"
-      />
-      <div className="min-h-screen">
-        {/* Breadcrumb */}
-        <div className="px-6 py-4">
-          <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
-            <span>Solicitations</span>
-            <span className="mx-2">→</span>
-            <span>Solicitation Details</span>
-            <span className="mx-2">→</span>
-            <span>{isLoading ? "Loading..." : solicitationName}</span>
-            <span className="mx-2">→</span>
-            <span className="text-gray-900 dark:text-gray-100 font-medium">
-              Edit Proposal
-            </span>
-          </div>
+      {/* Upload Documents Section */}
+      <div className="">
+        <div className="py-4">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+            Update Requested Documents
+          </h2>
         </div>
 
-        {/* Main Content */}
-        <div className="px-6 py-8">
-          {/* Header */}
-          <div className="flex items-center justify-between mb-8">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">
-                Edit Proposal - {isLoading ? "Loading..." : solicitationName}
-              </h1>
-              <p className="text-gray-600 dark:text-gray-400">
-                {solicitation?.solId || "Loading..."} • {solicitationStatus}
-              </p>
-            </div>
-            <div className="flex items-center gap-3">
-              <Badge
-                variant="secondary"
-                className={`${
-                  solicitationStatus?.toLowerCase() === "active"
-                    ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300"
-                    : "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300"
-                }`}
-              >
-                {solicitationStatus || "Unknown"}
-              </Badge>
-            </div>
+        <Forge control={forge.control} ref={formRef} onSubmit={handleSubmit}>
+          <div className="py-4">
+            <DataTable
+              data={requiredFiles}
+              columns={columns}
+              options={{
+                disablePagination: true,
+                disableSelection: true,
+                isLoading: false,
+                totalCounts: requiredFiles.length,
+                manualPagination: false,
+                setPagination: () => {},
+                pagination: { pageIndex: 0, pageSize: 10 },
+              }}
+              classNames={{
+                container: "border-0",
+                table: "border-collapse",
+                tHeader: "bg-gray-50 dark:bg-gray-700",
+                tHead:
+                  "text-left font-medium text-gray-700 dark:text-gray-300 py-3 px-4",
+                tCell:
+                  "py-4 px-4 border-b border-gray-200 dark:border-gray-600",
+                tRow: "hover:bg-gray-50 dark:hover:bg-gray-700",
+              }}
+            />
           </div>
-
-          {/* Upload Documents Section */}
-          <div className="">
-            <div className="py-4">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                Update Requested Documents
-              </h2>
-            </div>
-
-            <Forge
-              control={forge.control}
-              ref={formRef}
-              onSubmit={handleSubmit}
-            >
-              <div className="py-4">
-                <DataTable
-                  data={requiredFiles}
-                  columns={columns}
-                  options={{
-                    disablePagination: true,
-                    disableSelection: true,
-                    isLoading: false,
-                    totalCounts: requiredFiles.length,
-                    manualPagination: false,
-                    setPagination: () => {},
-                    pagination: { pageIndex: 0, pageSize: 10 },
-                  }}
-                  classNames={{
-                    container: "border-0",
-                    table: "border-collapse",
-                    tHeader: "bg-gray-50 dark:bg-gray-700",
-                    tHead:
-                      "text-left font-medium text-gray-700 dark:text-gray-300 py-3 px-4",
-                    tCell:
-                      "py-4 px-4 border-b border-gray-200 dark:border-gray-600",
-                    tRow: "hover:bg-gray-50 dark:hover:bg-gray-700",
-                  }}
-                />
-              </div>
-            </Forge>
-          </div>
-
-          {/* Action Buttons */}
-          <div className="flex items-center justify-end mt-8">
-            <div className="flex items-center gap-3">
-              <Button
-                variant="outline"
-                onClick={handleBack}
-                className="px-6"
-                disabled={isSubmitting}
-              >
-                Back
-              </Button>
-              <Button
-                className="px-6 bg-[#2A4467] hover:bg-[#1e3147]"
-                onClick={() => formRef.current?.onSubmit()}
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? "Updating..." : "Update Proposal"}
-              </Button>
-            </div>
-          </div>
-
-          {/* Dialogs */}
-          <CompleteProposalDialog
-            open={isCompleteDialogOpen}
-            onOpenChange={setIsCompleteDialogOpen}
-            control={forge.control as any}
-            reset={forge.reset}
-            setValue={forge.setValue as any}
-            getValue={forge.getValues as any}
-            id={selectedDocumentId}
-          />
-
-          <FileUploadDialog
-            open={isFileUploadDialogOpen}
-            onOpenChange={setIsFileUploadDialogOpen}
-            onFilesUploaded={(files) =>
-              handleFilesUploaded(files, selectedDocumentId || "")
-            }
-            control={forge.control}
-            requiredDocumentId={selectedDocumentId || ""}
-            maxFiles={5}
-            type={type}
-            acceptedTypes={[".pdf", ".doc", ".docx", ".xls", ".xlsx"]}
-          />
-        </div>
-        <div className="h-10" />
+        </Forge>
       </div>
+
+      <div className="flex items-center justify-end mt-8">
+        <div className="flex items-center gap-3">
+          <Button
+            variant="outline"
+            onClick={handleBack}
+            className="px-6"
+            disabled={isSubmitting}
+          >
+            Back
+          </Button>
+          <Button
+            className="px-6 bg-[#2A4467] hover:bg-[#1e3147]"
+            onClick={() => formRef.current?.onSubmit()}
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? "Updating..." : "Update Proposal"}
+          </Button>
+        </div>
+      </div>
+
+      {/* Dialogs */}
+      <CompleteProposalDialog
+        open={isCompleteDialogOpen}
+        onOpenChange={setIsCompleteDialogOpen}
+        control={forge.control as any}
+        reset={forge.reset}
+        setValue={forge.setValue as any}
+        getValue={forge.getValues as any}
+        id={selectedDocumentId}
+        {...{ shouldUnregister }}
+      />
+
+      <FileUploadDialog
+        open={isFileUploadDialogOpen}
+        onOpenChange={setIsFileUploadDialogOpen}
+        onFilesUploaded={(files) =>
+          handleFilesUploaded(files, selectedDocumentId || "")
+        }
+        control={forge.control}
+        requiredDocumentId={selectedDocumentId || ""}
+        maxFiles={5}
+        type={type}
+        acceptedTypes={[".pdf", ".doc", ".docx", ".xls", ".xlsx"]}
+      />
     </>
   );
 };
-
-export default EditProposalPage;

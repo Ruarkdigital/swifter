@@ -14,7 +14,7 @@ import { CornerDownRight, Plus, Trash2 } from "lucide-react";
 import ProposalItemRow from "./ProposalItemRow";
 import { FormValues } from "./SubmitProposalPage";
 import { usePersist } from "@/lib/forge/usePersist/usePersist";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { UseFormSetValue, UseFormGetValues } from "react-hook-form";
 
 interface CompleteProposalDialogProps {
@@ -25,6 +25,7 @@ interface CompleteProposalDialogProps {
   reset?: () => void;
   setValue: UseFormSetValue<FormValues>;
   getValue: UseFormGetValues<FormValues>;
+  shouldUnregister?: boolean
 }
 
 const CompleteProposalDialog: React.FC<CompleteProposalDialogProps> = ({
@@ -32,18 +33,27 @@ const CompleteProposalDialog: React.FC<CompleteProposalDialogProps> = ({
   open,
   onOpenChange,
   control,
-  reset,
   setValue,
   getValue,
+  shouldUnregister = true
 }) => {
   const { fields, append, remove, update } = useFieldArray({
     control,
     name: "priceAction",
     inputProps: {},
-    shouldUnregister: true,
+    shouldUnregister,
   });
 
   const [totalAmount, setTotalAmount] = useState("0.00");
+
+  // Initialize total amount when dialog opens with existing data
+  useEffect(() => {
+    if (open) {
+      const currentFormValues = getValue();
+      const total = calculateTotal(currentFormValues);
+      setTotalAmount(total.toFixed(2));
+    }
+  }, [open, getValue]);
 
   // Calculate subtotal for an item (including its sub-items)
   const calculateItemSubtotal = (item: any) => {
@@ -375,7 +385,6 @@ const CompleteProposalDialog: React.FC<CompleteProposalDialogProps> = ({
                 variant="outline"
                 onClick={() => {
                   onOpenChange(false);
-                  reset?.();
                 }}
               >
                 Cancel

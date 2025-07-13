@@ -346,7 +346,7 @@ export const InvitedVendorCard = ({
 export const SolicitationDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { isVendor } = useUserRole();
+  const { isVendor, isCompanyAdmin } = useUserRole();
   const queryClient = useQueryClient();
   const toastHandlers = useToastHandler();
   const [searchQuery, setSearchQuery] = useState("");
@@ -928,12 +928,14 @@ export const SolicitationDetailPage = () => {
               >
                 Vendor & Proposals
               </TabsTrigger>
-              <TabsTrigger
-                value="evaluation"
-                className="data-[state=active]:border-[#2A4467] data-[state=active]:dark:bg-transparent data-[state=active]:dark:text-slate-100 relative rounded-none py-2 after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 border-0 border-b-2 data-[state=active]:bg-transparent data-[state=active]:shadow-none flex-none px-3"
-              >
-                Evaluation
-              </TabsTrigger>
+              {!isCompanyAdmin && (
+                <TabsTrigger
+                  value="evaluation"
+                  className="data-[state=active]:border-[#2A4467] data-[state=active]:dark:bg-transparent data-[state=active]:dark:text-slate-100 relative rounded-none py-2 after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 border-0 border-b-2 data-[state=active]:bg-transparent data-[state=active]:shadow-none flex-none px-3"
+                >
+                  Evaluation
+                </TabsTrigger>
+              )}
             </>
           )}
           {!isVendor && (
