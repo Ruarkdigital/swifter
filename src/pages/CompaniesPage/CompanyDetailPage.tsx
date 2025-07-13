@@ -441,6 +441,7 @@ const CompanyDetailPage = () => {
         open={showRemoveAdminDialog}
         onClose={(open) => setShowRemoveAdminDialog(open)}
         onPrimaryAction={confirmRemoveAdmin}
+        isLoading={isDeletingAdmin}
         primaryButtonText="Remove"
         secondaryButtonText="Cancel"
       />
@@ -496,6 +497,7 @@ const CompanyDetailPage = () => {
             open={showConfirmDialog}
             onSecondaryAction={() => setShowConfirmDialog(false)}
             onClose={setShowConfirmDialog}
+            isLoading={isUpdatingStatus}
             trigger={
               companyData.status !== "active" ? (
                 <Button

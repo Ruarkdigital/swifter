@@ -607,20 +607,6 @@ const ProposalDetailsPage: React.FC = () => {
           </div>
         )}
 
-        {/* Award Vendor Confirmation Modal */}
-        {/* <ConfirmAlert
-          open={showAwardModal}
-          onClose={setShowAwardModal}
-          type="award"
-          title="Confirm Award Vendor"
-          text="Are you sure you want to award this vendor? This action cannot be undone."
-          primaryButtonText="Award Vendor"
-          secondaryButtonText="Cancel"
-          onPrimaryAction={handleConfirmAward}
-          onSecondaryAction={() => setShowAwardModal(false)}
-          hideDialog={false}
-        /> */}
-
         {/* Tabs */}
         <Tabs defaultValue="overview" className="w-full">
           <TabsList className="h-auto rounded-none border-b border-gray-300 dark:border-gray-600 !bg-transparent p-0 w-full justify-start">
@@ -928,6 +914,8 @@ const ProposalDetailsPage: React.FC = () => {
         </Tabs>
       </div>
 
+
+        {/* Award Vendor Confirmation Modal */}
       <ConfirmAlert
         open={showAwardModal}
         onClose={setShowAwardModal}
@@ -938,6 +926,7 @@ const ProposalDetailsPage: React.FC = () => {
         secondaryButtonText="Cancel"
         type="award"
         showSecondaryButton={true}
+        isLoading={awardVendorMutation.isPending}
       />
     </div>
   );

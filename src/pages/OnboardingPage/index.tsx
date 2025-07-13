@@ -331,8 +331,9 @@ const OnboardingPage = () => {
                   type="submit"
                   className="w-full h-12  text-white font-medium rounded-lg transition-colors"
                   disabled={isPending}
+                  isLoading={isPending}
                 >
-                  {isPending ? "Creating Account..." : "Complete"}
+                  Complete
                 </Button>
               </div>
             </Forge>

@@ -47,6 +47,8 @@ type ConfirmAlertProps = {
   toggleValue?: boolean;
   hideDialog?: boolean;
   onToggleChange?: (value: boolean) => void;
+  isLoading?: boolean;
+  primaryButtonLoading?: boolean;
 };
 export const ConfirmAlert = (props: ConfirmAlertProps) => {
   const setReset = useSetReset();
@@ -138,6 +140,8 @@ export const ConfirmAlert = (props: ConfirmAlertProps) => {
     }
   };
 
+  const isPrimaryButtonLoading = props.primaryButtonLoading || props.isLoading || mutation.isPending;
+
   const handleSecondaryAction = () => {
     if (props.onSecondaryAction) {
       props.onSecondaryAction();
@@ -221,7 +225,8 @@ export const ConfirmAlert = (props: ConfirmAlertProps) => {
         )}
         <Button
           onClick={handlePrimaryAction}
-          isLoading={mutation.isPending}
+          isLoading={isPrimaryButtonLoading}
+          disabled={isPrimaryButtonLoading}
           className={cn(
             "flex-1",
             props.type === "success" || props.type === "draft"

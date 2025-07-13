@@ -194,8 +194,8 @@ const CreateAdminDialog = () => {
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isPending}>
-              {isPending ? "Send Invite" : "Send Invite"}
+            <Button type="submit" disabled={isPending} isLoading={isPending}>
+              Send Invite
             </Button>
           </div>
         </Forge>

@@ -302,6 +302,7 @@ export const EvaluationManagementPage = () => {
               primaryButtonText="Take Over"
               secondaryButtonText="Cancel"
               onPrimaryAction={() => handleManageEvaluation(row.original.id)}
+              isLoading={manageEvaluationMutation.isPending}
               trigger={
                 <Button
                   variant="ghost"

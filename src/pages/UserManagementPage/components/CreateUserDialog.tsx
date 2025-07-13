@@ -335,10 +335,11 @@ const CreateUserDialog = () => {
                   multipleUserFormRef.current?.onSubmit();
                 }
               }}
-              // disabled={isPending}
+              disabled={isPending}
+              isLoading={isPending}
               className="px-6 py-2 bg-[#2A4467] hover:bg-[#1e3147] text-white rounded-md"
             >
-              {isPending ? "Sending..." : "Send Invite"}
+              Send Invite
             </Button>
           </div>
         </Tabs>

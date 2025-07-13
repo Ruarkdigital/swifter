@@ -249,7 +249,7 @@ export const VendorManagementPage = () => {
   });
 
   // Suspend vendor mutation
-  const { mutateAsync: suspendVendor } = useMutation<
+  const { mutateAsync: suspendVendor, isPending: isSuspendingVendor } = useMutation<
     ApiResponse<any>,
     ApiResponseError,
     string
@@ -273,7 +273,7 @@ export const VendorManagementPage = () => {
   });
 
   // Unsuspend vendor mutation
-  const { mutateAsync: unsuspendVendor } = useMutation<
+  const { mutateAsync: unsuspendVendor, isPending: isUnsuspendingVendor } = useMutation<
     ApiResponse<any>,
     ApiResponseError,
     string
@@ -497,6 +497,7 @@ export const VendorManagementPage = () => {
                 text="Are you sure you want to unsuspend this vendor?"
                 title="Unsuspend Vendor"
                 onPrimaryAction={() => handleUnsuspendVendor(row.original._id)}
+                isLoading={isUnsuspendingVendor}
               >
                 <DropdownMenuItem className="p-3 text-green-600">
                   Unsuspend Vendor
@@ -507,6 +508,7 @@ export const VendorManagementPage = () => {
                 text="Are you sure you want to suspend this vendor?"
                 title="Suspend Vendor"
                 onPrimaryAction={() => handleSuspendVendor(row.original._id)}
+                isLoading={isSuspendingVendor}
               >
                 <DropdownMenuItem className="p-3 text-orange-600">
                   Suspend Vendor

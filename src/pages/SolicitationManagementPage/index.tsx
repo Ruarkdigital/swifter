@@ -586,6 +586,11 @@ export const SolicitationManagementPage = () => {
   const confirmPublicSolicitationMutation = useConfirmPublicSolicitation();
   const declinePublicSolicitationMutation = useDeclinePublicSolicitation();
 
+  // Extract loading states
+  const isDeletingSolicitation = deleteSolicitationMutation.isPending;
+  const isConfirmingSolicitation = confirmPublicSolicitationMutation.isPending;
+  const isDeclining = declinePublicSolicitationMutation.isPending;
+
   // Get current data based on active tab
   const currentData = useMemo(() => {
     if (activeTab === "all") {
@@ -1418,6 +1423,7 @@ export const SolicitationManagementPage = () => {
         onPrimaryAction={handleDeleteConfirm}
         onSecondaryAction={handleDeleteCancel}
         showSecondaryButton={true}
+        isLoading={isDeletingSolicitation}
       />
 
       {/* Confirm Interest Dialog */}
@@ -1432,6 +1438,7 @@ export const SolicitationManagementPage = () => {
         onPrimaryAction={handleConfirmSolicitation}
         onSecondaryAction={handleConfirmCancel}
         showSecondaryButton={true}
+        isLoading={isConfirmingSolicitation}
       />
 
       {/* Decline Interest Dialog */}
@@ -1446,6 +1453,7 @@ export const SolicitationManagementPage = () => {
         onPrimaryAction={handleDeclineSolicitation}
         onSecondaryAction={handleDeclineCancel}
         showSecondaryButton={true}
+        isLoading={isDeclining}
       />
       <div className="h-10" />
     </div>

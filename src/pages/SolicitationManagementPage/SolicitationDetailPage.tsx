@@ -758,6 +758,7 @@ export const SolicitationDetailPage = () => {
                   onPrimaryAction={() =>
                     remindEvaluatorMutation.mutate(row.original._id)
                   }
+                  isLoading={remindEvaluatorMutation.isPending}
                   trigger={
                     <Button
                       variant="link"
@@ -780,6 +781,7 @@ export const SolicitationDetailPage = () => {
                   onPrimaryAction={() =>
                     removeEvaluatorMutation.mutate(row.original._id)
                   }
+                  isLoading={removeEvaluatorMutation.isPending}
                   trigger={
                     <Button
                       variant="link"
@@ -1036,10 +1038,8 @@ export const SolicitationDetailPage = () => {
                   <label className="text-sm font-medium text-gray-500 mb-1 block">
                     Status
                   </label>
-                  <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100 border-0">
-                    {solicitation.status.charAt(0).toUpperCase() +
-                      solicitation.status.slice(1)}
-                  </Badge>
+                  <StatusBadge status={solicitation.status} />
+                  
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-500 mb-1 block">

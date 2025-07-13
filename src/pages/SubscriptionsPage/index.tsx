@@ -486,6 +486,7 @@ const SubscriptionsPage = () => {
                   primaryButtonText="Suspend"
                   secondaryButtonText="Cancel"
                   showSecondaryButton={true}
+                  isLoading={updateStatusMutation.isPending}
                   onPrimaryAction={() =>
                     handleSuspendSubscription(subscription.id)
                   }
@@ -508,6 +509,7 @@ const SubscriptionsPage = () => {
                   primaryButtonText="Renew"
                   secondaryButtonText="Cancel"
                   showSecondaryButton={true}
+                  isLoading={renewMutation.isPending}
                   onPrimaryAction={() =>
                     handleRenewSubscription(subscription.id)
                   }
@@ -530,6 +532,7 @@ const SubscriptionsPage = () => {
                   primaryButtonText="Reactivate"
                   secondaryButtonText="Cancel"
                   showSecondaryButton={true}
+                  isLoading={updateStatusMutation.isPending}
                   onPrimaryAction={() =>
                     handleReactivateSubscription(subscription.id)
                   }

@@ -271,6 +271,7 @@ const SubscriptionDetailPage = () => {
               open={isReactivateDialogOpen}
               onClose={setIsReactivateDialogOpen}
               onPrimaryAction={handleReactivateSubscription}
+              isLoading={updateStatusMutation.isPending}
               trigger={
                 <Button 
                   className="text-white"
@@ -291,6 +292,7 @@ const SubscriptionDetailPage = () => {
               open={isSuspendDialogOpen}
               onClose={setIsSuspendDialogOpen}
               onPrimaryAction={handleSuspendSubscription}
+              isLoading={updateStatusMutation.isPending}
               trigger={
                 <Button 
                   className="bg-red-600 hover:bg-red-700 text-white"

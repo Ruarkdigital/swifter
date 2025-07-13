@@ -442,6 +442,7 @@ const AdminDetailsSheet: React.FC<AdminDetailsSheetProps> = ({
                 text="Are you sure you want to delete this admin? This action cannot be undone."
                 type="delete"
                 onPrimaryAction={handleDeleteUser}
+                isLoading={deleteMutation.isPending}
                   primaryButtonText={
                     deleteMutation.isPending ? "Deleting..." : "Yes"
                   }

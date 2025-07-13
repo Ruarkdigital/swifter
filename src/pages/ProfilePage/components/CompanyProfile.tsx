@@ -277,8 +277,8 @@ const CompanyProfile: React.FC = () => {
 
         {/* Save Button */}
         <div className="flex justify-end pt-6">
-          <Button type="submit" disabled={isPending} className="px-6">
-            {isPending ? "Saving..." : "Save Changes"}
+          <Button type="submit" disabled={isPending} isLoading={isPending} className="px-6">
+            Save Changes
           </Button>
         </div>
       </Forge>

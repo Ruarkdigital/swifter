@@ -267,7 +267,7 @@ const AdminManagementPage = () => {
   });
 
   // Delete admin mutation
-  const { mutateAsync: deleteAdmin } = useMutation<
+  const { mutateAsync: deleteAdmin, isPending: isDeletingAdmin } = useMutation<
     ApiResponse<any>,
     ApiResponseError,
     string
@@ -291,7 +291,7 @@ const AdminManagementPage = () => {
   });
 
   // Update admin status mutation
-  const { mutateAsync: updateAdminStatus } = useMutation<
+  const { mutateAsync: updateAdminStatus, isPending: isUpdatingAdminStatus } = useMutation<
     ApiResponse<any>,
     ApiResponseError,
     { adminId: string; status: "active" | "inactive" }
@@ -468,6 +468,7 @@ const AdminManagementPage = () => {
             title="Delete Admin"
             open={isDeleteDialogOpen}
             onPrimaryAction={() => handleDeleteAdmin(row.original._id)}
+            isLoading={isDeletingAdmin}
           ></ConfirmAlert>
 
           <ConfirmAlert
@@ -477,6 +478,7 @@ const AdminManagementPage = () => {
             onPrimaryAction={() =>
               handleUpdateAdminStatus(row.original._id, "inactive")
             }
+            isLoading={isUpdatingAdminStatus}
           ></ConfirmAlert>
         </Dialog>
       ),
