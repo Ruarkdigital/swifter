@@ -129,6 +129,11 @@ export const VendorManagementPage = () => {
     plan: "",
   });
   const [activeStatCard, setActiveStatCard] = useState<string | null>(null);
+  const [suspendedVendorId, setSuspendedVendorId] = useState<string | null>(
+    null
+  );
+  const [isSuspendModel, setIsSuspendModel] = useState(false);
+  const [isUnsuspendModel, setIsUnsuspendModel] = useState(false);
 
   // Debounce search query
   useEffect(() => {
@@ -249,55 +254,53 @@ export const VendorManagementPage = () => {
   });
 
   // Suspend vendor mutation
-  const { mutateAsync: suspendVendor, isPending: isSuspendingVendor } = useMutation<
-    ApiResponse<any>,
-    ApiResponseError,
-    string
-  >({
-    mutationKey: ["suspendVendor"],
-    mutationFn: async (vendorId) =>
-      await deleteRequest({ url: `/procurement/vendors/${vendorId}/suspend` }),
-    onSuccess: () => {
-      toast.success("Success", "Vendor suspended successfully");
-      queryClient.invalidateQueries({ queryKey: ["vendors"] });
-      queryClient.invalidateQueries({ queryKey: ["vendorDashboard"] });
-    },
-    onError: (error) => {
-      console.log(error);
-      const err = error as ApiResponseError;
-      toast.error(
-        "Error",
-        err?.response?.data?.message ?? "Failed to suspend vendor"
-      );
-    },
-  });
+  const { mutateAsync: suspendVendor, isPending: isSuspendingVendor } =
+    useMutation<ApiResponse<any>, ApiResponseError, string>({
+      mutationKey: ["suspendVendor"],
+      mutationFn: async (vendorId) =>
+        await deleteRequest({
+          url: `/procurement/vendors/${vendorId}/suspend`,
+        }),
+      onSuccess: () => {
+        toast.success("Success", "Vendor suspended successfully");
+        queryClient.invalidateQueries({ queryKey: ["vendors"] });
+        queryClient.invalidateQueries({ queryKey: ["vendorDashboard"] });
+        setIsSuspendModel(false);
+      },
+      onError: (error) => {
+        console.log(error);
+        const err = error as ApiResponseError;
+        toast.error(
+          "Error",
+          err?.response?.data?.message ?? "Failed to suspend vendor"
+        );
+      },
+    });
 
   // Unsuspend vendor mutation
-  const { mutateAsync: unsuspendVendor, isPending: isUnsuspendingVendor } = useMutation<
-    ApiResponse<any>,
-    ApiResponseError,
-    string
-  >({
-    mutationKey: ["unsuspendVendor"],
-    mutationFn: async (vendorId) =>
-      await putRequest({
-        url: `/procurement/vendors/${vendorId}/unsuspend`,
-        payload: {},
-      }),
-    onSuccess: () => {
-      toast.success("Success", "Vendor unsuspend successfully");
-      queryClient.invalidateQueries({ queryKey: ["vendors"] });
-      queryClient.invalidateQueries({ queryKey: ["vendorDashboard"] });
-    },
-    onError: (error) => {
-      console.log(error);
-      const err = error as ApiResponseError;
-      toast.error(
-        "Error",
-        err?.response?.data?.message ?? "Failed to unsuspend vendor"
-      );
-    },
-  });
+  const { mutateAsync: unsuspendVendor, isPending: isUnsuspendingVendor } =
+    useMutation<ApiResponse<any>, ApiResponseError, string>({
+      mutationKey: ["unsuspendVendor"],
+      mutationFn: async (vendorId) =>
+        await putRequest({
+          url: `/procurement/vendors/${vendorId}/unsuspend`,
+          payload: {},
+        }),
+      onSuccess: () => {
+        toast.success("Success", "Vendor unsuspend successfully");
+        queryClient.invalidateQueries({ queryKey: ["vendors"] });
+        queryClient.invalidateQueries({ queryKey: ["vendorDashboard"] });
+        setIsUnsuspendModel(false);
+      },
+      onError: (error) => {
+        console.log(error);
+        const err = error as ApiResponseError;
+        toast.error(
+          "Error",
+          err?.response?.data?.message ?? "Failed to unsuspend vendor"
+        );
+      },
+    });
 
   // Handle vendor suspension
   const handleSuspendVendor = async (vendorId: string) => {
@@ -332,10 +335,10 @@ export const VendorManagementPage = () => {
   const handleStatCardClick = (cardType: string) => {
     // Reset pagination when filter changes
     setPagination((prev) => ({ ...prev, pageIndex: 0 }));
-    
+
     // Set active card and update filters
     setActiveStatCard(cardType);
-    
+
     switch (cardType) {
       case "all":
         setFilters((prev) => ({ ...prev, status: "" }));
@@ -358,12 +361,12 @@ export const VendorManagementPage = () => {
   // Handle filter changes from dropdown
   const handleFilterChange = (
     filterType: string,
-    value: string,
-    label: string
+    value: string
+    // label: string
   ) => {
     // Reset to first page when filters change
     setPagination((prev) => ({ ...prev, pageIndex: 0 }));
-    
+
     // Clear active stat card when using dropdown filters
     if (filterType === "Status") {
       setActiveStatCard(null);
@@ -377,8 +380,6 @@ export const VendorManagementPage = () => {
     } else if (filterType === "Plan") {
       setFilters((prev) => ({ ...prev, plan: value }));
     }
-
-    console.log(`Filter changed: ${filterType} - ${value} (${label})`);
   };
 
   // Filter data based on search query and filters
@@ -493,27 +494,25 @@ export const VendorManagementPage = () => {
               }
             /> */}
             {row.original.isSuspended ? (
-              <ConfirmAlert
-                text="Are you sure you want to unsuspend this vendor?"
-                title="Unsuspend Vendor"
-                onPrimaryAction={() => handleUnsuspendVendor(row.original._id)}
-                isLoading={isUnsuspendingVendor}
+              <DropdownMenuItem
+                className="p-3 text-green-600"
+                onClick={() => {
+                  setSuspendedVendorId(row.original._id);
+                  setIsUnsuspendModel(true);
+                }}
               >
-                <DropdownMenuItem className="p-3 text-green-600">
-                  Unsuspend Vendor
-                </DropdownMenuItem>
-              </ConfirmAlert>
+                Unsuspend Vendor
+              </DropdownMenuItem>
             ) : (
-              <ConfirmAlert
-                text="Are you sure you want to suspend this vendor?"
-                title="Suspend Vendor"
-                onPrimaryAction={() => handleSuspendVendor(row.original._id)}
-                isLoading={isSuspendingVendor}
+              <DropdownMenuItem
+                className="p-3 text-orange-600"
+                onClick={() => {
+                  setSuspendedVendorId(row.original._id);
+                  setIsSuspendModel(true);
+                }}
               >
-                <DropdownMenuItem className="p-3 text-orange-600">
-                  Suspend Vendor
-                </DropdownMenuItem>
-              </ConfirmAlert>
+                Suspend Vendor
+              </DropdownMenuItem>
             )}
           </DropdownMenuContent>
         </DropdownMenu>
@@ -692,6 +691,30 @@ export const VendorManagementPage = () => {
           pagination,
         }}
       />
+
+      <ConfirmAlert
+        text="Are you sure you want to unsuspend this vendor?"
+        title="Unsuspend Vendor"
+        onPrimaryAction={() => handleUnsuspendVendor(suspendedVendorId ?? "")}
+        onClose={() => {
+          setSuspendedVendorId(null)
+          setIsUnsuspendModel(false)
+        }}
+        open={isUnsuspendModel}
+        isLoading={isUnsuspendingVendor}
+      ></ConfirmAlert>
+
+      <ConfirmAlert
+        text="Are you sure you want to suspend this vendor?"
+        title="Suspend Vendor"
+        onPrimaryAction={() => handleSuspendVendor(suspendedVendorId ?? "")}
+        onClose={() => {
+          setSuspendedVendorId(null)
+          setIsSuspendModel(false)
+        }}
+        open={isSuspendModel}
+        isLoading={isSuspendingVendor}
+      ></ConfirmAlert>
     </div>
   );
 };
