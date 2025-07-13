@@ -331,12 +331,12 @@ const ProposalDetailsPage: React.FC = () => {
   };
 
   // Handle view evaluator score card
-  const handleViewEvaluator = (evaluatorId: string) => {
-    // Navigate to evaluator score card page
-    navigate(
-      `/procurement/solicitations/${id}/evaluator-score-card/${evaluatorId}`
-    );
-  };
+  // const handleViewEvaluator = (evaluatorId: string) => {
+  //   // Navigate to evaluator score card page
+  //   navigate(
+  //     `/procurement/solicitations/${id}/evaluator-score-card/${evaluatorId}`
+  //   );
+  // };
 
   // Define columns for the evaluator scores table
   const evaluatorColumns: ColumnDef<EvaluatorData>[] = [
