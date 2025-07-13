@@ -393,7 +393,7 @@ const ProposalForm = ({
     defaultValues: {
       total: values.total || 0,
       status: "submit",
-      document: [],
+      document: values.document || [],
       priceAction: values.priceAction || [
         {
           component: "",
