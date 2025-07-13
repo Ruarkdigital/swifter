@@ -41,7 +41,7 @@ type EvaluatorScoreData = {
   dateAssigned: string | null;
   dateSubmitted: string;
   status: string;
-  score: number | null;
+  averageScore: number | null;
   _id?: string; // Add evaluatorId if available in API response
 };
 
@@ -161,13 +161,13 @@ const ProposalDetailsPage: React.FC = () => {
       evaluatorName: evaluator.name,
       email: evaluator.email,
       assignedDate: evaluator.dateAssigned
-        ? format(new Date(evaluator.dateAssigned), "MMM d, yyyy")
+        ? format(new Date(evaluator.dateAssigned), "MMM d, yyyy pppp")
         : "N/A",
       submittedDate: evaluator.dateSubmitted
-        ? format(new Date(evaluator.dateSubmitted), "MMM d, yyyy")
+        ? format(new Date(evaluator.dateSubmitted), "MMM d, yyyy pppp")
         : "N/A",
-      status: evaluator.status === "submitted" ? "Completed" : "Pending",
-      totalScore: evaluator.score ? `${evaluator.score}/100` : "N/A",
+      status: evaluator.status === "Completed" ? "Completed" : "Pending",
+      totalScore: evaluator.averageScore ? `${evaluator.averageScore}/100` : "N/A",
       commentSummary: "View details for comments", // Placeholder as API doesn't provide comment summary
     })) || [];
 
@@ -396,15 +396,15 @@ const ProposalDetailsPage: React.FC = () => {
         </div>
       ),
     },
-    {
-      accessorKey: "commentSummary",
-      header: "Comment Summary",
-      cell: ({ row }) => (
-        <div className="text-gray-900 dark:text-white">
-          {row.original.commentSummary}
-        </div>
-      ),
-    },
+    // {
+    //   accessorKey: "commentSummary",
+    //   header: "Comment Summary",
+    //   cell: ({ row }) => (
+    //     <div className="text-gray-900 dark:text-white">
+    //       {row.original.commentSummary}
+    //     </div>
+    //   ),
+    // },
     {
       id: "actions",
       header: "Actions",
