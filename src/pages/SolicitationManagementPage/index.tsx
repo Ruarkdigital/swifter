@@ -358,7 +358,9 @@ const StatusBadge = ({
   };
 
   return (
-    <Badge className={`${getStatusColor(status)} border-0 !text-center mx-auto`}>
+    <Badge
+      className={`${getStatusColor(status)} border-0 !text-center mx-auto`}
+    >
       {getStatusLabel(status)}
     </Badge>
   );
@@ -414,9 +416,8 @@ export const SolicitationManagementPage = () => {
   >(null);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [declineDialogOpen, setDeclineDialogOpen] = useState(false);
-  const [selectedSolicitationForAction, setSelectedSolicitationForAction] = useState<
-    string | null
-  >(null);
+  const [selectedSolicitationForAction, setSelectedSolicitationForAction] =
+    useState<string | null>(null);
   // const [activeTab, setActiveTab] = useState<string>("all");
 
   // Update filters when pagination changes
@@ -769,41 +770,43 @@ export const SolicitationManagementPage = () => {
           header: "Actions",
           cell: ({ row }) => {
             return (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="h-8 w-8 p-0">
-                  <MoreHorizontal className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem
-                  className="py-3 px-4"
-                  onClick={() =>
-                    navigate(`/dashboard/solicitation/${row.original._id}`)
-                  }
-                >
-                  View Details
-                </DropdownMenuItem>
-                {/* Show confirmation options for public solicitations */}
-                {row.original.visibility === "public" && !row.original.owner && (
-                  <>
-                    <DropdownMenuItem
-                      className="py-3 px-4 text-green-600 hover:text-green-700 hover:bg-green-50 dark:hover:bg-green-900/20"
-                      onClick={() => handleConfirmClick(row.original._id)}
-                    >
-                      Confirm Interest
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      className="py-3 px-4 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
-                      onClick={() => handleDeclineClick(row.original._id)}
-                    >
-                      Decline
-                    </DropdownMenuItem>
-                  </>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )},
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="h-8 w-8 p-0">
+                    <MoreHorizontal className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem
+                    className="py-3 px-4"
+                    onClick={() =>
+                      navigate(`/dashboard/solicitation/${row.original._id}`)
+                    }
+                  >
+                    View Details
+                  </DropdownMenuItem>
+                  {/* Show confirmation options for public solicitations */}
+                  {row.original.visibility === "public" &&
+                    !row.original.owner && (
+                      <>
+                        <DropdownMenuItem
+                          className="py-3 px-4 text-green-600 hover:text-green-700 hover:bg-green-50 dark:hover:bg-green-900/20"
+                          onClick={() => handleConfirmClick(row.original._id)}
+                        >
+                          Confirm Interest
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          className="py-3 px-4 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+                          onClick={() => handleDeclineClick(row.original._id)}
+                        >
+                          Decline
+                        </DropdownMenuItem>
+                      </>
+                    )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            );
+          },
         },
       ]
     : isProcurement
@@ -817,7 +820,8 @@ export const SolicitationManagementPage = () => {
                 {truncate(row.original.name, { length: 50 })}
               </span>
               <span className="text-sm text-gray-500 dark:text-gray-400">
-                {row.original.solId} • {row.original.typeId?.name.split("-")?.[0]}
+                {row.original.solId} •{" "}
+                {row.original.typeId?.name.split("-")?.[0]}
               </span>
             </div>
           ),
@@ -882,16 +886,19 @@ export const SolicitationManagementPage = () => {
         {
           accessorKey: "vendors",
           header: "Vendors",
-          cell: ({ row }) => (
-            <div className="text-sm">
-              <div className="text-green-600">
-                Confirmed: {row.original.vendorConfirmed || 0}
+          cell: ({ row }) => {
+            const vendors = row.original.vendors || [];
+            return (
+              <div className="text-sm">
+                <div className="text-green-600">
+                  Confirmed: {vendors.filter((v) => v.status === "confirmed").length}
+                </div>
+                <div className="text-red-600">
+                  Declined: {vendors.filter((v) => v.status === "declined").length}
+                </div>
               </div>
-              <div className="text-red-600">
-                Declined: {row.original.vendorDeclined || 0}
-              </div>
-            </div>
-          ),
+            );
+          },
         },
         {
           id: "actions",
@@ -937,7 +944,8 @@ export const SolicitationManagementPage = () => {
                 {truncate(row.original.name, { length: 50 })}
               </span>
               <span className="text-sm text-gray-500 dark:text-gray-400">
-                {row.original.solId} • {row.original.typeId?.name.split("-")?.[0]}
+                {row.original.solId} •{" "}
+                {row.original.typeId?.name.split("-")?.[0]}
               </span>
             </div>
           ),
@@ -991,7 +999,7 @@ export const SolicitationManagementPage = () => {
               </span>
             </>
           ),
-        },     
+        },
         {
           accessorKey: "status",
           header: "Status",
@@ -1000,16 +1008,19 @@ export const SolicitationManagementPage = () => {
         {
           accessorKey: "vendors",
           header: "Vendors",
-          cell: ({ row }) => (
-            <div className="text-sm">
-              <div className="text-green-600">
-                Confirmed: {row.original.vendorConfirmed || 0}
+          cell: ({ row }) => {
+            const vendors = row.original.vendors || [];
+            return (
+              <div className="text-sm">
+                <div className="text-green-600">
+                  Confirmed: {vendors.filter((v) => v.status === "confirmed").length}
+                </div>
+                <div className="text-red-600">
+                  Declined: {vendors.filter((v) => v.status === "declined").length}
+                </div>
               </div>
-              <div className="text-red-600">
-                Declined: {row.original.vendorDeclined || 0}
-              </div>
-            </div>
-          ),
+            );
+          },
         },
         {
           id: "actions",
@@ -1060,7 +1071,7 @@ export const SolicitationManagementPage = () => {
           iconColor="text-gray-600"
           iconBgColor="bg-gray-100"
           onClick={() => {
-            setFilters(prev => ({ ...prev, status: undefined, page: 1 }));
+            setFilters((prev) => ({ ...prev, status: undefined, page: 1 }));
             setPagination({ pageIndex: 0, pageSize: 10 });
           }}
         />
@@ -1071,7 +1082,7 @@ export const SolicitationManagementPage = () => {
           iconColor="text-green-600"
           iconBgColor="bg-green-100"
           onClick={() => {
-            setFilters(prev => ({ ...prev, status: "active", page: 1 }));
+            setFilters((prev) => ({ ...prev, status: "active", page: 1 }));
             setPagination({ pageIndex: 0, pageSize: 10 });
           }}
         />
@@ -1083,7 +1094,11 @@ export const SolicitationManagementPage = () => {
             iconColor="text-yellow-600"
             iconBgColor="bg-yellow-100"
             onClick={() => {
-              setFilters(prev => ({ ...prev, status: "evaluating", page: 1 }));
+              setFilters((prev) => ({
+                ...prev,
+                status: "evaluating",
+                page: 1,
+              }));
               setPagination({ pageIndex: 0, pageSize: 10 });
             }}
           />
@@ -1095,7 +1110,7 @@ export const SolicitationManagementPage = () => {
           iconColor="text-gray-600"
           iconBgColor="bg-gray-100"
           onClick={() => {
-            setFilters(prev => ({ ...prev, status: "draft", page: 1 }));
+            setFilters((prev) => ({ ...prev, status: "draft", page: 1 }));
             setPagination({ pageIndex: 0, pageSize: 10 });
           }}
         />
@@ -1106,7 +1121,7 @@ export const SolicitationManagementPage = () => {
           iconColor="text-blue-600"
           iconBgColor="bg-blue-100"
           onClick={() => {
-            setFilters(prev => ({ ...prev, status: "awarded", page: 1 }));
+            setFilters((prev) => ({ ...prev, status: "awarded", page: 1 }));
             setPagination({ pageIndex: 0, pageSize: 10 });
           }}
         />
@@ -1117,7 +1132,7 @@ export const SolicitationManagementPage = () => {
           iconColor="text-red-600"
           iconBgColor="bg-red-100"
           onClick={() => {
-            setFilters(prev => ({ ...prev, status: "closed", page: 1 }));
+            setFilters((prev) => ({ ...prev, status: "closed", page: 1 }));
             setPagination({ pageIndex: 0, pageSize: 10 });
           }}
         />
