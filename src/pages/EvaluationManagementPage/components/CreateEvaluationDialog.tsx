@@ -308,6 +308,15 @@ const CreateEvaluationDialog = () => {
       await queryClient.invalidateQueries({
         queryKey: ["getEvaluationDrafts"]
       });
+      await queryClient.invalidateQueries({
+        queryKey: ["evaluations-list"]
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ["assigned-evaluations-list"]
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ["my-evaluations-list"]
+      });
 
       toast.success(
         "Evaluation Created",

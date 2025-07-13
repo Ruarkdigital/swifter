@@ -4,16 +4,23 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
-import { Share2, Eye, Download } from "lucide-react";
+import { Share2, Eye, Download, ChevronDown } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { DataTable } from "@/components/layouts/DataTable";
 import { ColumnDef } from "@tanstack/react-table";
 import { ConfirmAlert } from "@/components/layouts/ConfirmAlert";
 import { putRequest, getRequest } from "@/lib/axiosInstance";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useToastHandler } from "@/hooks/useToaster";
 import { ApiResponse, ApiResponseError } from "@/types";
 import { useState } from "react";
 import { format } from "date-fns";
+import { formatCurrency } from "@/lib/utils";
 
 // Define the evaluator data type
 type EvaluatorData = {
@@ -54,7 +61,10 @@ export interface VendorProposalData {
 export interface Criteria {
   title: string;
   criteria: CriteriaClass;
-  scoring: number;
+  scoring: {
+    pass_fail?: string;
+    weight?: number;
+  };
 }
 
 export interface CriteriaClass {}
@@ -70,7 +80,8 @@ export interface ProposalDetails {
   vendor: string;
   contact: string;
   ref: string;
-  submissiion: Date;
+  total: number;
+  submissiion: string;
   status: string;
   score: number;
   allEvaluators: number;
@@ -89,6 +100,7 @@ const ProposalDetailsPage: React.FC = () => {
   const { id, proposalId } = useParams<{ id: string; proposalId: string }>();
   const navigate = useNavigate();
   const location = useLocation();
+  const queryClient = useQueryClient();
   const toastHandlers = useToastHandler();
   const [showAwardModal, setShowAwardModal] = useState(false);
 
@@ -143,20 +155,21 @@ const ProposalDetailsPage: React.FC = () => {
   const evaluatorScores = evaluatorScoresData?.data?.data;
 
   // Transform evaluator scores data for DataTable
-  const evaluatorTableData: EvaluatorData[] = evaluatorScores?.evaluators?.map((evaluator, index) => ({
-    id: evaluator._id || `evaluator-${index}`,
-    evaluatorName: evaluator.name,
-    email: evaluator.email,
-    assignedDate: evaluator.dateAssigned 
-      ? format(new Date(evaluator.dateAssigned), "MMM d, yyyy")
-      : "N/A",
-    submittedDate: evaluator.dateSubmitted 
-      ? format(new Date(evaluator.dateSubmitted), "MMM d, yyyy")
-      : "N/A",
-    status: evaluator.status === "submitted" ? "Completed" : "Pending",
-    totalScore: evaluator.score ? `${evaluator.score}/100` : "N/A",
-    commentSummary: "View details for comments", // Placeholder as API doesn't provide comment summary
-  })) || [];
+  const evaluatorTableData: EvaluatorData[] =
+    evaluatorScores?.evaluators?.map((evaluator, index) => ({
+      id: evaluator._id || `evaluator-${index}`,
+      evaluatorName: evaluator.name,
+      email: evaluator.email,
+      assignedDate: evaluator.dateAssigned
+        ? format(new Date(evaluator.dateAssigned), "MMM d, yyyy")
+        : "N/A",
+      submittedDate: evaluator.dateSubmitted
+        ? format(new Date(evaluator.dateSubmitted), "MMM d, yyyy")
+        : "N/A",
+      status: evaluator.status === "submitted" ? "Completed" : "Pending",
+      totalScore: evaluator.score ? `${evaluator.score}/100` : "N/A",
+      commentSummary: "View details for comments", // Placeholder as API doesn't provide comment summary
+    })) || [];
 
   // Helper function to get file type styling
   const getFileTypeStyle = (fileName: string) => {
@@ -208,14 +221,53 @@ const ProposalDetailsPage: React.FC = () => {
     navigate(-1);
   };
 
-  const handleExport = () => {
+  const handleExport = async (type: "pdf" | "docx" = "pdf") => {
     if (!proposal) return;
-    // Export proposal as PDF using the API endpoint
-    const exportUrl = `/procurement/solicitations/${id}/vendor-proposal/${vendorId}/export`;
-    window.open(
-      `${process.env.REACT_APP_API_BASE_URL || ""}${exportUrl}`,
-      "_blank"
-    );
+
+    try {
+      const response = await getRequest({
+        url: `/procurement/solicitations/${id}/vendor-proposal/${vendorId}/export?type=${type}`,
+        config: {
+          responseType: "blob",
+        },
+      });
+
+      // Create blob URL and trigger download
+      const blob = new Blob([response.data], {
+        type:
+          type === "pdf"
+            ? "application/pdf"
+            : "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      });
+
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+
+      // Generate filename with vendor name and current date
+      const vendorName = proposal.proposalDetails.vendor || "vendor";
+      const currentDate = new Date().toISOString().split("T")[0];
+      link.download = `${vendorName}_proposal_${currentDate}.${type}`;
+
+      document.body.appendChild(link);
+      link.click();
+
+      // Cleanup
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      toastHandlers.success(
+        "Export",
+        `Proposal exported successfully as ${type.toUpperCase()}`
+      );
+    } catch (error) {
+      const err = error as ApiResponseError;
+      toastHandlers.error(
+        "Export",
+        err.response?.data.message ||
+          "Failed to export proposal. Please try again."
+      );
+    }
   };
 
   const awardVendorMutation = useMutation<
@@ -233,6 +285,9 @@ const ProposalDetailsPage: React.FC = () => {
         result.data.message ?? "Vendor awarded successfully"
       );
       setShowAwardModal(false);
+      queryClient.invalidateQueries({ queryKey: ["vendor-proposal", id] });
+      queryClient.invalidateQueries({ queryKey: ["evaluator-scores", id] });
+      queryClient.invalidateQueries({ queryKey: ["solicitation", id] });
     },
     onError: (error) => {
       toastHandlers.error("Award Vendor", error);
@@ -267,7 +322,7 @@ const ProposalDetailsPage: React.FC = () => {
   const handleConfirmAward = () => {
     // Note: vendorId should be passed from the award button context
     // This is a placeholder - actual implementation would need the specific vendor ID
-    awardVendorMutation.mutate("vendor-id-placeholder");
+    awardVendorMutation.mutate(vendorId);
   };
 
   // Handle remind evaluator
@@ -278,7 +333,9 @@ const ProposalDetailsPage: React.FC = () => {
   // Handle view evaluator score card
   const handleViewEvaluator = (evaluatorId: string) => {
     // Navigate to evaluator score card page
-    navigate(`/procurement/solicitations/${id}/evaluator-score-card/${evaluatorId}`);
+    navigate(
+      `/procurement/solicitations/${id}/evaluator-score-card/${evaluatorId}`
+    );
   };
 
   // Define columns for the evaluator scores table
@@ -386,7 +443,10 @@ const ProposalDetailsPage: React.FC = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
-          <div onClick={handleBack} className="text-sm text-gray-500 dark:text-gray-400 space-x-2 cursor-pointer">
+          <div
+            onClick={handleBack}
+            className="text-sm text-gray-500 dark:text-gray-400 space-x-2 cursor-pointer"
+          >
             Solicitations &gt; {solicitation?.name || "Loading..."} &gt; Vendors
             &gt; {proposal?.proposalDetails?.vendor || "Loading..."}&#39;s
             Proposal Details
@@ -401,14 +461,25 @@ const ProposalDetailsPage: React.FC = () => {
           <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">
             Proposal Details
           </h1>
-          <Button
-            variant="outline"
-            onClick={handleExport}
-            className="flex items-center space-x-2"
-          >
-            <Share2 className="h-4 w-4" />
-            <span>Export</span>
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="flex items-center space-x-2">
+                <Share2 className="h-4 w-4" />
+                <span>Export</span>
+                <ChevronDown className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => handleExport("pdf")}>
+                <Download className="mr-2 h-4 w-4" />
+                Export as PDF
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleExport("docx")}>
+                <Download className="mr-2 h-4 w-4" />
+                Export as DOCX
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
 
         {/* Loading State */}
@@ -512,7 +583,11 @@ const ProposalDetailsPage: React.FC = () => {
                   Total Amount
                 </label>
                 <p className="text-base font-medium text-gray-900 dark:text-white">
-                  N/A
+                  {formatCurrency(
+                    proposal?.proposalDetails?.total || 0,
+                    "en-US",
+                    "USD"
+                  ) || "N/A"}
                 </p>
               </div>
             </div>
@@ -533,7 +608,7 @@ const ProposalDetailsPage: React.FC = () => {
         )}
 
         {/* Award Vendor Confirmation Modal */}
-        <ConfirmAlert
+        {/* <ConfirmAlert
           open={showAwardModal}
           onClose={setShowAwardModal}
           type="award"
@@ -544,7 +619,7 @@ const ProposalDetailsPage: React.FC = () => {
           onPrimaryAction={handleConfirmAward}
           onSecondaryAction={() => setShowAwardModal(false)}
           hideDialog={false}
-        />
+        /> */}
 
         {/* Tabs */}
         <Tabs defaultValue="overview" className="w-full">
@@ -583,7 +658,7 @@ const ProposalDetailsPage: React.FC = () => {
                   {proposal?.proposalDetails?.submissiion
                     ? format(
                         new Date(proposal.proposalDetails.submissiion),
-                        "MMMM d, yyyy"
+                        "MMMM d, yyyy pppp"
                       )
                     : "N/A"}
                 </p>
@@ -640,11 +715,22 @@ const ProposalDetailsPage: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {criterias.map((criteria, index) => (
                 <div key={index}>
-                  <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                    {criteria.title} ({criteria.scoring}%)
-                  </label>
+                  {criteria.scoring?.weight && (
+                    <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                      {criteria.title}
+                    </label>
+                  )}
+                  {criteria.scoring?.pass_fail && (
+                    <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                      {criteria.title}
+                    </label>
+                  )}
                   <p className="text-base font-medium text-gray-900 dark:text-white">
-                    Avg: N/A
+                    Avg:{" "}
+                    {criteria.scoring?.pass_fail ||
+                      criteria.scoring?.weight ||
+                      "N/A"}
+                    %
                   </p>
                 </div>
               ))}
@@ -770,16 +856,20 @@ const ProposalDetailsPage: React.FC = () => {
                 </h4>
                 {evaluatorScores && (
                   <div className="text-sm text-gray-500 dark:text-gray-400">
-                    {evaluatorScores.submittedEvaluators} of {evaluatorScores.allEvaluators} evaluators submitted
+                    {evaluatorScores.submittedEvaluators} of{" "}
+                    {evaluatorScores.allEvaluators} evaluators submitted
                     {evaluatorScores.averageScore && (
                       <span className="ml-4">
-                        Average Score: <span className="font-medium">{evaluatorScores.averageScore.toFixed(1)}/100</span>
+                        Average Score:{" "}
+                        <span className="font-medium">
+                          {evaluatorScores.averageScore}/100
+                        </span>
                       </span>
                     )}
                   </div>
                 )}
               </div>
-              
+
               {/* Loading State */}
               {isLoadingEvaluatorScores && (
                 <div className="flex items-center justify-center py-8">
@@ -788,7 +878,7 @@ const ProposalDetailsPage: React.FC = () => {
                   </div>
                 </div>
               )}
-              
+
               {/* Error State */}
               {evaluatorScoresError && (
                 <div className="flex items-center justify-center py-8">
@@ -797,7 +887,7 @@ const ProposalDetailsPage: React.FC = () => {
                   </div>
                 </div>
               )}
-              
+
               {/* Data Table */}
               {!isLoadingEvaluatorScores && !evaluatorScoresError && (
                 <DataTable
@@ -822,15 +912,17 @@ const ProposalDetailsPage: React.FC = () => {
                   }}
                 />
               )}
-              
+
               {/* Empty State */}
-              {!isLoadingEvaluatorScores && !evaluatorScoresError && evaluatorTableData.length === 0 && (
-                <div className="text-center py-8">
-                  <p className="text-gray-500 dark:text-gray-400">
-                    No evaluators assigned to this solicitation yet.
-                  </p>
-                </div>
-              )}
+              {!isLoadingEvaluatorScores &&
+                !evaluatorScoresError &&
+                evaluatorTableData.length === 0 && (
+                  <div className="text-center py-8">
+                    <p className="text-gray-500 dark:text-gray-400">
+                      No evaluators assigned to this solicitation yet.
+                    </p>
+                  </div>
+                )}
             </div>
           </TabsContent>
         </Tabs>

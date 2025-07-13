@@ -8,17 +8,16 @@ interface EvaluationCriteria {
   type: string;
   score: number | string;
   weight: number;
-  comments?: string;
+  comment?: string;
   group: string;
 }
 
 interface EvaluatorDetails {
-  id: string;
   name: string;
   email: string;
-  submissionDate: string;
+  submission: string;
   status: string;
-  evaluationScore: number;
+  score: number;
 }
 
 interface EvaluationScorecardData {

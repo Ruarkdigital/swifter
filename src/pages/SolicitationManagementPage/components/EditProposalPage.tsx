@@ -156,7 +156,7 @@ const EditProposalPage: React.FC<EditProposalPageProps> = () => {
   });
 
   // Fetch existing proposal data
-  const { data: proposalData, isLoading: isLoadingProposal } = useQuery<
+  const { data: proposalData, isLoading: isLoadingProposal, isSuccess } = useQuery<
     ApiResponse<{
       _id: string;
       action: {
@@ -250,28 +250,38 @@ const EditProposalPage: React.FC<EditProposalPageProps> = () => {
 
   // Populate form with existing proposal data
   useEffect(() => {
-    if (proposalData?.data?.data) {
+    if (isSuccess && proposalData?.data?.data) {
       const existingProposal = proposalData.data.data;
 
       // Map existing documents to form format
-      const existingDocuments = existingProposal.requiredDoc.map((doc) => ({
+      const existingDocuments = existingProposal.requiredDoc?.map((doc) => ({
         requiredDocumentId: doc.id,
-        files: doc.files.map((file) => ({
+        files: doc.files?.map((file) => ({
           name: file.name,
           url: file.url,
           type: file.type,
           size: file.size,
           uploadedAt: file.uploadedAt,
-        })),
-      }));
+        })) || [],
+      })) || [];
 
-      // Reset form with existing data
-      forge.reset({
-        total: 0, // You may need to calculate this from existing data
-        status: "submit",
-        document: existingDocuments,
-        priceAction: existingProposal.action as any || [
-          {
+      // Calculate total from existing action data
+      const calculateTotal = () => {
+        if (existingProposal.action && typeof existingProposal.action === 'object') {
+          const action = Array.isArray(existingProposal.action) 
+            ? existingProposal.action[0] 
+            : existingProposal.action;
+          return (action?.quantity || 0) * (action?.unitPrice || 0);
+        }
+        return 0;
+      };
+
+      // Prepare price action data
+      const priceActionData = existingProposal.action 
+        ? (Array.isArray(existingProposal.action) 
+            ? existingProposal.action 
+            : [existingProposal.action])
+        : [{
             component: "",
             description: "",
             quantity: 0,
@@ -279,11 +289,20 @@ const EditProposalPage: React.FC<EditProposalPageProps> = () => {
             unitPrice: 0,
             subtotal: 0,
             subItems: [],
-          },
-        ],
-      });
+          }];
+
+      // Reset form with existing data
+      const formData = {
+        total: calculateTotal(),
+        status: "submit" as const,
+        document: existingDocuments,
+        priceAction: priceActionData,
+      };
+
+      console.log('Resetting form with data:', formData);
+      forge.reset(formData);
     }
-  }, [proposalData]);
+  }, [proposalData, isSuccess, forge.reset]);
 
   // Handle file upload completion
   const handleFilesUploaded = (

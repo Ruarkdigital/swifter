@@ -46,7 +46,13 @@ type VendorProposal = {
   companyName: string;
   email: string;
   submissionDate: string;
-  status: "Submitted" | "Under Review" | "Accepted" | "Rejected" | "Pending" | "Confirmed";
+  status:
+    | "Submitted"
+    | "Under Review"
+    | "Accepted"
+    | "Rejected"
+    | "Pending"
+    | "Confirmed";
   proposalValue: number;
   documents: number;
   evaluationScore?: number;
@@ -564,7 +570,12 @@ export const SolicitationDetailPage = () => {
         // Map vendor status to proposal status
         const statusMap: Record<
           string,
-          "Submitted" | "Under Review" | "Accepted" | "Rejected" | "Pending" | "Confirmed"
+          | "Submitted"
+          | "Under Review"
+          | "Accepted"
+          | "Rejected"
+          | "Pending"
+          | "Confirmed"
         > = {
           invited: "Pending",
           confirmed: "Confirmed",
@@ -589,7 +600,7 @@ export const SolicitationDetailPage = () => {
       header: "Actions",
       cell: ({ row }) => (
         <div className="flex items-center ">
-          {isOwner && (
+          {isOwner && row.original.status !== "invited" && (
             <Button
               variant="link"
               className="text-green-700"
@@ -693,7 +704,9 @@ export const SolicitationDetailPage = () => {
       accessorKey: "status",
       header: "Status",
       cell: ({ row }) => (
-        <EvaluatorStatusBadge status={row.original.status || "Pending"} />
+        <EvaluatorStatusBadge
+          status={(row.original?.progress ?? 0) > 0 ? "submitted" : "pending"}
+        />
       ),
     },
     {
@@ -709,10 +722,7 @@ export const SolicitationDetailPage = () => {
                     View
                   </Button>
                 </SheetTrigger>
-                <SheetContent
-                  side="right"
-                  className="md:max-w-[50dvw] sm:w-[600px] p-0"
-                >
+                <SheetContent side="right" className="sm:max-w-2xl p-0">
                   <EvaluationScorecard
                     solicitationId={id!}
                     evaluatorId={row.original._id}
@@ -737,7 +747,8 @@ export const SolicitationDetailPage = () => {
                   />
                 </SheetContent>
               </Sheet>
-              {!row.original.status || row.original.status === "Pending" ? (
+              {(row.original.progress ?? 0) > 0 ? null : !row.original.status ||
+                row.original.status === "Pending" ? (
                 <ConfirmAlert
                   title="Send Reminder"
                   text={`Are you sure you want to send a reminder to ${row.original.name}?`}
@@ -860,17 +871,25 @@ export const SolicitationDetailPage = () => {
             </Sheet>
           )}
 
-          {solicitation?.status?.toLowerCase() !== "awarded" && !viewProposal && isOwner && (
-            <Link to={`/dashboard/solicitations/${id}/submit-proposal`}>
-              <Button className="text-white px-6 py-2">Submit Proposal</Button>
-            </Link>
-          )}
+          {solicitation?.status?.toLowerCase() !== "awarded" &&
+            !viewProposal &&
+            isOwner && (
+              <Link to={`/dashboard/solicitations/${id}/submit-proposal`}>
+                <Button className="text-white px-6 py-2">
+                  Submit Proposal
+                </Button>
+              </Link>
+            )}
 
-          {solicitation?.status?.toLowerCase() !== "awarded" && viewProposal && isOwner && (
-            <Link to={`/dashboard/solicitations/${id}/edit-proposal/${viewProposal._id}`}>
-              <Button className="text-white px-6 py-2">Edit Proposal</Button>
-            </Link>
-          )}
+          {solicitation?.status?.toLowerCase() !== "awarded" &&
+            viewProposal &&
+            isOwner && (
+              <Link
+                to={`/dashboard/solicitations/${id}/edit-proposal/${viewProposal._id}`}
+              >
+                <Button className="text-white px-6 py-2">Edit Proposal</Button>
+              </Link>
+            )}
         </div>
       )}
 

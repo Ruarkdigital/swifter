@@ -41,7 +41,11 @@ const step2Schema = yup.object({
   bidIntent: yup.string().required("Bid intent is required"),
   bidIntentDeadlineDate: yup
     .string()
-    .required("Bid intent deadline date is required"),
+    .when("bidIntent", {
+      is: "required",
+      then: (schema) => schema.required("Bid intent deadline date is required when bid intent is required"),
+      otherwise: (schema) => schema.optional(),
+    }),
   visibility: yup.string().required("Visibility is required"),
 });
 
@@ -63,7 +67,7 @@ const documentSchema = yup.mixed().test({
   test: (value) => {
     return value instanceof File;
   },
-}) // Allow additional properties without validation
+}); // Allow additional properties without validation
 
 const vendorSchema = yup.object({
   value: yup.string().required("Vendor ID is required"),
@@ -84,10 +88,14 @@ type Step3FormData = yup.InferType<typeof step3Schema>;
 type Step4FormData = yup.InferType<typeof step4Schema>;
 type Step5FormData = yup.InferType<typeof step5Schema>;
 
-export type CreateSolicitationFormData = Step1FormData & Step2FormData & Step3FormData & Step4FormData & Step5FormData & {
-  files?: File[];
-  vendors?: Array<{ id: string; status?: string }>;
-};
+export type CreateSolicitationFormData = Step1FormData &
+  Step2FormData &
+  Step3FormData &
+  Step4FormData &
+  Step5FormData & {
+    files?: File[];
+    vendors?: Array<{ id: string; status?: string }>;
+  };
 
 // Types for API request
 type SolicitationCreateRequest = {
@@ -197,12 +205,14 @@ const CreateSolicitationDialog = () => {
 
   // File upload mutation
   const { mutateAsync: uploadFiles } = useMutation<
-    ApiResponse<{
-      name: string;
-      url: string;
-      size: string;
-      type: string;
-    }[]>,
+    ApiResponse<
+      {
+        name: string;
+        url: string;
+        size: string;
+        type: string;
+      }[]
+    >,
     ApiResponseError,
     FormData
   >({
@@ -261,51 +271,63 @@ const CreateSolicitationDialog = () => {
       const apiPayload: SolicitationCreateRequest = {
         name: completeData.solicitationName,
         typeId: completeData.solicitationType,
-        categoryIds: Array.isArray(completeData.category) 
-          ? completeData.category 
+        categoryIds: Array.isArray(completeData.category)
+          ? completeData.category
           : [completeData.category],
-        estimatedCost: completeData.estimatedCost ? parseFloat(completeData.estimatedCost) : undefined,
+        estimatedCost: completeData.estimatedCost
+          ? parseFloat(completeData.estimatedCost)
+          : undefined,
         description: completeData.description,
         visibility: completeData.visibility as "public" | "invite-only",
         status: "active",
-        submissionDeadline: new Date(completeData.submissionDeadlineDate).toISOString(),
-        questionDeadline: completeData.questionAcceptanceDeadlineDate 
-          ? new Date(completeData.questionAcceptanceDeadlineDate).toISOString() 
+        submissionDeadline: new Date(
+          completeData.submissionDeadlineDate
+        ).toISOString(),
+        questionDeadline: completeData.questionAcceptanceDeadlineDate
+          ? new Date(completeData.questionAcceptanceDeadlineDate).toISOString()
           : undefined,
-        bidIntentDeadline: completeData.bidIntentDeadlineDate 
-          ? new Date(completeData.bidIntentDeadlineDate).toISOString() 
+        bidIntentDeadline: completeData.bidIntentDeadlineDate
+          ? new Date(completeData.bidIntentDeadlineDate).toISOString()
           : undefined,
         timezone: completeData.timezone || "Africa/Lagos",
-        events: completeData.event?.map((evt: any) => {
-          // Validate date and time before creating Date object
-          if (!evt.date || !evt.time) {
-            console.warn('Invalid event date or time:', { date: evt.date, time: evt.time });
-            return null;
-          }
-          
-          // Handle Date object from TextDatePicker
-          const dateStr = evt.date instanceof Date 
-            ? evt.date.toISOString().split('T')[0] // Extract YYYY-MM-DD
-            : evt.date;
-          
-          // Validate the constructed date string
-          const dateTimeStr = `${dateStr}T${evt.time}`;
-          const eventDate = new Date(dateTimeStr);
-          
-          if (isNaN(eventDate.getTime())) {
-            console.warn('Invalid date constructed:', dateTimeStr);
-            return null;
-          }
-          
-          return {
-            eventType: evt.event,
-            eventLocation: evt.location,
-            eventDate: eventDate.toISOString(),
-            eventDescription: evt.note || undefined,
-          };
-        }).filter(Boolean), // Remove null entries
+        events: completeData.event
+          ?.map((evt: any) => {
+            // Validate date and time before creating Date object
+            if (!evt.date || !evt.time) {
+              console.warn("Invalid event date or time:", {
+                date: evt.date,
+                time: evt.time,
+              });
+              return null;
+            }
+
+            // Handle Date object from TextDatePicker
+            const dateStr =
+              evt.date instanceof Date
+                ? evt.date.toISOString().split("T")[0] // Extract YYYY-MM-DD
+                : evt.date;
+
+            // Validate the constructed date string
+            const dateTimeStr = `${dateStr}T${evt.time}`;
+            const eventDate = new Date(dateTimeStr);
+
+            if (isNaN(eventDate.getTime())) {
+              console.warn("Invalid date constructed:", dateTimeStr);
+              return null;
+            }
+
+            return {
+              eventType: evt.event,
+              eventLocation: evt.location,
+              eventDate: eventDate.toISOString(),
+              eventDescription: evt.note || undefined,
+            };
+          })
+          .filter(Boolean), // Remove null entries
         files: uploadedFiles.length > 0 ? uploadedFiles : undefined,
-        vendors: completeData.vendor?.map((item: any) => ({ id: item.value })) || undefined,
+        vendors:
+          completeData.vendor?.map((item: any) => ({ id: item.value })) ||
+          undefined,
       };
 
       const response = await createSolicitation(apiPayload);
@@ -315,7 +337,7 @@ const CreateSolicitationDialog = () => {
         queryClient.invalidateQueries({ queryKey: ["solicitations"] });
         queryClient.invalidateQueries({ queryKey: ["my-solicitations"] });
         queryClient.invalidateQueries({ queryKey: ["dashboard-stats"] });
-        
+
         toast.success(
           "Solicitation Created",
           "Your solicitation has been created successfully."
@@ -340,18 +362,145 @@ const CreateSolicitationDialog = () => {
     }
   };
 
-  const handleCancel = () => {
-    setOpen(false);
-    setCurrentStep(1);
-    forge.reset();
+  const handleCancel = async () => {
+    try {
+      const formData = forge.getValues();
+
+      // Check if we have at least the minimum required fields for draft
+      if (
+        !formData.solicitationName ||
+        !formData.solicitationType ||
+        !formData.category ||
+        !formData.description
+      ) {
+        // If minimum fields are not filled, just close the dialog
+        setOpen(false);
+        setCurrentStep(1);
+        forge.reset();
+        return;
+      }
+
+      // Handle file uploads first if there are files
+      let uploadedFiles: Array<{
+        name: string;
+        url: string;
+        size: string;
+        type: string;
+      }> = [];
+
+      if (formData.documents && formData.documents.length > 0) {
+        const fileFormData = new FormData();
+        formData.documents.forEach((file: any) => {
+          if (file instanceof File) {
+            fileFormData.append("file", file);
+          }
+        });
+
+        const uploadResponse = await uploadFiles(fileFormData);
+        if (uploadResponse?.data?.data) {
+          uploadedFiles = uploadResponse.data.data;
+        }
+      }
+
+      // Transform form data to match API schema for draft
+      const apiPayload: SolicitationCreateRequest = {
+        name: formData.solicitationName,
+        typeId: formData.solicitationType,
+        categoryIds: Array.isArray(formData.category)
+          ? formData.category
+          : [formData.category],
+        estimatedCost: formData.estimatedCost
+          ? parseFloat(formData.estimatedCost)
+          : undefined,
+        description: formData.description,
+        visibility:
+          (formData.visibility as "public" | "invite-only") || "invite-only",
+        status: "draft", // Save as draft
+        submissionDeadline: formData.submissionDeadlineDate
+          ? new Date(formData.submissionDeadlineDate).toISOString()
+          : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // Default to 30 days from now
+        questionDeadline: formData.questionAcceptanceDeadlineDate
+          ? new Date(formData.questionAcceptanceDeadlineDate).toISOString()
+          : undefined,
+        bidIntentDeadline: formData.bidIntentDeadlineDate
+          ? new Date(formData.bidIntentDeadlineDate).toISOString()
+          : undefined,
+        timezone: formData.timezone || "Africa/Lagos",
+        events: formData.event?.map((evt: any) => {
+          // Validate date and time before creating Date object
+          if (!evt.date || !evt.time) {
+            return {
+              eventType: "",
+              eventLocation: "",
+              eventDate: "",
+              eventDescription: undefined,
+            };
+          }
+
+          // Handle Date object from TextDatePicker
+          const dateStr =
+            evt.date instanceof Date
+              ? evt.date.toISOString().split("T")[0] // Extract YYYY-MM-DD
+              : evt.date;
+
+          // Validate the constructed date string
+          const dateTimeStr = `${dateStr}T${evt.time}`;
+          const eventDate = new Date(dateTimeStr);
+
+          if (isNaN(eventDate.getTime())) {
+            return {
+              eventType: "",
+              eventLocation: "",
+              eventDate: "",
+              eventDescription: undefined,
+            };
+          }
+
+          return {
+            eventType: evt.event,
+            eventLocation: evt.location,
+            eventDate: eventDate.toISOString(),
+            eventDescription: evt.note || undefined,
+          };
+        }),
+        files: uploadedFiles.length > 0 ? uploadedFiles : undefined,
+        vendors:
+          formData.vendor?.map((item: any) => ({ id: item.value })) ||
+          undefined,
+      };
+
+      const response = await createSolicitation(apiPayload);
+
+      if (response?.data) {
+        // Invalidate queries to refresh the solicitation list
+        queryClient.invalidateQueries({ queryKey: ["solicitations"] });
+        queryClient.invalidateQueries({ queryKey: ["my-solicitations"] });
+        queryClient.invalidateQueries({ queryKey: ["dashboard-stats"] });
+
+        toast.success(
+          "Draft Saved",
+          "Your solicitation has been saved as a draft. You can continue editing it later."
+        );
+        setOpen(false);
+        setCurrentStep(1);
+        forge.reset();
+      }
+    } catch (error) {
+      console.log(error);
+      const err = error as ApiResponseError;
+      toast.error(
+        "Save Failed",
+        err?.message ?? "Failed to save draft. Please try again."
+      );
+    }
   };
-  
+
   // Validate current step before proceeding to the next step
   const validateAndProceed = async () => {
     try {
       // Get current form values
       const formValues = forge.getValues();
-      
+
       // Validate based on current step
       switch (currentStep) {
         case 1:
@@ -375,7 +524,7 @@ const CreateSolicitationDialog = () => {
         default:
           break;
       }
-      
+
       // If we reach here, validation passed, proceed to next step
       setCurrentStep((prev) => prev + 1);
     } catch (error) {
@@ -383,21 +532,21 @@ const CreateSolicitationDialog = () => {
       if (error instanceof yup.ValidationError) {
         // Set errors in the form
         const fieldErrors: Record<string, string> = {};
-        
+
         error.inner.forEach((err) => {
           if (err.path) {
             fieldErrors[err.path] = err.message;
           }
         });
-        
+
         // Set errors in the form
         Object.keys(fieldErrors).forEach((field) => {
           forge.setError(field as any, {
-            type: 'manual',
-            message: fieldErrors[field]
+            type: "manual",
+            message: fieldErrors[field],
           });
         });
-        
+
         // Show toast with first error
         if (error.inner.length > 0) {
           toast.error(
@@ -408,10 +557,7 @@ const CreateSolicitationDialog = () => {
       } else {
         // Handle unexpected errors
         console.error("Validation error:", error);
-        toast.error(
-          "Error",
-          "An unexpected error occurred. Please try again."
-        );
+        toast.error("Error", "An unexpected error occurred. Please try again.");
       }
     }
   };
@@ -455,7 +601,7 @@ const CreateSolicitationDialog = () => {
         </div>
 
         {/* Form Content */}
-        <Forge control={forge.control} onSubmit={onSubmit} debug>
+        <Forge control={forge.control} onSubmit={onSubmit}>
           {currentStep === 1 && (
             <Step1Form
               solicitationTypes={solicitationTypes}
@@ -472,10 +618,7 @@ const CreateSolicitationDialog = () => {
 
           {currentStep === 3 && (
             <>
-              <Step3Form
-                eventOptions={eventOptions}
-                control={forge.control}
-              />
+              <Step3Form eventOptions={eventOptions} control={forge.control} />
             </>
           )}
 
@@ -502,10 +645,9 @@ const CreateSolicitationDialog = () => {
 
           {/* Footer Buttons */}
           <div
-            className={cn(
-              "flex items-center justify-end pt-6  px-6 py-6",
-              { "justify-between": currentStep > 1 }
-            )}
+            className={cn("flex items-center justify-end pt-6  px-6 py-6", {
+              "justify-between": currentStep > 1,
+            })}
           >
             {currentStep > 1 && (
               <Button
@@ -528,11 +670,7 @@ const CreateSolicitationDialog = () => {
               </Button>
               <Button
                 type={currentStep === 6 ? "submit" : "button"}
-                onClick={
-                  currentStep === 6
-                    ? undefined
-                    : validateAndProceed
-                }
+                onClick={currentStep === 6 ? undefined : validateAndProceed}
                 disabled={isPending}
                 className="px-8 py-2 bg-[#2A4467] hover:bg-[#1e3147] text-white rounded-lg"
               >
@@ -543,7 +681,6 @@ const CreateSolicitationDialog = () => {
                   : "Continue"}
               </Button>
             </div>
-            
           </div>
         </Forge>
       </DialogContent>

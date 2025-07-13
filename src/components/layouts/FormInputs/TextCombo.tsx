@@ -99,7 +99,7 @@ export const TextCombo = (props: TextComboProps & Partial<ForgerSlotProps>) => {
             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0 dark:bg-gray-800 dark:border-gray-600 bg-white">
+        <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0 dark:bg-gray-900 dark:border-gray-600 bg-white ">
           <div className="p-2" onClick={() => inputRef.current?.focus()}>
             <Input
               ref={inputRef}
@@ -110,7 +110,7 @@ export const TextCombo = (props: TextComboProps & Partial<ForgerSlotProps>) => {
               className="h-9 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200"
             />
           </div>
-          <div className="max-h-60 overflow-auto bg-white">
+          <div className="max-h-60 overflow-auto bg-white dark:bg-slate-950">
             {filteredOptions.length === 0 ? (
               <div className="py-6 text-center text-sm text-gray-500 dark:text-gray-400">
                 {emptyMessage}

@@ -178,6 +178,7 @@ const SubmittedDocumentPage: React.FC = () => {
     vendorId: string;
   }>();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   // API calls
   const {
@@ -221,7 +222,7 @@ const SubmittedDocumentPage: React.FC = () => {
   >({});
 
   // Forge form setup for criteria scoring
-  const { handleSubmit, reset, watch, setValue } =
+  const { handleSubmit, reset, watch, setValue,  } =
     useForge<CriteriaScorePayload>({
       defaultValues: {
         comment: "",
@@ -263,6 +264,7 @@ const SubmittedDocumentPage: React.FC = () => {
       );
       setShowSubmitDialog(false);
       // navigate(`/dashboard/evaluation/assigned/${groupId}`);
+      queryClient.invalidateQueries({ queryKey: ["evaluation-criteria"] });
     },
     onError: (error) => {
       toast.error("Error", error.message || "Failed to submit evaluation");
@@ -299,7 +301,7 @@ const SubmittedDocumentPage: React.FC = () => {
     if (activeCriteriaId && activeCriteriaId !== criteriaId) {
       const currentFormData = {
         comment: watch("comment") as string,
-        score: watch("score") as string | number,
+        score: watch("type") === "weight" ? Number(watch("score")) : watch("score") as string,
         type: watch("type") as "pass_fail" | "weight",
       };
       setCriteriaFormStates((prev) => ({
@@ -344,7 +346,7 @@ const SubmittedDocumentPage: React.FC = () => {
     if (activeCriteriaId) {
       const currentFormData = {
         comment: watch("comment") as string,
-        score: watch("score") as string | number,
+        score: watch("type") === "weight" ? Number(watch("score")) : watch("score") as string,
         type: watch("type") as "pass_fail" | "weight",
       };
       setCriteriaFormStates((prev) => ({
@@ -492,7 +494,7 @@ const SubmittedDocumentPage: React.FC = () => {
                   <AccordionItem
                     key={criteriaItem._id}
                     value={criteriaItem._id}
-                    className="border rounded-md mb-4"
+                    className="border dark:border-slate-300 rounded-md mb-4"
                   >
                     <AccordionTrigger
                       className="px-4 py-4 hover:no-underline"
@@ -512,7 +514,7 @@ const SubmittedDocumentPage: React.FC = () => {
                       }}
                     >
                       <div className="flex items-center justify-between w-full">
-                        <span className="font-medium text-gray-900">
+                        <span className="font-medium text-gray-900 dark:text-slate-200">
                           {criteriaItem.title}
                         </span>
                         {criteriaItem.scoring && (
@@ -529,27 +531,27 @@ const SubmittedDocumentPage: React.FC = () => {
                       <div className="border-t border-gray-200">
                         <div className="grid grid-cols-1 md:grid-cols-4 gap-0">
                           <div className="p-4 md:border-r border-gray-200">
-                            <h4 className="text-sm font-medium text-gray-700 mb-2">
+                            <h4 className="text-sm font-medium text-gray-700 dark:text-slate-200 mb-2">
                               Requested Doc.
                             </h4>
                             {criteriaItem.uploads.length > 0 ? (
                               criteriaItem.uploads.map((upload, index) => (
                                 <p
                                   key={index}
-                                  className="text-sm text-blue-600 hover:underline cursor-pointer"
+                                  className="text-sm text-blue-600 hover:underline cursor-pointer dark:text-slate-200"
                                 >
                                   {upload.title || `Document ${index + 1}`}
                                 </p>
                               ))
                             ) : (
-                              <p className="text-sm text-gray-500">
+                              <p className="text-sm text-gray-500 dark:text-slate-200">
                                 No documents
                               </p>
                             )}
                           </div>
 
                           <div className="p-4 md:col-span-2 md:border-r border-gray-200">
-                            <h4 className="text-sm font-medium text-gray-700 mb-4">
+                            <h4 className="text-sm font-medium text-gray-700 mb-4 dark:text-slate-200">
                               Scoring
                             </h4>
 
@@ -594,9 +596,9 @@ const SubmittedDocumentPage: React.FC = () => {
                                   <div>
                                     <div className="flex flex-col">
                                       <RadioGroup
-                                        value={watch("score") as string}
+                                        value={watch("score")?.toString()}
                                         onValueChange={(value) =>
-                                          setValue("score", value)
+                                          setValue("score", parseInt(value))
                                         }
                                         className="flex gap-8 justify-center mb-1"
                                       >
@@ -611,7 +613,7 @@ const SubmittedDocumentPage: React.FC = () => {
                                             />
                                             <Label
                                               htmlFor={`${criteriaItem._id}-${score}`}
-                                              className="text-sm"
+                                              className="text-sm dark:text-slate-200"
                                             >
                                               {score}
                                             </Label>
@@ -619,10 +621,10 @@ const SubmittedDocumentPage: React.FC = () => {
                                         ))}
                                       </RadioGroup>
                                       <div className="flex justify-between px-4 mt-1">
-                                        <span className="text-xs text-gray-500">
+                                        <span className="text-xs text-gray-500 dark:text-slate-200">
                                           Low
                                         </span>
-                                        <span className="text-xs text-gray-500">
+                                        <span className="text-xs text-gray-500 dark:text-slate-200">
                                           High
                                         </span>
                                       </div>
@@ -634,17 +636,17 @@ const SubmittedDocumentPage: React.FC = () => {
                           </div>
 
                           <div className="p-4">
-                            <h4 className="text-sm font-medium text-gray-700 mb-2">
+                            <h4 className="text-sm font-medium text-gray-700 mb-2 dark:text-slate-200">
                               Scoring Type
                             </h4>
-                            <p className="text-sm text-gray-600">
+                            <p className="text-sm text-gray-600 dark:text-slate-200 ">
                               {criteriaItem.criteria.pass_fail
                                 ? "Pass/Fail"
                                 : "Weight"}
                             </p>
                             {criteriaItem.criteria.weight && (
                               <div className="mt-2">
-                                <span className="text-xs text-gray-500">
+                                <span className="text-xs text-gray-500 dark:text-slate-200">
                                   {criteriaItem.criteria.weight}%
                                 </span>
                               </div>
@@ -652,21 +654,21 @@ const SubmittedDocumentPage: React.FC = () => {
 
                             {/* Display current score if exists */}
                             {criteriaItem.scoring && (
-                              <div className="mt-3 p-2 bg-blue-50 rounded-md">
-                                <h5 className="text-xs font-medium text-blue-700 mb-1">
+                              <div className="mt-3 p-2 bg-blue-50 dark:bg-slate-800 rounded-md">
+                                <h5 className="text-xs font-medium text-blue-700 mb-1 dark:text-slate-200">
                                   Current Score
                                 </h5>
-                                <p className="text-sm text-blue-600">
+                                <p className="text-sm text-blue-600 dark:text-slate-200">
                                   {criteriaItem.criteria.pass_fail
                                     ? criteriaItem.scoring.scoring.pass_fail
                                     : criteriaItem.scoring.scoring.weight}
                                 </p>
                                 {criteriaItem.scoring.comment && (
                                   <p
-                                    className="text-xs text-blue-500 mt-1 truncate"
+                                    className="text-xs text-blue-500 mt-1 truncate dark:text-slate-200"
                                     title={criteriaItem.scoring.comment}
                                   >
-                                    "{criteriaItem.scoring.comment}"
+                                    Comment: "{criteriaItem.scoring.comment}"
                                   </p>
                                 )}
                               </div>
@@ -677,18 +679,18 @@ const SubmittedDocumentPage: React.FC = () => {
                         <Separator className="my-0" />
 
                         <div className="p-4 border-t border-gray-200">
-                          <h4 className="text-sm font-medium text-gray-700 mb-2">
+                          <h4 className="text-sm font-medium text-gray-700 mb-2 dark:text-slate-200">
                             Description
                           </h4>
-                          <p className="text-sm text-gray-600">
+                          <p className="text-sm text-gray-600 dark:text-slate-200">
                             {criteriaItem.description}
                           </p>
                         </div>
 
                         {activeCriteriaId === criteriaItem._id && (
                           <>
-                            <div className="p-4 bg-gray-50 border-t border-gray-200">
-                              <h4 className="text-sm font-medium text-gray-700 mb-2">
+                            <div className="p-4 bg-gray-50 dark:bg-slate-900 border-t border-gray-200">
+                              <h4 className="text-sm font-medium text-gray-700 mb-2 dark:text-slate-200">
                                 Comments (Required)
                               </h4>
                               <Textarea
@@ -696,7 +698,7 @@ const SubmittedDocumentPage: React.FC = () => {
                                 onChange={(e) =>
                                   setValue("comment", e.target.value)
                                 }
-                                className="w-full"
+                                className="w-full dark:text-slate-200"
                                 rows={3}
                                 placeholder="Enter your comments here..."
                               />
@@ -733,7 +735,7 @@ const SubmittedDocumentPage: React.FC = () => {
                 ))
               ) : (
                 <div className="text-center py-8">
-                  <p className="text-gray-500 dark:text-gray-400">
+                  <p className="text-gray-500 dark:text-slate-300">
                     No criteria available
                   </p>
                 </div>

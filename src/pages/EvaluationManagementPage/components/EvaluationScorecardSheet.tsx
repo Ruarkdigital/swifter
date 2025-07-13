@@ -48,7 +48,7 @@ const EvaluationScorecardSheet: React.FC<EvaluationScorecardSheetProps> = ({
           View
         </Button>
       </SheetTrigger>
-      <SheetContent className="w-full max-w-2xl p-0">
+      <SheetContent className="w-full sm:max-w-2xl p-0">
         <div className="flex flex-col h-full">
           {/* Header */}
           <div className="flex items-center justify-between p-6 border-b">
@@ -123,7 +123,7 @@ const EvaluationScorecardSheet: React.FC<EvaluationScorecardSheetProps> = ({
                      <div key={index} className="border rounded-lg mb-4">
                        <div className="flex items-center justify-between p-4">
                          <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                           {criterion.criteria?.title || `Criterion ${index + 1}`}
+                           {criterion?.title || `Criterion ${index + 1}`}
                          </span>
                        </div>
                        <div className="px-4 pb-4 border-t">

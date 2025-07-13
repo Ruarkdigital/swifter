@@ -3,8 +3,12 @@ import { getRequest } from "@/lib/axiosInstance";
 
 interface EvaluationCriteria {
   comment: string | null;
-  criteria: any | null;
+  criteria: {
+    weight: number;
+    status: "weight" | "pass_fail";
+  } | null;
   score: string;
+  title: string;
 }
 
 interface EvaluatorDetails {

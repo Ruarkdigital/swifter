@@ -90,7 +90,7 @@ export const BidComparisonSheet = ({ evaluationId, proposalId, vendorName }: Bid
       accessorKey: "vendorName",
       header: "Vendor Name",
       cell: ({ row }) => (
-        <div className="text-gray-900 font-medium">
+        <div className="font-medium">
           {row.original.vendorName || "-"}
         </div>
       ),
@@ -99,7 +99,7 @@ export const BidComparisonSheet = ({ evaluationId, proposalId, vendorName }: Bid
       accessorKey: "vendorEmail",
       header: "Vendor Email",
       cell: ({ row }) => (
-        <div className="text-gray-600">
+        <div className="">
           {row.original.vendorEmail || "-"}
         </div>
       ),
@@ -108,7 +108,7 @@ export const BidComparisonSheet = ({ evaluationId, proposalId, vendorName }: Bid
       accessorKey: "total",
       header: "Total Amount",
       cell: ({ row }) => (
-        <div className="text-gray-900 font-medium">
+        <div className="font-medium">
           ${row.original.total?.toFixed(2) || "0.00"}
         </div>
       ),
@@ -117,8 +117,8 @@ export const BidComparisonSheet = ({ evaluationId, proposalId, vendorName }: Bid
       accessorKey: "score",
       header: "Score",
       cell: ({ row }) => (
-        <div className="text-gray-900">
-          {row.original.score?.toFixed(1) || "-"}
+        <div className="">
+          {row.original.score || "-"}
         </div>
       ),
     },
@@ -126,7 +126,7 @@ export const BidComparisonSheet = ({ evaluationId, proposalId, vendorName }: Bid
       accessorKey: "rank",
       header: "Rank",
       cell: ({ row }) => (
-        <div className="text-gray-900 font-medium">
+        <div className="font-medium">
           {row.original.rank || "-"}
         </div>
       ),
@@ -150,8 +150,8 @@ export const BidComparisonSheet = ({ evaluationId, proposalId, vendorName }: Bid
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b">
           <div className="flex items-center gap-3">
-            <ChevronLeft className="h-5 w-5 text-gray-600" />
-            <h2 className="text-lg font-medium text-gray-900">
+            <ChevronLeft className="h-5 w-5 text-gray-600 dark:text-slate-200" />
+            <h2 className="text-lg font-medium text-gray-900 dark:text-slate-200">
               Price Breakdown
             </h2>
           </div>
@@ -161,7 +161,7 @@ export const BidComparisonSheet = ({ evaluationId, proposalId, vendorName }: Bid
         <div className="p-6">
           {/* Title and Export */}
           <div className="flex items-center justify-between mb-8">
-            <h1 className="text-2xl font-semibold text-gray-900">
+            <h1 className="text-2xl font-semibold text-gray-900 dark:text-slate-200">
               {vendorName} Price Breakdown
             </h1>
           </div>
@@ -169,20 +169,20 @@ export const BidComparisonSheet = ({ evaluationId, proposalId, vendorName }: Bid
           {/* Company and Submission Info */}
           <div className="grid grid-cols-3 gap-8 mb-8">
             <div>
-              <p className="text-sm text-gray-500 mb-1">Selected Vendor</p>
-              <p className="text-base font-medium text-gray-900">
+              <p className="text-sm text-gray-500 dark:text-slate-200 mb-1">Selected Vendor</p>
+              <p className="text-base font-medium text-gray-900 dark:text-slate-200">
                 {proposalData?.vendorName || vendorName || "Vendor"}
               </p>
             </div>
             <div>
-              <p className="text-sm text-gray-500 mb-1">Total Amount</p>
-              <p className="text-base font-semibold text-gray-900">
+              <p className="text-sm text-gray-500 dark:text-slate-200 mb-1">Total Amount</p>
+              <p className="text-base font-semibold text-gray-900 dark:text-slate-200">
                 ${totalAmount.toFixed(2)}
               </p>
             </div>
             <div>
-              <p className="text-sm text-gray-500 mb-1">Rank</p>
-              <p className="text-base font-medium text-gray-900">
+              <p className="text-sm text-gray-500 dark:text-slate-200 mb-1">Rank</p>
+              <p className="text-base font-medium text-gray-900 dark:text-slate-200">
                 {proposalData?.rank || "-"}
               </p>
             </div>
@@ -221,7 +221,7 @@ export const BidComparisonSheet = ({ evaluationId, proposalId, vendorName }: Bid
                 }}
                 emptyPlaceholder={
                   <div className="flex items-center justify-center py-12">
-                    <div className="text-gray-500">No bid comparison data available</div>
+                    <div className="text-gray-500 dark:text-slate-200">No bid comparison data available</div>
                   </div>
                 }
               />
