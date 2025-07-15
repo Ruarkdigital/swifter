@@ -9,6 +9,7 @@ import AIChatWidget from "./components/layouts/AIChatWidget";
 import { useAuthentication } from "@/hooks/useAuthentication";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useToken } from "@/store/authSlice";
+
 import * as Sentry from "@sentry/react";
 import { routes } from "./routes";
 import { Suspense } from "react";

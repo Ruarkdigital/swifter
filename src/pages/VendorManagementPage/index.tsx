@@ -689,8 +689,8 @@ export const VendorManagementPage = () => {
         classNames={{
           container:
             "bg-white dark:bg-slate-950 rounded-xl px-3 border border-gray-300 dark:border-slate-600",
-          tCell: "text-center",
-          tHead: "text-center",
+          // tCell: "text-center",
+          // tHead: "text-center",
         }}
         options={{
           disableSelection: true,

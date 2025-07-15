@@ -351,8 +351,8 @@ const InvitationsPage = () => {
         classNames={{
           container:
             "bg-white dark:bg-slate-950 rounded-xl px-3 border border-gray-300 dark:border-slate-600",
-          tCell: "text-center",
-          tHead: "text-center",
+          // tCell: "text-center",
+          // tHead: "text-center",
         }}
         header={() => (
           <div className="flex items-center w-full justify-between border-b border-[#E9E9EB] dark:border-slate-600 p-3 pt-0">

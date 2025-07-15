@@ -5,8 +5,12 @@ import { Header } from "./Header";
 import Footer from "@/components/layouts/Footer";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useInactivityLogout } from "@/hooks/useInactivityLogout";
 
 export const Dashboard = () => {
+  // Enable inactivity logout for authenticated users in dashboard
+  useInactivityLogout();
+
   return (
     <Container
       noGutter

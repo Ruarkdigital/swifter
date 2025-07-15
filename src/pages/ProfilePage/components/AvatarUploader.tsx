@@ -47,7 +47,7 @@ const AvatarUploader: React.FC<AvatarUploaderProps> = ({
         onValueChange={onFilesChange}
         dropzoneOptions={{
           accept: {
-            "image/*": [".jpg", ".jpeg", ".png", ".gif"],
+            "image/*": [".jpg", ".jpeg", ".png"],
           },
           maxFiles: 1,
           maxSize: 4 * 1024 * 1024, // 4MB

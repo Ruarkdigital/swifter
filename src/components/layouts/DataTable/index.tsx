@@ -156,7 +156,7 @@ export function DataTable<T = unknown>({
                 {row.getVisibleCells().map((cell) => (
                   <TableCell
                     className={cn(
-                      "p-2 text-gray-900 dark:text-gray-200",
+                      "p-2 pl-4 text-gray-900 dark:text-gray-200",
                       classNames?.tCell
                     )}
                     key={cell.id}

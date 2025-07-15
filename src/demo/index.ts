@@ -29,3 +29,7 @@ export const getUser = (roleName?: UserRole): User => {
 export const getToken = () => {
   return faker.string.uuid()
 }
+
+export { default as InactivityLogoutDemo } from './InactivityLogoutDemo';
+export { ConfirmAlertDemo } from './ConfirmAlertDemo';
+export { TextComboDemo } from './TextComboDemo';
