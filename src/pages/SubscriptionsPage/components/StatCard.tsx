@@ -6,6 +6,7 @@ export type StatCardProps = {
   icon: any;
   iconColor?: string;
   iconBgColor?: string;
+  onClick?: () => void;
 };
 
 export const StatCard = ({
@@ -14,6 +15,7 @@ export const StatCard = ({
   icon: Icon,
   iconColor = "text-gray-500",
   iconBgColor = "bg-gray-100",
+  onClick,
 }: StatCardProps) => {
   // Enhanced icon background colors for dark mode
   const getDarkModeIconBg = (bgColor: string) => {
@@ -40,7 +42,12 @@ export const StatCard = ({
   };
 
   return (
-    <Card className="p-6 border border-gray-200 dark:border-gray-700 rounded-lg">
+    <Card 
+      className={`p-6 border border-gray-200 dark:border-gray-700 rounded-lg ${
+        onClick ? 'cursor-pointer hover:shadow-md transition-shadow duration-200' : ''
+      }`}
+      onClick={onClick}
+    >
       <CardContent className="p-0">
         <div className="flex items-center justify-between">
           <div>

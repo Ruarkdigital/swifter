@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Users, MoreHorizontal } from "lucide-react";
 import { format } from "date-fns";
 import { useState, useMemo, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getRequest, deleteRequest, putRequest } from "@/lib/axiosInstance";
 import { format as formatDate, startOfDay, subDays, endOfDay } from "date-fns";
@@ -96,6 +97,7 @@ const EmptyState = () => {
 const AdminManagementPage = () => {
   const toast = useToastHandler();
   const queryClient = useQueryClient();
+  const [searchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
   const [pagination, setPagination] = useState<PaginationState>({
@@ -109,6 +111,14 @@ const AdminManagementPage = () => {
 
   // Filter states
   const [filters, setFilters] = useState<Record<string, string>>({});
+
+  // Initialize filters from URL parameters
+  useEffect(() => {
+    const roleParam = searchParams.get("role");
+    if (roleParam && ["admin", "super_admin", "company_admin"].includes(roleParam)) {
+      setFilters((prev) => ({ ...prev, Role: roleParam }));
+    }
+  }, [searchParams]);
   const [dateRange, setDateRange] = useState<{
     startDate?: Date;
     endDate?: Date;

@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { FileText } from "lucide-react";
 import { format } from "date-fns";
 import { useState, useMemo, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import CreateEvaluationDialog from "./components/CreateEvaluationDialog";
 import { ConfirmAlert } from "@/components/layouts/ConfirmAlert";
 import { useToastHandler } from "@/hooks/useToaster";
@@ -121,6 +121,7 @@ const transformAssignedEvaluationData = (
 export const EvaluationManagementPage = () => {
   const navigate = useNavigate();
   const { isProcurement, isEvaluator, isCompanyAdmin } = useUserRole();
+  const [searchParams] = useSearchParams();
   const manageEvaluationMutation = useManageEvaluation();
   const { success: successToast, error: errorToast } = useToastHandler();
   const [searchQuery, setSearchQuery] = useState("");
@@ -130,6 +131,15 @@ export const EvaluationManagementPage = () => {
     pageIndex: 0,
     pageSize: 10,
   });
+
+  // Initialize filters from URL parameters
+  useEffect(() => {
+    const statusParam = searchParams.get('status');
+    if (statusParam && ['Active', 'Pending', 'Completed'].includes(statusParam)) {
+      setStatusFilter(statusParam);
+      setActiveStatCard(statusParam);
+    }
+  }, [searchParams]);
 
   // API Queries
   const { data: dashboardStats } = useEvaluationDashboard();

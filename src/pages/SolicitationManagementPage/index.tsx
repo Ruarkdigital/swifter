@@ -11,8 +11,8 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Calendar } from "@/components/ui/calendar";
-import { useState, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useMemo, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getRequest, deleteRequest } from "@/lib/axiosInstance";
 import { ApiResponse, ApiResponseError } from "@/types";
@@ -389,6 +389,7 @@ const EmptyState = ({ isProcurement }: { isProcurement: boolean }) => {
 export const SolicitationManagementPage = () => {
   const navigate = useNavigate();
   const { isProcurement, isVendor } = useUserRole();
+  const [searchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("all");
   const [pagination, setPagination] = useState<PaginationState>({
@@ -419,6 +420,14 @@ export const SolicitationManagementPage = () => {
   const [selectedSolicitationForAction, setSelectedSolicitationForAction] =
     useState<string | null>(null);
   // const [activeTab, setActiveTab] = useState<string>("all");
+
+  // Initialize filters from URL parameters
+  useEffect(() => {
+    const statusParam = searchParams.get('status');
+    if (statusParam && ['draft', 'active', 'closed', 'awarded', 'evaluating'].includes(statusParam)) {
+      setFilters(prev => ({ ...prev, status: statusParam as 'draft' | 'active' | 'closed' | 'awarded' | 'evaluating' }));
+    }
+  }, [searchParams]);
 
   // Update filters when pagination changes
   const handlePaginationChange = (

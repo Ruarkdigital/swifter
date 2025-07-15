@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { useState, useMemo, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getRequest, putRequest } from "@/lib/axiosInstance";
 import { ApiResponse, ApiResponseError } from "@/types";
@@ -125,6 +126,7 @@ const EmptyState = () => {
 const UserManagementPage = () => {
   const toast = useToastHandler();
   const queryClient = useQueryClient();
+  const [searchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
@@ -136,6 +138,15 @@ const UserManagementPage = () => {
     pageIndex: 0,
     pageSize: 10,
   });
+  const [statusFilter, setStatusFilter] = useState<string>("");
+
+  // Initialize status filter from URL parameters
+  useEffect(() => {
+    const statusParam = searchParams.get('status');
+    if (statusParam && ['active', 'inactive', 'pending', 'suspended'].includes(statusParam)) {
+      setStatusFilter(statusParam);
+    }
+  }, [searchParams]);
 
   // Debounce search query
   useEffect(() => {

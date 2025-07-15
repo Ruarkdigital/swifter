@@ -445,7 +445,7 @@ const superAdminConfig: DashboardConfig = {
       properties: [
         {
           id: "weekly-activities",
-          title: "Weekly Company Activity",
+          title: "Company Activity",
           type: "area",
           className: "col-span-2",
           data: Array.from({ length: 7 }, (_, i) => ({

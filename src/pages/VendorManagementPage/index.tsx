@@ -13,7 +13,7 @@ import {
   endOfYear,
 } from "date-fns";
 import { useState, useMemo, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getRequest, deleteRequest, putRequest } from "@/lib/axiosInstance";
 import { ApiResponse, ApiResponseError } from "@/types";
@@ -117,6 +117,7 @@ export const VendorManagementPage = () => {
   const navigate = useNavigate();
   const toast = useToastHandler();
   const queryClient = useQueryClient();
+  const [searchParams] = useSearchParams();
   const [searchQuery] = useState("");
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
   const [pagination, setPagination] = useState<PaginationState>({
@@ -134,6 +135,15 @@ export const VendorManagementPage = () => {
   );
   const [isSuspendModel, setIsSuspendModel] = useState(false);
   const [isUnsuspendModel, setIsUnsuspendModel] = useState(false);
+
+  // Initialize filters from URL parameters
+  useEffect(() => {
+    const statusParam = searchParams.get('status');
+    if (statusParam && ['Active', 'Inactive', 'Pending', 'Suspended'].includes(statusParam)) {
+      setFilters(prev => ({ ...prev, status: statusParam }));
+      setActiveStatCard(statusParam);
+    }
+  }, [searchParams]);
 
   // Debounce search query
   useEffect(() => {

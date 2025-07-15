@@ -2,10 +2,10 @@ import { Button } from "@/components/ui/button";
 import { MoreHorizontal, Building } from "lucide-react";
 import { format, startOfDay, subDays, endOfDay } from "date-fns";
 import { useState, useMemo, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getRequest, putRequest, postRequest } from "@/lib/axiosInstance";
-import { ApiList, ApiResponse, ApiResponseError, SubscriptionPlan } from "@/types";
+import { ApiResponse, ApiResponseError,  } from "@/types";
 import { useToastHandler } from "@/hooks/useToaster";
 import { StatCard } from "./components/StatCard";
 import { DataTable } from "@/components/layouts/DataTable";
@@ -105,6 +105,7 @@ const SubscriptionsPage = () => {
   const navigate = useNavigate();
   const toast = useToastHandler();
   const queryClient = useQueryClient();
+  const [searchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
   const [filters, setFilters] = useState<{
@@ -112,6 +113,14 @@ const SubscriptionsPage = () => {
     plan?: string;
     datePublished?: string;
   }>({});
+
+  // Initialize filters from URL parameters
+  useEffect(() => {
+    const statusParam = searchParams.get('status');
+    if (statusParam && ['active', 'expired', 'suspended'].includes(statusParam)) {
+      setFilters(prev => ({ ...prev, status: statusParam }));
+    }
+  }, [searchParams]);
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
     pageSize: 10,
@@ -381,16 +390,16 @@ const SubscriptionsPage = () => {
   };
 
   // Fetch subscription plans
-  const { data: plansData } = useQuery<
-    ApiResponse<ApiList<SubscriptionPlan>>,
-    ApiResponseError
-  >({
-    queryKey: ["subscriptionPlans-9"],
-    queryFn: async () => await getRequest({ url: "/subscriptions/plans" }),
-    // retryOnMount: false,
-    // refetchOnMount: false,
-    // staleTime: 30 * 60 * 1000, // 30 minutes
-  });
+  // const { data: plansData } = useQuery<
+  //   ApiResponse<ApiList<SubscriptionPlan>>,
+  //   ApiResponseError
+  // >({
+  //   queryKey: ["subscriptionPlans-9"],
+  //   queryFn: async () => await getRequest({ url: "/subscriptions/plans" }),
+  //   // retryOnMount: false,
+  //   // refetchOnMount: false,
+  //   // staleTime: 30 * 60 * 1000, // 30 minutes
+  // });
 
   // const formatUsers = (usersUsed: number, maxUsers: number) => {
   //   if (maxUsers === -1) return "Unlimited";
@@ -578,6 +587,9 @@ const SubscriptionsPage = () => {
           icon={IconMap?.creditCard as any}
           iconColor="text-blue-600"
           iconBgColor="bg-blue-100"
+          onClick={() => {
+            setFilters(prev => ({ ...prev, status: undefined }));
+          }}
         />
         <StatCard
           title="Active Subscriptions"
@@ -585,6 +597,9 @@ const SubscriptionsPage = () => {
           icon={IconMap?.creditCard as any}
           iconColor="text-green-600"
           iconBgColor="bg-green-100"
+          onClick={() => {
+            setFilters(prev => ({ ...prev, status: 'active' }));
+          }}
         />
         <StatCard
           title="Expired Subscriptions"
@@ -592,6 +607,9 @@ const SubscriptionsPage = () => {
           icon={IconMap?.creditCard as any}
           iconColor="text-red-600"
           iconBgColor="bg-red-100"
+          onClick={() => {
+            setFilters(prev => ({ ...prev, status: 'expired' }));
+          }}
         />
       </div>
 
@@ -685,15 +703,15 @@ const SubscriptionsPage = () => {
                       },
                     ],
                   },
-                  {
-                    title: "Plan",
-                    options: plansData?.data.data.data?.map(
-                        (plan: SubscriptionPlan) => ({
-                          label: plan.name,
-                          value: plan.name,
-                        })
-                      ) || [],
-                  },
+                  // {
+                  //   title: "Plan",
+                  //   options: plansData?.data.data.data?.map(
+                  //       (plan: SubscriptionPlan) => ({
+                  //         label: plan.name,
+                  //         value: plan.name,
+                  //       })
+                  //     ) || [],
+                  // },
                 ]}
                 onFilterChange={handleFilterChange}
                 selectedValues={{

@@ -433,46 +433,58 @@ export const RoleBasedDashboard: React.FC = () => {
     setSelectedFilter(filter);
   };
 
+  // Handle stat card clicks for navigation with filters
   const handleStatCardClick = (title: string) => {
-    // Route to appropriate pages based on user role and card title
-    switch (userRole) {
-      case "super_admin":
-        if (title.toLowerCase().includes("companies") || title.toLowerCase().includes("company")) {
-          navigate("/dashboard/companies");
-        } else if (title.toLowerCase().includes("admin") || title.toLowerCase().includes("user")) {
-          navigate("/dashboard/admin-management");
-        }
-        break;
-      case "company_admin":
-        if (title.toLowerCase().includes("solicitation") || title.toLowerCase().includes("rfp")) {
-          navigate("/dashboard/solicitation");
-        } else if (title.toLowerCase().includes("evaluation")) {
-          navigate("/dashboard/evaluation");
-        }
-        break;
-      case "procurement":
-        if (title.toLowerCase().includes("solicitation") || title.toLowerCase().includes("rfp")) {
-          navigate("/dashboard/solicitation");
-        } else if (title.toLowerCase().includes("evaluation")) {
-          navigate("/dashboard/evaluation");
-        } else if (title.toLowerCase().includes("vendor")) {
-          navigate("/dashboard/vendor");
-        }
-        break;
-      case "evaluator":
-        if (title.toLowerCase().includes("evaluation")) {
-          navigate("/dashboard/evaluation");
-        }
-        break;
-      case "vendor":
-        if (title.toLowerCase().includes("invitation") || title.toLowerCase().includes("bid")) {
-          navigate("/dashboard/invitations");
-        } else if (title.toLowerCase().includes("proposal") || title.toLowerCase().includes("submission")) {
-          navigate("/dashboard/invitations");
-        }
-        break;
-      default:
-        break;
+    // Define route mappings with filters for each user role
+    const routeMappings: Record<string, { route: string; filters?: Record<string, string> }> = {
+      // Super Admin routes
+      "All Companies": { route: "/dashboard/companies" },
+      "Active Companies": { route: "/dashboard/companies", filters: { status: "active" } },
+      "Suspended Companies": { route: "/dashboard/companies", filters: { status: "suspended" } },
+      "All Admins": { route: "/dashboard/admin-management" },
+      "Super Admins": { route: "/dashboard/admin-management", filters: { role: "super_admin" } },
+      "Organisation Admins": { route: "/dashboard/admin-management", filters: { role: "company_admin" } },
+      
+      // Procurement routes
+      "All Solicitations": { route: "/dashboard/solicitation" },
+      "Active Solicitations": { route: "/dashboard/solicitation", filters: { status: "active" } },
+      "Pending Evaluations": { route: "/dashboard/evaluation", filters: { status: "pending" } },
+      "Awarded": { route: "/dashboard/solicitation", filters: { status: "awarded" } },
+      
+      // Evaluator routes
+      "All Evaluations": { route: "/dashboard/evaluation" },
+      "Active Evaluations": { route: "/dashboard/evaluation", filters: { status: "active" } },
+      "Completed Evaluations": { route: "/dashboard/evaluation", filters: { status: "completed" } },
+      
+      // Vendor routes
+      "All Invitations": { route: "/dashboard/invitations" },
+      "Confirmed Invitations": { route: "/dashboard/invitations", filters: { status: "confirmed" } },
+      "Declined Invitations": { route: "/dashboard/invitations", filters: { status: "declined" } },
+      "Pending Invitations": { route: "/dashboard/invitations", filters: { status: "pending" } },
+      
+      // Company Admin routes (similar to procurement for solicitations)
+      "Total Users": { route: "/dashboard/user-management" },
+      "Active Users": { route: "/dashboard/user-management", filters: { status: "active" } },
+      "Inactive Users": { route: "/dashboard/user-management", filters: { status: "inactive" } },
+    };
+
+    const mapping = routeMappings[title];
+    if (mapping) {
+      const { route, filters } = mapping;
+      
+      if (filters && Object.keys(filters).length > 0) {
+        // Create URLSearchParams for filters
+        const searchParams = new URLSearchParams();
+        Object.entries(filters).forEach(([key, value]) => {
+          searchParams.set(key, value);
+        });
+        
+        // Navigate with query parameters
+        navigate(`${route}?${searchParams.toString()}`);
+      } else {
+        // Navigate without filters
+        navigate(route);
+      }
     }
   };
 
