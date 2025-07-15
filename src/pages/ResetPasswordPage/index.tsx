@@ -35,6 +35,7 @@ const ResetPassword = () => {
   const handler = useToastHandler();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+
   const { control, setValue } = useForge<FormState>({
     resolver: yupResolver(schema),
   });
@@ -45,7 +46,7 @@ const ResetPassword = () => {
       setValue('token', token);
     } else {
       handler.error('Invalid or missing reset token');
-      navigate('/login');
+      navigate('/');
     }
   }, [searchParams, setValue, handler, navigate]);
 
