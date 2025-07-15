@@ -463,6 +463,7 @@ export const RoleBasedDashboard: React.FC = () => {
       "Pending Invitations": { route: "/dashboard/invitations", filters: { status: "pending" } },
       
       // Company Admin routes (similar to procurement for solicitations)
+      "Total Solicitations": { route: "/dashboard/solicitation" },
       "Total Users": { route: "/dashboard/user-management" },
       "Active Users": { route: "/dashboard/user-management", filters: { status: "active" } },
       "Inactive Users": { route: "/dashboard/user-management", filters: { status: "inactive" } },

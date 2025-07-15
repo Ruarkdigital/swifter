@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { useState, useMemo, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getRequest, putRequest } from "@/lib/axiosInstance";
 import { ApiResponse, ApiResponseError } from "@/types";
@@ -51,7 +51,7 @@ type User = {
   _id: string;
   name: string;
   email: string;
-  role:"Admin" | "Procurement Lead" | "Evaluator" | "User";
+  role:"Admin" | "Procurement Lead" | "Evaluator" | "Vendor";
   status: "active"| "accepted" | "suspended" | "inactive" | "pending";
   lastActivity: string;
   createdAt: string;
@@ -126,6 +126,7 @@ const EmptyState = () => {
 const UserManagementPage = () => {
   const toast = useToastHandler();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
@@ -139,12 +140,19 @@ const UserManagementPage = () => {
     pageSize: 10,
   });
   const [statusFilter, setStatusFilter] = useState<string>("");
+  const [roleFilter, setRoleFilter] = useState<string>("");
 
-  // Initialize status filter from URL parameters
+  // Initialize filters from URL parameters
   useEffect(() => {
     const statusParam = searchParams.get('status');
+    const roleParam = searchParams.get('role');
+    
     if (statusParam && ['active', 'inactive', 'pending', 'suspended'].includes(statusParam)) {
       setStatusFilter(statusParam);
+    }
+    
+    if (roleParam && ['admin', 'procurement_lead', 'evaluator', 'vendor'].includes(roleParam)) {
+      setRoleFilter(roleParam);
     }
   }, [searchParams]);
 
@@ -249,8 +257,8 @@ const UserManagementPage = () => {
   const totalUsers = usersData?.data?.data?.total || 0;
 
   // Calculate dashboard statistics from users list
-  const userStats =
-    users.length > 0
+  const userStats = useMemo(() => {
+    return users.length > 0
       ? calculateDashboardStats(users)
       : {
           allUsers: 0,
@@ -261,11 +269,51 @@ const UserManagementPage = () => {
           procurementLeads: 0,
           evaluators: 0,
         };
+  }, [users]);
+
+  // Handle filter changes from dropdown
+  const handleFilterChange = (filterTitle: string, value: string) => {
+    if (filterTitle === "Role") {
+      setRoleFilter(value === "all" ? "" : value);
+      // Update URL
+      const params = new URLSearchParams(searchParams);
+      if (value === "all" || !value) {
+        params.delete('role');
+      } else {
+        params.set('role', value);
+      }
+      navigate(`/dashboard/users?${params.toString()}`, { replace: true });
+    } else if (filterTitle === "Status") {
+      setStatusFilter(value === "all" ? "" : value);
+      // Update URL
+      const params = new URLSearchParams(searchParams);
+      if (value === "all" || !value) {
+        params.delete('status');
+      } else {
+        params.set('status', value);
+      }
+      navigate(`/dashboard/users?${params.toString()}`, { replace: true });
+    }
+  };
 
   // Filter data based on search query (for client-side filtering if needed)
   const filteredData = useMemo(() => {
-    return users;
-  }, [users]);
+    if (!users) return [];
+    
+    return users.filter((user: User) => {
+      const matchesSearch = user.name?.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+                           user.email?.toLowerCase().includes(debouncedSearchQuery.toLowerCase());
+      const matchesStatus = !statusFilter || user.status === statusFilter;
+      const matchesRole = !roleFilter || (
+         (roleFilter === 'admin' && user.role === 'Admin') ||
+         (roleFilter === 'procurement_lead' && user.role === 'Procurement Lead') ||
+         (roleFilter === 'evaluator' && user.role === 'Evaluator') ||
+         (roleFilter === 'vendor' && user.role === 'Vendor')
+       );
+      
+      return matchesSearch && matchesStatus && matchesRole;
+    });
+  }, [users, debouncedSearchQuery, statusFilter, roleFilter]);
 
   // Define table columns
   const columns: ColumnDef<User>[] = [
@@ -399,6 +447,10 @@ const UserManagementPage = () => {
           icon={Users}
           iconColor="text-gray-600"
           iconBgColor="bg-gray-100"
+          onClick={() => {
+            setStatusFilter('');
+            setRoleFilter('');
+          }}
         />
         <StatCard
           title="Active Users"
@@ -406,6 +458,9 @@ const UserManagementPage = () => {
           icon={UserCheck}
           iconColor="text-green-600"
           iconBgColor="bg-green-100"
+          onClick={() => {
+            setStatusFilter('active');
+          }}
         />
         <StatCard
           title="Suspended Users"
@@ -413,6 +468,9 @@ const UserManagementPage = () => {
           icon={UserX}
           iconColor="text-red-600"
           iconBgColor="bg-red-100"
+          onClick={() => {
+            setStatusFilter('suspended');
+          }}
         />
         <StatCard
           title="Inactive Users"
@@ -420,6 +478,9 @@ const UserManagementPage = () => {
           icon={Clock}
           iconColor="text-yellow-600"
           iconBgColor="bg-yellow-100"
+          onClick={() => {
+            setStatusFilter('inactive');
+          }}
         />
       </div>
 
@@ -431,6 +492,11 @@ const UserManagementPage = () => {
           icon={Shield}
           iconColor="text-purple-600"
           iconBgColor="bg-purple-100"
+          onClick={() => {
+            navigate('/dashboard/users?role=admin');
+            setRoleFilter('admin');
+            setStatusFilter('');
+          }}
         />
         <StatCard
           title="Procurement Leads"
@@ -438,6 +504,11 @@ const UserManagementPage = () => {
           icon={Briefcase}
           iconColor="text-blue-600"
           iconBgColor="bg-blue-100"
+          onClick={() => {
+            navigate('/dashboard/users?role=procurement_lead');
+            setRoleFilter('procurement_lead');
+            setStatusFilter('');
+          }}
         />
         <StatCard
           title="Evaluators"
@@ -445,6 +516,11 @@ const UserManagementPage = () => {
           icon={Star}
           iconColor="text-orange-600"
           iconBgColor="bg-orange-100"
+          onClick={() => {
+            navigate('/dashboard/users?role=evaluator');
+            setRoleFilter('evaluator');
+            setStatusFilter('');
+          }}
         />
       </div>
 
@@ -487,9 +563,22 @@ const UserManagementPage = () => {
                           label: "Inactive",
                           value: "inactive",
                         },
+                        {
+                          label: "Suspended",
+                          value: "suspended",
+                        },
+                        {
+                          label: "Pending",
+                          value: "pending",
+                        },
                       ],
                     },
                   ]}
+                  onFilterChange={handleFilterChange}
+                  selectedValues={{
+                    Role: roleFilter,
+                    Status: statusFilter,
+                  }}
                 />
               </div>
             </div>
