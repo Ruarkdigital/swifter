@@ -809,7 +809,6 @@ export class DashboardDataTransformer {
     if (!data || !Array.isArray(data)) {
       return [];
     }
-    console.log({ data })
 
     const actionDescriptions = {
       vendor_invitation: "You've been invited to bid on",
@@ -886,9 +885,9 @@ export class DashboardDataTransformer {
       action: actionDescriptions[update.action as keyof typeof actionDescriptions] || 'Unknown Action',
       type: update.type || "evaluation",
       date:
-        update.date || update.updatedAt
+        update.date || update.updatedAt || update.createdAt
           ? format(
-              new Date(update.date || update.updatedAt),
+              new Date(update.date || update.updatedAt || update.createdAt),
               "MMM d, yyyy h:mm a 'GMT'xxx"
             )
           : format(new Date(), "MMM d, yyyy h:mm a 'GMT'xxx"),
@@ -1131,9 +1130,9 @@ export class DashboardDataTransformer {
       to: `/dashboard/solicitation/${update.solicitation._id}`,
       action: actionDescriptions[update.action as keyof typeof actionDescriptions] || 'Unknown Action',
       date:
-        update.updatedAt || update.date
+        update.updatedAt || update.date || update.createdAt
           ? format(
-              new Date(update.updatedAt || update.date),
+              new Date(update.updatedAt || update.date || update.createdAt),
               "MMM d, yyyy h:mm a 'GMT'xxx"
             )
           : format(new Date(), "MMM d, yyyy h:mm a 'GMT'xxx"),
