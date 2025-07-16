@@ -333,7 +333,7 @@ const SubscriptionsPage = () => {
   >({
     mutationFn: async ({ id, status }) =>
       await putRequest({
-        url: `/subscriptions/${id}`,
+        url: `/subscriptions/${id}/status`,
         payload: { status },
       }),
     onSuccess: (_, variables) => {
