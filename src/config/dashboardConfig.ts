@@ -457,7 +457,7 @@ const superAdminConfig: DashboardConfig = {
           filters: ["12 months", "6 months", "3 months", "30 days", "7 days"],
         },
         {
-          id: "solicitation-distribution",
+          id: "sub-distribution",
           title: "Subscription Distribution",
           type: "donut",
           outerRadius: 150,

@@ -30,13 +30,17 @@ interface ChartComponentProps {
   chart: DashboardConfig["rows"][0]["properties"][0];
   selected?: string;
   onFilterChange?: (filter: string) => void;
+  chartData?: any; // Dynamic chart data based on individual filter
 }
 
 export const ChartComponent: React.FC<ChartComponentProps> = ({
   chart,
   selected,
   onFilterChange,
+  chartData,
 }) => {
+  // Use dynamic chartData if provided, otherwise fallback to chart.data
+  const data = chartData || chart.data;
   const chartConfig = {
     value: {
       label: "Value",
@@ -54,7 +58,7 @@ export const ChartComponent: React.FC<ChartComponentProps> = ({
             <ResponsiveContainer width="100%" height="100%" minHeight={400}>
               <PieChart>
                 <Pie
-                  data={chart.data}
+                  data={data}
                   cx={chart.cx || "50%"}
                   cy={chart.cy || "50%"}
                   labelLine={chart.labelLine !== false}
@@ -64,7 +68,7 @@ export const ChartComponent: React.FC<ChartComponentProps> = ({
                   startAngle={chart.startAngle || 0}
                   endAngle={chart.endAngle || 360}
                 >
-                  {chart?.data?.map((entry, index) => {
+                  {data?.map((entry: any, index: number) => {
                     // Use consistent status-based colors
                     const color = getStatusColor(
                       entry.name, 
@@ -82,7 +86,7 @@ export const ChartComponent: React.FC<ChartComponentProps> = ({
                   iconType={chart.legendIconType || "rect"}
                   iconSize={10}
                   formatter={(_, __, index) => {
-                    const item = chart?.data?.[index];
+                    const item = data?.[index];
                     return (
                       <span className="ml-0.5 mr-2 items-center inline-block">
                         <span className="mr-2 text-gray-900 dark:text-gray-100">
@@ -106,7 +110,7 @@ export const ChartComponent: React.FC<ChartComponentProps> = ({
             <ResponsiveContainer width="100%" height="100%" minHeight={400}>
               <PieChart>
                 <Pie
-                  data={chart.data}
+                  data={data}
                   cx="50%"
                   cy="50%"
                   innerRadius={chart?.innerRadius ?? 60}
@@ -114,7 +118,7 @@ export const ChartComponent: React.FC<ChartComponentProps> = ({
                   dataKey="value"
                   label={false}
                 >
-                  {chart.data?.map((entry: any, index: number) => {
+                  {data?.map((entry: any, index: number) => {
                     const color = getStatusColor(
                       entry.name, 
                       index, 
@@ -158,7 +162,7 @@ export const ChartComponent: React.FC<ChartComponentProps> = ({
                   iconSize={10}
                   className="mb-2"
                   formatter={(_, __, index) => {
-                    const item = chart.data?.[index];
+                    const item = data?.[index];
                     return (
                       <span className="ml-0.5 mr-2 items-center inline-block">
                         <span className="mr-2 text-gray-900 dark:text-gray-100 font-light">
@@ -181,11 +185,11 @@ export const ChartComponent: React.FC<ChartComponentProps> = ({
           <ChartContainer className="h-full w-full" config={chartConfig}>
             <ResponsiveContainer width="100%" height="100%" minHeight={400}>
               <LineChart
-                data={chart.data}
+                data={data}
                 margin={{ top: 5, right: 30, left: 20, bottom: 7 }}
               >
                 <XAxis
-                  dataKey={Object.keys(chart.data?.[0] || {})[0]}
+                  dataKey={Object.keys(data?.[0] || {})[0]}
                   tick={{ fill: "currentColor" }}
                   stroke="currentColor"
                   className="text-gray-500 dark:text-gray-400"
@@ -207,7 +211,7 @@ export const ChartComponent: React.FC<ChartComponentProps> = ({
                   iconType={chart.legendIconType || "circle"}
                   wrapperStyle={{ paddingTop: "10px" }}
                 />
-                {Object.keys(chart.data?.[0] || {})
+                {Object.keys(data?.[0] || {})
                   .slice(1)
                   .map((key, index) => {
                     // Use consistent status-based colors for lines
@@ -240,11 +244,11 @@ export const ChartComponent: React.FC<ChartComponentProps> = ({
           <ChartContainer className="h-full w-full" config={chartConfig}>
             <ResponsiveContainer width="100%" height="100%" minHeight={400}>
               <AreaChart
-                data={chart.data}
+                data={data}
                 margin={{ top: 5, right: 30, left: 2, bottom: 7 }}
               >
                 <XAxis
-                  dataKey={Object.keys(chart.data?.[0] || {})[0]}
+                  dataKey={Object.keys(data?.[0] || {})[0]}
                   tick={{ fill: "currentColor" }}
                   stroke="currentColor"
                   className="text-gray-500 dark:text-gray-400"
@@ -267,7 +271,7 @@ export const ChartComponent: React.FC<ChartComponentProps> = ({
                   iconSize={10}
                   wrapperStyle={{ paddingTop: "10px" }}
                 />
-                {Object.keys(chart.data?.[0] || {})
+                {Object.keys(data?.[0] || {})
                   .slice(1)
                   .map((key, index) => {
                     // Dynamic color generation based on chart properties or default colors
@@ -311,7 +315,7 @@ export const ChartComponent: React.FC<ChartComponentProps> = ({
           <ChartContainer className="h-full w-full" config={chartConfig}>
             <ResponsiveContainer width="100%" height="100%" minHeight={200}>
               <BarChart
-                data={chart.data}
+                data={data}
                 layout={chart.layout || "horizontal"}
                 margin={{
                   top: 5,
@@ -332,7 +336,7 @@ export const ChartComponent: React.FC<ChartComponentProps> = ({
                     />
                     <YAxis
                       type="category"
-                      dataKey={Object.keys(chart.data?.[0] || {})[0]}
+                      dataKey={Object.keys(data?.[0] || {})[0]}
                       tick={{ fill: "currentColor", fontSize: 12 }}
                       stroke="currentColor"
                       className="text-gray-500 dark:text-gray-400"
@@ -344,7 +348,7 @@ export const ChartComponent: React.FC<ChartComponentProps> = ({
                 ) : (
                   <>
                     <XAxis
-                      dataKey={Object.keys(chart.data?.[0] || {})[0]}
+                      dataKey={Object.keys(data?.[0] || {})[0]}
                       tick={{ fill: "currentColor", fontSize: 12  }}
                       stroke="currentColor"
                       className="text-gray-500 dark:text-gray-400"
@@ -375,7 +379,7 @@ export const ChartComponent: React.FC<ChartComponentProps> = ({
                   />
                 )}
                 <ChartTooltip content={<ChartTooltipContent />} />
-                {Object.keys(chart.data?.[0] || {})
+                {Object.keys(data?.[0] || {})
                   .slice(1)
                   .map((key, index) => {
                     // Use consistent status-based colors for bars
@@ -428,7 +432,7 @@ export const ChartComponent: React.FC<ChartComponentProps> = ({
           <div className="flex space-x-4 text-sm overflow-auto py-2">
             {chart.filters?.map((item) => (
               <Button
-                variant={selected === item ? "secondary" : "ghost"}
+                variant={selected?.replace(/\s+/g, "") === item ? "secondary" : "ghost"}
                 key={item}
                 className="text-gray-500 dark:text-gray-400"
                 onClick={() => onFilterChange?.(item)}

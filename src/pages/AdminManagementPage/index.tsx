@@ -4,7 +4,12 @@ import { format } from "date-fns";
 import { useState, useMemo, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getRequest, deleteRequest, putRequest } from "@/lib/axiosInstance";
+import {
+  getRequest,
+  deleteRequest,
+  putRequest,
+  postRequest,
+} from "@/lib/axiosInstance";
 import { format as formatDate, startOfDay, subDays, endOfDay } from "date-fns";
 import { ApiList, ApiResponse, ApiResponseError } from "@/types";
 import { useToastHandler } from "@/hooks/useToaster";
@@ -108,6 +113,7 @@ const AdminManagementPage = () => {
   const [isAdminDetailsOpen, setIsAdminDetailsOpen] = useState(false);
   const [isSuspendDialogOpen, setIsSuspendDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isReminderDialogOpen, setIsReminderDialogOpen] = useState(false);
 
   // Filter states
   const [filters, setFilters] = useState<Record<string, string>>({});
@@ -115,7 +121,10 @@ const AdminManagementPage = () => {
   // Initialize filters from URL parameters
   useEffect(() => {
     const roleParam = searchParams.get("role");
-    if (roleParam && ["admin", "super_admin", "company_admin"].includes(roleParam)) {
+    if (
+      roleParam &&
+      ["admin", "super_admin", "company_admin"].includes(roleParam)
+    ) {
       setFilters((prev) => ({ ...prev, Role: roleParam }));
     }
   }, [searchParams]);
@@ -301,31 +310,54 @@ const AdminManagementPage = () => {
   });
 
   // Update admin status mutation
-  const { mutateAsync: updateAdminStatus, isPending: isUpdatingAdminStatus } = useMutation<
-    ApiResponse<any>,
-    ApiResponseError,
-    { adminId: string; status: "active" | "inactive" }
-  >({
-    mutationKey: ["updateAdminStatus"],
-    mutationFn: async ({ adminId, status }) =>
-      await putRequest({
-        url: `/admins/${adminId}/status`,
-        payload: { status },
-      }),
-    onSuccess: () => {
-      toast.success("Success", "Admin status updated successfully");
-      queryClient.invalidateQueries({ queryKey: ["admins"] });
-      queryClient.invalidateQueries({ queryKey: ["adminDashboard"] });
-    },
-    onError: (error) => {
-      console.log(error);
-      const err = error as ApiResponseError;
-      toast.error(
-        "Error",
-        err?.response?.data?.message ?? "Failed to update admin status"
-      );
-    },
-  });
+  const { mutateAsync: updateAdminStatus, isPending: isUpdatingAdminStatus } =
+    useMutation<
+      ApiResponse<any>,
+      ApiResponseError,
+      { adminId: string; status: "active" | "inactive" }
+    >({
+      mutationKey: ["updateAdminStatus"],
+      mutationFn: async ({ adminId, status }) =>
+        await putRequest({
+          url: `/admins/${adminId}/status`,
+          payload: { status },
+        }),
+      onSuccess: () => {
+        toast.success("Success", "Admin status updated successfully");
+        queryClient.invalidateQueries({ queryKey: ["admins"] });
+        queryClient.invalidateQueries({ queryKey: ["adminDashboard"] });
+      },
+      onError: (error) => {
+        console.log(error);
+        const err = error as ApiResponseError;
+        toast.error(
+          "Error",
+          err?.response?.data?.message ?? "Failed to update admin status"
+        );
+      },
+    });
+
+  // Send reminder invite mutation
+  const { mutateAsync: sendReminderInvite, isPending: isSendingReminder } =
+    useMutation<ApiResponse<any>, ApiResponseError, string>({
+      mutationKey: ["sendReminderInvite"],
+      mutationFn: async (email) =>
+        await postRequest({
+          url: `/onboarding/remind-invite?email=${encodeURIComponent(email)}`,
+          payload: {},
+        }),
+      onSuccess: () => {
+        toast.success("Success", "Reminder invite sent successfully");
+      },
+      onError: (error) => {
+        console.log(error);
+        const err = error as ApiResponseError;
+        toast.error(
+          "Error",
+          err?.response?.data?.message ?? "Failed to send reminder invite"
+        );
+      },
+    });
 
   // Handle admin deletion
   const handleDeleteAdmin = async (adminId: string) => {
@@ -343,6 +375,16 @@ const AdminManagementPage = () => {
   ) => {
     try {
       await updateAdminStatus({ adminId, status });
+    } catch (error) {
+      // Error is already handled in onError callback
+    }
+  };
+
+  // Handle sending reminder invite
+  const handleSendReminderInvite = async (email: string) => {
+    try {
+      await sendReminderInvite(email);
+      setIsReminderDialogOpen(false);
     } catch (error) {
       // Error is already handled in onError callback
     }
@@ -410,8 +452,8 @@ const AdminManagementPage = () => {
       header: "Last Login",
       cell: ({ row }) => (
         <span className="text-sm text-gray-700 dark:text-gray-300">
-          {row.original.lastLoginAt
-            ? format(new Date(row.original.lastLoginAt), "MMM dd, yyyy HH:mm")
+          {row.original.lastLogin
+            ? format(new Date(row.original.lastLogin), "MMM dd, yyyy HH:mm")
             : "Never"}
         </span>
       ),
@@ -454,6 +496,18 @@ const AdminManagementPage = () => {
               >
                 View Admin
               </DropdownMenuItem>
+              {row.original.status === "pending" && (
+                <DropdownMenuItem
+                  onClick={() => {
+                    setSelectedAdmin(row.original);
+                    setIsReminderDialogOpen(true);
+                  }}
+                  className="p-3"
+                >
+                  Send Reminder
+                </DropdownMenuItem>
+              )}
+
               {row.original.role === "admin" ? (
                 <>
                   <DropdownMenuItem
@@ -471,6 +525,7 @@ const AdminManagementPage = () => {
                   </DropdownMenuItem>
                 </>
               ) : null}
+
             </DropdownMenuContent>
           </DropdownMenu>
           <ConfirmAlert
@@ -518,7 +573,7 @@ const AdminManagementPage = () => {
           iconColor="text-gray-600"
           iconBgColor="bg-gray-100"
           onClick={() => {
-            setFilters(prev => ({ ...prev, Role: "" }));
+            setFilters((prev) => ({ ...prev, Role: "" }));
             setPagination({ pageIndex: 0, pageSize: 10 });
           }}
         />
@@ -529,7 +584,7 @@ const AdminManagementPage = () => {
           iconColor="text-gray-600"
           iconBgColor="bg-gray-100"
           onClick={() => {
-            setFilters(prev => ({ ...prev, Role: "super_admin" }));
+            setFilters((prev) => ({ ...prev, Role: "super_admin" }));
             setPagination({ pageIndex: 0, pageSize: 10 });
           }}
         />
@@ -540,7 +595,7 @@ const AdminManagementPage = () => {
           iconColor="text-gray-600"
           iconBgColor="bg-gray-100"
           onClick={() => {
-            setFilters(prev => ({ ...prev, Role: "company_admin" }));
+            setFilters((prev) => ({ ...prev, Role: "company_admin" }));
             setPagination({ pageIndex: 0, pageSize: 10 });
           }}
         />
@@ -718,6 +773,20 @@ const AdminManagementPage = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Send Reminder Dialog */}
+      <ConfirmAlert
+        text={`Send a reminder email to ${selectedAdmin?.name} (${selectedAdmin?.email}) about their pending invite?`}
+        title="Send Reminder Invite"
+        open={isReminderDialogOpen}
+        onClose={setIsReminderDialogOpen}
+        onPrimaryAction={() => {
+          if (selectedAdmin) {
+            handleSendReminderInvite(selectedAdmin.email);
+          }
+        }}
+        isLoading={isSendingReminder}
+      />
     </div>
   );
 };

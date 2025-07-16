@@ -5538,7 +5538,7 @@
         }
       }
     },
-    "/evaluator/{evaluationId}/submit-evaluation": {
+    "/evaluator/{evaluationId}/submit-evaluation/vendor/{vendorId}": {
       "post": {
         "summary": "Submit Evaluation",
         "description": "Submit evaluation criteria",
@@ -5559,6 +5559,15 @@
             "schema": {
               "type": "string",
               "description": "evaluationId"
+            }
+          },
+          {
+            "in": "path",
+            "name": "vendorId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "vendorId"
             }
           }
         ],
@@ -6891,6 +6900,109 @@
           },
           "500": {
             "description": "Something bad went wrong",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/onboarding/remind-invite": {
+      "post": {
+        "summary": "Remind user about pending invite",
+        "description": "Send a reminder email to a user with a pending invite",
+        "tags": [
+          "CompanyAdmin",
+          "SuperAdmin"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "email",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "email"
+            },
+            "description": "Email address of the user to remind",
+            "example": "user@example.com"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Invite reminder sent successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "message": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated user",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Unauthorized user",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizeError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Invite not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation error - Email parameter required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
             "content": {
               "application/json": {
                 "schema": {
@@ -9640,6 +9752,106 @@
           },
           "500": {
             "description": "Something bad went wrong",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/procurement/evaluations/{evaluationId}/bid-comparison/export": {
+      "get": {
+        "summary": "Export bid comparison",
+        "description": "Generates and downloads a PDF or DOCX document showing a comparison of all vendor bids for a specific evaluation. Includes rank, score, total, and submission details.",
+        "tags": [
+          "Procurement-Evaluation",
+          "Company-Evaluation",
+          "Evaluator"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "evaluationId",
+            "in": "path",
+            "description": "The MongoDB ObjectId of the evaluation",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "type",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "pdf",
+                "docx"
+              ],
+              "default": "pdf"
+            },
+            "description": "Export file type (pdf or docx)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successfully generated file",
+            "content": {
+              "application/pdf": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "application/vnd.openxmlformats-officedocument.wordprocessingml.document": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated user",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Invalid evaluation ID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizeError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Evaluation or related proposals not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
             "content": {
               "application/json": {
                 "schema": {
@@ -18295,7 +18507,7 @@
       }
     },
     "/vendor/proposal/{solicitationId}/proposal/:proposalId": {
-      "post": {
+      "put": {
         "summary": "Edit Submit vendor proposal for solicitation",
         "description": "Submit a vendor proposal in response to a solicitation.\nIncludes required documents and price breakdown with validation rules:\n- Total amount must match sum of all price components\n- Status must be either 'draft' or 'submit'\n- Total and status are requuired\n- Documents must include all required files\n- Price components must have valid quantities and amounts\n",
         "tags": [

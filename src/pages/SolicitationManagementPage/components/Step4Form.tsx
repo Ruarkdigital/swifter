@@ -230,7 +230,7 @@ function Step4Form() {
       List={FileListItem}
       dropzoneOptions={{
         multiple: true,
-        maxFiles: 4,
+        // maxFiles: 4,
       }}
       accept={acceptedFileTypes as any}
     />

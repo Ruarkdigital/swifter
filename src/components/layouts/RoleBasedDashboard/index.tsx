@@ -14,10 +14,11 @@ import { PageLoader } from "@/components/ui/PageLoader";
 // Main Role-Based Dashboard Component
 export const RoleBasedDashboard: React.FC = () => {
   const { dashboardConfig, userRole } = useUserRole();
-  const [selectedFilter, setSelectedFilter] = useState("12months");
+  // Individual chart filters instead of global filter
+  const [chartFilters, setChartFilters] = useState<Record<string, string>>({});
   const navigate = useNavigate();
 
-  // Fetch dashboard data based on user role
+  // Fetch dashboard data based on user role (without global filter)
   const {
     dashboardCount,
     roleDistribution,
@@ -47,7 +48,10 @@ export const RoleBasedDashboard: React.FC = () => {
     vendorMyActions,
     vendorGeneralUpdates,
     isLoading,
-  } = useDashboardData(userRole, selectedFilter);
+    // Individual chart data fetchers
+    getChartData,
+  } = useDashboardData(userRole, chartFilters);
+  console.log({ data: getChartData("weekly-activities") });
 
   // Transform API data into dashboard configuration format
   const enhancedDashboardConfig: DashboardConfig = useMemo(() => {
@@ -80,7 +84,7 @@ export const RoleBasedDashboard: React.FC = () => {
                       ...chart,
                       data: transformedWeeklyData,
                     };
-                  case "solicitation-distribution":
+                  case "sub-distribution":
                     return {
                       ...chart,
                       data: transformedSubData,
@@ -154,7 +158,7 @@ export const RoleBasedDashboard: React.FC = () => {
                     ...property,
                     centerText: {
                       label: property?.centerText?.label ?? "Vendors",
-                      value: vendorsDistribution?.total ?? 0
+                      value: vendorsDistribution?.total ?? 0,
                     },
                     data: transformedVendorsDistribution,
                   };
@@ -207,15 +211,14 @@ export const RoleBasedDashboard: React.FC = () => {
           evaluatorMyActions
         );
       const transformedEvaluatorEvaluationUpdates =
-          DashboardDataTransformer.transformEvaluatorEvaluationUpdates(
-            evaluatorEvaluationUpdates
-          );
+        DashboardDataTransformer.transformEvaluatorEvaluationUpdates(
+          evaluatorEvaluationUpdates
+        );
 
       return {
         ...dashboardConfig,
-        stats: DashboardDataTransformer.transformEvaluatorStats(
-          evaluatorDashboard
-        ),
+        stats:
+          DashboardDataTransformer.transformEvaluatorStats(evaluatorDashboard),
         rows: dashboardConfig.rows.map((row) => {
           if (row.type === "activity") {
             return {
@@ -245,9 +248,7 @@ export const RoleBasedDashboard: React.FC = () => {
     if (userRole === "vendor") {
       // Transform Vendor data
       const transformedVendorMyActions =
-        DashboardDataTransformer.transformVendorMyActions(
-          vendorMyActions
-        );
+        DashboardDataTransformer.transformVendorMyActions(vendorMyActions);
       const transformedVendorGeneralUpdates =
         DashboardDataTransformer.transformVendorGeneralUpdates(
           vendorGeneralUpdates
@@ -255,9 +256,7 @@ export const RoleBasedDashboard: React.FC = () => {
 
       return {
         ...dashboardConfig,
-        stats: DashboardDataTransformer.transformVendorStats(
-          vendorDashboard
-        ),
+        stats: DashboardDataTransformer.transformVendorStats(vendorDashboard),
         rows: dashboardConfig.rows.map((row) => {
           if (row.type === "activity") {
             return {
@@ -295,7 +294,9 @@ export const RoleBasedDashboard: React.FC = () => {
           procurementSolicitationStatus
         );
       const transformedBidIntent =
-        DashboardDataTransformer.transformProcurementBidIntent(procurementBidIntent);
+        DashboardDataTransformer.transformProcurementBidIntent(
+          procurementBidIntent
+        );
       const transformedVendorsDistribution =
         DashboardDataTransformer.transformProcurementVendorsDistribution(
           procurementVendorsDistribution
@@ -305,9 +306,13 @@ export const RoleBasedDashboard: React.FC = () => {
           procurementProposalSubmission
         );
       const transformedWeeklyData =
-        DashboardDataTransformer.transformProcurementWeeklyActivities(procurementWeeklyActivities);
+        DashboardDataTransformer.transformProcurementWeeklyActivities(
+          procurementWeeklyActivities
+        );
       const transformedTotalEvaluations =
-        DashboardDataTransformer.transformProcurementTotalEvaluations(procurementTotalEvaluations);
+        DashboardDataTransformer.transformProcurementTotalEvaluations(
+          procurementTotalEvaluations
+        );
       const transformedProcurementMyActions =
         DashboardDataTransformer.transformProcurementMyActions(
           procurementMyActions
@@ -321,7 +326,6 @@ export const RoleBasedDashboard: React.FC = () => {
         ...dashboardConfig,
         stats: transformedProcurementStats,
         rows: dashboardConfig.rows.map((row) => {
-
           if (row.type === "activity") {
             return {
               ...row,
@@ -363,7 +367,9 @@ export const RoleBasedDashboard: React.FC = () => {
                       ...chart,
                       centerText: {
                         label: "Vendors",
-                        value: procurementVendorsDistribution?.total.toString() || '0'
+                        value:
+                          procurementVendorsDistribution?.total.toString() ||
+                          "0",
                       },
                       data: transformedVendorsDistribution,
                     };
@@ -429,57 +435,113 @@ export const RoleBasedDashboard: React.FC = () => {
     vendorGeneralUpdates,
   ]);
 
-  const handleFilterChange = (filter: string) => {
-    setSelectedFilter(filter);
+  // Handle individual chart filter changes
+  const handleFilterChange = (chartId?: string, filter?: string) => {
+    if (!chartId || !filter) return;
+    setChartFilters((prev) => ({
+      ...prev,
+      [chartId]: filter.replace(/\s+/g, ""),
+    }));
+  };
+
+  // Get filter for specific chart (default to "12months")
+  const getChartFilter = (chartId?: string) => {
+    if (!chartId) return "12months";
+    return chartFilters[chartId] || "12months";
   };
 
   // Handle stat card clicks for navigation with filters
   const handleStatCardClick = (title: string) => {
     // Define route mappings with filters for each user role
-    const routeMappings: Record<string, { route: string; filters?: Record<string, string> }> = {
+    const routeMappings: Record<
+      string,
+      { route: string; filters?: Record<string, string> }
+    > = {
       // Super Admin routes
       "All Companies": { route: "/dashboard/companies" },
-      "Active Companies": { route: "/dashboard/companies", filters: { status: "active" } },
-      "Suspended Companies": { route: "/dashboard/companies", filters: { status: "suspended" } },
+      "Active Companies": {
+        route: "/dashboard/companies",
+        filters: { status: "active" },
+      },
+      "Suspended Companies": {
+        route: "/dashboard/companies",
+        filters: { status: "suspended" },
+      },
       "All Admins": { route: "/dashboard/admin-management" },
-      "Super Admins": { route: "/dashboard/admin-management", filters: { role: "super_admin" } },
-      "Organisation Admins": { route: "/dashboard/admin-management", filters: { role: "company_admin" } },
-      
+      "Super Admins": {
+        route: "/dashboard/admin-management",
+        filters: { role: "super_admin" },
+      },
+      "Organisation Admins": {
+        route: "/dashboard/admin-management",
+        filters: { role: "company_admin" },
+      },
+
       // Procurement routes
       "All Solicitations": { route: "/dashboard/solicitation" },
-      "Active Solicitations": { route: "/dashboard/solicitation", filters: { status: "active" } },
-      "Pending Evaluations": { route: "/dashboard/evaluation", filters: { status: "pending" } },
-      "Awarded": { route: "/dashboard/solicitation", filters: { status: "awarded" } },
-      
+      "Active Solicitations": {
+        route: "/dashboard/solicitation",
+        filters: { status: "active" },
+      },
+      "Pending Evaluations": {
+        route: "/dashboard/evaluation",
+        filters: { status: "pending" },
+      },
+      Awarded: {
+        route: "/dashboard/solicitation",
+        filters: { status: "awarded" },
+      },
+
       // Evaluator routes
       "All Evaluations": { route: "/dashboard/evaluation" },
-      "Active Evaluations": { route: "/dashboard/evaluation", filters: { status: "active" } },
-      "Completed Evaluations": { route: "/dashboard/evaluation", filters: { status: "completed" } },
-      
+      "Active Evaluations": {
+        route: "/dashboard/evaluation",
+        filters: { status: "active" },
+      },
+      "Completed Evaluations": {
+        route: "/dashboard/evaluation",
+        filters: { status: "completed" },
+      },
+
       // Vendor routes
       "All Invitations": { route: "/dashboard/invitations" },
-      "Confirmed Invitations": { route: "/dashboard/invitations", filters: { status: "confirmed" } },
-      "Declined Invitations": { route: "/dashboard/invitations", filters: { status: "declined" } },
-      "Pending Invitations": { route: "/dashboard/invitations", filters: { status: "pending" } },
-      
+      "Confirmed Invitations": {
+        route: "/dashboard/invitations",
+        filters: { status: "confirmed" },
+      },
+      "Declined Invitations": {
+        route: "/dashboard/invitations",
+        filters: { status: "declined" },
+      },
+      "Pending Invitations": {
+        route: "/dashboard/invitations",
+        filters: { status: "pending" },
+      },
+
       // Company Admin routes (similar to procurement for solicitations)
       "Total Solicitations": { route: "/dashboard/solicitation" },
       "Total Users": { route: "/dashboard/user-management" },
-      "Active Users": { route: "/dashboard/user-management", filters: { status: "active" } },
-      "Inactive Users": { route: "/dashboard/user-management", filters: { status: "inactive" } },
+      "Active Users": {
+        route: "/dashboard/user-management",
+        filters: { status: "active" },
+      },
+      "Inactive Users": {
+        route: "/dashboard/user-management",
+        filters: { status: "inactive" },
+      },
     };
 
     const mapping = routeMappings[title];
     if (mapping) {
       const { route, filters } = mapping;
-      
+
       if (filters && Object.keys(filters).length > 0) {
         // Create URLSearchParams for filters
         const searchParams = new URLSearchParams();
         Object.entries(filters).forEach(([key, value]) => {
           searchParams.set(key, value);
         });
-        
+
         // Navigate with query parameters
         navigate(`${route}?${searchParams.toString()}`);
       } else {
@@ -492,11 +554,17 @@ export const RoleBasedDashboard: React.FC = () => {
   // Show loading state if data is being fetched
   if (
     isLoading &&
-    (["super_admin", "company_admin", "evaluator", "vendor", "procurement"].includes(userRole))
+    [
+      "super_admin",
+      "company_admin",
+      "evaluator",
+      "vendor",
+      "procurement",
+    ].includes(userRole)
   ) {
     return (
-      <PageLoader 
-        title="Dashboard" 
+      <PageLoader
+        title="Dashboard"
         // headerContent={<ExportReportSheet />}
       />
     );
@@ -525,9 +593,9 @@ export const RoleBasedDashboard: React.FC = () => {
         })}
       >
         {enhancedDashboardConfig.stats?.map?.((stat, index) => (
-          <CardStats 
-            key={index} 
-            {...stat} 
+          <CardStats
+            key={index}
+            {...stat}
             onClick={() => handleStatCardClick(stat.title)}
           />
         ))}
@@ -562,8 +630,15 @@ export const RoleBasedDashboard: React.FC = () => {
                 <ChartComponent
                   key={chart.id}
                   chart={chart}
-                  selected={selectedFilter}
-                  onFilterChange={handleFilterChange}
+                  selected={getChartFilter(chart.id)}
+                  onFilterChange={(filter) =>
+                    handleFilterChange(chart.id, filter)
+                  }
+                  chartData={
+                    getChartData
+                      ? getChartData(chart.id)
+                      : chart.data
+                  }
                 />
               ))}
             </div>
@@ -581,7 +656,10 @@ export const RoleBasedDashboard: React.FC = () => {
                 // Check if component has activity-specific properties
                 if (component.items) {
                   return (
-                    <ActivityComponent key={`activity-${index}`} activity={component} />
+                    <ActivityComponent
+                      key={`activity-${index}`}
+                      activity={component}
+                    />
                   );
                 } else {
                   // Assume it's a chart component
@@ -589,8 +667,20 @@ export const RoleBasedDashboard: React.FC = () => {
                     <ChartComponent
                       key={`chart-${component.id || index}`}
                       chart={component}
-                      selected={selectedFilter}
-                      onFilterChange={handleFilterChange}
+                      selected={getChartFilter(
+                        component.id || `chart-${index}`
+                      )}
+                      onFilterChange={(filter) =>
+                        handleFilterChange(
+                          component.id || `chart-${index}`,
+                          filter
+                        )
+                      }
+                      chartData={
+                        getChartData
+                          ? getChartData(component.id || `chart-${index}`)
+                          : component.data
+                      }
                     />
                   );
                 }

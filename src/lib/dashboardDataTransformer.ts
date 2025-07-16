@@ -1188,4 +1188,86 @@ export class DashboardDataTransformer {
       timezone: update.solicitation?.timezone || "UTC",
     }));
   }
+
+  /**
+   * Transform Solicitation Status data for chart
+   */
+  static transformSolicitationStatusChart(data: any) {
+    if (!data) {
+      return applyConsistentColors([
+        { name: "Active", value: 0 },
+        { name: "Draft", value: 0 },
+        { name: "Closed", value: 0 },
+        { name: "Awarded", value: 0 },
+      ]);
+    }
+
+    const chartData = [
+      { name: "Active", value: data.active || 0 },
+      { name: "Draft", value: data.draft || 0 },
+      { name: "Closed", value: data.closed || 0 },
+      { name: "Awarded", value: data.awarded || 0 },
+    ];
+
+    return applyConsistentColors(chartData);
+  }
+
+  /**
+   * Transform Bid Intent data for chart
+   */
+  static transformBidIntentChart(data: any) {
+    if (!data) {
+      return applyConsistentColors([
+        { name: "Confirmed", value: 0 },
+        { name: "Declined", value: 0 },
+        { name: "Invited", value: 0 },
+      ]);
+    }
+
+    const total = (data.confirmed || 0) + (data.declined || 0) + (data.invited || 0);
+    
+    const chartData = [
+      { 
+        name: "Confirmed", 
+        value: data.confirmed || 0,
+        percentage: total > 0 ? Math.round((data.confirmed / total) * 100) : 0,
+      },
+      { 
+        name: "Declined", 
+        value: data.declined || 0,
+        percentage: total > 0 ? Math.round((data.declined / total) * 100) : 0,
+      },
+      { 
+        name: "Invited", 
+        value: data.invited || 0,
+        percentage: total > 0 ? Math.round((data.invited / total) * 100) : 0,
+      },
+    ];
+
+    return applyConsistentColors(chartData);
+  }
+
+  /**
+   * Transform Total Evaluations data for chart
+   */
+  static transformTotalEvaluations(data: any) {
+    if (!data || !Array.isArray(data)) {
+      return Array.from({ length: 12 }, (_, i) => ({
+        month: [
+          "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+          "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+        ][i],
+        evaluations: 0,
+        completed: 0,
+        pending: 0,
+      }));
+    }
+
+    return data.map((item: any) => ({
+      month: item.label || item.month || "Unknown",
+      evaluations: item.total || item.evaluations || 0,
+      completed: item.completed || 0,
+      pending: item.pending || 0,
+    }));
+  }
 }
