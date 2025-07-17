@@ -248,10 +248,11 @@ export class DashboardDataTransformer {
       company_admin: "Company Admin",
       evaluator: "Evaluator",
       vendor: "Vendor",
-    }
+    };
 
     const chartData = data.map((item) => ({
-      name: roleTitle[item.roleName as keyof typeof roleTitle] || 'Unknown Role',
+      name:
+        roleTitle[item.roleName as keyof typeof roleTitle] || "Unknown Role",
       value: parseInt(item.count) || 0,
     }));
 
@@ -597,23 +598,24 @@ export class DashboardDataTransformer {
       ]);
     }
 
-    const total = (data.confirmed || 0) + (data.declined || 0) + (data.invited || 0);
-    
+    const total =
+      (data.confirmed || 0) + (data.declined || 0) + (data.invited || 0);
+
     const chartData = [
-      { 
-        name: "Confirmed", 
-        value: data.confirmed || 0, 
-        percentage: total > 0 ? Math.round((data.confirmed / total) * 100) : 0, 
+      {
+        name: "Confirmed",
+        value: data.confirmed || 0,
+        percentage: total > 0 ? Math.round((data.confirmed / total) * 100) : 0,
       },
-      { 
-        name: "Declined", 
-        value: data.declined || 0, 
-        percentage: total > 0 ? Math.round((data.declined / total) * 100) : 0, 
+      {
+        name: "Declined",
+        value: data.declined || 0,
+        percentage: total > 0 ? Math.round((data.declined / total) * 100) : 0,
       },
-      { 
-        name: "Invited", 
-        value: data.invited || 0, 
-        percentage: total > 0 ? Math.round((data.invited / total) * 100) : 0, 
+      {
+        name: "Invited",
+        value: data.invited || 0,
+        percentage: total > 0 ? Math.round((data.invited / total) * 100) : 0,
       },
     ];
 
@@ -623,7 +625,9 @@ export class DashboardDataTransformer {
   /**
    * Transform Procurement Vendors Distribution data for donut chart
    */
-  static transformProcurementVendorsDistribution(data?: VendorsDistributionData) {
+  static transformProcurementVendorsDistribution(
+    data?: VendorsDistributionData
+  ) {
     if (!data) {
       return applyConsistentColors([
         { name: "Active", value: 0, percentage: 0 },
@@ -631,22 +635,22 @@ export class DashboardDataTransformer {
         { name: "Pending", value: 0, percentage: 0 },
       ]);
     }
-    
+
     const chartData = [
-      { 
-        name: "Active", 
-        value: data.active.count || 0, 
-        percentage: data.active.percentage || 0, 
+      {
+        name: "Active",
+        value: data.active.count || 0,
+        percentage: data.active.percentage || 0,
       },
-      { 
-        name: "Inactive", 
-        value: data.inactive.count || 0, 
-        percentage: data.inactive.percentage || 0, 
+      {
+        name: "Inactive",
+        value: data.inactive.count || 0,
+        percentage: data.inactive.percentage || 0,
       },
-      { 
-        name: "Pending", 
-        value: data.pending.count || 0, 
-        percentage: data.pending.percentage ||  0, 
+      {
+        name: "Pending",
+        value: data.pending.count || 0,
+        percentage: data.pending.percentage || 0,
       },
     ];
 
@@ -668,11 +672,11 @@ export class DashboardDataTransformer {
     // Create a map for easy lookup
     const solicitationsMap = new Map();
     const evaluationsMap = new Map();
-    
+
     data.solicitations.forEach((item: any) => {
       solicitationsMap.set(item.label, item.value);
     });
-    
+
     data.evaluations.forEach((item: any) => {
       evaluationsMap.set(item.label, item.value);
     });
@@ -711,8 +715,18 @@ export class DashboardDataTransformer {
     if (!data || !Array.isArray(data)) {
       return Array.from({ length: 12 }, (_, i) => ({
         month: [
-          "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-          "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+          "Jan",
+          "Feb",
+          "Mar",
+          "Apr",
+          "May",
+          "Jun",
+          "Jul",
+          "Aug",
+          "Sep",
+          "Oct",
+          "Nov",
+          "Dec",
         ][i],
         onTime: 0,
         late: 0,
@@ -835,7 +849,9 @@ export class DashboardDataTransformer {
       id: action.id || `action-${index}`,
       title: action.solicitation.name,
       to: `/dashboard/solicitation/${action.solicitation._id}`,
-      action: actionDescriptions[action.action as keyof typeof actionDescriptions] || 'Unknown Action',
+      action:
+        actionDescriptions[action.action as keyof typeof actionDescriptions] ||
+        "Unknown Action",
       type: action.type || "unknown",
       date:
         action.date || action.createdAt
@@ -882,7 +898,9 @@ export class DashboardDataTransformer {
       id: update.id || `update-${index}`,
       title: update.solicitation.name,
       to: `/dashboard/solicitation/${update.solicitation._id}`,
-      action: actionDescriptions[update.action as keyof typeof actionDescriptions] || 'Unknown Action',
+      action:
+        actionDescriptions[update.action as keyof typeof actionDescriptions] ||
+        "Unknown Action",
       type: update.type || "evaluation",
       date:
         update.date || update.updatedAt || update.createdAt
@@ -897,9 +915,7 @@ export class DashboardDataTransformer {
   /**
    * Transform Vendor dashboard data into stats cards
    */
-  static transformVendorStats(
-    data: any | undefined
-  ): DashboardConfig["stats"] {
+  static transformVendorStats(data: any | undefined): DashboardConfig["stats"] {
     if (!data) {
       // Return default/loading state
       return [
@@ -950,7 +966,7 @@ export class DashboardDataTransformer {
       },
       {
         title: "Confirmed Invitations",
-        value: data?.active|| 0,
+        value: data?.active || 0,
         icon: "folder-open",
         color: "text-green-600",
         bgColor: "bg-green-500/20",
@@ -1034,7 +1050,9 @@ export class DashboardDataTransformer {
 
     return data.map((update: any, index: number) => ({
       id: update.id || `vendor-update-${index}`,
-      action: actionDescriptions[update.action as keyof typeof actionDescriptions] || 'Unknown Action',
+      action:
+        actionDescriptions[update.action as keyof typeof actionDescriptions] ||
+        "Unknown Action",
       title: update.solicitation.name,
       to: `/dashboard/solicitation/${update.solicitation._id}`,
       time:
@@ -1080,7 +1098,8 @@ export class DashboardDataTransformer {
 
     return data.map((action: any, index: number) => ({
       id: action._id || action.id || `action-${index}`,
-      action: actionDescriptions[action.type as keyof typeof actionDescriptions] ||
+      action:
+        actionDescriptions[action.type as keyof typeof actionDescriptions] ||
         "",
       type: action.type.replace("_", " ") || "",
       title: action.solicitation,
@@ -1103,32 +1122,35 @@ export class DashboardDataTransformer {
       return [];
     }
 
-    const actionDescriptions = {
-      vendor_invitation: "A vendor has been invited to bid on",
-      vendor_accept: "A vendor has accepted to bid on",
-      vendor_reminder: "Reminder to respond to solicitation",
+    const actionDescriptions = (vendor: string) => ({
+      vendor_invitation: `${vendor} has been invited to bid on`,
+      vendor_accept: `${vendor} has accepted to bid on`,
+      vendor_reminder: `${vendor} reminder to respond to solicitation`,
       vendor_feedback: "You've received feedback on",
       evaluation: "Evaluation has been updated",
       update: "Evaluation updated",
-      vendor_declined: "A vendor declined on",
-      vendor_submitted: "A vendor submitted on",
-      proposal_submitted: "A proposal submitted on",
+      vendor_declined: `${vendor} declined on`,
+      vendor_submitted: `${vendor} submitted on`,
+      proposal_submitted: `A proposal submitted by ${vendor} on`,
       proposal_draft: "A proposal draft on",
       proporsal_updated: "A proposal has been updated on",
       scored: "A score has been received on",
-      awarded: "You've been awarded the",
+      awarded: `${vendor} has been awarded the`,
       question: "A question has been received on",
       response: "A a response has been received on",
       invite: "An invitation has been sent on",
       addendum: "An addendum has been received on",
       created: "A new solicitation has been created",
-    };
+    });
 
     return data.map((update: any, index: number) => ({
       id: update._id || update.id || `update-${index}`,
       title: update.solicitation.name,
       to: `/dashboard/solicitation/${update.solicitation._id}`,
-      action: actionDescriptions[update.action as keyof typeof actionDescriptions] || 'Unknown Action',
+      action:
+        actionDescriptions(update.vendor?.name)[
+          update.action as keyof typeof actionDescriptions
+        ] || "Unknown Action",
       date:
         update.updatedAt || update.date || update.createdAt
           ? format(
@@ -1176,7 +1198,10 @@ export class DashboardDataTransformer {
     return data.map((update: any, index: number) => ({
       id: update._id || update.id || `admin-update-${index}`,
       title: update.solicitation?.name || "Unknown Solicitation",
-      action: actionDescriptions[update.action as keyof typeof actionDescriptions] || update.action || 'Recent activity',
+      action:
+        actionDescriptions[update.action as keyof typeof actionDescriptions] ||
+        update.action ||
+        "Recent activity",
       time: update.createdAt
         ? format(new Date(update.createdAt), "MMM d, yyyy") +
           " • " +
@@ -1224,21 +1249,22 @@ export class DashboardDataTransformer {
       ]);
     }
 
-    const total = (data.confirmed || 0) + (data.declined || 0) + (data.invited || 0);
-    
+    const total =
+      (data.confirmed || 0) + (data.declined || 0) + (data.invited || 0);
+
     const chartData = [
-      { 
-        name: "Confirmed", 
+      {
+        name: "Confirmed",
         value: data.confirmed || 0,
         percentage: total > 0 ? Math.round((data.confirmed / total) * 100) : 0,
       },
-      { 
-        name: "Declined", 
+      {
+        name: "Declined",
         value: data.declined || 0,
         percentage: total > 0 ? Math.round((data.declined / total) * 100) : 0,
       },
-      { 
-        name: "Invited", 
+      {
+        name: "Invited",
         value: data.invited || 0,
         percentage: total > 0 ? Math.round((data.invited / total) * 100) : 0,
       },
@@ -1254,8 +1280,18 @@ export class DashboardDataTransformer {
     if (!data || !Array.isArray(data)) {
       return Array.from({ length: 12 }, (_, i) => ({
         month: [
-          "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-          "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+          "Jan",
+          "Feb",
+          "Mar",
+          "Apr",
+          "May",
+          "Jun",
+          "Jul",
+          "Aug",
+          "Sep",
+          "Oct",
+          "Nov",
+          "Dec",
         ][i],
         evaluations: 0,
         completed: 0,

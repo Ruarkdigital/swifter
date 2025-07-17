@@ -51,7 +51,6 @@ export const RoleBasedDashboard: React.FC = () => {
     // Individual chart data fetchers
     getChartData,
   } = useDashboardData(userRole, chartFilters);
-  console.log({ data: getChartData("weekly-activities") });
 
   // Transform API data into dashboard configuration format
   const enhancedDashboardConfig: DashboardConfig = useMemo(() => {
