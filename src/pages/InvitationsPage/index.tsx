@@ -31,6 +31,13 @@ type VendorSolicitation = {
   };
 };
 
+// API response type for invitation dashboard stats
+type InvitationDashboardStats = {
+  confirmed: number;
+  declined: number;
+  Suspended: number;
+};
+
 // UI Invitation type definition (mapped from API response)
 type Invitation = {
   id: string;
@@ -81,22 +88,41 @@ const transformSolicitationToInvitation = (
 const StatusBadge = ({ status }: { status: Invitation["status"] }) => {
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "Confirmed":
-        return "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400";
-      case "Declined":
+      case "active":
+        return "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400";
+      case "draft":
         return "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400";
-      case "Not Selected":
-        return "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300";
-      case "Pending":
+      case "evaluating":
         return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400";
+      case "closed":
+        return "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400";
+      case "awarded":
+        return "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400";
       default:
         return "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300";
     }
   };
 
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case "active":
+        return "Confirmed";
+      case "draft":
+        return "Not Selected";
+      case "evaluating":
+        return "Pending";
+      case "closed":
+        return "Declined";
+      case "awarded":
+        return "Awarded";
+      default:
+        return "Not Available";
+    }
+  };
+
   return (
     <Badge className={`${getStatusColor(status)} border-0 p-2 px-4`}>
-      {status}
+      {getStatusLabel(status)}
     </Badge>
   );
 };
@@ -133,6 +159,17 @@ const InvitationsPage = () => {
     // Reset pagination when filters change
     setPagination((prev) => ({ ...prev, pageIndex: 0 }));
   };
+
+  // API query for invitation dashboard statistics
+  const {
+    data: dashboardStatsData,
+  } = useQuery<ApiResponse<InvitationDashboardStats>, ApiResponseError>({
+    queryKey: ["vendor-invitation-dashboard"],
+    queryFn: async () => {
+      return await getRequest({ url: "/vendor/solicitations/invitation/dashboard" });
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
 
   // API query for vendor invitations
   const {
@@ -187,9 +224,9 @@ const InvitationsPage = () => {
     return invitationsData.data.data.map(transformSolicitationToInvitation);
   }, [invitationsData]);
 
-  // Calculate statistics from the data
+  // Calculate statistics from the API dashboard data
   const invitationStats = useMemo(() => {
-    if (!transformedData.length) {
+    if (!dashboardStatsData?.data?.data) {
       return {
         allInvitations: 0,
         confirmedInvitations: 0,
@@ -198,32 +235,16 @@ const InvitationsPage = () => {
       };
     }
 
-    const stats = transformedData.reduce(
-      (acc, invitation) => {
-        acc.allInvitations++;
-        switch (invitation.status) {
-          case "active":
-            acc.confirmedInvitations++;
-            break;
-          case "closed":
-            acc.declinedInvitations++;
-            break;
-          case "draft":
-            acc.pendingInvitations++;
-            break;
-        }
-        return acc;
-      },
-      {
-        allInvitations: 0,
-        confirmedInvitations: 0,
-        declinedInvitations: 0,
-        pendingInvitations: 0,
-      }
-    );
+    const statsData = dashboardStatsData.data.data;
+    const stats = {
+      allInvitations: statsData.confirmed + statsData.declined + statsData.Suspended,
+      confirmedInvitations: statsData.confirmed,
+      declinedInvitations: statsData.declined,
+      pendingInvitations: statsData.Suspended,
+    };
 
     return stats;
-  }, [transformedData]);
+  }, [dashboardStatsData]);
 
   // Use transformed data for display
   const displayData = transformedData;

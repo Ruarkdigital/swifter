@@ -132,13 +132,27 @@ const Step4Form = ({ control }: Step4FormProps) => {
               </div>
 
               <div>
-                <Forger
-                  placeholder="Enter Value"
-                  name={`criteria.${index}.score`}
-                  containerClass="w-full"
-                  component={TextInput}
-                  type={criteriaType === "weight" ? "number" : "text"}
-                />
+                {criteriaType === "pass_fail" ? (
+                  <Forger
+                    name={`criteria.${index}.score`}
+                    placeholder="Select Pass/Fail"
+                    component={TextSelect}
+                    options={[
+                      { label: "Pass", value: "pass" },
+                      { label: "Fail", value: "fail" }
+                    ]}
+                    containerClass="w-full"
+                    defaultValue="pass"
+                  />
+                ) : (
+                  <Forger
+                    placeholder="Enter Value"
+                    name={`criteria.${index}.score`}
+                    containerClass="w-full"
+                    component={TextInput}
+                    type="number"
+                  />
+                )}
               </div>
 
             <div>

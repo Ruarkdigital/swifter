@@ -43,6 +43,7 @@ import { Calendar } from "@/components/ui/calendar";
 type Admin = {
   _id: string;
   id?: string;
+  adminId?: string;
   name: string;
   email: string;
   role: string;
@@ -50,7 +51,7 @@ type Admin = {
   company?: string;
   lastLoginAt?: string;
   lastLogin?: string;
-  status: "pending" | "active" | "inactive";
+  status: "pending" | "accepted" | "inactive";
   userId?: string;
   dateCreated?: string;
   createdAt: string;
@@ -464,7 +465,7 @@ const AdminManagementPage = () => {
       cell: ({ row }) => {
         const status = row.original.status;
         const displayStatus =
-          status === "active"
+          status === "accepted"
             ? "Active"
             : status === "inactive"
             ? "Inactive"
@@ -472,7 +473,7 @@ const AdminManagementPage = () => {
         return (
           <StatusBadge
             status={
-              displayStatus.toLowerCase() as "active" | "inactive" | "pending"
+              displayStatus.toLowerCase() as "accepted" | "inactive" | "pending"
             }
           />
         );
@@ -531,6 +532,7 @@ const AdminManagementPage = () => {
           <ConfirmAlert
             text="Are you sure you want to delete this admin? This action cannot be undone."
             title="Delete Admin"
+            type="delete"
             open={isDeleteDialogOpen}
             onPrimaryAction={() => handleDeleteAdmin(row.original._id)}
             isLoading={isDeletingAdmin}
@@ -539,6 +541,7 @@ const AdminManagementPage = () => {
           <ConfirmAlert
             text="Are you sure you want to suspend this admin? This action cannot be undone."
             title="Suspend Admin"
+            type="warning"
             open={isSuspendDialogOpen}
             onPrimaryAction={() =>
               handleUpdateAdminStatus(row.original._id, "inactive")
@@ -719,7 +722,7 @@ const AdminManagementPage = () => {
       <AdminDetailsSheet
         open={isAdminDetailsOpen}
         onOpenChange={setIsAdminDetailsOpen}
-        adminId={selectedAdmin?._id || selectedAdmin?.id}
+        adminId={selectedAdmin?.adminId || selectedAdmin?.id}
         onStatusUpdate={handleUpdateAdminStatus}
         onDelete={handleDeleteAdmin}
       />
@@ -779,6 +782,7 @@ const AdminManagementPage = () => {
         text={`Send a reminder email to ${selectedAdmin?.name} (${selectedAdmin?.email}) about their pending invite?`}
         title="Send Reminder Invite"
         open={isReminderDialogOpen}
+        type="alert"
         onClose={setIsReminderDialogOpen}
         onPrimaryAction={() => {
           if (selectedAdmin) {

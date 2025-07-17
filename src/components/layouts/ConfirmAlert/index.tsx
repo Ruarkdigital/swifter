@@ -17,6 +17,7 @@ import {
 import { ReactNode } from "react";
 import { useSetReset } from "@/store/authSlice";
 import { cn } from "@/lib/utils";
+import { Bell, LogOut } from "lucide-react";
 
 type ModalType =
   | "success"
@@ -25,7 +26,9 @@ type ModalType =
   | "info"
   | "delete"
   | "draft"
-  | "award";
+  | "award"
+  | "logout"
+  | "alert";
 
 type ConfirmAlertProps = {
   url?: string;
@@ -119,6 +122,18 @@ export const ConfirmAlert = (props: ConfirmAlertProps) => {
           icon: FiInfo,
           bgColor: "bg-yellow-100 dark:bg-yellow-900/30",
           iconColor: "text-yellow-600 dark:text-yellow-400",
+        };
+      case "alert":
+        return {
+          icon: Bell,
+          bgColor: "bg-yellow-100 dark:bg-yellow-900/30",
+          iconColor: "text-yellow-600 dark:text-yellow-400",
+        };
+      case "logout":
+        return {
+          icon: LogOut,
+          bgColor: "bg-red-100 dark:bg-red-900/30",
+          iconColor: "text-red-600 dark:text-red-400",
         };
       case "delete":
       default:
