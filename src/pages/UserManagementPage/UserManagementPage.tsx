@@ -15,7 +15,7 @@ import { format } from "date-fns";
 import { useState, useMemo, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getRequest, putRequest } from "@/lib/axiosInstance";
+import { getRequest, putRequest, postRequest } from "@/lib/axiosInstance";
 import { ApiResponse, ApiResponseError } from "@/types";
 import { useToastHandler } from "@/hooks/useToaster";
 import { StatCard } from "../CompaniesPage/components/StatCard";
@@ -135,6 +135,8 @@ const UserManagementPage = () => {
   const [editUserId, setEditUserId] = useState<string | null>(null);
   const [isEditUserOpen, setIsEditUserOpen] = useState(false);
   const [isDeactivateUserOpen, setIsDeactivateUserOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [isReminderDialogOpen, setIsReminderDialogOpen] = useState(false);
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
     pageSize: 10,
@@ -243,10 +245,42 @@ const UserManagementPage = () => {
     },
   });
 
+  // Send reminder invite mutation
+  const { mutateAsync: sendReminderInvite, isPending: isSendingReminder } =
+    useMutation<ApiResponse<any>, ApiResponseError, string>({
+      mutationKey: ["sendReminderInvite"],
+      mutationFn: async (email) =>
+        await postRequest({
+          url: `/onboarding/remind-invite?email=${encodeURIComponent(email)}`,
+          payload: {},
+        }),
+      onSuccess: () => {
+        toast.success("Success", "Reminder invite sent successfully");
+      },
+      onError: (error) => {
+        console.log(error);
+        const err = error as ApiResponseError;
+        toast.error(
+          "Error",
+          err?.response?.data?.message ?? "Failed to send reminder invite"
+        );
+      },
+    });
+
   // Handle user status update (deactivate user)
   const handleDeactivateUser = async (userId: string) => {
     try {
       await updateUserStatus({ userId, status: "inactive" });
+    } catch (error) {
+      // Error is already handled in onError callback
+    }
+  };
+
+  // Handle sending reminder invite
+  const handleSendReminderInvite = async (email: string) => {
+    try {
+      await sendReminderInvite(email);
+      setIsReminderDialogOpen(false);
     } catch (error) {
       // Error is already handled in onError callback
     }
@@ -370,11 +404,6 @@ const UserManagementPage = () => {
       id: "actions",
       header: "Actions",
       cell: ({ row }) => {
-        // Hide actions for users with pending status
-        if (row.original.status === "pending") {
-          return null;
-        }
-        
         return (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -392,25 +421,40 @@ const UserManagementPage = () => {
               >
                 View User
               </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => {
-                  setEditUserId(row.original?.userId ?? "");
-                  setIsEditUserOpen(true);
-                }}
-                className="p-3"
-              >
-                Edit User
-              </DropdownMenuItem>
+              {row.original.status === "pending" && (
+                <DropdownMenuItem
+                  onClick={() => {
+                    setSelectedUser(row.original);
+                    setIsReminderDialogOpen(true);
+                  }}
+                  className="p-3"
+                >
+                  Send Reminder
+                </DropdownMenuItem>
+              )}
+              {row.original.status !== "pending" && (
+                <>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      setEditUserId(row.original?.userId ?? "");
+                      setIsEditUserOpen(true);
+                    }}
+                    className="p-3"
+                  >
+                    Edit User
+                  </DropdownMenuItem>
 
-              <DropdownMenuItem
-                onClick={() => {
-                  setSelectedUserId(row.original?._id)
-                  setIsDeactivateUserOpen(true)
-                }}
-                className="p-3 text-red-600 dark:text-red-40"
-              >
-                Deactivate User
-              </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      setSelectedUserId(row.original?._id)
+                      setIsDeactivateUserOpen(true)
+                    }}
+                    className="p-3 text-red-600 dark:text-red-40"
+                  >
+                    Deactivate User
+                  </DropdownMenuItem>
+                </>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
         );
@@ -632,6 +676,21 @@ const UserManagementPage = () => {
         title="Deactivate User"
         onPrimaryAction={() => handleDeactivateUser(selectedUserId ?? "")}
       ></ConfirmAlert>
+
+      {/* Send Reminder Dialog */}
+      <ConfirmAlert
+        text={`Send a reminder email to ${selectedUser?.name} (${selectedUser?.email}) about their pending invite?`}
+        title="Send Reminder Invite"
+        open={isReminderDialogOpen}
+        type="alert"
+        onClose={setIsReminderDialogOpen}
+        onPrimaryAction={() => {
+          if (selectedUser) {
+            handleSendReminderInvite(selectedUser.email);
+          }
+        }}
+        isLoading={isSendingReminder}
+      />
     </div>
   );
 };
