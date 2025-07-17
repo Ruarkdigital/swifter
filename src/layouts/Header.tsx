@@ -120,7 +120,7 @@ function UserMenu() {
 
         <DropdownMenuSeparator />
         <ConfirmAlert
-          type="delete"
+          type="logout"
           title="Confirm Logout"
           text="Are you sure you want to log out?"
           onPrimaryAction={handleLogOut}
