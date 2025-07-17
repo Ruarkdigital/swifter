@@ -154,9 +154,21 @@ export const useDashboardData = (
       case "sub-distribution":
         return DashboardDataTransformer.transformSubDistribution(subDistribution?.data?.data);
       case "company-status":
-        return DashboardDataTransformer.transformCompanyStatus(companyStatus?.data?.data);
+        // API returns TimeStats[] but transformer expects TimeStats with timeStats property
+        const companyStatusData = companyStatus?.data?.data;
+        if (Array.isArray(companyStatusData) && companyStatusData.length > 0) {
+          // If it's an array of TimeStats objects, take the first one
+          return DashboardDataTransformer.transformCompanyStatus(companyStatusData[0]);
+        }
+        return DashboardDataTransformer.transformCompanyStatus(undefined);
       case "module-usage":
-        return DashboardDataTransformer.transformModuleUsage(moduleUsage?.data?.data);
+        // API returns ModuleUsage[] but transformer expects ModuleUsage
+        const moduleUsageData = moduleUsage?.data?.data;
+        if (Array.isArray(moduleUsageData) && moduleUsageData.length > 0) {
+          // If it's an array of ModuleUsage objects, take the first one
+          return DashboardDataTransformer.transformModuleUsage(moduleUsageData[0]);
+        }
+        return DashboardDataTransformer.transformModuleUsage(undefined);
       case "solicitation-status":
         return DashboardDataTransformer.transformSolicitationStatusChart(solicitationStatus?.data?.data);
       case "bid-intent":
