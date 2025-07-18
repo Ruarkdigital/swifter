@@ -676,8 +676,8 @@ const CreateSolicitationDialog = () => {
               >
                 {currentStep === 6
                   ? isPending
-                    ? "Creating..."
-                    : "Create Solicitation"
+                    ? "Publishing..."
+                    : "Publish"
                   : "Continue"}
               </Button>
             </div>

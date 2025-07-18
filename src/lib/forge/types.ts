@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Component, ReactNode, RefObject } from "react";
+import React, { Component, ReactNode, RefObject, FormHTMLAttributes } from "react";
 import { Accept } from "react-dropzone";
 import {
   Control,
@@ -103,7 +103,7 @@ export type UseForgeResult<T extends FieldValues, TFieldProps = unknown> = Omit<
 export type ForgeProps<
   TFieldValues extends FieldValues,
   TFieldProps = unknown
-> = {
+> = Omit<FormHTMLAttributes<HTMLFormElement>, "onSubmit"> & {
   onSubmit: (submit: TFieldValues) => void;
   className?: string;
   children?: ReactNode;

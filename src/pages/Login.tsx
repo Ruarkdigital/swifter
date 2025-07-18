@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Forge, Forger, useForge } from "@/lib/forge";
+import { Forge, Forger, FormPropsRef, useForge } from "@/lib/forge";
 import * as yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { useToastHandler } from "@/hooks/useToaster";
@@ -13,6 +13,7 @@ import { TextInput } from "@/components/layouts/FormInputs/TextInput";
 import { Link } from "react-router-dom";
 import { useSetToken, useSetUser } from "@/store/authSlice";
 import { SEOWrapper } from "@/components/SEO";
+import { useRef } from "react";
 // import { getUser } from "@/demo";
 
 type FormState = {
@@ -27,6 +28,7 @@ const schema = yup.object().shape({
 
 const Login = () => {
   const toast = useToastHandler();
+  const formRef = useRef<FormPropsRef>(null)
 
   const setToken = useSetToken();
   const setUser = useSetUser();
@@ -48,10 +50,7 @@ const Login = () => {
   const onSubmit = async (data: FormState) => {
     try {
       const response = await mutateAsync(data);
-      // setUser(getUser("procurement"));
-      // setToken("token");
       if (response?.data) {
-        console.log(response.data);
         setUser({
           ...response.data.data.user,
           avatar:
@@ -99,7 +98,16 @@ const Login = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <Forge {...{ control, onSubmit }} className="grid gap-4">
+          <Forge 
+            {...{ control, onSubmit, ref: formRef }} 
+            className="grid gap-4"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !isPending) {
+                e.preventDefault();
+                formRef.current?.onSubmit()
+              }
+            }}
+          >
             <Forger
               name="email"
               label="Email Address"
