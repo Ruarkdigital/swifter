@@ -35,6 +35,7 @@ export const Forge = <TFieldValues extends FieldValues = FieldValues>({
   isNative,
   debug,
   platform = 'auto',
+  ...rest
 }: ForgeProps<TFieldValues>) => {
   // Determine the actual platform to use
   const actualPlatform = platform === 'auto' 
@@ -138,10 +139,10 @@ export const Forge = <TFieldValues extends FieldValues = FieldValues>({
       {...(control as unknown as any)}
       control={control as unknown as any}
     >
-      <div className={className}>
+      <form className={className} {...rest}>
         {renderFieldProps}
         {updatedChildren}
-      </div>
+      </form>
       {debug && <DevTool control={control} />}
     </FormProvider>
   );
