@@ -91,6 +91,7 @@ export interface EvaluatorEvaluationActivity {
 // Vendor Dashboard Data Types
 export interface VendorMyActions {
   action: string;
+  solicitationId: string,
   solicitation: {
     _id: string;
     name: string;

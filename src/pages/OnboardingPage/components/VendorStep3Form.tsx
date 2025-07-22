@@ -10,7 +10,10 @@ interface VendorStep3FormProps {
   setValue: UseFormSetValue<any>;
 }
 
-const VendorStep3Form: React.FC<VendorStep3FormProps> = ({ setValue, control }) => {
+const VendorStep3Form: React.FC<VendorStep3FormProps> = ({
+  setValue,
+  control,
+}) => {
   const value = useWatch({ control, name: "files" });
 
   const FileListItem = ({ file }: { file: File }) => {
@@ -40,7 +43,12 @@ const VendorStep3Form: React.FC<VendorStep3FormProps> = ({ setValue, control }) 
         </div>
         <button
           type="button"
-          onClick={() => setValue("files", value.filter((v: File) => v.name !== file.name))}
+          onClick={() =>
+            setValue(
+              "files",
+              value.filter((v: File) => v.name !== file.name)
+            )
+          }
           className="text-gray-400 hover:text-red-500 transition-colors"
         >
           <X className="h-4 w-4" />
@@ -70,16 +78,24 @@ const VendorStep3Form: React.FC<VendorStep3FormProps> = ({ setValue, control }) 
         element={<UploadElement />}
         List={FileListItem}
         containerClass="w-full"
-        accept={{
-          "application/pdf": [".pdf"],
-          "application/msword": [".doc"],
-          "application/vnd.openxmlformats-officedocument.wordprocessingml.document": [".docx"],
-          "application/vnd.ms-excel": [".xls"],
-          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": [".xlsx"],
-          "application/zip": [".zip"],
-          "image/png": [".png"],
-          "image/jpeg": [".jpeg", ".jpg"]
-        } as any}
+        accept={
+          {
+            "application/pdf": [".pdf"],
+            "application/msword": [".doc"],
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+              [".docx"],
+            "application/vnd.ms-excel": [".xls"],
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":
+              [".xlsx"],
+            "application/zip": [".zip"],
+            "image/png": [".png"],
+            "image/jpeg": [".jpeg", ".jpg"],
+          } as any
+        }
+        dropzoneOptions={{
+          multiple: true,
+          // maxFiles: 4,
+        }}
       />
     </div>
   );

@@ -1,7 +1,6 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DashboardConfig } from "@/config/dashboardConfig";
-import { Link } from "react-router-dom";
 import { Activity } from "lucide-react";
 
 interface ActivityComponentProps {
@@ -9,6 +8,7 @@ interface ActivityComponentProps {
 }
 
 export const ActivityComponent: React.FC<ActivityComponentProps> = ({ activity }) => {
+  console.log({ activity })
   return (
     <Card className="bg-white dark:bg-slate-950">
       <CardHeader className="pb-3">
@@ -26,20 +26,20 @@ export const ActivityComponent: React.FC<ActivityComponentProps> = ({ activity }
               <div className="mt-2 text-base text-gray-900 dark:text-gray-100">
                 <span className="font-medium">{item.action || item.title}</span>
                 {item.action && (
-                  <Link to={activity?.to ?? ''} className="underline underline-offset-4 ml-1 text-blue-900 dark:text-blue-400">
+                  <a href={item.to || '#'} className="underline underline-offset-4 ml-1 text-blue-900 dark:text-blue-400">
                     {item.title}
-                  </Link>
+                  </a>
                 )}
               </div>
 
               {(item.status || item.date || item.time) && (
                 <div className="flex items-center gap-2 min-w-0">
-                  {item.status && (
+                  {/* {item.status && (
                     <div className="p-1 px-3.5 rounded-full text-green-600 bg-green-100 dark:text-green-400 dark:bg-green-900/20">
                       <p>{item.status}</p>
                     </div>
                   )}
-                  <div className="bg-gray-500 dark:bg-gray-400 h-1 w-1 rounded-full" />
+                  <div className="bg-gray-500 dark:bg-gray-400 h-1 w-1 rounded-full" /> */}
                   {item.date || item.time ? (
                     <p className="text-xs text-gray-700 dark:text-gray-300">
                       {item.type} • {item.date || item.time}

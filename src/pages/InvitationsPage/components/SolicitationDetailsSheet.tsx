@@ -403,7 +403,7 @@ const SolicitationDetailsSheet: React.FC<SolicitationDetailsSheetProps> = ({
                           </p>
                         </div>
 
-                        {details?.estimatedCost && (
+                        {/* {details?.estimatedCost && (
                           <div>
                             <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
                               Estimated Cost
@@ -412,7 +412,7 @@ const SolicitationDetailsSheet: React.FC<SolicitationDetailsSheetProps> = ({
                               ${details.estimatedCost.toLocaleString()}
                             </p>
                           </div>
-                        )}
+                        )} */}
                       </div>
                     </div>
                   </div>
@@ -482,14 +482,14 @@ const SolicitationDetailsSheet: React.FC<SolicitationDetailsSheetProps> = ({
                           </div>
                         )}
 
-                        <div>
+                        {/* <div>
                           <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
                             Visibility
                           </h3>
                           <p className="text-sm text-gray-900 dark:text-gray-100 capitalize">
                             {details?.visibility || "Not specified"}
                           </p>
-                        </div>
+                        </div> */}
                       </div>
                     </div>
                   </div>

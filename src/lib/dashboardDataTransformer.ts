@@ -998,25 +998,44 @@ export class DashboardDataTransformer {
     }
 
     const actionDescriptions = {
-      vendor_invitation: "You've been invited to bid on",
-      vendor_accept: "You've accepted to bid on",
+      invited: "You've been invited to bid on",
+      confirmed: "You've accepted to bid on",
       vendor_reminder: "Reminder to evaluate",
       vendor_feedback: "Feedback received",
+      declined: "You've declined to bid on",
+      reminder_expiring: "Reminder of expiring",
+      reminder_no_response: "This is a reminder to respond to",
+      proposal_submitted: "You've submitted the proposal for",
+      proposal_drafted: "You've drafted the proposal for",
     };
 
-    return data.map((action, index) => ({
+    const actionLinkToSolicitation = (action: any) => ({
+      invited: `/dashboard/invitations/${action.solicitationId}`,
+      confirmed: `/dashboard/solicitation/${action.solicitationId}`,
+      vendor_reminder: `/dashboard/solicitation/${action.solicitationId}`,
+      vendor_feedback: `/dashboard/solicitation/${action.solicitationId}`,
+      declined: `/dashboard/solicitation/${action.solicitationId}`,
+      reminder_expiring: `/dashboard/solicitation/${action.solicitationId}`,
+      reminder_no_response: `/dashboard/solicitation/${action.solicitationId}`,
+      proposal_submitted: `/dashboard/solicitation/${action.solicitationId}`,
+      proposal_drafted: `/dashboard/solicitation/${action.solicitationId}`,
+    });
+
+    return data.map((action, index) => {
+      return {
       id: action._id || `vendor-action-${index}`,
       action:
         actionDescriptions[action.action as keyof typeof actionDescriptions] ||
         "You've been invited to bid",
-      status: action.solicitation?.vendors?.[0].status || "Pending",
-      type: action.action?.replace("_", " ") || "Invitation",
+      // status: action.solicitation?.vendors?.[0].status || "Pending",
+      // type: action.action?.replace("_", " ") || "Invitation",
       date: action.createdAt
         ? format(new Date(action.createdAt), "MMM d, yyyy h:mm a 'GMT'xxx")
         : null,
-      title: action.solicitation?.name || "Unknown Solicitation",
-      to: `/dashboard/solicitation/${action.solicitation._id}`,
-    }));
+      title: action.solicitation || "Unknown Solicitation",
+      to: actionLinkToSolicitation(action)[action.action as keyof typeof actionDescriptions],
+    }
+    });
   }
 
   /**

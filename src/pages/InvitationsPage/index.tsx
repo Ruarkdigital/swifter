@@ -12,30 +12,36 @@ import { IconMap } from "@/components/layouts/RoleBasedDashboard/components/Stat
 import { format } from "date-fns";
 
 // API Types based on Swagger documentation
-type VendorSolicitation = {
+export interface VendorSolicitation {
   _id: string;
-  solId: string;
   name: string;
-  typeId: {
-    name: string;
-  };
-  categoryIds: string[];
-  createdAt: string;
-  status: "draft" | "active" | "closed" | "awarded" | "evaluating";
-  questionDeadline: string;
-  submissionDeadline: string;
-  bidIntentDeadline: string;
-  vendors: {
-    total: number;
-    status: Record<string, any>;
-  };
-};
+  typeId: TypeID;
+  visibility: string;
+  status: string;
+  submissionDeadline: Date;
+  timezone: string;
+  vendor: Vendor;
+  solId: string;
+  createdAt: Date;
+  submissionStatus: string;
+  owner: boolean;
+}
+
+export interface TypeID {
+  name: string;
+}
+
+export interface Vendor {
+  id: string;
+  status: string;
+  responseStatus: string;
+}
 
 // API response type for invitation dashboard stats
 type InvitationDashboardStats = {
   confirmed: number;
   declined: number;
-  Suspended: number;
+  invited: number;
 };
 
 // UI Invitation type definition (mapped from API response)
@@ -47,7 +53,13 @@ type Invitation = {
   rfp: string;
   invitedDate: string;
   deadline: string;
-  status: "draft" | "active" | "closed" | "awarded" | "evaluating" | "not available";
+  status:
+    | "draft"
+    | "active"
+    | "closed"
+    | "awarded"
+    | "evaluating"
+    | "not available";
 };
 
 // Map API status to UI status
@@ -70,7 +82,7 @@ const mapApiStatusToUIStatus = (apiStatus: string): Invitation["status"] => {
 
 // Transform API data to UI format
 const transformSolicitationToInvitation = (
-  solicitation: VendorSolicitation
+  solicitation: VendorSolicitation,
 ): Invitation => {
   return {
     id: solicitation._id,
@@ -79,8 +91,11 @@ const transformSolicitationToInvitation = (
     solicitationId: solicitation.solId,
     rfp: solicitation.typeId?.name || "RFP",
     invitedDate: format(new Date(solicitation.createdAt), "MMM d, yyyy, pppp"),
-    deadline: format(new Date(solicitation.submissionDeadline), "MMM d, yyyy, pppp"),
-    status: mapApiStatusToUIStatus(solicitation.status),
+    deadline: format(
+      new Date(solicitation.submissionDeadline),
+      "MMM d, yyyy, pppp"
+    ),
+    status: mapApiStatusToUIStatus(solicitation.vendor.status),
   };
 };
 
@@ -139,9 +154,9 @@ const InvitationsPage = () => {
 
   // Handle filter changes
   const handleFilterChange = (filterTitle: string, value: string) => {
-    setFilterValues(prev => ({
+    setFilterValues((prev) => ({
       ...prev,
-      [filterTitle]: value
+      [filterTitle]: value,
     }));
 
     switch (filterTitle.toLowerCase()) {
@@ -161,21 +176,24 @@ const InvitationsPage = () => {
   };
 
   // API query for invitation dashboard statistics
-  const {
-    data: dashboardStatsData,
-  } = useQuery<ApiResponse<InvitationDashboardStats>, ApiResponseError>({
+  const { data: dashboardStatsData } = useQuery<
+    ApiResponse<InvitationDashboardStats>,
+    ApiResponseError
+  >({
     queryKey: ["vendor-invitation-dashboard"],
     queryFn: async () => {
-      return await getRequest({ url: "/vendor/solicitations/invitation/dashboard" });
+      return await getRequest({
+        url: "/vendor/solicitations/invitation/dashboard",
+      });
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
   // API query for vendor invitations
-  const {
-    data: invitationsData,
-    isLoading,
-  } = useQuery<ApiResponse<VendorSolicitation[]>, ApiResponseError>({
+  const { data: invitationsData, isLoading } = useQuery<
+    ApiResponse<VendorSolicitation[]>,
+    ApiResponseError
+  >({
     queryKey: [
       "vendor-invitations",
       {
@@ -237,10 +255,11 @@ const InvitationsPage = () => {
 
     const statsData = dashboardStatsData.data.data;
     const stats = {
-      allInvitations: statsData.confirmed + statsData.declined + statsData.Suspended,
+      allInvitations:
+        statsData.confirmed + statsData.declined + statsData.invited,
       confirmedInvitations: statsData.confirmed,
       declinedInvitations: statsData.declined,
-      pendingInvitations: statsData.Suspended,
+      pendingInvitations: statsData.invited,
     };
 
     return stats;
@@ -315,7 +334,7 @@ const InvitationsPage = () => {
           bgColor="bg-gray-500/20 dark:bg-gray-500/30"
           onClick={() => {
             setStatusFilter("all");
-            setFilterValues(prev => ({ ...prev, Status: "all" }));
+            setFilterValues((prev) => ({ ...prev, Status: "all" }));
             setPagination({ pageIndex: 0, pageSize: 10 });
           }}
         />
@@ -327,7 +346,7 @@ const InvitationsPage = () => {
           bgColor="bg-green-500/20 dark:bg-green-500/30"
           onClick={() => {
             setStatusFilter("active");
-            setFilterValues(prev => ({ ...prev, Status: "active" }));
+            setFilterValues((prev) => ({ ...prev, Status: "active" }));
             setPagination({ pageIndex: 0, pageSize: 10 });
           }}
         />
@@ -339,7 +358,7 @@ const InvitationsPage = () => {
           bgColor="bg-red-500/20 dark:bg-red-500/30"
           onClick={() => {
             setStatusFilter("closed");
-            setFilterValues(prev => ({ ...prev, Status: "closed" }));
+            setFilterValues((prev) => ({ ...prev, Status: "closed" }));
             setPagination({ pageIndex: 0, pageSize: 10 });
           }}
         />
@@ -351,7 +370,7 @@ const InvitationsPage = () => {
           bgColor="bg-yellow-500/20 dark:bg-yellow-500/30"
           onClick={() => {
             setStatusFilter("draft");
-            setFilterValues(prev => ({ ...prev, Status: "draft" }));
+            setFilterValues((prev) => ({ ...prev, Status: "draft" }));
             setPagination({ pageIndex: 0, pageSize: 10 });
           }}
         />

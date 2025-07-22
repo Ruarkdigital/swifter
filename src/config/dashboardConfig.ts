@@ -107,6 +107,8 @@ const evaluatorConfig: DashboardConfig = {
             action: "System maintenance completed",
             type: "system",
             date: faker.date.recent({ days: 7 }).toLocaleDateString(),
+            title: "IT Infrastructure Upgrade Project",
+            to: "/dashboard/evaluation/" + faker.string.uuid(),
           })),
         },
         {
@@ -117,6 +119,8 @@ const evaluatorConfig: DashboardConfig = {
             action: "System maintenance completed",
             type: "system",
             date: faker.date.recent({ days: 7 }).toLocaleDateString(),
+            title: "IT Infrastructure Upgrade Project",
+            to: "/dashboard/evaluation/" + faker.string.uuid(),
           })),
         },
       ],
@@ -167,10 +171,12 @@ const vendorConfig: DashboardConfig = {
           items: Array.from({ length: 4 }, () => ({
             id: faker.string.uuid(),
             action:
-              "You've been invited to bid on IT Infrastructure Upgrade Project",
+              "You've been invited to bid on",
             status: "Pending",
             type: "Invitation",
             date: faker.date.recent({ days: 7 }).toLocaleDateString(),
+            title: "IT Infrastructure Upgrade Project",
+            to: "/dashboard/invitations/" + faker.string.uuid(),
           })),
         },
         {
@@ -179,14 +185,15 @@ const vendorConfig: DashboardConfig = {
           items: Array.from({ length: 4 }, () => ({
             id: faker.string.uuid(),
             title:
-              "Your proposal was submitted for IT Infrastructure Upgrade Project",
+              "IT Infrastructure Upgrade Project",
             time:
               faker.date.recent({ days: 3 }).toLocaleDateString() +
               " • " +
               faker.date
                 .recent()
                 .toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-          })),
+            to: "/dashboard/solicitation/" + faker.string.uuid(),
+           })),
         },
       ],
     },
@@ -307,9 +314,11 @@ const companyAdminConfig: DashboardConfig = {
           title: "Recent Activity",
           items: Array.from({ length: 5 }, () => ({
             id: faker.string.uuid(),
-            action: "New company registration approved",
+            action: "New company registration approved for",
             company: faker.company.name(),
             date: faker.date.recent({ days: 7 }).toLocaleDateString(),
+            title: faker.company.name(),
+            to: "/dashboard/companies/" + faker.string.uuid(),
           })),
         },
       ],

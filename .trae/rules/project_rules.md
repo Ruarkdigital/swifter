@@ -21,7 +21,6 @@
 3. Break UI into **reusable components**.
 
    * For feature-specific components:
-
      * **React Router:** `/src/pages/<feature>/components` and `/src/pages/<feature>/layouts`
      * **Next.js (App Router):** `/app/(Root)/<feature>/_components` or `/app/(Root)/<feature>/layout`
 4. Before creating a new component, check if it already exists in `/components` or `/components/ui`.
