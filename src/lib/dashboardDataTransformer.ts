@@ -1023,18 +1023,21 @@ export class DashboardDataTransformer {
 
     return data.map((action, index) => {
       return {
-      id: action._id || `vendor-action-${index}`,
-      action:
-        actionDescriptions[action.action as keyof typeof actionDescriptions] ||
-        "You've been invited to bid",
-      // status: action.solicitation?.vendors?.[0].status || "Pending",
-      // type: action.action?.replace("_", " ") || "Invitation",
-      date: action.createdAt
-        ? format(new Date(action.createdAt), "MMM d, yyyy h:mm a 'GMT'xxx")
-        : null,
-      title: action.solicitation || "Unknown Solicitation",
-      to: actionLinkToSolicitation(action)[action.action as keyof typeof actionDescriptions],
-    }
+        id: action._id || `vendor-action-${index}`,
+        action:
+          actionDescriptions[
+            action.action as keyof typeof actionDescriptions
+          ] || "You've been invited to bid",
+        // status: action.solicitation?.vendors?.[0].status || "Pending",
+        // type: action.action?.replace("_", " ") || "Invitation",
+        date: action.createdAt
+          ? format(new Date(action.createdAt), "MMM d, yyyy h:mm a 'GMT'xxx")
+          : null,
+        title: action.solicitation || "Unknown Solicitation",
+        to: actionLinkToSolicitation(action)[
+          action.action as keyof typeof actionDescriptions
+        ],
+      };
     });
   }
 
@@ -1152,7 +1155,6 @@ export class DashboardDataTransformer {
       vendor_submitted: `${vendor} submitted on`,
       proposal_submitted: `A proposal submitted by ${vendor} on`,
       proposal_draft: "A proposal draft on",
-      proporsal_updated: "A proposal has been updated on",
       scored: "A score has been received on",
       awarded: `${vendor} has been awarded the`,
       question: "A question has been received on",
@@ -1160,7 +1162,24 @@ export class DashboardDataTransformer {
       invite: "An invitation has been sent on",
       addendum: "An addendum has been received on",
       created: "A new solicitation has been created",
+      declined: "You've declined to bid on",
+      reminder_expiring: "Reminder of expiring",
+      reminder_no_response: "This is a reminder to respond to",
+      proposal_drafted: "You've drafted the proposal for",
+      proposal_updated: "Proposal updated for"
     });
+
+    // const actionLinkToSolicitation = (action: any) => ({
+    //   invited: `/dashboard/invitations/${action.solicitationId}`,
+    //   confirmed: `/dashboard/solicitation/${action.solicitationId}`,
+    //   vendor_reminder: `/dashboard/solicitation/${action.solicitationId}`,
+    //   vendor_feedback: `/dashboard/solicitation/${action.solicitationId}`,
+    //   declined: `/dashboard/solicitation/${action.solicitationId}`,
+    //   reminder_expiring: `/dashboard/solicitation/${action.solicitationId}`,
+    //   reminder_no_response: `/dashboard/solicitation/${action.solicitationId}`,
+    //   proposal_submitted: `/dashboard/solicitation/${action.solicitationId}`,
+    //   proposal_drafted: `/dashboard/solicitation/${action.solicitationId}`,
+    // });
 
     return data.map((update: any, index: number) => ({
       id: update._id || update.id || `update-${index}`,

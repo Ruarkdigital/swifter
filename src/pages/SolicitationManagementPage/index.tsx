@@ -106,6 +106,8 @@ type Solicitation = {
   events: SolicitationEvent[];
   files: SolicitationFile[];
   vendors: SolicitationVendor[];
+  confirmed: number,
+  declined: number,
   contact: string;
   vendorConfirmed: number;
   vendorDeclined: number;
@@ -896,14 +898,15 @@ export const SolicitationManagementPage = () => {
           accessorKey: "vendors",
           header: "Vendors",
           cell: ({ row }) => {
-            const vendors = row.original.vendors || [];
+            const declined = row.original.declined || 0;
+            const confirmed = row.original.confirmed || 0;
             return (
               <div className="text-sm">
                 <div className="text-green-600">
-                  Confirmed: {vendors.filter((v) => v.status === "confirmed").length}
+                  Confirmed: {confirmed}
                 </div>
                 <div className="text-red-600">
-                  Declined: {vendors.filter((v) => v.status === "declined").length}
+                  Declined: {declined}
                 </div>
               </div>
             );

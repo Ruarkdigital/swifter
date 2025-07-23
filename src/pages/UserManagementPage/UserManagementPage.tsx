@@ -32,6 +32,7 @@ import {
 import CreateUserDialog from "./components/CreateUserDialog";
 import EditUserDialog from "./components/EditUserDialog";
 import UserDetailsSheet from "./components/UserDetailsSheet";
+import UserStats from "./components/UserStats";
 import { DropdownFilters } from "@/components/layouts/SolicitationFilters";
 
 
@@ -172,29 +173,7 @@ const UserManagementPage = () => {
     setPagination((prev) => ({ ...prev, pageIndex: 0 }));
   }, [debouncedSearchQuery]);
 
-  // Fetch users dashboard statistics
-  useQuery<
-    ApiResponse<UserDashboard>,
-    ApiResponseError
-  >({
-    queryKey: ["userDashboard"],
-    queryFn: async () => await getRequest({ url: "/users/dashboard" }),
-    enabled: false, // Disable since endpoint doesn't exist
-  });
-
-  // Calculate dashboard stats from users list since no dashboard endpoint exists
-  const calculateDashboardStats = (users: any[]) => {
-    return {
-      allUsers: users.length,
-      activeUsers: users.filter((u: any) => u.status === "active").length,
-      suspendedUsers: users.filter((u: any) => u.status === "inactive").length,
-      inactiveUsers: users.filter((u: any) => u.status === "pending").length,
-      admins: users.filter((u: any) => u.role === "company_admin").length,
-      procurementLeads: users.filter((u: any) => u.role === "procurement")
-        .length,
-      evaluators: users.filter((u: any) => u.role === "evaluator").length,
-    };
-  };
+  // Note: User dashboard statistics are now handled by the UserStats component
 
   // Fetch users list
   const { data: usersData, isLoading } = useQuery<
@@ -290,20 +269,7 @@ const UserManagementPage = () => {
   const users = usersData?.data?.data?.data || [];
   const totalUsers = usersData?.data?.data?.total || 0;
 
-  // Calculate dashboard statistics from users list
-  const userStats = useMemo(() => {
-    return users.length > 0
-      ? calculateDashboardStats(users)
-      : {
-          allUsers: 0,
-          activeUsers: 0,
-          suspendedUsers: 0,
-          inactiveUsers: 0,
-          admins: 0,
-          procurementLeads: 0,
-          evaluators: 0,
-        };
-  }, [users]);
+  // Note: Dashboard statistics are now handled by the UserStats component
 
   // Handle filter changes from dropdown
   const handleFilterChange = (filterTitle: string, value: string) => {
@@ -483,90 +449,8 @@ const UserManagementPage = () => {
         </div>
       </div>
 
-      {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <StatCard
-          title="All Users"
-          value={userStats.allUsers}
-          icon={Users}
-          iconColor="text-gray-600"
-          iconBgColor="bg-gray-100"
-          onClick={() => {
-            setStatusFilter('');
-            setRoleFilter('');
-          }}
-        />
-        <StatCard
-          title="Active Users"
-          value={userStats.activeUsers}
-          icon={UserCheck}
-          iconColor="text-green-600"
-          iconBgColor="bg-green-100"
-          onClick={() => {
-            setStatusFilter('active');
-          }}
-        />
-        <StatCard
-          title="Suspended Users"
-          value={userStats.suspendedUsers}
-          icon={UserX}
-          iconColor="text-red-600"
-          iconBgColor="bg-red-100"
-          onClick={() => {
-            setStatusFilter('suspended');
-          }}
-        />
-        <StatCard
-          title="Inactive Users"
-          value={userStats.inactiveUsers}
-          icon={Clock}
-          iconColor="text-yellow-600"
-          iconBgColor="bg-yellow-100"
-          onClick={() => {
-            setStatusFilter('inactive');
-          }}
-        />
-      </div>
-
-      {/* Role Statistics */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <StatCard
-          title="Admins"
-          value={userStats.admins}
-          icon={Shield}
-          iconColor="text-purple-600"
-          iconBgColor="bg-purple-100"
-          onClick={() => {
-            navigate('/dashboard/users?role=admin');
-            setRoleFilter('admin');
-            setStatusFilter('');
-          }}
-        />
-        <StatCard
-          title="Procurement Leads"
-          value={userStats.procurementLeads}
-          icon={Briefcase}
-          iconColor="text-blue-600"
-          iconBgColor="bg-blue-100"
-          onClick={() => {
-            navigate('/dashboard/users?role=procurement_lead');
-            setRoleFilter('procurement_lead');
-            setStatusFilter('');
-          }}
-        />
-        <StatCard
-          title="Evaluators"
-          value={userStats.evaluators}
-          icon={Star}
-          iconColor="text-orange-600"
-          iconBgColor="bg-orange-100"
-          onClick={() => {
-            navigate('/dashboard/users?role=evaluator');
-            setRoleFilter('evaluator');
-            setStatusFilter('');
-          }}
-        />
-      </div>
+      {/* User Statistics */}
+      <UserStats />
 
       {/* Users Table */}
       <DataTable

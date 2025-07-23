@@ -1,9 +1,22 @@
 import React from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { getRequest } from '@/lib/axiosInstance';
+import { ApiResponse, ApiResponseError } from '@/types';
 
 interface StatCardProps {
   title: string;
   count: number;
   icon: React.ReactNode;
+}
+
+interface UserDashboardData {
+  allUsers: number;
+  activeUsers: number;
+  suspendedUsers: number;
+  inactiveUsers: number;
+  admins: number;
+  procurementLeads: number;
+  evaluators: number;
 }
 
 const StatCard: React.FC<StatCardProps> = ({ title, count, icon }) => {
@@ -21,13 +34,66 @@ const StatCard: React.FC<StatCardProps> = ({ title, count, icon }) => {
 };
 
 const UserStats: React.FC = () => {
-  // Placeholder data - this will eventually come from an API
-  const stats = [
-    { title: 'All Users', count: 20, icon: <UserGroupIcon /> },
-    { title: 'Admins', count: 3, icon: <UserIcon /> },
-    { title: 'Procurement Leads', count: 7, icon: <UserIcon /> },
-    { title: 'Evaluators', count: 10, icon: <UserIcon /> },
-  ];
+  // Fetch user dashboard stats from API
+  const { data: dashboardData, isLoading, error } = useQuery<
+    ApiResponse<UserDashboardData>,
+    ApiResponseError
+  >({
+    queryKey: ['user-dashboard-stats'],
+    queryFn: async () => {
+      return await getRequest({ url: '/users/dashboard' });
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    refetchOnWindowFocus: false,
+  });
+
+  const stats = dashboardData?.data?.data
+    ? [
+        { title: 'All Users', count: dashboardData.data.data.allUsers, icon: <UserGroupIcon /> },
+        { title: 'Active Users', count: dashboardData.data.data.activeUsers, icon: <UserIcon /> },
+        { title: 'Suspended Users', count: dashboardData.data.data.suspendedUsers, icon: <UserIcon /> },
+        { title: 'Inactive Users', count: dashboardData.data.data.inactiveUsers, icon: <UserIcon /> },
+        { title: 'Admins', count: dashboardData.data.data.admins, icon: <UserIcon /> },
+        { title: 'Procurement Leads', count: dashboardData.data.data.procurementLeads, icon: <UserIcon /> },
+        { title: 'Evaluators', count: dashboardData.data.data.evaluators, icon: <UserIcon /> },
+      ]
+    : [
+        { title: 'All Users', count: 0, icon: <UserGroupIcon /> },
+        { title: 'Active Users', count: 0, icon: <UserIcon /> },
+        { title: 'Suspended Users', count: 0, icon: <UserIcon /> },
+        { title: 'Inactive Users', count: 0, icon: <UserIcon /> },
+        { title: 'Admins', count: 0, icon: <UserIcon /> },
+        { title: 'Procurement Leads', count: 0, icon: <UserIcon /> },
+        { title: 'Evaluators', count: 0, icon: <UserIcon /> },
+      ];
+
+  if (isLoading) {
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+        {Array.from({ length: 7 }).map((_, index) => (
+          <div key={index} className="bg-white p-6 rounded-lg shadow animate-pulse">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="h-4 bg-gray-200 rounded w-20 mb-2"></div>
+                <div className="h-6 bg-gray-200 rounded w-12"></div>
+              </div>
+              <div className="w-8 h-8 bg-gray-200 rounded"></div>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+        <div className="col-span-full bg-red-50 border border-red-200 rounded-lg p-4">
+          <p className="text-red-600 text-sm">Failed to load user statistics. Please try again later.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
