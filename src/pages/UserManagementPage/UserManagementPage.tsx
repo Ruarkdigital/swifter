@@ -3,16 +3,10 @@ import { Input } from "@/components/ui/input";
 import {
   Search,
   Users,
-  UserCheck,
-  UserX,
-  Clock,
   MoreHorizontal,
-  Shield,
-  Briefcase,
-  Star,
 } from "lucide-react";
 import { format } from "date-fns";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getRequest, putRequest, postRequest } from "@/lib/axiosInstance";
@@ -35,16 +29,7 @@ import UserStats from "./components/UserStats";
 import { DropdownFilters } from "@/components/layouts/SolicitationFilters";
 
 
-// Dashboard statistics type
-type UserDashboard = {
-  allUsers: number;
-  activeUsers: number;
-  suspendedUsers: number;
-  inactiveUsers: number;
-  admins: number;
-  procurementLeads: number;
-  evaluators: number;
-};
+
 
 // User type definition
 type User = {
