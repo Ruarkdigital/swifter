@@ -54,27 +54,21 @@ type Invitation = {
   invitedDate: string;
   deadline: string;
   status:
-    | "draft"
-    | "active"
-    | "closed"
-    | "awarded"
-    | "evaluating"
+    | "invited"
+    | "confirmed"
+    | "declined"
     | "not available";
 };
 
 // Map API status to UI status
 const mapApiStatusToUIStatus = (apiStatus: string): Invitation["status"] => {
   switch (apiStatus.toLowerCase()) {
-    case "active":
-      return "active";
-    case "draft":
-      return "draft";
-    case "evaluating":
-      return "evaluating";
-    case "closed":
-      return "closed";
-    case "awarded":
-      return "awarded";
+    case "confirmed":
+      return "confirmed";
+    case "declined":
+      return "declined";
+    case "invited":
+      return "invited"
     default:
       return "not available";
   }
@@ -103,33 +97,26 @@ const transformSolicitationToInvitation = (
 const StatusBadge = ({ status }: { status: Invitation["status"] }) => {
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "active":
+      case "confirmed":
         return "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400";
-      case "draft":
-        return "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400";
-      case "evaluating":
+      case "invited":
         return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400";
-      case "closed":
+      case "declined":
         return "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400";
-      case "awarded":
-        return "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400";
       default:
         return "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300";
     }
   };
 
+
   const getStatusLabel = (status: string) => {
     switch (status) {
-      case "active":
+      case "confirmed":
         return "Confirmed";
-      case "draft":
-        return "Not Selected";
-      case "evaluating":
-        return "Pending";
-      case "closed":
+      case "invited":
+        return "Invited";
+      case "declined":
         return "Declined";
-      case "awarded":
-        return "Awarded";
       default:
         return "Not Available";
     }

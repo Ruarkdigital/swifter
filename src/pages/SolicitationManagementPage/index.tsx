@@ -133,7 +133,7 @@ type DashboardStatsResponse = {
   total: number;
   active: number;
   awarded: number;
-  underEvaluating: number;
+  underEvaluation: number;
   pending: number;
   closed: number;
   draft: number;
@@ -697,7 +697,7 @@ export const SolicitationManagementPage = () => {
       return {
         total: 0,
         active: 0,
-        underEvaluating: 0,
+        underEvaluation: 0,
         pending: 0,
         draft: 0,
         awarded: 0,
@@ -1100,8 +1100,8 @@ export const SolicitationManagementPage = () => {
         />
         {isProcurement && (
           <StatCard
-            title="Pending Evaluations"
-            value={dashboardStats.pending}
+            title="Under Evaluations"
+            value={dashboardStats.underEvaluation}
             icon={IconMap["folder-open"] as any}
             iconColor="text-yellow-600"
             iconBgColor="bg-yellow-100"
