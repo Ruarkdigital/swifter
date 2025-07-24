@@ -18,7 +18,6 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getRequest, putRequest, postRequest } from "@/lib/axiosInstance";
 import { ApiResponse, ApiResponseError } from "@/types";
 import { useToastHandler } from "@/hooks/useToaster";
-import { StatCard } from "../CompaniesPage/components/StatCard";
 import { DataTable } from "@/components/layouts/DataTable";
 import { ColumnDef, PaginationState } from "@tanstack/react-table";
 import { Badge } from "@/components/ui/badge";
@@ -168,10 +167,10 @@ const UserManagementPage = () => {
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
-  // Reset pagination when search changes
+  // Reset pagination when search or filters change
   useEffect(() => {
     setPagination((prev) => ({ ...prev, pageIndex: 0 }));
-  }, [debouncedSearchQuery]);
+  }, [debouncedSearchQuery, statusFilter, roleFilter]);
 
   // Note: User dashboard statistics are now handled by the UserStats component
 
@@ -185,6 +184,8 @@ const UserManagementPage = () => {
       pagination.pageIndex,
       pagination.pageSize,
       debouncedSearchQuery,
+      statusFilter,
+      roleFilter,
     ],
     queryFn: async () =>
       await getRequest({
@@ -194,6 +195,8 @@ const UserManagementPage = () => {
             page: pagination.pageIndex + 1,
             limit: pagination.pageSize,
             search: debouncedSearchQuery || undefined,
+            status: statusFilter || undefined,
+            role: roleFilter ? roleFilter.replace('_', ' ') : undefined,
           },
         },
       }),
@@ -296,24 +299,33 @@ const UserManagementPage = () => {
     }
   };
 
-  // Filter data based on search query (for client-side filtering if needed)
-  const filteredData = useMemo(() => {
-    if (!users) return [];
-    
-    return users.filter((user: User) => {
-      const matchesSearch = user.name?.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
-                           user.email?.toLowerCase().includes(debouncedSearchQuery.toLowerCase());
-      const matchesStatus = !statusFilter || user.status === statusFilter;
-      const matchesRole = !roleFilter || (
-         (roleFilter === 'admin' && user.role === 'Admin') ||
-         (roleFilter === 'procurement_lead' && user.role === 'Procurement Lead') ||
-         (roleFilter === 'evaluator' && user.role === 'Evaluator') ||
-         (roleFilter === 'vendor' && user.role === 'Vendor')
-       );
-      
-      return matchesSearch && matchesStatus && matchesRole;
-    });
-  }, [users, debouncedSearchQuery, statusFilter, roleFilter]);
+  // Handle local filter changes from UserStats (without page navigation)
+  const handleLocalFilterChange = (filterType: 'status' | 'role' | 'all', filterValue: string) => {
+    if (filterType === 'all') {
+      setStatusFilter('');
+      setRoleFilter('');
+    } else if (filterType === 'status') {
+      setStatusFilter(filterValue);
+      setRoleFilter(''); // Clear role filter when status is selected
+    } else if (filterType === 'role') {
+      setRoleFilter(filterValue);
+      setStatusFilter(''); // Clear status filter when role is selected
+    }
+  };
+
+  // Get current active filter for UserStats
+  const getActiveFilter = () => {
+    if (statusFilter) {
+      return { type: 'status' as const, value: statusFilter };
+    }
+    if (roleFilter) {
+      return { type: 'role' as const, value: roleFilter };
+    }
+    return null;
+  };
+
+  // Use API data directly since filtering is now handled server-side
+  const filteredData = users;
 
   // Define table columns
   const columns: ColumnDef<User>[] = [
@@ -450,7 +462,10 @@ const UserManagementPage = () => {
       </div>
 
       {/* User Statistics */}
-      <UserStats />
+      <UserStats 
+        onFilterChange={handleLocalFilterChange}
+        activeFilter={getActiveFilter()}
+      />
 
       {/* Users Table */}
       <DataTable

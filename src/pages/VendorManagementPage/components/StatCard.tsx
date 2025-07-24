@@ -21,8 +21,8 @@ export const StatCard = ({
 }: StatCardProps) => {
   return (
     <Card 
-      className={`p-6 border rounded-lg transition-all duration-200 ${
-        onClick ? 'cursor-pointer hover:shadow-md hover:border-blue-300' : ''
+      className={`p-6  ${
+        onClick ? 'cursor-pointer' : ''
       } `}
       onClick={onClick}
     >

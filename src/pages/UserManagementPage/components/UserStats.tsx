@@ -1,12 +1,23 @@
-import React from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { getRequest } from '@/lib/axiosInstance';
-import { ApiResponse, ApiResponseError } from '@/types';
+import React from "react";
+import { useQuery } from "@tanstack/react-query";
+import { getRequest } from "@/lib/axiosInstance";
+import { ApiResponse, ApiResponseError } from "@/types";
+import { Card, CardContent } from "@/components/ui/card";
+import { IconMap } from "@/components/layouts/RoleBasedDashboard/components/StatsCard";
 
 interface StatCardProps {
   title: string;
   count: number;
-  icon: React.ReactNode;
+  icon: any;
+  onClick?: () => void;
+  iconColor?: string;
+  iconBgColor?: string;
+  isActive?: boolean;
+}
+
+interface UserStatsProps {
+  onFilterChange?: (filterType: 'status' | 'role' | 'all', filterValue: string) => void;
+  activeFilter?: { type: 'status' | 'role' | 'all'; value: string } | null;
 }
 
 interface UserDashboardData {
@@ -19,59 +30,197 @@ interface UserDashboardData {
   evaluators: number;
 }
 
-const StatCard: React.FC<StatCardProps> = ({ title, count, icon }) => {
+const StatCard: React.FC<StatCardProps> = ({
+  title,
+  count,
+  icon: Icon,
+  onClick,
+  iconColor,
+  iconBgColor,
+  isActive,
+}) => {
   return (
-    <div className="bg-white p-6 rounded-lg shadow flex items-center justify-between">
-      <div>
-        <p className="text-sm font-medium text-gray-500">{title}</p>
-        <p className="text-2xl font-semibold text-gray-900">{count}</p>
-      </div>
-      <div className="text-gray-400">
-        {icon}
-      </div>
-    </div>
+    <Card
+      className={`p-6  ${onClick ? "cursor-pointer" : ""} `}
+      onClick={onClick}
+    >
+      <CardContent className="p-0">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className={`text-sm font-medium mb-1 ${"text-gray-600"}`}>
+              {title}
+            </p>
+            <p
+              className={`text-2xl font-bold ${
+                isActive
+                  ? "text-blue-900 dark:text-blue-100"
+                  : "text-gray-900 dark:text-gray-200"
+              }`}
+            >
+              {count}
+            </p>
+          </div>
+          <div className={`p-3 rounded-full ${iconBgColor}`}>
+            <Icon className={`h-6 w-6 ${iconColor}`} />
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 };
 
-const UserStats: React.FC = () => {
+const UserStats: React.FC<UserStatsProps> = ({ onFilterChange, activeFilter }) => {
   // Fetch user dashboard stats from API
-  const { data: dashboardData, isLoading, error } = useQuery<
-    ApiResponse<UserDashboardData>,
-    ApiResponseError
-  >({
-    queryKey: ['user-dashboard-stats'],
+  const {
+    data: dashboardData,
+    isLoading,
+    error,
+  } = useQuery<ApiResponse<UserDashboardData>, ApiResponseError>({
+    queryKey: ["user-dashboard-stats"],
     queryFn: async () => {
-      return await getRequest({ url: '/users/dashboard' });
+      return await getRequest({ url: "/users/dashboard" });
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
     refetchOnWindowFocus: false,
   });
 
+  const handleCardClick = (title: string) => {
+    if (!onFilterChange) return;
+    
+    switch (title) {
+      case "All Users":
+        onFilterChange('all', '');
+        break;
+      case "Active Users":
+        onFilterChange('status', 'active');
+        break;
+      case "Suspended Users":
+        onFilterChange('status', 'suspended');
+        break;
+      case "Inactive Users":
+        onFilterChange('status', 'inactive');
+        break;
+      case "Admins":
+        onFilterChange('role', 'admin');
+        break;
+      case "Procurement Leads":
+        onFilterChange('role', 'procurement_lead');
+        break;
+      case "Evaluators":
+        onFilterChange('role', 'evaluator');
+        break;
+      default:
+        break;
+    }
+  };
+
+  const isCardActive = (title: string) => {
+    if (!activeFilter) return false;
+    
+    switch (title) {
+      case "All Users":
+        return activeFilter.type === 'all';
+      case "Active Users":
+        return activeFilter.type === 'status' && activeFilter.value === 'active';
+      case "Suspended Users":
+        return activeFilter.type === 'status' && activeFilter.value === 'suspended';
+      case "Inactive Users":
+        return activeFilter.type === 'status' && activeFilter.value === 'inactive';
+      case "Admins":
+        return activeFilter.type === 'role' && activeFilter.value === 'admin';
+      case "Procurement Leads":
+        return activeFilter.type === 'role' && activeFilter.value === 'procurement_lead';
+      case "Evaluators":
+        return activeFilter.type === 'role' && activeFilter.value === 'evaluator';
+      default:
+        return false;
+    }
+  };
+
   const stats = dashboardData?.data?.data
     ? [
-        { title: 'All Users', count: dashboardData.data.data.allUsers, icon: <UserGroupIcon /> },
-        { title: 'Active Users', count: dashboardData.data.data.activeUsers, icon: <UserIcon /> },
-        { title: 'Suspended Users', count: dashboardData.data.data.suspendedUsers, icon: <UserIcon /> },
-        { title: 'Inactive Users', count: dashboardData.data.data.inactiveUsers, icon: <UserIcon /> },
-        { title: 'Admins', count: dashboardData.data.data.admins, icon: <UserIcon /> },
-        { title: 'Procurement Leads', count: dashboardData.data.data.procurementLeads, icon: <UserIcon /> },
-        { title: 'Evaluators', count: dashboardData.data.data.evaluators, icon: <UserIcon /> },
+        {
+          title: "All Users",
+          count: dashboardData.data.data.allUsers,
+          icon: IconMap?.users as any,
+          iconColor: "text-gray-600",
+          iconBgColor: "bg-gray-100",
+          onClick: () => handleCardClick("All Users"),
+          isActive: isCardActive("All Users"),
+        },
+        {
+          title: "Active Users",
+          count: dashboardData.data.data.activeUsers,
+          icon: IconMap?.users as any,
+          iconColor: "text-green-600",
+          iconBgColor: "bg-green-100",
+          onClick: () => handleCardClick("Active Users"),
+          isActive: isCardActive("Active Users"),
+        },
+        {
+          title: "Suspended Users",
+          count: dashboardData.data.data.suspendedUsers,
+          icon: IconMap?.users as any,
+          iconColor: "text-red-600",
+          iconBgColor: "bg-red-100",
+          onClick: () => handleCardClick("Suspended Users"),
+          isActive: isCardActive("Suspended Users"),
+        },
+        {
+          title: "Inactive Users",
+          count: dashboardData.data.data.inactiveUsers,
+          icon: IconMap?.users as any,
+          iconColor: "text-gray-600",
+          iconBgColor: "bg-gray-100",
+          onClick: () => handleCardClick("Inactive Users"),
+          isActive: isCardActive("Inactive Users"),
+        },
+        {
+          title: "Admins",
+          count: dashboardData.data.data.admins,
+          icon: IconMap?.users as any,
+          iconColor: "text-gray-600",
+          iconBgColor: "bg-gray-100",
+          onClick: () => handleCardClick("Admins"),
+          isActive: isCardActive("Admins"),
+        },
+        {
+          title: "Procurement Leads",
+          count: dashboardData.data.data.procurementLeads,
+          icon: IconMap?.users as any,
+          iconColor: "text-gray-600",
+          iconBgColor: "bg-gray-100",
+          onClick: () => handleCardClick("Procurement Leads"),
+          isActive: isCardActive("Procurement Leads"),
+        },
+        {
+          title: "Evaluators",
+          count: dashboardData.data.data.evaluators,
+          icon: IconMap?.users as any,
+          iconColor: "text-gray-600",
+          iconBgColor: "bg-gray-100",
+          onClick: () => handleCardClick("Evaluators"),
+          isActive: isCardActive("Evaluators"),
+        },
       ]
     : [
-        { title: 'All Users', count: 0, icon: <UserGroupIcon /> },
-        { title: 'Active Users', count: 0, icon: <UserIcon /> },
-        { title: 'Suspended Users', count: 0, icon: <UserIcon /> },
-        { title: 'Inactive Users', count: 0, icon: <UserIcon /> },
-        { title: 'Admins', count: 0, icon: <UserIcon /> },
-        { title: 'Procurement Leads', count: 0, icon: <UserIcon /> },
-        { title: 'Evaluators', count: 0, icon: <UserIcon /> },
+        { title: "All Users", count: 0, icon: IconMap?.users as any, iconColor: "text-gray-600", iconBgColor: "bg-gray-100", onClick: () => handleCardClick("All Users"), isActive: isCardActive("All Users") },
+        { title: "Active Users", count: 0, icon: IconMap?.users as any, iconColor: "text-gray-600", iconBgColor: "bg-gray-100", onClick: () => handleCardClick("Active Users"), isActive: isCardActive("Active Users") },
+        { title: "Suspended Users", count: 0, icon: IconMap?.users as any, iconColor: "text-gray-600", iconBgColor: "bg-gray-100", onClick: () => handleCardClick("Suspended Users"), isActive: isCardActive("Suspended Users") },
+        { title: "Inactive Users", count: 0, icon: IconMap?.users as any, iconColor: "text-gray-600", iconBgColor: "bg-gray-100", onClick: () => handleCardClick("Inactive Users"), isActive: isCardActive("Inactive Users") },
+        { title: "Admins", count: 0, icon: IconMap?.users as any, iconColor: "text-gray-600", iconBgColor: "bg-gray-100", onClick: () => handleCardClick("Admins"), isActive: isCardActive("Admins") },
+        { title: "Procurement Leads", count: 0, icon: IconMap?.users as any, iconColor: "text-gray-600", iconBgColor: "bg-gray-100", onClick: () => handleCardClick("Procurement Leads"), isActive: isCardActive("Procurement Leads") },
+        { title: "Evaluators", count: 0, icon: IconMap?.users as any, iconColor: "text-gray-600", iconBgColor: "bg-gray-100", onClick: () => handleCardClick("Evaluators"), isActive: isCardActive("Evaluators") },
       ];
 
   if (isLoading) {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
         {Array.from({ length: 7 }).map((_, index) => (
-          <div key={index} className="bg-white p-6 rounded-lg shadow animate-pulse">
+          <div
+            key={index}
+            className="bg-white p-6 rounded-lg shadow animate-pulse"
+          >
             <div className="flex items-center justify-between">
               <div>
                 <div className="h-4 bg-gray-200 rounded w-20 mb-2"></div>
@@ -89,7 +238,9 @@ const UserStats: React.FC = () => {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
         <div className="col-span-full bg-red-50 border border-red-200 rounded-lg p-4">
-          <p className="text-red-600 text-sm">Failed to load user statistics. Please try again later.</p>
+          <p className="text-red-600 text-sm">
+            Failed to load user statistics. Please try again later.
+          </p>
         </div>
       </div>
     );
@@ -98,23 +249,20 @@ const UserStats: React.FC = () => {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
       {stats.map((stat) => (
-        <StatCard key={stat.title} title={stat.title} count={stat.count} icon={stat.icon} />
+        <StatCard
+          key={stat.title}
+          title={stat.title}
+          count={stat.count}
+          icon={stat.icon}
+          iconColor={stat.iconColor}
+          iconBgColor={stat.iconBgColor}
+          onClick={stat.onClick}
+          isActive={stat.isActive}
+        />
       ))}
     </div>
   );
 };
 
-// Placeholder Icons - these should be replaced with actual SVG icons
-const UserGroupIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-8 h-8">
-    <path strokeLinecap="round" strokeLinejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719" />
-  </svg>
-);
-
-const UserIcon = () => (
- <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-8 h-8">
-    <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
-  </svg>
-);
 
 export default UserStats;
