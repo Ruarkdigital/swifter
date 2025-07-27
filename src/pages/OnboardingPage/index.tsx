@@ -348,7 +348,7 @@ const OnboardingPage = () => {
               rel="noopener noreferrer"
               className="font-medium text-[#2A4467] dark:text-[#4A90E2] hover:underline cursor-pointer"
             >
-              AIG PRO Inc
+              AIG Pro Inc
             </a>
           </p>
         </div>
