@@ -18,6 +18,7 @@ import { postRequest, getRequest } from "@/lib/axiosInstance";
 import { ApiList, ApiResponse, ApiResponseError } from "@/types";
 import { useToastHandler } from "@/hooks/useToaster";
 import * as yup from "yup";
+import { useUser } from "@/store/authSlice";
 
 const schema = yup.object().shape({
   firstName: yup.string().required("First name is required"),
@@ -38,6 +39,7 @@ type CreateAdminData = yup.InferType<typeof schema>;
 const CreateAdminDialog = () => {
   const [open, setOpen] = useState(false);
 
+  const user = useUser()
   const toast = useToastHandler();
   const queryClient = useQueryClient();
 
@@ -49,7 +51,6 @@ const CreateAdminDialog = () => {
       lastName: "",
       email: "",
       role: "company_admin",
-      company: "",
     },
   });
 
@@ -86,7 +87,7 @@ const CreateAdminDialog = () => {
         lastName: data.lastName,
         email: data.email,
         role: data.role,
-        ...(data.company && { companyId: data.company }),
+        companyId: data.company ?? user?.companyId,
       };
       return await postRequest({
         url: "/onboarding/add-user",

@@ -2,7 +2,7 @@ export const Footer = () => {
   return (
     <footer className="bg-white dark:bg-gray-900 py-4 px-12 mt-auto transition-colors">
       <div className="flex items-center justify-between">
-        <a href="http://www.aigproinc.ca">
+        <a href="http://www.aigproinc.ca" target="_blank">
           <div
             className="text-base font-semibold text-[#6B6B6B] dark:text-gray-400"
             style={{ fontFamily: "Quicksand" }}
