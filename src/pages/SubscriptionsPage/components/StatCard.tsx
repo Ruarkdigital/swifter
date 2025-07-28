@@ -43,8 +43,8 @@ export const StatCard = ({
 
   return (
     <Card 
-      className={`p-6 border border-gray-200 dark:border-gray-700 rounded-lg ${
-        onClick ? 'cursor-pointer hover:shadow-md transition-shadow duration-200' : ''
+      className={`p-6 transition-all duration-200 ${
+        onClick ? 'cursor-pointer hover:shadow-md hover:border-gray-300 dark:hover:border-gray-600 hover:scale-[1.08]' : ''
       }`}
       onClick={onClick}
     >

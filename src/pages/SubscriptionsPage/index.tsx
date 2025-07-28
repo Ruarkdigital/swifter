@@ -385,7 +385,7 @@ const SubscriptionsPage = () => {
     try {
       return format(new Date(dateString), "MMM dd, yyyy, pppp");
     } catch {
-      return dateString;
+      return "Never";
     }
   };
 

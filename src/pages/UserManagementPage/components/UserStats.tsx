@@ -16,8 +16,11 @@ interface StatCardProps {
 }
 
 interface UserStatsProps {
-  onFilterChange?: (filterType: 'status' | 'role' | 'all', filterValue: string) => void;
-  activeFilter?: { type: 'status' | 'role' | 'all'; value: string } | null;
+  onFilterChange?: (
+    filterType: "status" | "role" | "all",
+    filterValue: string
+  ) => void;
+  activeFilter?: { type: "status" | "role" | "all"; value: string } | null;
 }
 
 interface UserDashboardData {
@@ -41,7 +44,11 @@ const StatCard: React.FC<StatCardProps> = ({
 }) => {
   return (
     <Card
-      className={`p-6  ${onClick ? "cursor-pointer" : ""} `}
+      className={`p-6 transition-all duration-200  ${
+        onClick
+          ? "cursor-pointer hover:shadow-md hover:border-gray-300 dark:hover:border-gray-600 hover:scale-[1.08]"
+          : ""
+      } `}
       onClick={onClick}
     >
       <CardContent className="p-0">
@@ -69,7 +76,10 @@ const StatCard: React.FC<StatCardProps> = ({
   );
 };
 
-const UserStats: React.FC<UserStatsProps> = ({ onFilterChange, activeFilter }) => {
+const UserStats: React.FC<UserStatsProps> = ({
+  onFilterChange,
+  activeFilter,
+}) => {
   // Fetch user dashboard stats from API
   const {
     data: dashboardData,
@@ -86,28 +96,28 @@ const UserStats: React.FC<UserStatsProps> = ({ onFilterChange, activeFilter }) =
 
   const handleCardClick = (title: string) => {
     if (!onFilterChange) return;
-    
+
     switch (title) {
       case "All Users":
-        onFilterChange('all', '');
+        onFilterChange("all", "");
         break;
       case "Active Users":
-        onFilterChange('status', 'active');
+        onFilterChange("status", "active");
         break;
       case "Suspended Users":
-        onFilterChange('status', 'suspended');
+        onFilterChange("status", "suspended");
         break;
       case "Inactive Users":
-        onFilterChange('status', 'inactive');
+        onFilterChange("status", "inactive");
         break;
       case "Admins":
-        onFilterChange('role', 'admin');
+        onFilterChange("role", "admin");
         break;
       case "Procurement Leads":
-        onFilterChange('role', 'procurement_lead');
+        onFilterChange("role", "procurement_lead");
         break;
       case "Evaluators":
-        onFilterChange('role', 'evaluator');
+        onFilterChange("role", "evaluator");
         break;
       default:
         break;
@@ -116,22 +126,33 @@ const UserStats: React.FC<UserStatsProps> = ({ onFilterChange, activeFilter }) =
 
   const isCardActive = (title: string) => {
     if (!activeFilter) return false;
-    
+
     switch (title) {
       case "All Users":
-        return activeFilter.type === 'all';
+        return activeFilter.type === "all";
       case "Active Users":
-        return activeFilter.type === 'status' && activeFilter.value === 'active';
+        return (
+          activeFilter.type === "status" && activeFilter.value === "active"
+        );
       case "Suspended Users":
-        return activeFilter.type === 'status' && activeFilter.value === 'suspended';
+        return (
+          activeFilter.type === "status" && activeFilter.value === "suspended"
+        );
       case "Inactive Users":
-        return activeFilter.type === 'status' && activeFilter.value === 'inactive';
+        return (
+          activeFilter.type === "status" && activeFilter.value === "inactive"
+        );
       case "Admins":
-        return activeFilter.type === 'role' && activeFilter.value === 'admin';
+        return activeFilter.type === "role" && activeFilter.value === "admin";
       case "Procurement Leads":
-        return activeFilter.type === 'role' && activeFilter.value === 'procurement_lead';
+        return (
+          activeFilter.type === "role" &&
+          activeFilter.value === "procurement_lead"
+        );
       case "Evaluators":
-        return activeFilter.type === 'role' && activeFilter.value === 'evaluator';
+        return (
+          activeFilter.type === "role" && activeFilter.value === "evaluator"
+        );
       default:
         return false;
     }
@@ -204,13 +225,69 @@ const UserStats: React.FC<UserStatsProps> = ({ onFilterChange, activeFilter }) =
         },
       ]
     : [
-        { title: "All Users", count: 0, icon: IconMap?.users as any, iconColor: "text-gray-600", iconBgColor: "bg-gray-100", onClick: () => handleCardClick("All Users"), isActive: isCardActive("All Users") },
-        { title: "Active Users", count: 0, icon: IconMap?.users as any, iconColor: "text-gray-600", iconBgColor: "bg-gray-100", onClick: () => handleCardClick("Active Users"), isActive: isCardActive("Active Users") },
-        { title: "Suspended Users", count: 0, icon: IconMap?.users as any, iconColor: "text-gray-600", iconBgColor: "bg-gray-100", onClick: () => handleCardClick("Suspended Users"), isActive: isCardActive("Suspended Users") },
-        { title: "Inactive Users", count: 0, icon: IconMap?.users as any, iconColor: "text-gray-600", iconBgColor: "bg-gray-100", onClick: () => handleCardClick("Inactive Users"), isActive: isCardActive("Inactive Users") },
-        { title: "Admins", count: 0, icon: IconMap?.users as any, iconColor: "text-gray-600", iconBgColor: "bg-gray-100", onClick: () => handleCardClick("Admins"), isActive: isCardActive("Admins") },
-        { title: "Procurement Leads", count: 0, icon: IconMap?.users as any, iconColor: "text-gray-600", iconBgColor: "bg-gray-100", onClick: () => handleCardClick("Procurement Leads"), isActive: isCardActive("Procurement Leads") },
-        { title: "Evaluators", count: 0, icon: IconMap?.users as any, iconColor: "text-gray-600", iconBgColor: "bg-gray-100", onClick: () => handleCardClick("Evaluators"), isActive: isCardActive("Evaluators") },
+        {
+          title: "All Users",
+          count: 0,
+          icon: IconMap?.users as any,
+          iconColor: "text-gray-600",
+          iconBgColor: "bg-gray-100",
+          onClick: () => handleCardClick("All Users"),
+          isActive: isCardActive("All Users"),
+        },
+        {
+          title: "Active Users",
+          count: 0,
+          icon: IconMap?.users as any,
+          iconColor: "text-gray-600",
+          iconBgColor: "bg-gray-100",
+          onClick: () => handleCardClick("Active Users"),
+          isActive: isCardActive("Active Users"),
+        },
+        {
+          title: "Suspended Users",
+          count: 0,
+          icon: IconMap?.users as any,
+          iconColor: "text-gray-600",
+          iconBgColor: "bg-gray-100",
+          onClick: () => handleCardClick("Suspended Users"),
+          isActive: isCardActive("Suspended Users"),
+        },
+        {
+          title: "Inactive Users",
+          count: 0,
+          icon: IconMap?.users as any,
+          iconColor: "text-gray-600",
+          iconBgColor: "bg-gray-100",
+          onClick: () => handleCardClick("Inactive Users"),
+          isActive: isCardActive("Inactive Users"),
+        },
+        {
+          title: "Admins",
+          count: 0,
+          icon: IconMap?.users as any,
+          iconColor: "text-gray-600",
+          iconBgColor: "bg-gray-100",
+          onClick: () => handleCardClick("Admins"),
+          isActive: isCardActive("Admins"),
+        },
+        {
+          title: "Procurement Leads",
+          count: 0,
+          icon: IconMap?.users as any,
+          iconColor: "text-gray-600",
+          iconBgColor: "bg-gray-100",
+          onClick: () => handleCardClick("Procurement Leads"),
+          isActive: isCardActive("Procurement Leads"),
+        },
+        {
+          title: "Evaluators",
+          count: 0,
+          icon: IconMap?.users as any,
+          iconColor: "text-gray-600",
+          iconBgColor: "bg-gray-100",
+          onClick: () => handleCardClick("Evaluators"),
+          isActive: isCardActive("Evaluators"),
+        },
       ];
 
   if (isLoading) {
@@ -263,6 +340,5 @@ const UserStats: React.FC<UserStatsProps> = ({ onFilterChange, activeFilter }) =
     </div>
   );
 };
-
 
 export default UserStats;

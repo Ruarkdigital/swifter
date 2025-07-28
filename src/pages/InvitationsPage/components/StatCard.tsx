@@ -23,7 +23,7 @@ export function StatCard({
     <Card 
       className={cn(
         "border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm transition-all duration-200",
-        onClick ? "cursor-pointer hover:shadow-md hover:border-gray-300 dark:hover:border-gray-600 hover:scale-[1.02]" : "hover:shadow-md"
+        onClick ? "cursor-pointer hover:shadow-md hover:border-gray-300 dark:hover:border-gray-600 hover:scale-[1.08]" : "hover:shadow-md"
       )}
       onClick={onClick}
     >

@@ -24,7 +24,7 @@ export const StatCard = ({
     <Card 
       className={cn(
         "p-6 border border-gray-200 rounded-lg transition-all duration-200",
-        onClick ? "cursor-pointer hover:shadow-md hover:border-gray-300 dark:hover:border-gray-600 hover:scale-[1.02]" : "",
+        onClick ? "cursor-pointer hover:shadow-md hover:border-gray-300 dark:hover:border-gray-600 hover:scale-[1.08]" : "",
         className
       )}
       onClick={onClick}
