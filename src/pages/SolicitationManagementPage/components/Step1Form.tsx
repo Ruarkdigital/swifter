@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Forger } from "@/lib/forge";
-import { TextInput } from "@/components/layouts/FormInputs/TextInput";
+import { TextCurrencyInput, TextInput } from "@/components/layouts/FormInputs/TextInput";
 import { TextSelect } from "@/components/layouts/FormInputs/TextSelect";
 import { TextArea } from "@/components/layouts/FormInputs/TextArea";
 import { TextSelectWithSearch } from "@/components/layouts/FormInputs";
@@ -44,7 +44,7 @@ const Step1Form: React.FC<Step1FormProps> = ({
 
       {/* Estimated Cost */}
       <Forger
-        component={TextInput}
+        component={TextCurrencyInput}
         name="estimatedCost"
         label={
           <span>

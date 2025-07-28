@@ -14,6 +14,7 @@ import { Tag, TagInput } from "emblor";
 import { format } from "date-fns";
 import { CalendarIcon, ClockIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import CurrencyInput from "react-currency-input-field";
 
 export type TextInputProps = React.InputHTMLAttributes<HTMLInputElement> & {
   label?: string | JSX.Element;
@@ -122,7 +123,9 @@ export const TextInput = (props: TextInputProps & Partial<ForgerSlotProps>) => {
         )}
       </div>
       {error && <span className="text-xs text-red-500 mt-1">{error}</span>}
-      {!error && helperText && <span className="text-xs text-gray-500 mt-1">{helperText}</span>}
+      {!error && helperText && (
+        <span className="text-xs text-gray-500 mt-1">{helperText}</span>
+      )}
     </div>
   );
 };
@@ -176,7 +179,9 @@ export const TextArea = (props: TextAreaProps & Partial<ForgerSlotProps>) => {
         )}
       </div>
       {error && <span className="text-xs text-red-500 mt-1">{error}</span>}
-      {!error && helperText && <span className="text-xs text-gray-500 mt-1">{helperText}</span>}
+      {!error && helperText && (
+        <span className="text-xs text-gray-500 mt-1">{helperText}</span>
+      )}
     </div>
   );
 };
@@ -232,7 +237,9 @@ export const TextTagInput = (
         setActiveTagIndex={setActiveTagIndex}
       />
       {error && <span className="text-xs text-red-500 mt-1">{error}</span>}
-      {!error && helperText && <span className="text-xs text-gray-500 mt-1">{helperText}</span>}
+      {!error && helperText && (
+        <span className="text-xs text-gray-500 mt-1">{helperText}</span>
+      )}
     </div>
   );
 };
@@ -268,14 +275,14 @@ export const TextDatePicker = (
 
   const combineDateTime = (date: Date | undefined, time: string) => {
     if (!date) return undefined;
-    
+
     const [hours, minutes] = time.split(":").map(Number);
     const combinedDate = new Date(date);
-    
+
     if (!isNaN(hours) && !isNaN(minutes)) {
       combinedDate.setHours(hours, minutes, 0, 0);
     }
-    
+
     return combinedDate;
   };
 
@@ -347,7 +354,9 @@ export const TextDatePicker = (
         </PopoverContent>
       </Popover>
       {error && <span className="text-xs text-red-500 mt-1">{error}</span>}
-      {!error && helperText && <span className="text-xs text-gray-500 mt-1">{helperText}</span>}
+      {!error && helperText && (
+        <span className="text-xs text-gray-500 mt-1">{helperText}</span>
+      )}
     </div>
   );
 };
@@ -404,7 +413,79 @@ export const TextTimeInput = (
         </div>
       </div>
       {error && <span className="text-xs text-red-500 mt-1">{error}</span>}
-      {!error && helperText && <span className="text-xs text-gray-500 mt-1">{helperText}</span>}
+      {!error && helperText && (
+        <span className="text-xs text-gray-500 mt-1">{helperText}</span>
+      )}
+    </div>
+  );
+};
+
+type TextCurrencyInputProps = Omit<TextInputProps, "onChange"> & {
+  onChange: (value: number | string) => void;
+};
+
+export const TextCurrencyInput = (props: TextCurrencyInputProps) => {
+  const {
+    label,
+    containerClass,
+    error,
+    startAdornment,
+    endAdornment,
+    name,
+    value,
+    onChange,
+    onBlur,
+    helperText,
+    placeholder,
+    className,
+    id,
+  } = props;
+
+  return (
+    <div
+      className={`flex flex-col font-medium w-full relative ${
+        containerClass ?? ""
+      }`}
+    >
+      {label && (
+        <Label
+          htmlFor={id}
+          className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+        >
+          {label}
+        </Label>
+      )}
+      <div className="relative">
+        {startAdornment && (
+          <span className="absolute left-3 top-1/2 transform -translate-y-1/2 z-10">
+            {startAdornment}
+          </span>
+        )}
+        <CurrencyInput
+          // {...inputProps}
+          id={id}
+          name={name}
+          value={value}
+          onBlur={onBlur}
+          decimalsLimit={2}
+          prefix="$"
+          defaultValue={1000}
+          onValueChange={(value) => onChange?.(value ?? "")}
+          placeholder={placeholder}
+          className={`w-full h-12 border border-gray-300 rounded-lg px-4 pr-10 focus:border-[#2A4467] focus:ring-[#2A4467] ${
+            error ? "border-red-500" : ""
+          } ${className}`}
+        />
+        {endAdornment && (
+          <span className="absolute right-3 top-1/2 transform -translate-y-1/2 z-10">
+            {endAdornment}
+          </span>
+        )}
+      </div>
+      {error && <span className="text-xs text-red-500 mt-1">{error}</span>}
+      {!error && helperText && (
+        <span className="text-xs text-gray-500 mt-1">{helperText}</span>
+      )}
     </div>
   );
 };
