@@ -239,7 +239,11 @@ const CreateSolicitationDialog = () => {
       await postRequest({ url: "/procurement/solicitations", payload: data }),
   });
 
-  const onSubmit = async (data: any) => {
+  const onSubmit = async (data: any, event?: React.FormEvent) => {
+    // Prevent default form submission behavior which causes page reload
+    if (event) {
+      event.preventDefault();
+    }
     try {
       const formData = forge.getValues();
       const completeData = {

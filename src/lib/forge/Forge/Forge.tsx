@@ -139,7 +139,13 @@ export const Forge = <TFieldValues extends FieldValues = FieldValues>({
       {...(control as unknown as any)}
       control={control as unknown as any}
     >
-      <form className={className} {...rest}>
+      <form 
+        className={className} 
+        onSubmit={(e) => {
+          e.preventDefault();
+        }}
+        {...rest}
+      >
         {renderFieldProps}
         {updatedChildren}
       </form>

@@ -46,8 +46,8 @@ export const TextFileUploader = ({
   ...props
 }: TextFileProps) => {
   const dropZoneConfig = {
-    maxSize: 1024 * 1024 * 4, // 4MB
     multiple: true,
+    maxFiles: 10000000000000000000000000,
     accept,
     ...props.dropzoneOptions
   };

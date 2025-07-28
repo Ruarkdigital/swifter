@@ -17,11 +17,11 @@ interface Step6FormProps {
 const Step6Form = ({ formData, setStep }: Step6FormProps) => {
   // Utility function to safely format date values using date-fns
   const formatDateValue = (value: any): string => {
-    if (!value) return 'Not specified';
+    if (!value) return "Not specified";
     if (value instanceof Date) {
       return format(value, "MMM dd, yyyy 'at' hh:mm a");
     }
-    if (typeof value === 'string') {
+    if (typeof value === "string") {
       try {
         const date = new Date(value);
         if (!isNaN(date.getTime())) {
@@ -44,7 +44,10 @@ const Step6Form = ({ formData, setStep }: Step6FormProps) => {
       </div>
 
       <Accordion type="single" collapsible className="w-full" defaultValue="1">
-        <AccordionItem value="1" className="border border-gray-200 dark:border-gray-700 rounded-lg mb-4">
+        <AccordionItem
+          value="1"
+          className="border border-gray-200 dark:border-gray-700 rounded-lg mb-4"
+        >
           <AccordionTrigger className="px-4 py-3 text-[15px] dark:text-gray-200 leading-6 hover:no-underline">
             <span className="font-medium">1. Basic Information</span>
           </AccordionTrigger>
@@ -54,19 +57,19 @@ const Step6Form = ({ formData, setStep }: Step6FormProps) => {
                 <div>
                   <p className="text-sm text-gray-500">Solicitation NAme</p>
                   <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                    {formData.solicitationName || 'Not specified'}
+                    {formData?.solicitationName || "Not specified"}
                   </p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">Type</p>
                   <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                    {formData.solicitationType || 'Not specified'}
+                    {formData?.solicitationType || "Not specified"}
                   </p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">Category</p>
                   <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                    {formData.category || 'Not specified'}
+                    {formData?.category || "Not specified"}
                   </p>
                 </div>
                 {/* <div>
@@ -79,10 +82,14 @@ const Step6Form = ({ formData, setStep }: Step6FormProps) => {
               <div>
                 <p className="text-sm text-gray-500">Description</p>
                 <p className="text-sm text-gray-700 dark:text-gray-300 mt-1">
-                  {formData.description || 'Not specified'}
+                  {formData?.description || "Not specified"}
                 </p>
               </div>
-              <Button variant="outline" onClick={() => setStep(1)} className="w-full mt-4 border-gray-300 text-gray-700 hover:bg-gray-50">
+              <Button
+                variant="outline"
+                onClick={() => setStep(1)}
+                className="w-full mt-4 border-gray-300 text-gray-700 hover:bg-gray-50"
+              >
                 <span className="mr-2">✏️</span>
                 Edit Information
               </Button>
@@ -90,7 +97,10 @@ const Step6Form = ({ formData, setStep }: Step6FormProps) => {
           </AccordionContent>
         </AccordionItem>
 
-        <AccordionItem value="2" className="border border-gray-200 dark:border-gray-700 rounded-lg mb-4">
+        <AccordionItem
+          value="2"
+          className="border border-gray-200 dark:border-gray-700 rounded-lg mb-4"
+        >
           <AccordionTrigger className="px-4 py-3 text-[15px] dark:text-gray-200 leading-6 hover:no-underline">
             <span className="font-medium">2. Timeline & Bid Details</span>
           </AccordionTrigger>
@@ -100,41 +110,47 @@ const Step6Form = ({ formData, setStep }: Step6FormProps) => {
                 <div>
                   <p className="text-sm text-gray-500">Submission Deadline</p>
                   <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                    {formatDateValue(formData.submissionDeadlineDate)}
+                    {formatDateValue(formData?.submissionDeadlineDate)}
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-500">Question Acceptance Deadline</p>
+                  <p className="text-sm text-gray-500">
+                    Question Acceptance Deadline
+                  </p>
                   <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                    {formatDateValue(formData.questionAcceptanceDeadlineDate)}
+                    {formatDateValue(formData?.questionAcceptanceDeadlineDate)}
                   </p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">Bid Intent Deadline</p>
                   <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                    {formatDateValue(formData.bidIntentDeadlineDate)}
+                    {formatDateValue(formData?.bidIntentDeadlineDate)}
                   </p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">Timezone</p>
                   <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                    {formData.timezone || 'Not specified'}
+                    {formData?.timezone || "Not specified"}
                   </p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">Bid Intent</p>
                   <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                    {formData.bidIntent || 'Not specified'}
+                    {formData?.bidIntent || "Not specified"}
                   </p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">Visibility</p>
                   <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                    {formData.visibility || 'Not specified'}
+                    {formData?.visibility || "Not specified"}
                   </p>
                 </div>
               </div>
-              <Button variant="outline" onClick={() => setStep(2)} className="w-full mt-4 border-gray-300 text-gray-700 hover:bg-gray-50">
+              <Button
+                variant="outline"
+                onClick={() => setStep(2)}
+                className="w-full mt-4 border-gray-300 text-gray-700 hover:bg-gray-50"
+              >
                 <span className="mr-2">✏️</span>
                 Edit Information
               </Button>
@@ -142,26 +158,29 @@ const Step6Form = ({ formData, setStep }: Step6FormProps) => {
           </AccordionContent>
         </AccordionItem>
 
-        <AccordionItem value="3" className="border border-gray-200 dark:border-gray-700 rounded-lg mb-4">
+        <AccordionItem
+          value="3"
+          className="border border-gray-200 dark:border-gray-700 rounded-lg mb-4"
+        >
           <AccordionTrigger className="px-4 py-3 text-[15px] dark:text-gray-200 leading-6 hover:no-underline">
             <span className="font-medium">3. Event Details</span>
           </AccordionTrigger>
           <AccordionContent className="px-4 pb-4">
             <div className="space-y-4">
-              {formData.event && formData.event.length > 0 ? (
-                formData.event.map((event: any, index: number) => (
+              {formData?.event && formData?.event?.length > 0 ? (
+                formData?.event?.map?.((event: any, index: number) => (
                   <div key={index} className="space-y-2">
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <p className="text-sm text-gray-500">Event</p>
                         <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                          {event.event || 'Not specified'}
+                          {event?.event || "Not specified"}
                         </p>
                       </div>
                       <div>
                         <p className="text-sm text-gray-500">Location</p>
                         <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                          {event.location || 'Not specified'}
+                          {event.location || "Not specified"}
                         </p>
                       </div>
                       <div>
@@ -173,23 +192,31 @@ const Step6Form = ({ formData, setStep }: Step6FormProps) => {
                       <div>
                         <p className="text-sm text-gray-500">Time</p>
                         <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                          {event.time || 'Not specified'}
+                          {event.time || "Not specified"}
                         </p>
                       </div>
                     </div>
                     {event.note && (
                       <div>
                         <p className="text-sm text-gray-500">Note</p>
-                        <p className="text-sm text-gray-700 dark:text-gray-300">{event.note}</p>
+                        <p className="text-sm text-gray-700 dark:text-gray-300">
+                          {event.note}
+                        </p>
                       </div>
                     )}
-                    {formData.event && index < formData.event.length - 1 && <Separator className="my-4" />}
+                    {formData.event && index < formData.event.length - 1 && (
+                      <Separator className="my-4" />
+                    )}
                   </div>
                 ))
               ) : (
                 <p className="text-sm text-gray-500">No events added</p>
               )}
-              <Button variant="outline" onClick={() => setStep(3)} className="w-full mt-4 border-gray-300 text-gray-700 hover:bg-gray-50">
+              <Button
+                variant="outline"
+                onClick={() => setStep(3)}
+                className="w-full mt-4 border-gray-300 text-gray-700 hover:bg-gray-50"
+              >
                 <span className="mr-2">✏️</span>
                 Edit Information
               </Button>
@@ -197,21 +224,30 @@ const Step6Form = ({ formData, setStep }: Step6FormProps) => {
           </AccordionContent>
         </AccordionItem>
 
-        <AccordionItem value="4" className="border border-gray-200 dark:border-gray-700 rounded-lg mb-4">
+        <AccordionItem
+          value="4"
+          className="border border-gray-200 dark:border-gray-700 rounded-lg mb-4"
+        >
           <AccordionTrigger className="px-4 py-3 text-[15px] dark:text-gray-200 leading-6 hover:no-underline">
             <span className="font-medium">4. Uploaded Documents</span>
           </AccordionTrigger>
           <AccordionContent className="px-4 pb-4">
             <div className="space-y-4">
-              {formData.documents && formData.documents.length > 0 ? (
+              {formData?.documents && formData?.documents?.length > 0 ? (
                 <>
-                  <p className="text-sm text-gray-500 mb-3">Uploaded Documents ({formData.documents.length})</p>
+                  <p className="text-sm text-gray-500 mb-3">
+                    Uploaded Documents ({formData.documents.length})
+                  </p>
                   <div className="grid grid-cols-2 gap-4">
                     {formData.documents.map((document, index) => (
                       <div key={index} className="flex items-center space-x-2">
-                        <span className="text-sm text-gray-700 dark:text-gray-300">•</span>
+                        <span className="text-sm text-gray-700 dark:text-gray-300">
+                          •
+                        </span>
                         <span className="text-sm text-gray-900 dark:text-gray-100">
-                          {(document as any)?.name || (document as any)?.path?.split('/').pop() || `Document ${index + 1}`}
+                          {(document as any)?.name ||
+                            (document as any)?.path?.split("/").pop() ||
+                            `Document ${index + 1}`}
                         </span>
                       </div>
                     ))}
@@ -220,7 +256,11 @@ const Step6Form = ({ formData, setStep }: Step6FormProps) => {
               ) : (
                 <p className="text-sm text-gray-500">No documents uploaded</p>
               )}
-              <Button variant="outline" onClick={() => setStep(4)} className="w-full mt-4 border-gray-300 text-gray-700 hover:bg-gray-50">
+              <Button
+                variant="outline"
+                onClick={() => setStep(4)}
+                className="w-full mt-4 border-gray-300 text-gray-700 hover:bg-gray-50"
+              >
                 <span className="mr-2">✏️</span>
                 Edit Details
               </Button>
@@ -228,19 +268,26 @@ const Step6Form = ({ formData, setStep }: Step6FormProps) => {
           </AccordionContent>
         </AccordionItem>
 
-        <AccordionItem value="5" className="border border-gray-200 dark:border-gray-700 rounded-lg mb-4">
+        <AccordionItem
+          value="5"
+          className="border border-gray-200 dark:border-gray-700 rounded-lg mb-4"
+        >
           <AccordionTrigger className="px-4 py-3 text-[15px] dark:text-gray-200 leading-6 hover:no-underline">
             <span className="font-medium">5. Invited Vendors</span>
           </AccordionTrigger>
           <AccordionContent className="px-4 pb-4">
             <div className="space-y-4">
-              {formData.vendor && formData.vendor.length > 0 ? (
+              {formData?.vendor && formData?.vendor?.length > 0 ? (
                 <>
-                  <p className="text-sm text-gray-500 mb-3">Invited Vendors ({formData.vendor.length})</p>
+                  <p className="text-sm text-gray-500 mb-3">
+                    Invited Vendors ({formData.vendor.length})
+                  </p>
                   <div className="grid grid-cols-2 gap-4">
                     {formData.vendor.map((vendor, index: number) => (
                       <div key={index} className="flex items-center space-x-2">
-                        <span className="text-sm text-gray-700 dark:text-gray-300">•</span>
+                        <span className="text-sm text-gray-700 dark:text-gray-300">
+                          •
+                        </span>
                         <span className="text-sm text-gray-900 dark:text-gray-100">
                           {vendor?.value}
                         </span>
@@ -251,7 +298,11 @@ const Step6Form = ({ formData, setStep }: Step6FormProps) => {
               ) : (
                 <p className="text-sm text-gray-500">No vendors invited</p>
               )}
-              <Button variant="outline" onClick={() => setStep(5)} className="w-full mt-4 border-gray-300 text-gray-700 hover:bg-gray-50">
+              <Button
+                variant="outline"
+                onClick={() => setStep(5)}
+                className="w-full mt-4 border-gray-300 text-gray-700 hover:bg-gray-50"
+              >
                 <span className="mr-2">✏️</span>
                 Edit Details
               </Button>

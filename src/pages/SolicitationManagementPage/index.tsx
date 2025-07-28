@@ -106,8 +106,8 @@ type Solicitation = {
   events: SolicitationEvent[];
   files: SolicitationFile[];
   vendors: SolicitationVendor[];
-  confirmed: number,
-  declined: number,
+  confirmed: number;
+  declined: number;
   contact: string;
   vendorConfirmed: number;
   vendorDeclined: number;
@@ -425,9 +425,22 @@ export const SolicitationManagementPage = () => {
 
   // Initialize filters from URL parameters
   useEffect(() => {
-    const statusParam = searchParams.get('status');
-    if (statusParam && ['draft', 'active', 'closed', 'awarded', 'evaluating'].includes(statusParam)) {
-      setFilters(prev => ({ ...prev, status: statusParam as 'draft' | 'active' | 'closed' | 'awarded' | 'evaluating' }));
+    const statusParam = searchParams.get("status");
+    if (
+      statusParam &&
+      ["draft", "active", "closed", "awarded", "evaluating"].includes(
+        statusParam
+      )
+    ) {
+      setFilters((prev) => ({
+        ...prev,
+        status: statusParam as
+          | "draft"
+          | "active"
+          | "closed"
+          | "awarded"
+          | "evaluating",
+      }));
     }
   }, [searchParams]);
 
@@ -843,13 +856,7 @@ export const SolicitationManagementPage = () => {
           cell: ({ row }) => (
             <div className="flex flex-wrap gap-1">
               {row.original.categoryIds?.map((category) => (
-                <Badge
-                  key={category._id}
-                  variant="secondary"
-                  className="text-xs text-center"
-                >
-                  {category.name}
-                </Badge>
+                <span className="text-muted-foreground">{category.name}</span>
               )) || (
                 <span className="text-muted-foreground">No categories</span>
               )}
@@ -902,12 +909,8 @@ export const SolicitationManagementPage = () => {
             const confirmed = row.original.confirmed || 0;
             return (
               <div className="text-sm">
-                <div className="text-green-600">
-                  Confirmed: {confirmed}
-                </div>
-                <div className="text-red-600">
-                  Declined: {declined}
-                </div>
+                <div className="text-green-600">Confirmed: {confirmed}</div>
+                <div className="text-red-600">Declined: {declined}</div>
               </div>
             );
           },
@@ -1025,10 +1028,12 @@ export const SolicitationManagementPage = () => {
             return (
               <div className="text-sm">
                 <div className="text-green-600">
-                  Confirmed: {vendors.filter((v) => v.status === "confirmed").length}
+                  Confirmed:{" "}
+                  {vendors.filter((v) => v.status === "confirmed").length}
                 </div>
                 <div className="text-red-600">
-                  Declined: {vendors.filter((v) => v.status === "declined").length}
+                  Declined:{" "}
+                  {vendors.filter((v) => v.status === "declined").length}
                 </div>
               </div>
             );
