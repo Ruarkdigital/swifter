@@ -82,9 +82,9 @@ const StatusBadge = ({ status }: { status: User["status"] }) => {
 // Role badge component
 const RoleBadge = ({ role }: { role: string }) => {
   return (
-    <span className={``}>
+    <span className={`capitalize`}>
       {/* {getRoleIcon(role.name)} */}
-      {role?.replace("_", " ").toUpperCase() || "N/A"}
+      {role?.replace("_", " ") || "N/A"}
     </span>
   );
 };
