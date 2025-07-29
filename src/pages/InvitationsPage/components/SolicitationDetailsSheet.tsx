@@ -18,6 +18,11 @@ import { useToastHandler } from "@/hooks/useToaster";
 // import { useUser } from "@/store/authSlice";
 import { format } from "date-fns";
 import { PageLoader } from "@/components/ui/PageLoader";
+import { DocSVG } from "@/assets/icons/Doc";
+import { PdfSVG } from "@/assets/icons/Pdf";
+import { ExcelSVG } from "@/assets/icons/Excel";
+import PowerPointSVG from "@/assets/icons/PowerPoint";
+import { config } from "@/config";
 
 // Types based on API documentation
 type SolicitationType = {
@@ -197,7 +202,7 @@ const SolicitationDetailsSheet: React.FC<SolicitationDetailsSheetProps> = ({
   };
 
   const details = solicitationData?.data?.data.details;
-  const files = solicitationData?.data?.data.requiredFiles || [];
+  const files = solicitationData?.data?.data.details.files || [];
 
   // Find current vendor's status
   // const currentVendor = details?.vendors?.find(
@@ -262,6 +267,38 @@ const SolicitationDetailsSheet: React.FC<SolicitationDetailsSheetProps> = ({
   const statusBadge = getStatusBadge(
     details?.status || solicitation?.status || ""
   );
+
+  const getFileExtension = (fileName: string, fileType: string): string => {
+    const extension = fileName.split(".").pop()?.toUpperCase();
+    if (extension) return extension;
+
+    // Fallback to type if no extension in name
+    if (fileType.includes("pdf")) return "PDF";
+    if (fileType.includes("doc")) return "DOC";
+    if (fileType.includes("excel") || fileType.includes("sheet")) return "XLS";
+    if (fileType.includes("powerpoint") || fileType.includes("presentation"))
+      return "PPT";
+
+    return "FILE";
+  };
+
+  const getFileIcon = (fileExtension: string) => {
+    switch (fileExtension) {
+      case "DOC":
+      case "DOCX":
+        return <DocSVG />;
+      case "PDF":
+        return <PdfSVG />;
+      case "XLS":
+      case "XLSX":
+        return <ExcelSVG />;
+      case "PPT":
+      case "PPTX":
+        return <PowerPointSVG />;
+      default:
+        return <DocSVG />;
+    }
+  };
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -512,15 +549,15 @@ const SolicitationDetailsSheet: React.FC<SolicitationDetailsSheetProps> = ({
                             <div className="flex items-center space-x-3">
                               <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
                                 <span className="text-blue-600 dark:text-blue-400 font-semibold text-xs">
-                                  {doc.type.toUpperCase()}
+                                  {getFileIcon(doc.type.toUpperCase())}
                                 </span>
                               </div>
                               <div>
                                 <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                                  {doc.title}
+                                  {doc.name}
                                 </h3>
                                 <p className="text-xs text-gray-500 dark:text-gray-400">
-                                  {doc.type.toUpperCase()} • {doc.size}
+                                  {getFileExtension(doc.name, doc.type)} • {doc.size}
                                 </p>
                               </div>
                             </div>
@@ -528,7 +565,7 @@ const SolicitationDetailsSheet: React.FC<SolicitationDetailsSheetProps> = ({
                               <div className="flex items-center space-x-2">
                                 <button
                                   className="p-2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
-                                  onClick={() => window.open(doc.url, "_blank")}
+                                  onClick={() => window.open(`${config.baseUrl}/upload/${doc._id}/${doc.name}`, "_blank")}
                                 >
                                   <Eye className="w-4 h-4" />
                                 </button>
