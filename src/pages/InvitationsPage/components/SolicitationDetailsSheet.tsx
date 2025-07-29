@@ -557,18 +557,23 @@ const SolicitationDetailsSheet: React.FC<SolicitationDetailsSheetProps> = ({
                                   {doc.name}
                                 </h3>
                                 <p className="text-xs text-gray-500 dark:text-gray-400">
-                                  {getFileExtension(doc.name, doc.type)} • {doc.size}
+                                  {getFileExtension(doc.name, doc.type)} •{" "}
+                                  {doc.size}
                                 </p>
                               </div>
                             </div>
                             {doc.url && (
                               <div className="flex items-center space-x-2">
-                                <button
-                                  className="p-2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
-                                  onClick={() => window.open(`${config.baseUrl}/upload/${doc._id}/${doc.name}`, "_blank")}
-                                >
-                                  <Eye className="w-4 h-4" />
-                                </button>
+                                {getFileExtension(doc.name, doc.type) === "PDF" && (
+                                  <button
+                                    className="p-2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
+                                    onClick={() =>
+                                      window.open(doc.url, "_blank")
+                                    }
+                                  >
+                                    <Eye className="w-4 h-4" />
+                                  </button>
+                                )}
                                 <button
                                   className="p-2 text-blue-400 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/30 hover:text-blue-600 dark:hover:text-blue-300 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
                                   onClick={() => {

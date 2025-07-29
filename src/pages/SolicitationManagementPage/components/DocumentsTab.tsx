@@ -25,16 +25,17 @@ type DocumentsTabProps = {
 const DocumentsTab: React.FC<DocumentsTabProps> = ({ files = [] }) => {
   // Helper function to get file extension from name or type
   const getFileExtension = (fileName: string, fileType: string): string => {
-    const extension = fileName.split('.').pop()?.toUpperCase();
+    const extension = fileName.split(".").pop()?.toUpperCase();
     if (extension) return extension;
-    
+
     // Fallback to type if no extension in name
-    if (fileType.includes('pdf')) return 'PDF';
-    if (fileType.includes('doc')) return 'DOC';
-    if (fileType.includes('excel') || fileType.includes('sheet')) return 'XLS';
-    if (fileType.includes('powerpoint') || fileType.includes('presentation')) return 'PPT';
-    
-    return 'FILE';
+    if (fileType.includes("pdf")) return "PDF";
+    if (fileType.includes("doc")) return "DOC";
+    if (fileType.includes("excel") || fileType.includes("sheet")) return "XLS";
+    if (fileType.includes("powerpoint") || fileType.includes("presentation"))
+      return "PPT";
+
+    return "FILE";
   };
 
   const getFileIcon = (fileExtension: string) => {
@@ -54,7 +55,6 @@ const DocumentsTab: React.FC<DocumentsTabProps> = ({ files = [] }) => {
         return <DocSVG />;
     }
   };
-
 
   return (
     <div className="space-y-6 pt-4">
@@ -78,7 +78,9 @@ const DocumentsTab: React.FC<DocumentsTabProps> = ({ files = [] }) => {
         {files.length === 0 ? (
           <div className="text-center py-8">
             <File className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-500">No documents available for this solicitation</p>
+            <p className="text-gray-500">
+              No documents available for this solicitation
+            </p>
           </div>
         ) : (
           /* Documents Grid */
@@ -113,18 +115,22 @@ const DocumentsTab: React.FC<DocumentsTabProps> = ({ files = [] }) => {
                         </div>
                       </div>
 
-                       {/* Right side - Action Buttons */}
-                       <div className="flex items-center gap-2 ml-2">
-                         <Button
-                           variant="ghost"
-                           size="icon"
-                           className={cn("h-8 w-8 p-0 bg-gray-100 dark:bg-slate-900 rounded-full")}
-                           title="View"
-                           onClick={() => window.open(file.url, '_blank')}
-                         >
-                           <Eye className="w-4 h-4 text-gray-500" />
-                         </Button>
-                         {/* <Button
+                      {/* Right side - Action Buttons */}
+                      <div className="flex items-center gap-2 ml-2">
+                        {getFileExtension(file.name, file.type) === "PDF" && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className={cn(
+                              "h-8 w-8 p-0 bg-gray-100 dark:bg-slate-900 rounded-full"
+                            )}
+                            title="View"
+                            onClick={() => window.open(file.url, "_blank")}
+                          >
+                            <Eye className="w-4 h-4 text-gray-500" />
+                          </Button>
+                        )}
+                        {/* <Button
                            variant="ghost"
                            size="icon"
                            className="h-8 w-8 p-0 bg-green-100 dark:bg-slate-900 rounded-full"
@@ -132,23 +138,23 @@ const DocumentsTab: React.FC<DocumentsTabProps> = ({ files = [] }) => {
                          >
                            <Edit className="w-4 h-4 text-green-500 dark:text-gray-500" />
                          </Button> */}
-                         <Button
-                           variant="ghost"
-                           size="icon"
-                           className="h-8 w-8 p-0 bg-blue-100 dark:bg-slate-900 rounded-full"
-                           title="Download"
-                           onClick={() => {
-                             const link = document.createElement('a');
-                             link.href = file.url;
-                             link.download = file.name;
-                             document.body.appendChild(link);
-                             link.click();
-                             document.body.removeChild(link);
-                           }}
-                         >
-                           <Download className="w-4 h-4 text-blue-500 dark:text-gray-500" />
-                         </Button>
-                         {/* <Button
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 p-0 bg-blue-100 dark:bg-slate-900 rounded-full"
+                          title="Download"
+                          onClick={() => {
+                            const link = document.createElement("a");
+                            link.href = file.url;
+                            link.download = file.name;
+                            document.body.appendChild(link);
+                            link.click();
+                            document.body.removeChild(link);
+                          }}
+                        >
+                          <Download className="w-4 h-4 text-blue-500 dark:text-gray-500" />
+                        </Button>
+                        {/* <Button
                            variant="ghost"
                            size="icon"
                            className="h-8 w-8 p-0 bg-red-100 dark:bg-slate-900 rounded-full"
@@ -156,15 +162,15 @@ const DocumentsTab: React.FC<DocumentsTabProps> = ({ files = [] }) => {
                          >
                            <Trash2 className="w-4 h-4 text-red-500 dark:text-gray-500" />
                          </Button> */}
-                       </div>
-                     </div>
-                   </CardContent>
-                 </Card>
-               );
-             })}
-           </div>
-         )}
-       </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        )}
+      </div>
     </div>
   );
 };
