@@ -27,7 +27,7 @@ const Step4Form = ({ control }: Step4FormProps) => {
       title: "",
       description: "",
       type: "pass_fail",
-      score: "",
+      score: "pass",
       group: "",
     });
   };
@@ -134,6 +134,7 @@ const Step4Form = ({ control }: Step4FormProps) => {
               <div>
                 {criteriaType === "pass_fail" ? (
                   <Forger
+                    key={`pass_fail_${index}`}
                     name={`criteria.${index}.score`}
                     placeholder="Select Pass/Fail"
                     component={TextSelect}
@@ -142,10 +143,11 @@ const Step4Form = ({ control }: Step4FormProps) => {
                       { label: "Fail", value: "fail" }
                     ]}
                     containerClass="w-full"
-                    defaultValue="pass"
+                    defaultValue={String(criteriaTypes?.[index]?.score || "pass")}
                   />
                 ) : (
                   <Forger
+                    key={`weight_${index}`}
                     placeholder="Enter Value"
                     name={`criteria.${index}.score`}
                     containerClass="w-full"
