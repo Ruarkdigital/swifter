@@ -429,17 +429,22 @@ export const ChartComponent: React.FC<ChartComponentProps> = ({
       <CardHeader>
         <CardTitle className="text-lg font-semibold">{chart.title}</CardTitle>
         {chart.filters && chart.filters.length > 0 && (
-          <div className="flex space-x-4 text-sm overflow-auto py-2">
-            {chart.filters?.map((item) => (
-              <Button
-                variant={selected?.replace(/\s+/g, "") === item ? "secondary" : "ghost"}
-                key={item}
-                className="text-gray-500 dark:text-gray-400"
-                onClick={() => onFilterChange?.(item)}
-              >
-                {item}
-              </Button>
-            ))}
+          <div className="flex space-x-2 text-sm overflow-auto py-2">
+            {chart.filters?.map((item) => {
+              const isActive = selected?.replace(/\s+/g, "") === item.replace(/\s+/g, "");
+              return (
+                <Button
+                  variant={isActive ? "default" : "ghost"}
+                  key={item}
+                  className={cn(
+                    "transition-all duration-200 font-medium",
+                  )}
+                  onClick={() => onFilterChange?.(item)}
+                >
+                  {item}
+                </Button>
+              );
+            })}
           </div>
         )}
       </CardHeader>

@@ -273,6 +273,7 @@ export class DashboardDataTransformer {
    * Transform module usage data for pie chart
    */
   static transformModuleUsage(data: ModuleUsage | undefined) {
+    // console.log({ data });
     if (!data) {
       return [
         { name: "Procurement", value: 0, percentage: 0 },

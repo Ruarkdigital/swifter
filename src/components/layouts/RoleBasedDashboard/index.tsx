@@ -65,7 +65,7 @@ export const RoleBasedDashboard: React.FC = () => {
       const transformedStatusData =
         DashboardDataTransformer.transformCompanyStatus(companyStatus?.[0]);
       const transformedModuleData =
-        DashboardDataTransformer.transformModuleUsage(moduleUsage?.[0]);
+        DashboardDataTransformer.transformModuleUsage(moduleUsage);
       const transformedRoleData =
         DashboardDataTransformer.transformRoleDistribution(roleDistribution);
 

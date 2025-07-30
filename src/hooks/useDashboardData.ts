@@ -299,7 +299,7 @@ export const useDashboardData = (
 
   // Module usage data
   const { data: moduleUsage, isLoading: isLoadingModules } = useQuery<
-    ApiResponse<ModuleUsage[]>,
+    ApiResponse<ModuleUsage>,
     ApiResponseError
   >({
     queryKey: ["module-usage", userRole, getFilterForChart("module-usage")],

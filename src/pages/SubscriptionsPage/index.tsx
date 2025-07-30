@@ -4,7 +4,7 @@ import { format, startOfDay, subDays, endOfDay } from "date-fns";
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getRequest, putRequest, postRequest } from "@/lib/axiosInstance";
+import { getRequest, postRequest } from "@/lib/axiosInstance";
 import { ApiResponse, ApiResponseError,  } from "@/types";
 import { useToastHandler } from "@/hooks/useToaster";
 import { StatCard } from "./components/StatCard";
