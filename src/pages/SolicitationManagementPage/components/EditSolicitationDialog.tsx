@@ -348,6 +348,19 @@ const EditSolicitationDialog = ({
       }),
   });
 
+  const { mutateAsync: saveDraft, isPending: isDraftSaving } = useMutation<
+    ApiResponse<any>,
+    ApiResponseError,
+    SolicitationUpdateRequest
+  >({
+    mutationKey: ["saveSolicitationDraft"],
+    mutationFn: async (data) =>
+      await putRequest({
+        url: `/procurement/solicitations/${solicitation._id}`,
+        payload: data,
+      }),
+  });
+
   const onSubmit = async (data: any) => {
     try {
       const formData = forge.getValues();
@@ -481,10 +494,138 @@ const EditSolicitationDialog = ({
     }
   };
 
-  const handleCancel = () => {
-    setOpen(false);
-    setCurrentStep(1);
-    forge.reset(getDefaultValues());
+
+  const handleSaveAsDraft = async () => {
+    try {
+      const formData = forge.getValues();
+      
+      // Handle file uploads first if there are files
+      let uploadedFiles: Array<{
+        name: string;
+        url: string;
+        size: string;
+        type: string;
+      }> = [];
+
+      if (formData.files && formData.files.length > 0) {
+        const fileFormData = new FormData();
+        formData.files.forEach((file: File) => {
+          fileFormData.append("file", file);
+        });
+
+        const uploadResponse = await uploadFiles(fileFormData);
+        if (uploadResponse?.data?.data) {
+          uploadedFiles = formData.files.map(
+            (file: File, index: number) => ({
+              name: file.name,
+              url: uploadResponse.data.data[index],
+              size: file.size.toString(),
+              type: file.type,
+            })
+          );
+        }
+      }
+
+      // Transform form data to match API schema with draft status
+      const apiPayload: SolicitationUpdateRequest = {
+        name: formData.solicitationName || solicitation.name,
+        typeId: formData.solicitationType || (typeof solicitation.typeId === "object" ? solicitation.typeId._id : solicitation.typeId),
+        categoryIds: formData.category ? 
+          (Array.isArray(formData.category) ? formData.category : [formData.category]) :
+          (solicitation.categories || solicitation.categoryIds || []).map(cat => cat._id),
+        estimatedCost: formData.estimatedCost
+          ? parseFloat(formData.estimatedCost)
+          : solicitation.estimatedCost,
+        description: formData.description || solicitation.description,
+        visibility: (formData.visibility as "public" | "invite-only") || 
+          (solicitation.visibility === "private" ? "invite-only" : solicitation.visibility),
+        status: "draft", // Always save as draft
+        submissionDeadline: formData.submissionDeadlineDate
+          ? new Date(formData.submissionDeadlineDate).toISOString()
+          : solicitation.submissionDeadline,
+        questionDeadline: formData.questionAcceptanceDeadlineDate
+          ? new Date(formData.questionAcceptanceDeadlineDate).toISOString()
+          : solicitation.questionDeadline,
+        bidIntentDeadline: formData.bidIntentDeadlineDate
+          ? new Date(formData.bidIntentDeadlineDate).toISOString()
+          : solicitation.bidIntentDeadline,
+        timezone: formData.timezone || solicitation.timezone || "Africa/Lagos",
+        events: formData.event && formData.event.length > 0
+          ? formData.event
+              ?.map((evt: any) => {
+                // Validate date and time before creating Date object
+                if (!evt.date || !evt.time) {
+                  return null;
+                }
+
+                // Handle Date object from TextDatePicker
+                const dateStr =
+                  evt.date instanceof Date
+                    ? evt.date.toISOString().split("T")[0] // Extract YYYY-MM-DD
+                    : evt.date;
+
+                // Validate the constructed date string
+                const dateTimeStr = `${dateStr}T${evt.time}`;
+                const eventDate = new Date(dateTimeStr);
+
+                if (isNaN(eventDate.getTime())) {
+                  return null;
+                }
+
+                return {
+                  eventType: evt.event,
+                  eventLocation: evt.location,
+                  eventDate: eventDate.toISOString(),
+                  eventDescription: evt.note || undefined,
+                };
+              })
+              .filter((event) => event !== null) // Remove null entries with proper type guard
+          : solicitation.events?.map(evt => ({
+              eventType: evt.eventType,
+              eventLocation: evt.eventLocation,
+              eventDate: evt.eventDate,
+              eventDescription: evt.eventDescription,
+            })),
+        files: uploadedFiles.length > 0 ? uploadedFiles : 
+          solicitation.files?.map(file => ({
+            name: file.name,
+            url: file.url,
+            size: file.size.toString(),
+            type: file.type,
+          })),
+        vendors:
+          formData.vendor && formData.vendor.length > 0
+            ? formData.vendor.map((item: any) => ({ id: item.value }))
+            : solicitation.vendors?.map(vendor => ({ id: vendor._id })),
+      };
+
+      const response = await saveDraft(apiPayload);
+
+      if (response?.data) {
+        // Invalidate queries to refresh the solicitation data
+        queryClient.invalidateQueries({ queryKey: ["solicitations"] });
+        queryClient.invalidateQueries({ queryKey: ["my-solicitations"] });
+        queryClient.invalidateQueries({ queryKey: ["dashboard-stats"] });
+        queryClient.invalidateQueries({
+          queryKey: ["solicitation", solicitation._id],
+        });
+
+        toast.success(
+          "Draft Saved",
+          "Your solicitation has been saved as draft successfully."
+        );
+        setOpen(false);
+        setCurrentStep(1);
+        forge.reset(getDefaultValues());
+      }
+    } catch (error) {
+      console.log(error);
+      const err = error as ApiResponseError;
+      toast.error(
+        "Save Failed",
+        err?.message ?? "Failed to save solicitation as draft. Please try again."
+      );
+    }
   };
 
   const getStepTitle = () => {
@@ -583,10 +724,11 @@ const EditSolicitationDialog = ({
               <Button
                 type="button"
                 variant="outline"
-                onClick={handleCancel}
+                onClick={handleSaveAsDraft}
+                disabled={isDraftSaving}
                 className="px-8 py-2 border border-gray-300 text-gray-700 hover:bg-gray-100 rounded-lg"
               >
-                Save as Draft
+                {isDraftSaving ? "Saving..." : "Save as Draft"}
               </Button>
             )}
             <div className="flex gap-3">
