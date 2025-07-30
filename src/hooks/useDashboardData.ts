@@ -146,30 +146,40 @@ export const useDashboardData = (
     if(!chartId) return []
     // const filter = getFilterForChart(chartId);
 
+    // Debug logging for API data
+    console.log(`[DEBUG] getChartData called for chartId: ${chartId}`);
+    
     // Map chart IDs to their corresponding data with proper transformation
     switch (chartId) {
-      case "role-distribution":
-        return DashboardDataTransformer.transformRoleDistribution(roleDistribution?.data?.data);
+      case "portal-role-distribution":
+        console.log('[DEBUG] Portal Role Distribution API Data:', roleDistribution?.data?.data);
+        const transformedRoleData = DashboardDataTransformer.transformRoleDistribution(roleDistribution?.data?.data);
+        console.log('[DEBUG] Transformed Portal Role Data:', transformedRoleData);
+        return transformedRoleData;
       case "weekly-activities":
         return DashboardDataTransformer.transformWeeklyActivities(weeklyActivities?.data?.data);
       case "sub-distribution":
         return DashboardDataTransformer.transformSubDistribution(subDistribution?.data?.data);
       case "company-status":
-        // API returns TimeStats[] but transformer expects TimeStats with timeStats property
+        console.log('[DEBUG] Company Status API Data:', companyStatus?.data?.data);
+        // API returns array with nested timeStats: [{ timeStats: [...] }]
         const companyStatusData = companyStatus?.data?.data;
-        if (Array.isArray(companyStatusData) && companyStatusData.length > 0) {
-          // If it's an array of TimeStats objects, take the first one
-          return DashboardDataTransformer.transformCompanyStatus(companyStatusData[0]);
+        let transformedCompanyStatus;
+        if (Array.isArray(companyStatusData) && companyStatusData.length > 0 && companyStatusData[0]?.timeStats) {
+          // Extract timeStats from the first element
+          transformedCompanyStatus = DashboardDataTransformer.transformCompanyStatus(companyStatusData[0]);
+        } else {
+          transformedCompanyStatus = DashboardDataTransformer.transformCompanyStatus(undefined);
         }
-        return DashboardDataTransformer.transformCompanyStatus(undefined);
+        console.log('[DEBUG] Transformed Company Status Data:', transformedCompanyStatus);
+        return transformedCompanyStatus;
       case "module-usage":
-        // API returns ModuleUsage[] but transformer expects ModuleUsage
+        console.log('[DEBUG] Module Usage API Data:', moduleUsage?.data?.data);
+        // API returns ModuleUsage object directly
         const moduleUsageData = moduleUsage?.data?.data;
-        if (Array.isArray(moduleUsageData) && moduleUsageData.length > 0) {
-          // If it's an array of ModuleUsage objects, take the first one
-          return DashboardDataTransformer.transformModuleUsage(moduleUsageData[0]);
-        }
-        return DashboardDataTransformer.transformModuleUsage(undefined);
+        const transformedModuleData = DashboardDataTransformer.transformModuleUsage(moduleUsageData);
+        console.log('[DEBUG] Transformed Module Data:', transformedModuleData);
+        return transformedModuleData;
       case "solicitation-status":
         return DashboardDataTransformer.transformSolicitationStatusChart(solicitationStatus?.data?.data);
       case "bid-intent":
@@ -280,7 +290,7 @@ export const useDashboardData = (
 
   // Company status data
   const { data: companyStatus, isLoading: isLoadingStatus } = useQuery<
-    ApiResponse<TimeStats[]>,
+    ApiResponse<{ timeStats: TimeStat[] }[]>,
     ApiResponseError
   >({
     queryKey: ["company-status", userRole, getFilterForChart("company-status")],

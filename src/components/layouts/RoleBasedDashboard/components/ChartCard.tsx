@@ -41,6 +41,14 @@ export const ChartComponent: React.FC<ChartComponentProps> = ({
 }) => {
   // Use dynamic chartData if provided, otherwise fallback to chart.data
   const data = chartData || chart.data;
+  
+  // Debug logging for chart data
+  console.log(`[ChartComponent] Chart ID: ${chart.id}`);
+  console.log(`[ChartComponent] Chart Title: ${chart.title}`);
+  console.log(`[ChartComponent] chartData prop:`, chartData);
+  console.log(`[ChartComponent] chart.data fallback:`, chart.data);
+  console.log(`[ChartComponent] Final data being used:`, data);
+  
   const chartConfig = {
     value: {
       label: "Value",

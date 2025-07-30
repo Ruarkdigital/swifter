@@ -94,16 +94,19 @@ export const RoleBasedDashboard: React.FC = () => {
                       },
                     };
                   case "company-status":
+                    console.log('[DEBUG] Company Status - enhancedDashboardConfig data:', transformedStatusData);
                     return {
                       ...chart,
                       data: transformedStatusData,
                     };
                   case "module-usage":
+                    console.log('[DEBUG] Module Usage - enhancedDashboardConfig data:', transformedModuleData);
                     return {
                       ...chart,
                       data: transformedModuleData,
                     };
                   case "portal-role-distribution":
+                    console.log('[DEBUG] Portal Role Distribution - enhancedDashboardConfig data:', transformedRoleData);
                     return {
                       ...chart,
                       data: transformedRoleData,

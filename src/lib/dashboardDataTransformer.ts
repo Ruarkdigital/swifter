@@ -1,9 +1,9 @@
 import {
   SuperAdminDashboardCount,
   RoleDistribution,
-  TimeStats,
+  // TimeStats,
   SubDistribution,
-  ModuleUsage,
+  // ModuleUsage,
   WeeklyActivities,
   EvaluatorDashboardData,
   EvaluatorMyActions,
@@ -177,12 +177,14 @@ export class DashboardDataTransformer {
   /**
    * Transform company status data for bar chart
    */
-  static transformCompanyStatus(data: TimeStats | undefined) {
+  static transformCompanyStatus(data: any) {
+    // Handle new API structure: data is an array with timeStats inside
+    const timeStats = data?.[0]?.timeStats;
+    
     if (
-      !data ||
-      !data.timeStats ||
-      !Array.isArray(data.timeStats) ||
-      data.timeStats.length === 0
+      !timeStats ||
+      !Array.isArray(timeStats) ||
+      timeStats.length === 0
     ) {
       return Array.from({ length: 12 }, (_, i) => ({
         month: [
@@ -205,8 +207,9 @@ export class DashboardDataTransformer {
       }));
     }
 
-    return data.timeStats.map((item, index) => {
-      const month = [
+    return timeStats.map((item: any, index: number) => {
+      // Use the label from API or fallback to month names
+      const month = item.label || [
         "Jan",
         "Feb",
         "Mar",
@@ -221,11 +224,19 @@ export class DashboardDataTransformer {
         "Dec",
       ][index % 12];
 
+      // Calculate suspended and pending from actual API data
+      const total = item.total || 0;
+      const active = item.active || 0;
+      const expiring = item.expiring || 0;
+      
+      // Calculate suspended as total minus active minus expiring
+      const suspended = Math.max(0, total - active - expiring);
+      
       return {
         month,
-        active: item.active || 0,
-        suspended: Math.floor((item.total || 0) * 0.1), // Estimated based on typical ratios
-        pending: Math.floor((item.expiring || 0) * 0.5),
+        active,
+        suspended,
+        pending: expiring, // Use expiring as pending since they represent similar concepts
       };
     });
   }
@@ -272,46 +283,34 @@ export class DashboardDataTransformer {
   /**
    * Transform module usage data for pie chart
    */
-  static transformModuleUsage(data: ModuleUsage | undefined) {
+  static transformModuleUsage(data: any) {
     // console.log({ data });
     if (!data) {
       return [
-        { name: "Procurement", value: 0, percentage: 0 },
-        { name: "Evaluation", value: 0, percentage: 0 },
-        { name: "Vendor Management", value: 0, percentage: 0 },
-        { name: "Addendum", value: 0, percentage: 0 },
+        { name: "Solicitation", value: 0 },
+        { name: "Evaluation", value: 0 },
+        { name: "Vendor", value: 0 },
+        { name: "Addendum", value: 0 },
       ];
     }
 
-    const total =
-      data.solicitationUsage +
-      data.evaluationUsage +
-      data.vendorUage +
-      data.adendumUsage;
-
+    // Use raw values directly as indicators, not percentages
     return [
       {
         name: "Solicitation",
         value: data.solicitationUsage || 0,
-        percentage:
-          total > 0 ? Math.round((data.solicitationUsage / total) * 100) : 0,
       },
       {
         name: "Evaluation",
         value: data.evaluationUsage || 0,
-        percentage:
-          total > 0 ? Math.round((data.evaluationUsage / total) * 100) : 0,
       },
       {
-        name: "Vendor Management",
-        value: data.vendorUage || 0,
-        percentage: total > 0 ? Math.round((data.vendorUage / total) * 100) : 0,
+        name: "Vendor",
+        value: data.vendorUage || 0, // Keep original typo from API
       },
       {
         name: "Addendum",
         value: data.adendumUsage || 0,
-        percentage:
-          total > 0 ? Math.round((data.adendumUsage / total) * 100) : 0,
       },
     ];
   }
