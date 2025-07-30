@@ -22,7 +22,6 @@ import { DocSVG } from "@/assets/icons/Doc";
 import { PdfSVG } from "@/assets/icons/Pdf";
 import { ExcelSVG } from "@/assets/icons/Excel";
 import PowerPointSVG from "@/assets/icons/PowerPoint";
-import { config } from "@/config";
 
 // Types based on API documentation
 type SolicitationType = {
