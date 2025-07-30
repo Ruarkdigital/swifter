@@ -527,10 +527,12 @@ const EvaluationDetailPage: React.FC = () => {
       header: "Actions",
       cell({ row }) {
         return (
-          <EvaluationScorecardSheet 
-            evaluatorId={row.original._id}
-            solicitationId={evaluation?.solicitation?._id || ""}
-          />
+          <div className="flex items-center gap-2">
+            <EvaluationScorecardSheet 
+              evaluatorId={row.original._id}
+              solicitationId={evaluation?.solicitation?._id || ""}
+            />
+          </div>
         )
       },
     }
@@ -1073,9 +1075,24 @@ const EvaluationDetailPage: React.FC = () => {
 
         <TabsContent value="evaluators" className="space-y-6">
           <div className="space-y-6 pt-5">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-              Evaluators
-            </h2>
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                Evaluators
+              </h2>
+              <EditEvaluationDialog
+                evaluationId={id}
+                page="groups"
+              >
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                >
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit Evaluators
+                </Button>
+              </EditEvaluationDialog>
+            </div>
             <DataTable
               data={evaluators}
               columns={evaluatorsColumns}
