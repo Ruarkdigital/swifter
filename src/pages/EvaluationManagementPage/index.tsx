@@ -35,6 +35,7 @@ type Evaluation = {
   daysLeft: number;
   status: "Active" | "Pending" | "Completed";
   owner: boolean;
+  timezone: string;
 };
 
 // Assigned Evaluation type definition
@@ -75,10 +76,11 @@ const transformEvaluationData = (
     name: item.solicitationName,
     solicitationId: item._id,
     type: item.solicitationType,
-    deadline: format(new Date(item.endDate), "MMM dd, yyyy pppp"),
+    deadline: format(new Date(item.endDate), "MMM dd, yyyy"),
     daysLeft: calculateDaysLeft(item.endDate),
     status: item.status as "Active" | "Pending" | "Completed",
     owner: item.owner,
+    timezone: item.timezone,
   }));
 };
 
@@ -108,10 +110,9 @@ const transformAssignedEvaluationData = (
       groupId: item.evaluationGroups?.[0]?._id || "",
       assignedDate: format(
         new Date(item.evaluationGroups?.[0]?.assignedOn),
-        "MMM dd, yyyy pppp"
+        "MMM dd, yyyy"
       ), // API doesn't provide assignedDate
-      deadline:
-        format(new Date(item.endDate), "MMM dd, yyyy pppp") ?? "N/A", // API doesn't provide deadline
+      deadline: format(new Date(item.endDate), "MMM dd, yyyy pppp") ?? "N/A", // API doesn't provide deadline
       progress: Math.round(item.averageProgress || 0),
       status,
     };
@@ -134,8 +135,11 @@ export const EvaluationManagementPage = () => {
 
   // Initialize filters from URL parameters
   useEffect(() => {
-    const statusParam = searchParams.get('status');
-    if (statusParam && ['Active', 'Pending', 'Completed'].includes(statusParam)) {
+    const statusParam = searchParams.get("status");
+    if (
+      statusParam &&
+      ["Active", "Pending", "Completed"].includes(statusParam)
+    ) {
       setStatusFilter(statusParam);
       setActiveStatCard(statusParam);
     }
@@ -207,8 +211,8 @@ export const EvaluationManagementPage = () => {
   // Handle stat card click for filtering
   const handleStatCardClick = (cardType: string) => {
     setActiveStatCard(cardType);
-    setPagination(prev => ({ ...prev, pageIndex: 0 }));
-    
+    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+
     switch (cardType) {
       case "all":
         setStatusFilter("");
@@ -287,6 +291,10 @@ export const EvaluationManagementPage = () => {
       ),
     },
     {
+      accessorKey: "timezone",
+      header: "Timezone",
+    },
+    {
       accessorKey: "status",
       header: "Status",
       cell: ({ row }) => <StatusBadge status={row.original.status} />,
@@ -355,6 +363,10 @@ export const EvaluationManagementPage = () => {
       ),
     },
     {
+      accessorKey: "timezone",
+      header: "Timezone",
+    },
+    {
       accessorKey: "status",
       header: "Status",
       cell: ({ row }) => <StatusBadge status={row.original.status} />,
@@ -416,15 +428,10 @@ export const EvaluationManagementPage = () => {
         </div>
       ),
     },
-    // {
-    //   accessorKey: "progress",
-    //   header: "Progress",
-    //   cell: ({ row }) => (
-    //     <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-    //       {row.original.progress}%
-    //     </span>
-    //   ),
-    // },
+    {
+      accessorKey: "timezone",
+      header: "Timezone",
+    },
     {
       id: "actions",
       header: "Actions",

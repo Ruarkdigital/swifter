@@ -701,9 +701,9 @@ const EvaluationDetailPage: React.FC = () => {
                       {evaluation?.startDate
                         ? format(
                             new Date(evaluation.startDate),
-                            "MMMM dd, yyyy pppp"
+                            "MMMM dd, yyyy"
                           )
-                        : "N/A"}
+                        : "N/A"} {" "} {evaluation?.timezone}
                     </p>
                   </div>
 
@@ -766,9 +766,9 @@ const EvaluationDetailPage: React.FC = () => {
                       {evaluation?.endDate
                         ? format(
                             new Date(evaluation.endDate),
-                            "MMMM dd, yyyy pppp"
+                            "MMMM dd, yyyy"
                           )
-                        : "N/A"}
+                        : "N/A"} {" "} {evaluation?.timezone}
                     </p>
                   </div>
 

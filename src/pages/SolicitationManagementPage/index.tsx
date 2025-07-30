@@ -891,10 +891,14 @@ export const SolicitationManagementPage = () => {
             <span>
               {safeFormatDate(
                 row.original.questionDeadline,
-                "MMM d, yyyy pppp"
+                "MMM d, yyyy"
               )}
             </span>
           ),
+        },
+        {
+          accessorKey: "timezone",
+          header: "Timezone",
         },
         {
           accessorKey: "status",

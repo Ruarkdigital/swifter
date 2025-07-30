@@ -13,6 +13,7 @@ type EvaluationDetail = {
   };
   startDate: string;
   endDate: string;
+  timezone: string;
   owner: boolean;
   evaluators: {
     groupId: string;
