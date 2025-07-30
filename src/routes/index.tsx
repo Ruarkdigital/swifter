@@ -220,6 +220,14 @@ export const routes = [
         ),
       },
       {
+        path: "/dashboard/invitations/:id",
+        element: (
+          <ProtectedRoute>
+            <InvitationsPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
         path: "/dashboard/user-management",
         element: (
           <ProtectedRoute>

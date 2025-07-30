@@ -138,9 +138,9 @@ const Step4Form = ({ control }: Step4FormProps) => {
                     name={`criteria.${index}.score`}
                     placeholder="Select Pass/Fail"
                     component={TextSelect}
+                    disabled
                     options={[
-                      { label: "Pass", value: "pass" },
-                      { label: "Fail", value: "fail" }
+                      { label: "Pass/Fail", value: "pass" },
                     ]}
                     containerClass="w-full"
                     defaultValue={String(criteriaTypes?.[index]?.score || "pass")}

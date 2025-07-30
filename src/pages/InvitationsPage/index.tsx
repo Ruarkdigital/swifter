@@ -1,5 +1,6 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useParams, useNavigate } from "react-router-dom";
 import { getRequest } from "@/lib/axiosInstance";
 import { ApiResponse, ApiResponseError } from "@/types";
 import { StatCard } from "./components/StatCard";
@@ -130,6 +131,8 @@ const StatusBadge = ({ status }: { status: Invitation["status"] }) => {
 };
 
 const InvitationsPage = () => {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [dateFilter, setDateFilter] = useState<string>("");
@@ -138,6 +141,13 @@ const InvitationsPage = () => {
     pageIndex: 0,
     pageSize: 10,
   });
+  const [selectedInvitation, setSelectedInvitation] = useState<Invitation | null>(null);
+  const [isSheetOpen, setIsSheetOpen] = useState<boolean>(false);
+
+  // Extract invitationId from URL params
+  const invitationId = id;
+
+
 
   // Handle filter changes
   const handleFilterChange = (filterTitle: string, value: string) => {
@@ -229,6 +239,18 @@ const InvitationsPage = () => {
     return invitationsData.data.data.map(transformSolicitationToInvitation);
   }, [invitationsData]);
 
+  // Effect to handle URL parameter and auto-open sheet
+  useEffect(() => {
+    if (invitationId && transformedData.length > 0) {
+      // Find the invitation with the matching ID
+      const invitation = transformedData.find(inv => inv.id === invitationId);
+      if (invitation) {
+        setSelectedInvitation(invitation);
+        setIsSheetOpen(true);
+      }
+    }
+  }, [invitationId, transformedData]);
+
   // Calculate statistics from the API dashboard data
   const invitationStats = useMemo(() => {
     if (!dashboardStatsData?.data?.data) {
@@ -263,9 +285,15 @@ const InvitationsPage = () => {
       header: "Solicitation Name",
       cell: ({ row }) => (
         <div className="flex flex-col">
-          <span className="font-medium text-gray-900 dark:text-gray-100">
+          <button
+            onClick={() => {
+              setSelectedInvitation(row.original);
+              setIsSheetOpen(true);
+            }}
+            className="text-blue-600 hover:text-blue-800 underline cursor-pointer text-left font-medium"
+          >
             {row.original.solicitationName}
-          </span>
+          </button>
           <span className="text-sm text-gray-500 dark:text-gray-400">
             {row.original.solicitationId} • {row.original.rfp}
           </span>
@@ -456,6 +484,26 @@ const InvitationsPage = () => {
             </div>
           </div>
         )}
+      />
+      
+      {/* Solicitation Details Sheet */}
+      <SolicitationDetailsSheet
+        open={isSheetOpen}
+        onOpenChange={(open) => {
+          setIsSheetOpen(open);
+          if (!open) {
+            setSelectedInvitation(null);
+            // Navigate back to invitations page without ID if we came from a direct link
+            if (invitationId) {
+              navigate('/dashboard/invitations', { replace: true });
+            }
+          }
+        }}
+        solicitation={selectedInvitation ? {
+          id: selectedInvitation.id,
+          solicitationName: selectedInvitation.solicitationName,
+          status: selectedInvitation.status,
+        } : undefined}
       />
     </div>
   );
