@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Trash2, Plus } from "lucide-react";
 import { useFieldArray, Control, useWatch } from "react-hook-form";
+import { useEffect } from "react";
 import { Forger } from "@/lib/forge";
 import { TextInput } from "@/components/layouts/FormInputs/TextInput";
 import { TextSelect } from "@/components/layouts/FormInputs/TextSelect";
@@ -14,13 +15,22 @@ interface Step4FormProps {
 }
 
 const Step4Form = ({ control }: Step4FormProps) => {
-  const { fields, append, remove } = useFieldArray({
+  const { fields, append, remove, update } = useFieldArray({
     control,
     name: "criteria",
   });
 
   const value = useWatch({ control, name: "group" });
   const criteriaTypes = useWatch({ control, name: "criteria" });
+
+  // Watch for type changes and reset score to "pass" when switching to pass_fail
+  useEffect(() => {
+    criteriaTypes?.forEach((criteria, index) => {
+      if (criteria.type === "pass_fail" && criteria.score !== "pass") {
+        update(index, { ...criteria, score: "pass" });
+      }
+    });
+  }, [criteriaTypes, update]);
 
   const addCriteria = () => {
     append({

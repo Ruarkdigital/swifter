@@ -27,7 +27,7 @@ const VendorStep2Form: React.FC<VendorStep2FormProps> = () => {
       <Forger
         name="location"
         component={TextInput}
-        label="Location"
+        label="Business Address"
         placeholder="Ottawa, Canada"
         containerClass="w-full"
       />

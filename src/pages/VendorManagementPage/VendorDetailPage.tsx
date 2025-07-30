@@ -83,9 +83,9 @@ const OverviewTab = ({ vendor }: { vendor: VendorDetail }) => {
         </p>
       </div>
 
-      {/* Location */}
+      {/* Business Address */}
       <div>
-        <h4 className="text-sm font-medium text-gray-500 mb-2">Location</h4>
+        <h4 className="text-sm font-medium text-gray-500 mb-2">Business Address</h4>
         <p className="text-sm text-gray-900 font-medium dark:text-gray-200">
           {vendor.location || "N/A"}
         </p>
