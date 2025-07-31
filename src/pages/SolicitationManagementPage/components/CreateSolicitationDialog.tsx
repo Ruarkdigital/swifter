@@ -71,6 +71,7 @@ const documentSchema = yup.mixed().test({
 
 const vendorSchema = yup.object({
   value: yup.string().required("Vendor ID is required"),
+  label: yup.string().optional(),
 });
 
 const step4Schema = yup.object({

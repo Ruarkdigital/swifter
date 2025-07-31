@@ -47,7 +47,7 @@ type User = {
 
 // API response types
 type UsersListResponse = {
-  data: User[];
+  data:Omit <User, "name">& { firstName: string }[];
   total: number;
   page: number;
   limit: number;
@@ -181,7 +181,7 @@ const UserManagementPage = () => {
             limit: pagination.pageSize,
             search: debouncedSearchQuery || undefined,
             status: statusFilter || undefined,
-            role: roleFilter ? roleFilter.replace('_', ' ') : undefined,
+            role: roleFilter ? roleFilter : undefined,
           },
         },
       }),
@@ -313,14 +313,14 @@ const UserManagementPage = () => {
   const filteredData = users;
 
   // Define table columns
-  const columns: ColumnDef<User>[] = [
+  const columns: ColumnDef<Omit<User, 'name'> & { firstName: string }>[] = [
     {
       accessorKey: "name",
       header: "User",
       cell: ({ row }) => (
         <div className="flex flex-col">
           <span className="font-medium text-gray-900 dark:text-gray-100">
-            {row.original.name}
+            {row.original.firstName}
           </span>
           <span className="text-sm text-blue-500 dark:text-blue-400 underline underline-offset-2">
             {row.original.email}
@@ -387,7 +387,7 @@ const UserManagementPage = () => {
               {row.original.status === "pending" && (
                 <DropdownMenuItem
                   onClick={() => {
-                    setSelectedUser(row.original);
+                    setSelectedUser(row.original as any);
                     setIsReminderDialogOpen(true);
                   }}
                   className="p-3"
@@ -455,7 +455,7 @@ const UserManagementPage = () => {
       {/* Users Table */}
       <DataTable
         data={filteredData}
-        columns={columns}
+        columns={columns as any}
         header={() => (
           <div className="p-6 py-3 w-full border-b border-gray-200 dark:border-gray-700">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">

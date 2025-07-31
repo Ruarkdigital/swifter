@@ -110,10 +110,10 @@ const UserStats: React.FC<UserStatsProps> = ({
         onFilterChange("status", "inactive");
         break;
       case "Admins":
-        onFilterChange("role", "admin");
+        onFilterChange("role", "company_admin");
         break;
       case "Procurement Leads":
-        onFilterChange("role", "procurement_lead");
+        onFilterChange("role", "procurement");
         break;
       case "Evaluators":
         onFilterChange("role", "evaluator");

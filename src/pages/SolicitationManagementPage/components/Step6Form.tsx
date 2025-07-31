@@ -289,7 +289,7 @@ const Step6Form = ({ formData, setStep }: Step6FormProps) => {
                           •
                         </span>
                         <span className="text-sm text-gray-900 dark:text-gray-100">
-                          {vendor?.value}
+                          {vendor?.label || vendor?.value}
                         </span>
                       </div>
                     ))}

@@ -8,7 +8,6 @@ interface ActivityComponentProps {
 }
 
 export const ActivityComponent: React.FC<ActivityComponentProps> = ({ activity }) => {
-  console.log({ activity })
   return (
     <Card className="bg-white dark:bg-slate-950">
       <CardHeader className="pb-3">

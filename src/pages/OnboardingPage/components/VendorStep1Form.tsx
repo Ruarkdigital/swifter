@@ -3,26 +3,37 @@ import { TextInput, TextSelect } from "@/components/layouts/FormInputs";
 import { Forger } from "@/lib/forge";
 import { Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { getRequest } from "@/lib/axiosInstance";
+import { ApiResponse, ApiResponseError } from "@/types";
 
 interface VendorStep1FormProps {}
 
-// Category options
-const categoryOptions = [
-  { label: "IT Operations", value: "it_operations" },
-  { label: "Software Development", value: "software_development" },
-  { label: "Consulting Services", value: "consulting_services" },
-  { label: "Marketing & Advertising", value: "marketing_advertising" },
-  { label: "Financial Services", value: "financial_services" },
-  { label: "Healthcare", value: "healthcare" },
-  { label: "Education", value: "education" },
-  { label: "Manufacturing", value: "manufacturing" },
-  { label: "Retail", value: "retail" },
-  { label: "Other", value: "other" },
-];
+// Types for category API
+type VendorCategory = {
+  _id?: string;
+  name: string;
+};
 
 const VendorStep1Form: React.FC<VendorStep1FormProps> = ({}) => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  // Fetch vendor categories
+  const { data: categoriesData } = useQuery<
+    ApiResponse<VendorCategory[]>,
+    ApiResponseError
+  >({
+    queryKey: ["vendorCategories"],
+    queryFn: async () =>
+      await getRequest({ url: "/procurement/solicitations/meta/categories" }),
+  });
+
+  const categoryOptions =
+    categoriesData?.data.data?.map((category) => ({
+      label: category.name,
+      value: category._id || category.name,
+    })) || [];
 
 
   return (

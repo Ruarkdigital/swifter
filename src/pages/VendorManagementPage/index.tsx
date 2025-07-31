@@ -444,7 +444,7 @@ export const VendorManagementPage = () => {
       accessorKey: "businessType",
       header: "Business Type",
       cell: ({ row }) => (
-        <span className="text-xs">{row.original.businessType || "N/A"}</span>
+        <span className="text-xs capitalize">{row.original.businessType || "N/A"}</span>
       ),
     },
     {

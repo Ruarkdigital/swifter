@@ -78,7 +78,7 @@ const OverviewTab = ({ vendor }: { vendor: VendorDetail }) => {
         <h4 className="text-sm font-medium text-gray-500 mb-2">
           Business Type
         </h4>
-        <p className="text-sm text-gray-900 dark:text-gray-200 font-medium">
+        <p className="text-sm text-gray-900 dark:text-gray-200 font-medium capitalize">
           {vendor.businessType || "N/A"}
         </p>
       </div>

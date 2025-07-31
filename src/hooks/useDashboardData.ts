@@ -91,7 +91,7 @@ export interface EvaluatorEvaluationActivity {
 // Vendor Dashboard Data Types
 export interface VendorMyActions {
   action: string;
-  solicitationId: string,
+  solicitationId: string;
   solicitation: {
     _id: string;
     name: string;
@@ -141,71 +141,6 @@ export const useDashboardData = (
     return chartFilters[chartId] || defaultFilter;
   };
 
-  // Function to get chart-specific data
-  const getChartData = (chartId?: string) => {
-    if(!chartId) return []
-    // const filter = getFilterForChart(chartId);
-
-    // Debug logging for API data
-    console.log(`[DEBUG] getChartData called for chartId: ${chartId}`);
-    
-    // Map chart IDs to their corresponding data with proper transformation
-    switch (chartId) {
-      case "portal-role-distribution":
-        console.log('[DEBUG] Portal Role Distribution API Data:', roleDistribution?.data?.data);
-        const transformedRoleData = DashboardDataTransformer.transformRoleDistribution(roleDistribution?.data?.data);
-        console.log('[DEBUG] Transformed Portal Role Data:', transformedRoleData);
-        return transformedRoleData;
-      case "weekly-activities":
-        return DashboardDataTransformer.transformWeeklyActivities(weeklyActivities?.data?.data);
-      case "sub-distribution":
-        return DashboardDataTransformer.transformSubDistribution(subDistribution?.data?.data);
-      case "company-status":
-        console.log('[DEBUG] Company Status API Data:', companyStatus?.data?.data);
-        // API returns array with nested timeStats: [{ timeStats: [...] }]
-        const companyStatusData = companyStatus?.data?.data;
-        let transformedCompanyStatus;
-        if (Array.isArray(companyStatusData) && companyStatusData.length > 0 && companyStatusData[0]?.timeStats) {
-          // Extract timeStats from the first element
-          transformedCompanyStatus = DashboardDataTransformer.transformCompanyStatus(companyStatusData[0]);
-        } else {
-          transformedCompanyStatus = DashboardDataTransformer.transformCompanyStatus(undefined);
-        }
-        console.log('[DEBUG] Transformed Company Status Data:', transformedCompanyStatus);
-        return transformedCompanyStatus;
-      case "module-usage":
-        console.log('[DEBUG] Module Usage API Data:', moduleUsage?.data?.data);
-        // API returns ModuleUsage object directly
-        const moduleUsageData = moduleUsage?.data?.data;
-        const transformedModuleData = DashboardDataTransformer.transformModuleUsage(moduleUsageData);
-        console.log('[DEBUG] Transformed Module Data:', transformedModuleData);
-        return transformedModuleData;
-      case "solicitation-status":
-        return DashboardDataTransformer.transformSolicitationStatusChart(solicitationStatus?.data?.data);
-      case "bid-intent":
-        return DashboardDataTransformer.transformBidIntentChart(bidIntent?.data?.data);
-      case "vendors-distribution":
-        return DashboardDataTransformer.transformVendorsDistribution(vendorsDistribution?.data?.data);
-      case "proposal-submission":
-        return DashboardDataTransformer.transformProposalSubmission(proposalSubmission?.data?.data);
-      case "company-role-distribution":
-        return DashboardDataTransformer.transformRoleDistribution(companyRoleDistribution?.data?.data);
-      case "procurement-solicitation-status":
-        return DashboardDataTransformer.transformSolicitationStatusChart(procurementSolicitationStatus?.data?.data);
-      case "procurement-bid-intent":
-        return DashboardDataTransformer.transformBidIntentChart(procurementBidIntent?.data?.data);
-      case "procurement-vendors-distribution":
-        return DashboardDataTransformer.transformVendorsDistribution(procurementVendorsDistribution?.data?.data);
-      case "procurement-proposal-submission":
-        return DashboardDataTransformer.transformProposalSubmission(procurementProposalSubmission?.data?.data);
-      case "procurement-weekly-activities":
-        return DashboardDataTransformer.transformWeeklyActivities(procurementWeeklyActivities?.data?.data);
-      case "procurement-total-evaluations":
-        return DashboardDataTransformer.transformTotalEvaluations(procurementTotalEvaluations?.data?.data);
-      default:
-        return [];
-    }
-  };
   // SuperAdmin dashboard count
   const { data: dashboardCount, isLoading: isLoadingCount } = useQuery<
     ApiResponse<SuperAdminDashboardCount>,
@@ -705,6 +640,109 @@ export const useDashboardData = (
     refetchOnWindowFocus: false,
     refetchOnMount: false,
   });
+
+  // Function to get chart-specific data
+  const getChartData = (chartId?: string) => {
+    if (!chartId) return [];
+    // const filter = getFilterForChart(chartId);
+
+    // Debug logging for API data
+    console.log(`[DEBUG] getChartData called for chartId: ${chartId}`);
+
+    // Map chart IDs to their corresponding data with proper transformation
+    switch (chartId) {
+      case "portal-role-distribution":
+        return DashboardDataTransformer.transformRoleDistribution(
+          roleDistribution?.data?.data
+        );
+      case "weekly-activities":
+        return DashboardDataTransformer.transformWeeklyActivities(
+          weeklyActivities?.data?.data
+        );
+      case "sub-distribution":
+        return DashboardDataTransformer.transformSubDistribution(
+          subDistribution?.data?.data
+        );
+      case "company-status":
+        // API returns array with nested timeStats: [{ timeStats: [...] }]
+        const companyStatusData = companyStatus?.data?.data;
+        let transformedCompanyStatus;
+        if (
+          Array.isArray(companyStatusData) &&
+          companyStatusData.length > 0 &&
+          companyStatusData[0]?.timeStats
+        ) {
+          // Extract timeStats from the first element
+          transformedCompanyStatus =
+            DashboardDataTransformer.transformCompanyStatus(
+              companyStatusData[0]
+            );
+        } else {
+          transformedCompanyStatus =
+            DashboardDataTransformer.transformCompanyStatus(undefined);
+        }
+        console.log(
+          "[DEBUG] Transformed Company Status Data:",
+          transformedCompanyStatus
+        );
+        return transformedCompanyStatus;
+      case "module-usage":
+        console.log("[DEBUG] Module Usage API Data:", moduleUsage?.data?.data);
+        // API returns ModuleUsage object directly
+        const moduleUsageData = moduleUsage?.data?.data;
+        return DashboardDataTransformer.transformModuleUsage(moduleUsageData);
+      case "solicitation-status":
+        return DashboardDataTransformer.transformSolicitationStatusChart(
+          solicitationStatus?.data?.data
+        );
+      case "bid-intent":
+        return DashboardDataTransformer.transformBidIntentChart(
+          bidIntent?.data?.data
+        );
+      case "vendors-distribution":
+        return DashboardDataTransformer.transformVendorsDistribution(
+          vendorsDistribution?.data?.data
+        );
+      case "proposal-submission":
+        console.log(
+          "[DEBUG] Proposal Submission API Data:",
+          proposalSubmission
+        );
+        return DashboardDataTransformer.transformProposalSubmission(
+          proposalSubmission?.data?.data
+        );
+      case "company-role-distribution":
+        return DashboardDataTransformer.transformRoleDistribution(
+          companyRoleDistribution?.data?.data
+        );
+      case "procurement-solicitation-status":
+        return DashboardDataTransformer.transformSolicitationStatusChart(
+          procurementSolicitationStatus?.data?.data
+        );
+      case "procurement-bid-intent":
+        return DashboardDataTransformer.transformBidIntentChart(
+          procurementBidIntent?.data?.data
+        );
+      case "procurement-vendors-distribution":
+        return DashboardDataTransformer.transformVendorsDistribution(
+          procurementVendorsDistribution?.data?.data
+        );
+      case "procurement-proposal-submission":
+        return DashboardDataTransformer.transformProposalSubmission(
+          procurementProposalSubmission?.data?.data
+        );
+      case "procurement-weekly-activities":
+        return DashboardDataTransformer.transformWeeklyActivities(
+          procurementWeeklyActivities?.data?.data
+        );
+      case "procurement-total-evaluations":
+        return DashboardDataTransformer.transformTotalEvaluations(
+          procurementTotalEvaluations?.data?.data
+        );
+      default:
+        return [];
+    }
+  };
 
   const isLoading =
     isLoadingCount ||

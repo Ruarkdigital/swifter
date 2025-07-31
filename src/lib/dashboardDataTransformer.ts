@@ -457,9 +457,11 @@ export class DashboardDataTransformer {
    * Transform Company Admin proposal submission data
    */
   static transformProposalSubmission(data: any) {
+    console.log({ data })
     if (!data || !Array.isArray(data)) {
       return [];
     }
+    
 
     return data.map((item: any) => ({
       date: item.date || "",
@@ -618,6 +620,8 @@ export class DashboardDataTransformer {
         percentage: total > 0 ? Math.round((data.invited / total) * 100) : 0,
       },
     ];
+
+    console.log({ chartData, data, total })
 
     return applyConsistentColors(chartData);
   }

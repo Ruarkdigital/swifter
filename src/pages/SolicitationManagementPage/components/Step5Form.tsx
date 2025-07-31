@@ -11,6 +11,7 @@ import { useMemo } from "react";
 type VendorEmailData = {
   email: string;
   _id: string;
+  name: string;
 };
 
 function Step5Form() {
@@ -25,8 +26,9 @@ function Step5Form() {
     if (!vendorsData?.data?.data) return [];
     
     return vendorsData.data.data.map((vendor) => ({
-      label: vendor.email,
+      label: vendor.name || vendor.email,
       value: vendor._id,
+      name: vendor.name,
     }));
   }, [vendorsData]);
 

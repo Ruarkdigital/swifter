@@ -3,7 +3,7 @@ import { Trash2, Plus } from "lucide-react";
 import { useFieldArray, Control, useWatch } from "react-hook-form";
 import { useEffect } from "react";
 import { Forger } from "@/lib/forge";
-import { TextInput } from "@/components/layouts/FormInputs/TextInput";
+import { TextInput, TextArea } from "@/components/layouts/FormInputs/TextInput";
 import { TextSelect } from "@/components/layouts/FormInputs/TextSelect";
 import { useQuery } from "@tanstack/react-query";
 import { ApiResponse, ApiResponseError } from "@/types";
@@ -22,6 +22,15 @@ const Step4Form = ({ control }: Step4FormProps) => {
 
   const value = useWatch({ control, name: "group" });
   const criteriaTypes = useWatch({ control, name: "criteria" });
+
+  // Calculate total weight score
+  const totalWeightScore = criteriaTypes?.reduce((total, criteria) => {
+    if (criteria.type === "weight" && criteria.score) {
+      const score = parseFloat(String(criteria.score));
+      return total + (isNaN(score) ? 0 : score);
+    }
+    return total;
+  }, 0) || 0;
 
   // Watch for type changes and reset score to "pass" when switching to pass_fail
   useEffect(() => {
@@ -92,6 +101,28 @@ const Step4Form = ({ control }: Step4FormProps) => {
         </span>
       </div>
 
+      {/* Total Score Indicator */}
+      <div className={`border rounded-lg px-3 py-1 flex items-center justify-between ${
+        totalWeightScore === 100 
+          ? "bg-green-50 border-green-200" 
+          : totalWeightScore > 100 
+          ? "bg-red-50 border-red-200" 
+          : "bg-yellow-50 border-yellow-200"
+      }`}>
+        <span className="text-sm font-medium text-gray-700">
+          Total Weight Score:
+        </span>
+        <span className={`text-lg font-bold ${
+          totalWeightScore === 100 
+            ? "text-green-600" 
+            : totalWeightScore > 100 
+            ? "text-red-600" 
+            : "text-yellow-600"
+        }`}>
+          {totalWeightScore}%
+        </span>
+      </div>
+
       <div className="space-y-4">
         {/* Header Row */}
         <div className="grid grid-cols-6 gap-4 text-sm font-medium text-gray-700 border-b pb-2 text-center">
@@ -123,11 +154,11 @@ const Step4Form = ({ control }: Step4FormProps) => {
 
               <div>
                 <Forger
-                  placeholder="Long Input"
+                  placeholder="Enter detailed description..."
                   name={`criteria.${index}.description`}
                   containerClass="w-full"
-                  component={TextInput}
-                  rows={1}
+                  component={TextArea}
+                  rows={3}
                 />
               </div>
 
@@ -163,6 +194,8 @@ const Step4Form = ({ control }: Step4FormProps) => {
                     containerClass="w-full"
                     component={TextInput}
                     type="number"
+                    min="0"
+                    max="100"
                   />
                 )}
               </div>

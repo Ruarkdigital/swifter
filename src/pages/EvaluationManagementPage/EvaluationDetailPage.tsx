@@ -254,7 +254,10 @@ const EvaluationDetailPage: React.FC = () => {
   // Handle release group
   const handleReleaseGroup = async () => {
     try {
-      const result = await releaseGroupMutation.mutateAsync(selectedGroupId);
+      const result = await releaseGroupMutation.mutateAsync({
+        evaluationGroupId: selectedGroupId,
+        evaluationId: id,
+      });
       if (result.status === 200) {
         toastHandlers.success("Release Group", "Group released successfully");
         setReleaseDialogOpen(false);
@@ -270,7 +273,10 @@ const EvaluationDetailPage: React.FC = () => {
   // Handle withhold group
   const handleWithholdGroup = async () => {
     try {
-      const result = await withholdGroupMutation.mutateAsync(selectedGroupId);
+      const result = await withholdGroupMutation.mutateAsync({
+        evaluationGroupId: selectedGroupId,
+        evaluationId: id,
+      });
       if (result.status === 200) {
         toastHandlers.success("Withhold Group", "Group withheld successfully");
         setWithholdDialogOpen(false);
@@ -407,19 +413,20 @@ const EvaluationDetailPage: React.FC = () => {
       ),
     },
     {
+      accessorKey: "description",
+      header: "Description",
+    },
+    {
       accessorKey: "passFail",
-      header: "Pass/Fail",
+      header: "Score",
       cell: ({ row }) => {
         const value = row.original.passFail;
         if (value === "-")
           return <span className="text-muted-foreground">-</span>;
         return (
-          <Badge
-            variant={value === "pass" ? "default" : "destructive"}
-            className="text-xs"
-          >
-            {value}
-          </Badge>
+          <span>
+            {value === "pass" ? "Pass / Fail" : value}
+          </span>
         );
       },
     },
@@ -852,7 +859,7 @@ const EvaluationDetailPage: React.FC = () => {
                     {group.groupName}
                   </h3>
                   <div className="flex gap-2">
-                    {isOwner && group.status === "Withheld" && (
+                    {isOwner && group.status === "Withhold" && (
                       <ConfirmAlert
                         type="success"
                         title="Release Group"
@@ -1039,7 +1046,7 @@ const EvaluationDetailPage: React.FC = () => {
                   Evaluation Criteria
                 </h2>
                 {isOwner && (
-                  <EditEvaluationDialog evaluationId={id} page="overview">
+                  <EditEvaluationDialog evaluationId={id} page="criteria">
                     <Button
                       variant="outline"
                       className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100"
@@ -1066,8 +1073,8 @@ const EvaluationDetailPage: React.FC = () => {
               )}
               classNames={{
                 container: "bg-white dark:bg-slate-950 rounded-xl px-3",
-                tCell: "text-center",
-                tHead: "text-center",
+                // tCell: "text-center",
+                // tHead: "text-center",
               }}
             />
           </div>
