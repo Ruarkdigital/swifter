@@ -181,7 +181,7 @@ const CreateSolicitationDialog = () => {
 
   const bidIntentOptions = [
     { label: "Required", value: "required" },
-    { label: "Not Required", value: "not-required" },
+    { label: "Not Required", value: "not required" },
   ];
 
   const visibilityOptions = [
@@ -203,12 +203,10 @@ const CreateSolicitationDialog = () => {
     },
     // Add mode for validation
     mode: "onChange",
-    // Ensure removed fields are permanently cleared from form state
-    shouldUnregister: true,
   });
 
   // File upload mutation
-  const { mutateAsync: uploadFiles } = useMutation<
+  const { mutateAsync: uploadFiles, isPending: isUploading } = useMutation<
     ApiResponse<
       {
         name: string;
@@ -682,11 +680,11 @@ const CreateSolicitationDialog = () => {
               <Button
                 type={currentStep === 6 ? "submit" : "button"}
                 onClick={currentStep === 6 ? undefined : validateAndProceed}
-                disabled={isPending}
+                disabled={isPending || isUploading}
                 className="px-8 py-2 bg-[#2A4467] hover:bg-[#1e3147] text-white rounded-lg"
               >
                 {currentStep === 6
-                  ? isPending
+                  ? isPending || isUploading
                     ? "Publishing..."
                     : "Publish"
                   : "Continue"}
