@@ -992,9 +992,12 @@ const EvaluationDetailPage: React.FC = () => {
                     </h4>
                     <Badge
                       variant="secondary"
-                      className="bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 border-yellow-200 dark:border-yellow-700"
+                      className={group.status === 'Release' 
+                        ? "bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 border-green-200 dark:border-green-700"
+                        : "bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 border-yellow-200 dark:border-yellow-700"
+                      }
                     >
-                      Pending
+                      {group.status}
                     </Badge>
                   </div>
                 </div>
