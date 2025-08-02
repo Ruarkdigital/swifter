@@ -15,11 +15,495 @@ import { DashboardConfig } from "@/config/dashboardConfig";
 import { applyConsistentColors } from "./chartColorUtils";
 import { format } from "date-fns";
 
+// Types for Recharts-compatible data formats
+export interface PieChartData {
+  [key: string]: string | number | undefined;
+  name: string;
+  value: number;
+  percentage?: number;
+}
+
+export interface LineChartData {
+  [key: string]: string | number;
+}
+
+export interface BarChartData {
+  [key: string]: string | number;
+}
+
+export type RechartsData = PieChartData | LineChartData | BarChartData;
+
+// Chart transformation utilities
+export class ChartDataTransformer {
+  /**
+   * Convert month number to short month name
+   */
+  static getMonthName(monthNumber: number): string {
+    const monthNames = [
+      "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+      "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+    ];
+    return monthNames[monthNumber - 1] || "Unknown";
+  }
+
+  /**
+   * Calculate percentage for pie/donut charts
+   */
+  static calculatePercentage(value: number, total: number): number {
+    return total > 0 ? Math.round((value / total) * 100) : 0;
+  }
+
+  /**
+   * Transform flat key-value objects to array format
+   */
+  static transformKeyValueToArray(data: Record<string, any>, valueKey = 'count'): PieChartData[] {
+    if (!data || typeof data !== 'object') return [];
+    
+    return Object.entries(data).map(([key, value]) => ({
+      name: key.charAt(0).toUpperCase() + key.slice(1),
+      value: typeof value === 'object' ? (value[valueKey] || 0) : (value || 0)
+    }));
+  }
+
+  /**
+   * Extract nested distribution arrays
+   */
+  static extractDistributionArray(data: any, distributionKey = 'distribution'): any[] {
+    if (!data) return [];
+    
+    // Handle nested structure like { data: { distribution: [...] } }
+    if (data.data && data.data[distributionKey]) {
+      return data.data[distributionKey];
+    }
+    
+    // Handle direct distribution array
+    if (data[distributionKey] && Array.isArray(data[distributionKey])) {
+      return data[distributionKey];
+    }
+    
+    return [];
+  }
+
+  /**
+   * Transform pie/donut chart data
+   */
+  static transformPieChart(rawData: any, chartId?: string): PieChartData[] {
+    if (!rawData) {
+      return this.getDefaultPieData(chartId);
+    }
+
+    // Handle different data structures based on chart type
+    switch (chartId) {
+      case 'solicitation-status':
+        return this.transformSolicitationStatusPie(rawData);
+      case 'vendors-distribution':
+      case 'vendors-bid-intent-status':
+        return this.transformVendorsDistributionPie(rawData);
+      case 'sub-distribution':
+        return this.transformSubscriptionDistributionPie(rawData);
+      case 'portal-role-distribution':
+        return this.transformRoleDistributionPie(rawData);
+      case 'bid-intent':
+        return this.transformBidIntentPie(rawData);
+      default:
+        return this.transformGenericPieData(rawData);
+    }
+  }
+
+  /**
+   * Transform line/area chart data
+   */
+  static transformLineChart(rawData: any, chartId?: string): LineChartData[] {
+    if (!rawData || !Array.isArray(rawData)) {
+      return this.getDefaultLineData(chartId);
+    }
+
+    return rawData.map((item: any) => {
+      const transformedItem: LineChartData = {};
+      
+      // Handle month conversion
+      if (item.month && typeof item.month === 'number') {
+        transformedItem.month = this.getMonthName(item.month);
+      } else if (item.month) {
+        transformedItem.month = item.month;
+      }
+      
+      // Handle date formatting
+      if (item.year && item.month) {
+        const monthName = typeof item.month === 'number' ? this.getMonthName(item.month) : item.month;
+        transformedItem.date = `${monthName} ${item.year}`;
+      }
+      
+      // Copy all other properties
+      Object.keys(item).forEach(key => {
+        if (key !== 'month' && key !== 'year') {
+          transformedItem[key] = item[key] || 0;
+        }
+      });
+      
+      return transformedItem;
+    });
+  }
+
+  /**
+   * Transform bar chart data
+   */
+  static transformBarChart(rawData: any, chartId?: string): BarChartData[] {
+    if (!rawData) {
+      return this.getDefaultBarData(chartId);
+    }
+
+    // Handle stacked bar charts (like company-status)
+    if (chartId === 'company-status' || chartId === 'total-evaluation') {
+      return this.transformStackedBarData(rawData);
+    }
+
+    // Handle vertical bar charts (like role-distribution)
+    if (chartId === 'role-distribution' || chartId === 'module-usage') {
+      return this.transformVerticalBarData(rawData);
+    }
+
+    // Handle array data
+    if (Array.isArray(rawData)) {
+      return rawData.map((item: any) => ({
+        name: item.name || item.roleName || 'Unknown',
+        value: item.value || item.count || 0,
+        ...item
+      }));
+    }
+
+    // Handle object data - transform to bar chart format
+     const keyValueData = this.transformKeyValueToArray(rawData);
+     return keyValueData.map(item => ({
+       name: item.name,
+       value: item.value
+     })) as BarChartData[];
+  }
+
+  /**
+   * Main transformation method - routes to appropriate chart transformer
+   */
+  static transformChart(chartId: string, rawApiData: any, chartType?: string): RechartsData[] {
+    try {
+      // Determine chart type from chartId if not provided
+      const inferredType = chartType || this.inferChartType(chartId);
+      
+      switch (inferredType) {
+        case 'pie':
+        case 'donut':
+          return this.transformPieChart(rawApiData, chartId);
+        case 'line':
+        case 'area':
+          return this.transformLineChart(rawApiData, chartId);
+        case 'bar':
+          return this.transformBarChart(rawApiData, chartId);
+        default:
+          console.warn(`Unknown chart type for chartId: ${chartId}`);
+          return [];
+      }
+    } catch (error) {
+      console.error(`Error transforming chart data for ${chartId}:`, error);
+      return this.getDefaultDataForChart(chartId);
+    }
+  }
+
+  // Private helper methods
+  private static inferChartType(chartId: string): string {
+    if (chartId.includes('status') || chartId.includes('distribution') || chartId.includes('intent')) {
+      return chartId.includes('donut') ? 'donut' : 'pie';
+    }
+    if (chartId.includes('activities') || chartId.includes('submission')) {
+      return chartId.includes('line') ? 'line' : 'area';
+    }
+    if (chartId.includes('evaluation') || chartId.includes('usage')) {
+      return 'bar';
+    }
+    return 'pie'; // default
+  }
+
+  private static transformSolicitationStatusPie(data: any): PieChartData[] {
+    const defaultData = [
+      { name: "Draft", value: 0 },
+      { name: "Active", value: 0 },
+      { name: "Under Evaluation", value: 0 },
+      { name: "Closed", value: 0 },
+      { name: "Awarded", value: 0 }
+    ];
+
+    if (!data) return applyConsistentColors(defaultData);
+
+    const chartData = [
+      { name: "Draft", value: data.draft || 0 },
+      { name: "Active", value: data.active || 0 },
+      { name: "Under Evaluation", value: data.evaluating || data.underEvaluating || 0 },
+      { name: "Closed", value: data.closed || 0 },
+      { name: "Awarded", value: data.awarded || 0 }
+    ];
+
+    return applyConsistentColors(chartData);
+  }
+
+  private static transformVendorsDistributionPie(data: any): PieChartData[] {
+    const defaultData = [
+      { name: "Active", value: 0, percentage: 0 },
+      { name: "Pending", value: 0, percentage: 0 },
+      { name: "Inactive", value: 0, percentage: 0 }
+    ];
+
+    if (!data) return applyConsistentColors(defaultData);
+
+    // Handle different API response structures
+    if (data.active && typeof data.active === 'object') {
+      const chartData = [
+        { name: "Active", value: data.active.count || 0, percentage: data.active.percentage || 0 },
+        { name: "Pending", value: data.pending?.count || 0, percentage: data.pending?.percentage || 0 },
+        { name: "Inactive", value: data.inactive?.count || 0, percentage: data.inactive?.percentage || 0 }
+      ];
+      return applyConsistentColors(chartData);
+    }
+
+    // Handle flat structure
+    const total = (data.invited || 0) + (data.confirmed || 0) + (data.declined || 0);
+    const chartData = [
+      { name: "Invited", value: data.invited || 0, percentage: this.calculatePercentage(data.invited || 0, total) },
+      { name: "Confirmed", value: data.confirmed || 0, percentage: this.calculatePercentage(data.confirmed || 0, total) },
+      { name: "Declined", value: data.declined || 0, percentage: this.calculatePercentage(data.declined || 0, total) }
+    ];
+
+    return applyConsistentColors(chartData);
+  }
+
+  private static transformSubscriptionDistributionPie(data: any): PieChartData[] {
+    const distributionArray = this.extractDistributionArray(data);
+    
+    if (distributionArray.length === 0) {
+      return applyConsistentColors([
+        { name: "Basic", value: 0 },
+        { name: "Pro", value: 0 },
+        { name: "Enterprise", value: 0 }
+      ]);
+    }
+
+    const chartData = distributionArray.map((item: any) => ({
+      name: item.plan || item.name || 'Unknown',
+      value: item.count || item.value || 0
+    }));
+
+    return applyConsistentColors(chartData);
+  }
+
+  private static transformRoleDistributionPie(data: any): PieChartData[] {
+    if (!data || !Array.isArray(data)) {
+      return applyConsistentColors([
+        { name: "Admin", value: 0 },
+        { name: "Procurement Lead", value: 0 },
+        { name: "Vendor", value: 0 }
+      ]);
+    }
+
+    const roleTitle = {
+      procurement: "Procurement Lead",
+      super_admin: "Super Admin",
+      company_admin: "Company Admin",
+      evaluator: "Evaluator",
+      vendor: "Vendor"
+    };
+
+    const chartData = data.map((item: any) => ({
+      name: roleTitle[item.roleName as keyof typeof roleTitle] || item.roleName || "Unknown Role",
+      value: parseInt(item.count) || 0
+    }));
+
+    return applyConsistentColors(chartData);
+  }
+
+  private static transformBidIntentPie(data: any): PieChartData[] {
+    if (!data) {
+      return applyConsistentColors([
+        { name: "Invited", value: 0, percentage: 0 },
+        { name: "Confirmed", value: 0, percentage: 0 },
+        { name: "Declined", value: 0, percentage: 0 }
+      ]);
+    }
+
+    const total = (data.invited || 0) + (data.confirmed || 0) + (data.declined || 0);
+    const chartData = [
+      { name: "Invited", value: data.invited || 0, percentage: this.calculatePercentage(data.invited || 0, total) },
+      { name: "Confirmed", value: data.confirmed || 0, percentage: this.calculatePercentage(data.confirmed || 0, total) },
+      { name: "Declined", value: data.declined || 0, percentage: this.calculatePercentage(data.declined || 0, total) }
+    ];
+
+    return applyConsistentColors(chartData);
+  }
+
+  private static transformGenericPieData(data: any): PieChartData[] {
+    if (Array.isArray(data)) {
+      return applyConsistentColors(data.map((item: any) => ({
+        name: item.name || item.label || 'Unknown',
+        value: item.value || item.count || 0,
+        percentage: item.percentage
+      })));
+    }
+
+    return applyConsistentColors(this.transformKeyValueToArray(data));
+  }
+
+  private static transformStackedBarData(data: any): BarChartData[] {
+    // Handle company status with timeStats
+    if (data && data[0] && data[0].timeStats) {
+      const timeStats = data[0].timeStats;
+      return timeStats.map((item: any, index: number) => {
+        const month = item.label || this.getMonthName((index % 12) + 1);
+        const total = item.total || 0;
+        const active = item.active || 0;
+        const expiring = item.expiring || 0;
+        const suspended = Math.max(0, total - active - expiring);
+        
+        return {
+          month,
+          active,
+          suspended,
+          pending: expiring
+        };
+      });
+    }
+
+    // Handle array data with month/time information
+    if (Array.isArray(data)) {
+      return data.map((item: any) => {
+        const result: BarChartData = {};
+        
+        if (item.month) {
+          result.month = typeof item.month === 'number' ? this.getMonthName(item.month) : item.month;
+        }
+        
+        Object.keys(item).forEach(key => {
+          if (key !== 'month') {
+            result[key] = item[key] || 0;
+          }
+        });
+        
+        return result;
+      });
+    }
+
+    return [];
+  }
+
+  private static transformVerticalBarData(data: any): BarChartData[] {
+    if (Array.isArray(data)) {
+      return data.map((item: any) => ({
+        name: item.name || item.roleName || 'Unknown',
+        value: item.value || item.count || 0
+      }));
+    }
+
+    // Handle module usage type data
+    if (data && typeof data === 'object') {
+      return [
+        { name: "Solicitation", value: data.solicitationUsage || 0 },
+        { name: "Evaluation", value: data.evaluationUsage || 0 },
+        { name: "Vendor", value: data.vendorUage || 0 }, // Keep original typo from API
+        { name: "Addendum", value: data.adendumUsage || 0 }
+      ];
+    }
+
+    return [];
+  }
+
+  private static getDefaultPieData(chartId?: string): PieChartData[] {
+    const defaults: Record<string, PieChartData[]> = {
+      'solicitation-status': [
+        { name: "Draft", value: 0 },
+        { name: "Active", value: 0 },
+        { name: "Under Evaluation", value: 0 },
+        { name: "Closed", value: 0 }
+      ],
+      'vendors-distribution': [
+        { name: "Active", value: 0 },
+        { name: "Pending", value: 0 },
+        { name: "Inactive", value: 0 }
+      ],
+      'default': [
+        { name: "Category A", value: 0 },
+        { name: "Category B", value: 0 },
+        { name: "Category C", value: 0 }
+      ]
+    };
+
+    return applyConsistentColors(defaults[chartId || 'default'] || defaults.default);
+  }
+
+  private static getDefaultLineData(chartId?: string): LineChartData[] {
+    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    
+    if (chartId === 'proposal-submission') {
+      return months.slice(0, 6).map(month => ({
+        month,
+        submitted: 0,
+        declined: 0,
+        missedDeadline: 0
+      }));
+    }
+
+    return months.slice(0, 7).map(month => ({
+      month,
+      activities: 0
+    }));
+  }
+
+  private static getDefaultBarData(chartId?: string): BarChartData[] {
+    if (chartId === 'company-status') {
+      const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+      return months.map(month => ({
+        month,
+        active: 0,
+        suspended: 0,
+        pending: 0
+      }));
+    }
+
+    return [
+      { name: "Category A", value: 0 },
+      { name: "Category B", value: 0 },
+      { name: "Category C", value: 0 }
+    ];
+  }
+
+  private static getDefaultDataForChart(chartId: string): RechartsData[] {
+    if (chartId.includes('status') || chartId.includes('distribution')) {
+      return this.getDefaultPieData(chartId);
+    }
+    if (chartId.includes('activities') || chartId.includes('submission')) {
+      return this.getDefaultLineData(chartId);
+    }
+    if (chartId.includes('evaluation') || chartId.includes('usage')) {
+      return this.getDefaultBarData(chartId);
+    }
+    return this.getDefaultPieData(chartId);
+  }
+}
+
 /**
  * Transforms API data into dashboard configuration format
  * This ensures compatibility with existing UI components
  */
 export class DashboardDataTransformer {
+  /**
+   * Transform chart data using the new unified transformer
+   * @param chartId - Chart identifier
+   * @param rawData - Raw API data
+   * @param chartType - Optional chart type override
+   * @returns Recharts-compatible data
+   */
+  static transformChartData(
+    chartId: string,
+    rawData: any,
+    chartType?: string
+  ): RechartsData[] {
+    return ChartDataTransformer.transformChart(chartId, rawData, chartType);
+  }
+
   /**
    * Transform SuperAdmin dashboard count data into stats cards
    */
@@ -457,17 +941,29 @@ export class DashboardDataTransformer {
    * Transform Company Admin proposal submission data
    */
   static transformProposalSubmission(data: any) {
-    console.log({ data })
     if (!data || !Array.isArray(data)) {
       return [];
     }
     
-
-    return data.map((item: any) => ({
-      date: item.date || "",
-      count: item.count || 0,
-      ...item,
-    }));
+    return data.map((item: any) => {
+      // Create month-year label for x-axis
+      const monthNames = [
+        "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+        "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+      ];
+      const monthLabel = monthNames[item.month - 1] || "Unknown";
+      const dateLabel = `${monthLabel} ${item.year}`;
+      
+      return {
+        date: dateLabel,
+        submitted: item.submitted || 0,
+        missedDeadline: item.missedDeadline || 0,
+        declined: item.declined || 0,
+        // Keep backward compatibility
+        count: (item.submitted || 0) + (item.missedDeadline || 0) + (item.declined || 0),
+        ...item,
+      };
+    });
   }
 
   /**
@@ -700,16 +1196,31 @@ export class DashboardDataTransformer {
     if (!data || !Array.isArray(data)) {
       return Array.from({ length: 7 }, (_, i) => ({
         day: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"][i],
-        submissions: 0,
-        evaluations: 0,
+        submitted: 0,
+        missedDeadline: 0,
+        declined: 0,
       }));
     }
 
-    return data.map((item: any) => ({
-      day: item.label || item.day || "Unknown",
-      submissions: item.submissions || item.value || 0,
-      evaluations: item.evaluations || 0,
-    }));
+    return data.map((item: any) => {
+      // Create month-year label for x-axis
+      const monthNames = [
+        "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+        "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+      ];
+      const monthLabel = monthNames[item.month - 1] || "Unknown";
+      const dateLabel = `${monthLabel} ${item.year}`;
+      
+      return {
+        day: dateLabel,
+        submitted: item.submitted || 0,
+        missedDeadline: item.missedDeadline || 0,
+        declined: item.declined || 0,
+        // Keep backward compatibility
+        submissions: item.submitted || 0,
+        evaluations: item.missedDeadline || 0,
+      };
+    });
   }
 
   /**

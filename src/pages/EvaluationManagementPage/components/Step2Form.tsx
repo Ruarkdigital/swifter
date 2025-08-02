@@ -81,6 +81,8 @@ const Step2Form = ({ control }: Step2FormProps) => {
                 options={evaluatorOptions}
                 maxCount={10}
                 hideClearAllButton={false}
+                creatable={true}
+                createLabel="Add email"
                 emptyIndicator={<p className="text-center text-sm text-gray-500">No evaluators found</p>}
               />
             </div>

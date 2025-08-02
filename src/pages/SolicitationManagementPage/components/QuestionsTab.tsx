@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { HelpCircle, Info } from "lucide-react";
 import { getRequest, postRequest } from "@/lib/axiosInstance";
@@ -6,6 +6,7 @@ import { useParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToastHandler } from "@/hooks/useToaster";
 import { useUserRole } from "@/hooks/useUserRole";
+import { useUser } from "@/store/authSlice";
 import { Button } from "@/components/ui/button";
 import MessageThread from "./MessageThread";
 import MessageComposer from "./MessageComposer";
@@ -63,6 +64,7 @@ const QuestionsTab: React.FC = () => {
   const toastHandler = useToastHandler();
   const { id: solicitationId } = useParams<{ id: string }>();
   const { isVendor, isProcurement, isEvaluator } = useUserRole();
+  const user = useUser();
   const [replyToQuestion, setReplyToQuestion] = useState<Question | null>(null);
   const [sendType, setSendType] = useState<"reply" | "addendum" | null>(null);
   const [showCreateQuestion, setShowCreateQuestion] = useState(false);
@@ -141,7 +143,39 @@ const QuestionsTab: React.FC = () => {
     },
   });
 
-  const questions: Question[] = questionsData?.data?.questions || [];
+  // Filter questions based on vendor visibility rules
+  const filteredQuestions: Question[] = useMemo(() => {
+    const allQuestions = questionsData?.data?.questions || [];
+    
+    if (!isVendor || !user) {
+      // Non-vendors see all questions
+      return allQuestions;
+    }
+    
+    // For vendors: only show questions they submitted OR questions with published responses
+    return allQuestions.filter((question: Question) => {
+      // Show questions submitted by the current vendor
+      if (question.user._id === user._id) {
+        return true;
+      }
+      
+      // Show questions that have been answered (published responses)
+      if (question.isAnswered && question.responses && question.responses.length > 0) {
+        // Check if any response is from procurement/evaluator (published response)
+        const hasPublishedResponse = question.responses.some((response: QuestionResponse) => {
+          return response.user.role.name === 'procurement' || 
+                 response.user.role.name === 'evaluator' || 
+                 response.user.role.name === 'company_admin' || 
+                 response.user.role.name === 'super_admin';
+        });
+        return hasPublishedResponse;
+      }
+      
+      return false;
+    });
+  }, [questionsData?.data?.questions, isVendor, user]);
+  
+  const questions: Question[] = filteredQuestions;
   const unansweredQuestions = questions.filter((q: Question) => !q.isAnswered);
   const answeredQuestions = questions.filter((q: Question) => q.isAnswered);
 

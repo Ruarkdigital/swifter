@@ -55,10 +55,10 @@ const eventSchema = yup.object({
   date: yup.string().required("Date is required"),
   time: yup.string().required("Time is required"),
   note: yup.string().optional(),
-});
+}).optional();
 
 const step3Schema = yup.object({
-  event: yup.array().of(eventSchema).min(1, "At least one event is required"),
+  event: yup.array().of(eventSchema).optional(),
 });
 
 const documentSchema = yup.mixed().test({
@@ -109,6 +109,7 @@ type SolicitationCreateRequest = {
   status?: "draft" | "active" | "closed" | "awarded" | "evaluating";
   submissionDeadline: string;
   questionDeadline?: string;
+  bidIntent?: "required" | "not-required";
   bidIntentDeadline?: string;
   timezone?: string;
   events?: Array<{
@@ -202,6 +203,8 @@ const CreateSolicitationDialog = () => {
     },
     // Add mode for validation
     mode: "onChange",
+    // Ensure removed fields are permanently cleared from form state
+    shouldUnregister: true,
   });
 
   // File upload mutation
@@ -291,6 +294,7 @@ const CreateSolicitationDialog = () => {
         questionDeadline: completeData.questionAcceptanceDeadlineDate
           ? new Date(completeData.questionAcceptanceDeadlineDate).toISOString()
           : undefined,
+        bidIntent: completeData.bidIntent as "required" | "not-required",
         bidIntentDeadline: completeData.bidIntentDeadlineDate
           ? new Date(completeData.bidIntentDeadlineDate).toISOString()
           : undefined,
@@ -515,7 +519,7 @@ const CreateSolicitationDialog = () => {
           await step2Schema.validate(formValues, { abortEarly: false });
           break;
         case 3:
-          await step3Schema.validate(formValues, { abortEarly: false });
+          // await step3Schema.validate(formValues, { abortEarly: false });
           break;
         case 4:
           // // Skip validation for step 4 if no documents are uploaded
@@ -644,6 +648,8 @@ const CreateSolicitationDialog = () => {
               <Step6Form
                 setStep={(val) => setCurrentStep(val)}
                 formData={forge.getValues()}
+                solicitationTypes={solicitationTypes}
+                categoryOptions={categoryOptions}
               />
             </>
           )}

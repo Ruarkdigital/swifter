@@ -171,8 +171,8 @@ const EditEvaluationDialog = ({
       mutationKey: ["updateEvaluation", evaluationId],
       mutationFn: async (evaluationData) =>
         await putRequest({
-          url: `/procurement/evaluations/${evaluationId}`,
-          payload: evaluationData,
+          url: `/procurement/evaluations`,
+          payload: { ...evaluationData, id: evaluationId },
         }),
       onSuccess: () => {
         // Invalidate and refetch evaluation data

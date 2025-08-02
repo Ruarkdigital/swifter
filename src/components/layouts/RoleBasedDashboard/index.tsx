@@ -94,19 +94,16 @@ export const RoleBasedDashboard: React.FC = () => {
                       },
                     };
                   case "company-status":
-                    console.log('[DEBUG] Company Status - enhancedDashboardConfig data:', transformedStatusData);
                     return {
                       ...chart,
                       data: transformedStatusData,
                     };
                   case "module-usage":
-                    console.log('[DEBUG] Module Usage - enhancedDashboardConfig data:', transformedModuleData);
                     return {
                       ...chart,
                       data: transformedModuleData,
                     };
                   case "portal-role-distribution":
-                    console.log('[DEBUG] Portal Role Distribution - enhancedDashboardConfig data:', transformedRoleData);
                     return {
                       ...chart,
                       data: transformedRoleData,
@@ -292,28 +289,37 @@ export const RoleBasedDashboard: React.FC = () => {
           procurementDashboard
         );
       const transformedSolicitationStatus =
-        DashboardDataTransformer.transformProcurementSolicitationStatus(
+        DashboardDataTransformer.transformChartData(
+          "solicitation-status",
           procurementSolicitationStatus
         );
       const transformedBidIntent =
-        DashboardDataTransformer.transformProcurementBidIntent(
+        DashboardDataTransformer.transformChartData(
+          "bid-intent",
           procurementBidIntent
         );
       const transformedVendorsDistribution =
-        DashboardDataTransformer.transformProcurementVendorsDistribution(
+        DashboardDataTransformer.transformChartData(
+          "vendors-distribution",
           procurementVendorsDistribution
         );
       const transformedProposalSubmission =
-        DashboardDataTransformer.transformProcurementProposalSubmission(
-          procurementProposalSubmission
+        DashboardDataTransformer.transformChartData(
+          "proposal-submission",
+          procurementProposalSubmission,
+          "line"
         );
       const transformedWeeklyData =
-        DashboardDataTransformer.transformProcurementWeeklyActivities(
-          procurementWeeklyActivities
+        DashboardDataTransformer.transformChartData(
+          "weekly-activities",
+          procurementWeeklyActivities,
+          "area"
         );
       const transformedTotalEvaluations =
-        DashboardDataTransformer.transformProcurementTotalEvaluations(
-          procurementTotalEvaluations
+        DashboardDataTransformer.transformChartData(
+          "total-evaluation",
+          procurementTotalEvaluations,
+          "bar"
         );
       const transformedProcurementMyActions =
         DashboardDataTransformer.transformProcurementMyActions(
@@ -324,7 +330,7 @@ export const RoleBasedDashboard: React.FC = () => {
           procurementGeneralUpdates
         );
 
-      return {
+      const payload = {
         ...dashboardConfig,
         stats: transformedProcurementStats,
         rows: dashboardConfig.rows.map((row) => {
@@ -399,7 +405,9 @@ export const RoleBasedDashboard: React.FC = () => {
 
           return row;
         }),
-      };
+      }
+
+      return payload;
     }
 
     // For other roles, return the original config

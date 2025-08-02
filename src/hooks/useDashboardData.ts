@@ -276,13 +276,13 @@ export const useDashboardData = (
             params: { range: getFilterForChart("solicitation-status") },
           },
         }),
-      enabled: userRole === "company_admin",
+      enabled: ["company_admin", "procurement"].includes(userRole),
       staleTime: 5 * 60 * 1000,
       refetchOnWindowFocus: false,
       refetchOnMount: false,
     });
 
-  // Company Admin Analytics - Bid Intent
+  // Company Admin and Procurement Analytics - Bid Intent
   const { data: bidIntent, isLoading: isLoadingBidIntent } = useQuery<
     ApiResponse<any>,
     ApiResponseError
@@ -295,7 +295,7 @@ export const useDashboardData = (
           params: { range: getFilterForChart("bid-intent") },
         },
       }),
-    enabled: userRole === "company_admin",
+    enabled: ["company_admin", "procurement"].includes(userRole),
     staleTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,
     refetchOnMount: false,
@@ -316,13 +316,13 @@ export const useDashboardData = (
             params: { range: getFilterForChart("vendors-distribution") },
           },
         }),
-      enabled: userRole === "company_admin",
+      enabled: ["company_admin", "procurement"].includes(userRole),
       staleTime: 5 * 60 * 1000,
       refetchOnWindowFocus: false,
       refetchOnMount: false,
     });
 
-  // Company Admin Analytics - Proposal Submission
+  // Company Admin and Procurement Analytics - Proposal Submission
   const { data: proposalSubmission, isLoading: isLoadingProposalSubmission } =
     useQuery<ApiResponse<any>, ApiResponseError>({
       queryKey: [
@@ -337,7 +337,7 @@ export const useDashboardData = (
             params: { range: getFilterForChart("proposal-submission") },
           },
         }),
-      enabled: userRole === "company_admin",
+      enabled: ["company_admin", "procurement"].includes(userRole),
       staleTime: 5 * 60 * 1000,
       refetchOnWindowFocus: false,
       refetchOnMount: false,
@@ -469,104 +469,6 @@ export const useDashboardData = (
       refetchOnMount: false,
     });
 
-  // Procurement Analytics - Solicitation Status
-  const {
-    data: procurementSolicitationStatus,
-    isLoading: isLoadingProcurementSolicitationStatus,
-  } = useQuery<ApiResponse<SolicitationStatusData>, ApiResponseError>({
-    queryKey: [
-      "procurement-solicitation-status",
-      userRole,
-      getFilterForChart("procurement-solicitation-status"),
-    ],
-    queryFn: async () =>
-      await getRequest({
-        url: "/procurement/solicitations/analytics/status",
-        config: {
-          params: {
-            range: getFilterForChart("procurement-solicitation-status"),
-          },
-        },
-      }),
-    enabled: userRole === "procurement",
-    staleTime: 5 * 60 * 1000,
-    refetchOnWindowFocus: false,
-    refetchOnMount: false,
-  });
-
-  // Procurement Analytics - Bid Intent
-  const {
-    data: procurementBidIntent,
-    isLoading: isLoadingProcurementBidIntent,
-  } = useQuery<ApiResponse<any>, ApiResponseError>({
-    queryKey: [
-      "procurement-bid-intent",
-      userRole,
-      getFilterForChart("procurement-bid-intent"),
-    ],
-    queryFn: async () =>
-      await getRequest({
-        url: "/procurement/solicitations/analytics/bid-intent",
-        config: {
-          params: { range: getFilterForChart("procurement-bid-intent") },
-        },
-      }),
-    enabled: userRole === "procurement",
-    staleTime: 5 * 60 * 1000,
-    refetchOnWindowFocus: false,
-    refetchOnMount: false,
-  });
-
-  // Procurement Analytics - Vendors Distribution
-  const {
-    data: procurementVendorsDistribution,
-    isLoading: isLoadingProcurementVendorsDistribution,
-  } = useQuery<ApiResponse<VendorsDistributionData>, ApiResponseError>({
-    queryKey: [
-      "procurement-vendors-distribution",
-      userRole,
-      getFilterForChart("procurement-vendors-distribution"),
-    ],
-    queryFn: async () =>
-      await getRequest({
-        url: "/procurement/solicitations/analytics/vendors-distribution",
-        config: {
-          params: {
-            range: getFilterForChart("procurement-vendors-distribution"),
-          },
-        },
-      }),
-    enabled: userRole === "procurement",
-    staleTime: 5 * 60 * 1000,
-    refetchOnWindowFocus: false,
-    refetchOnMount: false,
-  });
-
-  // Procurement Analytics - Proposal Submission
-  const {
-    data: procurementProposalSubmission,
-    isLoading: isLoadingProcurementProposalSubmission,
-  } = useQuery<ApiResponse<any>, ApiResponseError>({
-    queryKey: [
-      "procurement-proposal-submission",
-      userRole,
-      getFilterForChart("procurement-proposal-submission"),
-    ],
-    queryFn: async () =>
-      await getRequest({
-        url: "/procurement/solicitations/analytics/proposal-submission",
-        config: {
-          params: {
-            range: getFilterForChart("procurement-proposal-submission"),
-          },
-        },
-      }),
-    enabled: userRole === "procurement",
-    staleTime: 5 * 60 * 1000,
-    refetchOnWindowFocus: false,
-    refetchOnMount: false,
-  });
-
   // Procurement Analytics - Weekly Activities
   const {
     data: procurementWeeklyActivities,
@@ -646,9 +548,6 @@ export const useDashboardData = (
     if (!chartId) return [];
     // const filter = getFilterForChart(chartId);
 
-    // Debug logging for API data
-    console.log(`[DEBUG] getChartData called for chartId: ${chartId}`);
-
     // Map chart IDs to their corresponding data with proper transformation
     switch (chartId) {
       case "portal-role-distribution":
@@ -681,21 +580,22 @@ export const useDashboardData = (
           transformedCompanyStatus =
             DashboardDataTransformer.transformCompanyStatus(undefined);
         }
-        console.log(
-          "[DEBUG] Transformed Company Status Data:",
-          transformedCompanyStatus
-        );
         return transformedCompanyStatus;
       case "module-usage":
-        console.log("[DEBUG] Module Usage API Data:", moduleUsage?.data?.data);
         // API returns ModuleUsage object directly
         const moduleUsageData = moduleUsage?.data?.data;
         return DashboardDataTransformer.transformModuleUsage(moduleUsageData);
       case "solicitation-status":
-        return DashboardDataTransformer.transformSolicitationStatusChart(
-          solicitationStatus?.data?.data
+        const solicitationStatusData = solicitationStatus?.data?.data;
+        const res = DashboardDataTransformer.transformSolicitationStatusChart(
+          solicitationStatusData
         );
-      case "bid-intent":
+        return res;
+      case "vendors-bid-intent-status":
+        return DashboardDataTransformer.transformBidIntentChart(
+          bidIntent?.data?.data
+        );
+      case "vendors-intent-status":
         return DashboardDataTransformer.transformBidIntentChart(
           bidIntent?.data?.data
         );
@@ -704,40 +604,47 @@ export const useDashboardData = (
           vendorsDistribution?.data?.data
         );
       case "proposal-submission":
-        console.log(
-          "[DEBUG] Proposal Submission API Data:",
-          proposalSubmission
-        );
         return DashboardDataTransformer.transformProposalSubmission(
           proposalSubmission?.data?.data
         );
-      case "company-role-distribution":
+      case "role-distribution":
         return DashboardDataTransformer.transformRoleDistribution(
           companyRoleDistribution?.data?.data
         );
       case "procurement-solicitation-status":
-        return DashboardDataTransformer.transformSolicitationStatusChart(
-          procurementSolicitationStatus?.data?.data
+        return DashboardDataTransformer.transformChartData(
+          "solicitation-status",
+          solicitationStatus?.data?.data
         );
       case "procurement-bid-intent":
-        return DashboardDataTransformer.transformBidIntentChart(
-          procurementBidIntent?.data?.data
+        return DashboardDataTransformer.transformChartData(
+          "bid-intent",
+          bidIntent?.data?.data
         );
       case "procurement-vendors-distribution":
-        return DashboardDataTransformer.transformVendorsDistribution(
-          procurementVendorsDistribution?.data?.data
+        return DashboardDataTransformer.transformChartData(
+          "vendors-distribution",
+          vendorsDistribution?.data?.data
         );
       case "procurement-proposal-submission":
-        return DashboardDataTransformer.transformProposalSubmission(
-          procurementProposalSubmission?.data?.data
+        return DashboardDataTransformer.transformChartData(
+          "proposal-submission",
+          proposalSubmission?.data?.data,
+          "line"
         );
-      case "procurement-weekly-activities":
-        return DashboardDataTransformer.transformWeeklyActivities(
-          procurementWeeklyActivities?.data?.data
+      case "weekly-activities":
+        return DashboardDataTransformer.transformChartData(
+          "weekly-activities",
+          procurementWeeklyActivities?.data?.data,
+          "area"
         );
-      case "procurement-total-evaluations":
-        return DashboardDataTransformer.transformTotalEvaluations(
-          procurementTotalEvaluations?.data?.data
+      case "total-evaluation":
+        const resp = procurementTotalEvaluations?.data?.data;
+
+        return DashboardDataTransformer.transformChartData(
+          "total-evaluation",
+          resp,
+          "bar"
         );
       default:
         return [];
@@ -766,10 +673,9 @@ export const useDashboardData = (
     isLoadingVendorGeneralUpdates ||
     isLoadingProcurementMyActions ||
     isLoadingProcurementGeneralUpdates ||
-    isLoadingProcurementSolicitationStatus ||
-    isLoadingProcurementBidIntent ||
-    isLoadingProcurementVendorsDistribution ||
-    isLoadingProcurementProposalSubmission ||
+    // isLoadingProcurementSolicitationStatus ||
+    // isLoadingProcurementBidIntent ||
+    // isLoadingProcurementVendorsDistribution ||
     isLoadingProcurementWeeklyActivities ||
     isLoadingProcurementTotalEvaluations;
 
@@ -796,10 +702,10 @@ export const useDashboardData = (
     procurementGeneralUpdates: procurementGeneralUpdates?.data?.data,
 
     // Procurement Analytics data
-    procurementSolicitationStatus: procurementSolicitationStatus?.data?.data,
-    procurementBidIntent: procurementBidIntent?.data?.data,
-    procurementVendorsDistribution: procurementVendorsDistribution?.data?.data,
-    procurementProposalSubmission: procurementProposalSubmission?.data?.data,
+    procurementSolicitationStatus: solicitationStatus?.data?.data,
+    procurementBidIntent: bidIntent?.data?.data,
+    procurementVendorsDistribution: vendorsDistribution?.data?.data,
+    procurementProposalSubmission: proposalSubmission?.data?.data,
     procurementWeeklyActivities: procurementWeeklyActivities?.data?.data,
     procurementTotalEvaluations: procurementTotalEvaluations?.data?.data,
 

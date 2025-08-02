@@ -696,10 +696,10 @@ export const SolicitationManagementPage = () => {
     if (!searchQuery) return currentData;
     return currentData.filter(
       (item) =>
-        item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.contact.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.categories.some((cat) =>
-          cat.name.toLowerCase().includes(searchQuery.toLowerCase())
+        (item.name ?? '').toLowerCase().includes((searchQuery ?? '').toLowerCase()) ||
+        (item.contact ?? '').toLowerCase().includes((searchQuery ?? '').toLowerCase()) ||
+        (item.categories ?? []).some((cat) =>
+          (cat.name ?? '').toLowerCase().includes((searchQuery ?? '').toLowerCase())
         )
     );
   }, [currentData, searchQuery]);

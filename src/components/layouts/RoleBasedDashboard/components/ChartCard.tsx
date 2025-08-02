@@ -42,6 +42,7 @@ export const ChartComponent: React.FC<ChartComponentProps> = ({
   // Use dynamic chartData if provided, otherwise fallback to chart.data
   const data = chartData || chart.data;
   
+  
   const chartConfig = {
     value: {
       label: "Value",

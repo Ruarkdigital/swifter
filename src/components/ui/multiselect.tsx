@@ -39,6 +39,8 @@ interface MultiSelectProps {
   hideClearAllButton?: boolean
   hidePlaceholderWhenSelected?: boolean
   emptyIndicator?: React.ReactNode
+  creatable?: boolean
+  createLabel?: string
 }
 
 const MultipleSelector = React.forwardRef<
@@ -61,6 +63,8 @@ const MultipleSelector = React.forwardRef<
     hideClearAllButton = false,
     hidePlaceholderWhenSelected = false,
     emptyIndicator,
+    creatable = false,
+    createLabel = "Create",
     ...props
   },
   ref
@@ -70,6 +74,7 @@ const MultipleSelector = React.forwardRef<
   )
   const [isPopoverOpen, setIsPopoverOpen] = React.useState(false)
   const [isAnimating, setIsAnimating] = React.useState(false)
+  const [inputValue, setInputValue] = React.useState("")
 
   React.useEffect(() => {
     if (value) {
@@ -88,9 +93,45 @@ const MultipleSelector = React.forwardRef<
     [selectedValues, onValueChange]
   )
 
+  const createOption = React.useCallback(
+    (inputValue: string) => {
+      if (!inputValue.trim()) return
+      
+      // Basic email validation
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+      if (!emailRegex.test(inputValue.trim())) {
+        return // Don't create option if email is invalid
+      }
+      
+      const newOption: Option = {
+        label: inputValue.trim(),
+        value: inputValue.trim()
+      }
+      
+      // Check if option already exists
+      const exists = [...options, ...selectedValues].some(
+        option => option.value.toLowerCase() === newOption.value.toLowerCase()
+      )
+      
+      if (!exists) {
+        const newSelectedValues = [...selectedValues, newOption]
+        setSelectedValues(newSelectedValues)
+        onValueChange(newSelectedValues)
+        setInputValue("")
+      }
+    },
+    [options, selectedValues, onValueChange]
+  )
+
   const handleKeyDown = React.useCallback(
     (e: React.KeyboardEvent<HTMLDivElement>) => {
       const input = e.target as HTMLInputElement
+      if (e.key === "Enter" && creatable && input.value.trim()) {
+        e.preventDefault()
+        createOption(input.value)
+        return
+      }
+      
       if (input.value === "") {
         if (e.key === "Delete" || e.key === "Backspace") {
           if (selectedValues.length > 0) {
@@ -102,7 +143,7 @@ const MultipleSelector = React.forwardRef<
         }
       }
     },
-    [selectedValues, handleUnselect]
+    [selectedValues, handleUnselect, creatable, createOption]
   )
 
   const toggleOption = React.useCallback(
@@ -279,12 +320,31 @@ const MultipleSelector = React.forwardRef<
         onEscapeKeyDown={() => setIsPopoverOpen(false)}
       >
         <Command {...commandProps} onKeyDown={handleKeyDown} className="!w-full">
-          <CommandInput placeholder="Search..." className="dark:text-gray-100 dark:placeholder:text-gray-400" />
+          <CommandInput 
+            placeholder="Search..." 
+            className="dark:text-gray-100 dark:placeholder:text-gray-400" 
+            value={inputValue}
+            onValueChange={setInputValue}
+          />
           <CommandList>
             <CommandEmpty>
               {emptyIndicator ?? "No results found"}
             </CommandEmpty>
             <CommandGroup>
+              {creatable && inputValue.trim() && 
+                /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(inputValue.trim()) &&
+                !options.some(option => 
+                  option.value.toLowerCase() === inputValue.trim().toLowerCase()
+                ) && !selectedValues.some(option => 
+                  option.value.toLowerCase() === inputValue.trim().toLowerCase()
+                ) && (
+                <CommandItem
+                  onSelect={() => createOption(inputValue)}
+                  className="cursor-pointer dark:text-gray-200 dark:hover:bg-gray-700 dark:focus:bg-gray-700"
+                >
+                  <span className="text-blue-600 dark:text-blue-400">{createLabel} "{inputValue.trim()}"</span>
+                </CommandItem>
+              )}
               {options.map((option) => {
                 const isSelected = selectedValues.some(
                   (selectedValue) => selectedValue.value === option.value

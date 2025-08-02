@@ -22,6 +22,7 @@ export const STATUS_COLORS: StatusColorMap = {
   'success': '#22c55e',
   'approved': '#22c55e',
   'completed': '#22c55e',
+  'submitted': '#22c55e',
   
   // Pending/Warning states - Yellow
   'pending': '#eab308',
@@ -40,6 +41,8 @@ export const STATUS_COLORS: StatusColorMap = {
   'suspended': '#ef4444',
   'expired': '#ef4444',
   'late': '#ef4444',
+  'misseddeadline': '#ef4444',
+  'missed deadline': '#ef4444',
   
   // Neutral/Info states - Blue
   'total': '#3b82f6',

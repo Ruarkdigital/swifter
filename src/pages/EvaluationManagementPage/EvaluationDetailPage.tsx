@@ -54,6 +54,7 @@ type Evaluator = {
   _id: string;
   name: string;
   email: string;
+  progress: number;
   evaluationGroup: string;
   criteriaAssigned: number;
   status: "Completed" | "Pending";
@@ -303,6 +304,7 @@ const EvaluationDetailPage: React.FC = () => {
             email: evaluator.email,
             evaluationGroup: group.groupName,
             criteriaAssigned: group.criteriaCount,
+            progress: evaluator.progress ?? 0,
             status: evaluator.status === null ? "Pending" : "Completed",
           });
         });
@@ -521,8 +523,8 @@ const EvaluationDetailPage: React.FC = () => {
       header: "Evaluation Group",
     },
     {
-      accessorKey: "criteriaAssigned",
-      header: "Criteria Assigned",
+      accessorKey: "progress",
+      header: "Progress",
     },
     {
       accessorKey: "status",
@@ -863,7 +865,7 @@ const EvaluationDetailPage: React.FC = () => {
                       <ConfirmAlert
                         type="success"
                         title="Release Group"
-                        text={`Are you sure you want to release the group "${group.groupName}"? This action will make the evaluation results available to vendors.`}
+                        text={`This action will prevent the evaluators assigned to this group and criteria from evaluating`}
                         primaryButtonText="Release"
                         secondaryButtonText="Cancel"
                         onPrimaryAction={handleReleaseGroup}
@@ -892,7 +894,7 @@ const EvaluationDetailPage: React.FC = () => {
                       <ConfirmAlert
                         type="warning"
                         title="Withhold Group"
-                        text={`Are you sure you want to withhold the group "${group.groupName}"? This action will prevent vendors from accessing the evaluation results.`}
+                        text={`This action will enable the evaluators assigned to this group and criteria to evaluate`}
                         primaryButtonText="Withhold"
                         secondaryButtonText="Cancel"
                         onPrimaryAction={handleWithholdGroup}
@@ -980,7 +982,7 @@ const EvaluationDetailPage: React.FC = () => {
                     </h4>
                     <p className="text-gray-600 dark:text-gray-400">
                       {/* Placeholder for progress - would need additional API data */}
-                      Pending
+                     {group.averageProgress ?? 0}%
                     </p>
                   </div>
 

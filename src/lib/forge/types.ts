@@ -91,6 +91,7 @@ export type UseForgeProps<
   resolver?: Resolver<TFieldValues>;
   fields?: FieldProps<TFieldProps>[];
   mode?: "onBlur" | "onChange" | "onSubmit" | "onTouched" | "all";
+  shouldUnregister?: boolean;
 };
 
 export type UseForgeResult<T extends FieldValues, TFieldProps = unknown> = Omit<

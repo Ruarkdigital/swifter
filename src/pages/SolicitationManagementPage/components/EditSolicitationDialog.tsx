@@ -62,7 +62,7 @@ const eventSchema = yup.object({
 });
 
 const step3Schema = yup.object({
-  event: yup.array().of(eventSchema).min(1, "At least one event is required"),
+  event: yup.array().of(eventSchema).optional(),
 });
 
 const documentSchema = yup.object({
@@ -109,6 +109,7 @@ type SolicitationUpdateRequest = {
   status?: "draft" | "active" | "closed" | "awarded" | "evaluating";
   submissionDeadline: string;
   questionDeadline?: string;
+  bidIntent?: string;
   bidIntentDeadline?: string;
   timezone?: string;
   events?: Array<{
@@ -143,6 +144,7 @@ type Solicitation = {
   visibility: "public" | "private" | "invite-only";
   status: "draft" | "active" | "closed" | "awarded" | "evaluating";
   questionDeadline?: string;
+  bidIntent?: string;
   bidIntentDeadline?: string;
   timezone: string;
   events?: Array<{
@@ -408,7 +410,7 @@ const EditSolicitationDialog = ({
           : undefined,
         description: completeData.description,
         visibility: completeData.visibility as "public" | "invite-only",
-        status: solicitation.status, // Keep existing status
+        status: "active", // Set status to active when updating
         submissionDeadline: new Date(
           completeData.submissionDeadlineDate
         ).toISOString(),
@@ -546,6 +548,7 @@ const EditSolicitationDialog = ({
         questionDeadline: formData.questionAcceptanceDeadlineDate
           ? new Date(formData.questionAcceptanceDeadlineDate).toISOString()
           : solicitation.questionDeadline,
+          bidIntent: formData.bidIntent || solicitation.bidIntent,
         bidIntentDeadline: formData.bidIntentDeadlineDate
           ? new Date(formData.bidIntentDeadlineDate).toISOString()
           : solicitation.bidIntentDeadline,
@@ -710,6 +713,8 @@ const EditSolicitationDialog = ({
               <Step6Form
                 setStep={(val) => setCurrentStep(val)}
                 formData={forge.getValues() as any}
+                solicitationTypes={solicitationTypes}
+                categoryOptions={categoryOptions}
               />
             </>
           )}
@@ -717,10 +722,10 @@ const EditSolicitationDialog = ({
           {/* Footer Buttons */}
           <div
             className={cn("flex items-center justify-end pt-6  px-6 py-6", {
-              "justify-between": currentStep > 1,
+              "justify-between": currentStep > 1 && solicitation.status === "draft",
             })}
           >
-            {currentStep > 1 && (
+            {currentStep > 1 && solicitation.status === "draft" && (
               <Button
                 type="button"
                 variant="outline"

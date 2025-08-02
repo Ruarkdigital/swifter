@@ -8,7 +8,6 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Eye, Download, Loader2 } from "lucide-react";
 import { getRequest, putRequest } from "@/lib/axiosInstance";
@@ -95,6 +94,7 @@ type SolicitationDetails = {
 
 interface SolicitationDetailsSheetProps {
   open?: boolean;
+  disableButton?: boolean;
   onOpenChange?: (open: boolean) => void;
   solicitation?: {
     id: string;
@@ -107,6 +107,7 @@ const SolicitationDetailsSheet: React.FC<SolicitationDetailsSheetProps> = ({
   open,
   onOpenChange,
   solicitation,
+  disableButton
 }) => {
   const queryClient = useQueryClient();
   const toastHandlers = useToastHandler();
@@ -141,7 +142,7 @@ const SolicitationDetailsSheet: React.FC<SolicitationDetailsSheetProps> = ({
       putRequest({ url: `/vendor/solicitations/${solicitation?.id}/confirm` }),
     onSuccess: (result) => {
       toastHandlers.success(
-        "Invitation Confirmed",
+        "Interest Confirmed",
         result.data.message || "Successfully confirmed interest in solicitation"
       );
       // Invalidate and refetch related queries
@@ -149,6 +150,7 @@ const SolicitationDetailsSheet: React.FC<SolicitationDetailsSheetProps> = ({
         queryKey: ["solicitation-details", solicitation?.id],
       });
       queryClient.invalidateQueries({ queryKey: ["vendor-invitations"] });
+      queryClient.invalidateQueries({ queryKey: ["vendor-invitation-dashboard"] });
       // queryClient.invalidateQueries({ queryKey: ["vendor-solicitations"] });
       // Close the sheet
       onOpenChange?.(false);
@@ -179,6 +181,7 @@ const SolicitationDetailsSheet: React.FC<SolicitationDetailsSheetProps> = ({
         queryKey: ["solicitation-details", solicitation?.id],
       });
       queryClient.invalidateQueries({ queryKey: ["vendor-invitations"] });
+      queryClient.invalidateQueries({ queryKey: ["vendor-invitation-dashboard"] });
       queryClient.invalidateQueries({ queryKey: ["vendor-solicitations"] });
       // Close the sheet
       onOpenChange?.(false);
@@ -221,51 +224,47 @@ const SolicitationDetailsSheet: React.FC<SolicitationDetailsSheetProps> = ({
     return format(new Date(dateString), "hh:mm a");
   };
 
-  // Map status to badge variant
-  const getStatusBadge = (status: string) => {
-    switch (status?.toLowerCase()) {
-      case "active":
-        return {
-          text: "Active",
-          className:
-            "bg-green-100 dark:bg-green-800 text-green-800 dark:text-green-300",
-        };
-      case "draft":
-        return {
-          text: "Draft",
-          className:
-            "bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-300",
-        };
-      case "closed":
-        return {
-          text: "Closed",
-          className:
-            "bg-red-100 dark:bg-red-800 text-red-800 dark:text-red-300",
-        };
-      case "awarded":
-        return {
-          text: "Awarded",
-          className:
-            "bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-300",
-        };
-      case "evaluating":
-        return {
-          text: "Evaluating",
-          className:
-            "bg-yellow-100 dark:bg-yellow-800 text-yellow-800 dark:text-yellow-300",
-        };
-      default:
-        return {
-          text: "Not Selected",
-          className:
-            "bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-300",
-        };
-    }
-  };
-
-  const statusBadge = getStatusBadge(
-    details?.status || solicitation?.status || ""
-  );
+  // // Map status to badge variant
+  // const getStatusBadge = (status: string) => {
+  //   switch (status?.toLowerCase()) {
+  //     case "active":
+  //       return {
+  //         text: "Active",
+  //         className:
+  //           "bg-green-100 dark:bg-green-800 text-green-800 dark:text-green-300",
+  //       };
+  //     case "draft":
+  //       return {
+  //         text: "Draft",
+  //         className:
+  //           "bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-300",
+  //       };
+  //     case "closed":
+  //       return {
+  //         text: "Closed",
+  //         className:
+  //           "bg-red-100 dark:bg-red-800 text-red-800 dark:text-red-300",
+  //       };
+  //     case "awarded":
+  //       return {
+  //         text: "Awarded",
+  //         className:
+  //           "bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-300",
+  //       };
+  //     case "evaluating":
+  //       return {
+  //         text: "Evaluating",
+  //         className:
+  //           "bg-yellow-100 dark:bg-yellow-800 text-yellow-800 dark:text-yellow-300",
+  //       };
+  //     default:
+  //       return {
+  //         text: "Not Selected",
+  //         className:
+  //           "bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-300",
+  //       };
+  //   }
+  // };
 
   const getFileExtension = (fileName: string, fileType: string): string => {
     const extension = fileName.split(".").pop()?.toUpperCase();
@@ -301,11 +300,11 @@ const SolicitationDetailsSheet: React.FC<SolicitationDetailsSheetProps> = ({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetTrigger asChild>
+     {!disableButton && <SheetTrigger asChild>
         <h6 className="text-green-600 dark:text-green-400 underline underline-offset-8 cursor-pointer">
           View Details
         </h6>
-      </SheetTrigger>
+      </SheetTrigger>}
       <SheetContent
         side="right"
         className="w-full sm:max-w-2xl p-0 overflow-auto"
@@ -337,17 +336,12 @@ const SolicitationDetailsSheet: React.FC<SolicitationDetailsSheetProps> = ({
             <>
               {/* Project Header */}
               <div className="px-6 py-4">
-                <div className="flex items-center justify-between mb-4">
+                <div className="mb-4">
                   <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">
                     {details?.name ||
                       solicitation?.solicitationName ||
                       "Solicitation Details"}
                   </h1>
-                  <Badge
-                    className={`${statusBadge.className} hover:${statusBadge.className}`}
-                  >
-                    {statusBadge.text}
-                  </Badge>
                 </div>
                 <div className="flex items-center space-x-4 text-sm text-gray-600 dark:text-gray-400">
                   <span>{details?.solId}</span>
@@ -548,7 +542,7 @@ const SolicitationDetailsSheet: React.FC<SolicitationDetailsSheetProps> = ({
                             <div className="flex items-center space-x-3">
                               <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
                                 <span className="text-blue-600 dark:text-blue-400 font-semibold text-xs">
-                                  {getFileIcon(doc.type.toUpperCase())}
+                                  {getFileIcon(getFileExtension(doc.name,doc.type))}
                                 </span>
                               </div>
                               <div>

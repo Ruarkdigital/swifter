@@ -35,7 +35,9 @@ export type TextMultiSelectProps = {
   hideClearAllButton?: boolean;
   hidePlaceholderWhenSelected?: boolean;
   emptyIndicator?: React.ReactNode;
-};
+  creatable?: boolean;
+  createLabel?: string;
+}
 
 // Forge-compatible TextSelect component
 export const TextSelect = (props: TextSelectProps & Partial<ForgerSlotProps>) => {
@@ -123,6 +125,8 @@ export const TextMultiSelect = (props: TextMultiSelectProps & Partial<ForgerSlot
     hideClearAllButton = false,
     hidePlaceholderWhenSelected = false,
     emptyIndicator,
+    creatable = false,
+    createLabel = "Create",
     ...selectProps
   } = props;
 
@@ -166,6 +170,8 @@ export const TextMultiSelect = (props: TextMultiSelectProps & Partial<ForgerSlot
         hideClearAllButton={hideClearAllButton}
         hidePlaceholderWhenSelected={hidePlaceholderWhenSelected}
         emptyIndicator={emptyIndicator || <p className="text-center text-sm">No results found</p>}
+        creatable={creatable}
+        createLabel={createLabel}
         className={`w-full !h-12 border border-gray-300 rounded-lg focus:border-[#2A4467] focus:ring-[#2A4467] text-gray-900 dark:!text-gray-200 ${
           error ? "border-red-500" : ""
         }`}

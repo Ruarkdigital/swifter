@@ -1,6 +1,7 @@
 import { X, Plus } from "lucide-react";
 import { useWatch } from "react-hook-form";
 import { Forger, useFieldArray } from "@/lib/forge";
+import { useFormContext } from "react-hook-form";
 import { TextSelect } from "@/components/layouts/FormInputs/TextSelect";
 import {
   TextArea,
@@ -20,6 +21,7 @@ const Step3Form = ({
   eventOptions,
   control,
 }: Step3FormProps) => {
+  const { unregister } = useFormContext();
   const { append, fields, remove } = useFieldArray({
     name: "event" as unknown as string,
     control,
@@ -27,6 +29,25 @@ const Step3Form = ({
 
   const submissionDeadlineDate = useWatch({ name: "submissionDeadlineDate", control });
   const maxDate = submissionDeadlineDate ? new Date(submissionDeadlineDate) : undefined;
+
+  // Custom remove handler to ensure proper cleanup of nested fields
+  const handleRemove = (index: number) => {
+    // Manually unregister all nested fields for this event
+    const fieldNames = [
+      `event.${index}.event`,
+      `event.${index}.location`,
+      `event.${index}.date`,
+      `event.${index}.time`,
+      `event.${index}.note`,
+    ];
+    
+    fieldNames.forEach(fieldName => {
+      unregister(fieldName);
+    });
+    
+    // Remove the field from the array
+    remove(index);
+  };
 
   return (
     <div className="p-6 space-y-6">
@@ -36,7 +57,7 @@ const Step3Form = ({
           {...{
             index,
             eventOptions,
-            onRemove: remove,
+            onRemove: handleRemove,
             totalFields: fields.length,
             maxDate,
           }}
