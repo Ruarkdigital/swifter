@@ -148,14 +148,11 @@ type EditAddendumFormValues = {
 
 // Create useAddendums hook
 const useAddendums = (solicitationId: string) => {
-  const { isVendor } = useUserRole();
 
   return useQuery<ApiResponse<SolicitationAddendum[]>, ApiResponseError>({
     queryKey: ["addendums", solicitationId],
     queryFn: async () => {
-      const endpoint = isVendor
-        ? `/vendor/solicitations/${solicitationId}/addendums`
-        : `/procurement/solicitations/${solicitationId}/addendums`;
+      const endpoint = `/procurement/solicitations/${solicitationId}/addendums`;
       return await getRequest({ url: endpoint });
     },
     enabled: !!solicitationId,
@@ -193,11 +190,7 @@ const AddendumsTab: React.FC<AddendumsTabProps> = ({ solicitationId }) => {
     string
   >({
     mutationFn: async (addendumId: string) => {
-      // Use different API endpoint based on user role
-      const endpoint = isVendor
-        ? `/vendor/solicitations/${solicitationId}/addendums/${addendumId}` // Vendor-specific endpoint
-        : `/procurement/solicitations/${solicitationId}/addendums/${addendumId}`; // Default procurement endpoint
-
+      const endpoint = `/procurement/solicitations/${solicitationId}/addendums/${addendumId}`;
       return await deleteRequest({ url: endpoint });
     },
     onSuccess: () => {

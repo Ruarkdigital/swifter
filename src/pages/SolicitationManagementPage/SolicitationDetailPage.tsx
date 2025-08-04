@@ -1304,7 +1304,7 @@ export const SolicitationDetailPage = () => {
                   <p className="text-gray-900 dark:text-gray-200 font-medium">
                     {format(
                       new Date(solicitation.submissionDeadline),
-                      "MMMM dd, yyyy pppp"
+                      "yyyy-MM-dd HH:mm"
                     )}
                   </p>
                 </div>

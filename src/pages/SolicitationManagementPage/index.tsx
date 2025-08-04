@@ -698,6 +698,7 @@ export const SolicitationManagementPage = () => {
       (item) =>
         (item.name ?? '').toLowerCase().includes((searchQuery ?? '').toLowerCase()) ||
         (item.contact ?? '').toLowerCase().includes((searchQuery ?? '').toLowerCase()) ||
+        (item.solId ?? '').toLowerCase().includes((searchQuery ?? '').toLowerCase()) ||
         (item.categories ?? []).some((cat) =>
           (cat.name ?? '').toLowerCase().includes((searchQuery ?? '').toLowerCase())
         )
@@ -1124,19 +1125,34 @@ export const SolicitationManagementPage = () => {
             }}
           />
         )}
+        {isProcurement && (
+          <StatCard
+            title="Draft Solicitations"
+            value={dashboardStats.draft}
+            icon={IconMap["folder-open"] as any}
+            iconColor="text-gray-600"
+            iconBgColor="bg-gray-100"
+            onClick={() => {
+              setFilters((prev) => ({ ...prev, status: "draft", page: 1 }));
+              setPagination({ pageIndex: 0, pageSize: 10 });
+            }}
+          />
+        )}
+        {!isProcurement && (
+          <StatCard
+            title="Draft Proposal"
+            value={dashboardStats.draft}
+            icon={IconMap["folder-open"] as any}
+            iconColor="text-gray-600"
+            iconBgColor="bg-gray-100"
+            onClick={() => {
+              setFilters((prev) => ({ ...prev, status: "draft", page: 1 }));
+              setPagination({ pageIndex: 0, pageSize: 10 });
+            }}
+          />
+        )}
         <StatCard
-          title="Draft Solicitations"
-          value={dashboardStats.draft}
-          icon={IconMap["folder-open"] as any}
-          iconColor="text-gray-600"
-          iconBgColor="bg-gray-100"
-          onClick={() => {
-            setFilters((prev) => ({ ...prev, status: "draft", page: 1 }));
-            setPagination({ pageIndex: 0, pageSize: 10 });
-          }}
-        />
-        <StatCard
-          title="Awarded"
+          title={"Awarded Solicitation"}
           value={dashboardStats.awarded}
           icon={IconMap["folder-open"] as any}
           iconColor="text-blue-600"
@@ -1146,17 +1162,32 @@ export const SolicitationManagementPage = () => {
             setPagination({ pageIndex: 0, pageSize: 10 });
           }}
         />
-        <StatCard
-          title="Closed Evaluations"
-          value={dashboardStats.closed}
-          icon={IconMap["folder-open"] as any}
-          iconColor="text-red-600"
-          iconBgColor="bg-red-100"
-          onClick={() => {
-            setFilters((prev) => ({ ...prev, status: "closed", page: 1 }));
-            setPagination({ pageIndex: 0, pageSize: 10 });
-          }}
-        />
+        {!isProcurement && (
+          <StatCard
+            title="Closed Solicitations"
+            value={dashboardStats.closed}
+            icon={IconMap["folder-open"] as any}
+            iconColor="text-red-600"
+            iconBgColor="bg-red-100"
+            onClick={() => {
+              setFilters((prev) => ({ ...prev, status: "closed", page: 1 }));
+              setPagination({ pageIndex: 0, pageSize: 10 });
+            }}
+          />
+        )}
+        {isProcurement && (
+          <StatCard
+            title="Closed Evaluations"
+            value={dashboardStats.closed}
+            icon={IconMap["folder-open"] as any}
+            iconColor="text-red-600"
+            iconBgColor="bg-red-100"
+            onClick={() => {
+              setFilters((prev) => ({ ...prev, status: "closed", page: 1 }));
+              setPagination({ pageIndex: 0, pageSize: 10 });
+            }}
+          />
+        )}
       </div>
 
       <Tabs

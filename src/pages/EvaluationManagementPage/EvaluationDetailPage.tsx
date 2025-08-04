@@ -865,7 +865,7 @@ const EvaluationDetailPage: React.FC = () => {
                       <ConfirmAlert
                         type="success"
                         title="Release Group"
-                        text={`This action will prevent the evaluators assigned to this group and criteria from evaluating`}
+                        text={`This action will unseal the proposal documents, the evaluators will be notified to begin review and evaluation of the proposal.`}
                         primaryButtonText="Release"
                         secondaryButtonText="Cancel"
                         onPrimaryAction={handleReleaseGroup}

@@ -41,7 +41,8 @@ function Step5Form() {
           component={TextMultiSelect}
           options={vendorTags}
           placeholder="Select vendors"
-          maxCount={5}
+          maxCount={15}
+          creatable={true}
         />
         <span className="dark:text-gray-500 text-sm">
           Add with email address, Vendor name, domain name
