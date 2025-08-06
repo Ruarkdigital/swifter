@@ -1778,7 +1778,7 @@ export class DashboardDataTransformer {
         id: action.solicitation._id || action.evaluation._id,
         name: action.solicitation.name || action.evaluation.name,
       }),
-      type: action?.replace("_", " ") || "",
+      type: action?.replace?.("_", " ") || "",
       title: action.solicitation.name,
       date:
         action.createdAt || action.date
