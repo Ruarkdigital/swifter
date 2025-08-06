@@ -23,12 +23,7 @@ export const ActivityComponent: React.FC<ActivityComponentProps> = ({ activity }
               className="space-y-1 w-full py-1.5 border-t border-gray-200 dark:border-gray-700 first:border-t-0"
             >
               <div className="mt-2 text-base text-gray-900 dark:text-gray-100">
-                <span className="font-medium">{item.action || item.title}</span>
-                {item.action && (
-                  <a href={item.to || '#'} className="underline underline-offset-4 ml-1 text-blue-900 dark:text-blue-400">
-                    {item.title}
-                  </a>
-                )}
+                <span dangerouslySetInnerHTML={{ __html: item.text }} />
               </div>
 
               {(item.status || item.date || item.time) && (

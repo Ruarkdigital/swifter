@@ -40,8 +40,18 @@ export class ChartDataTransformer {
    */
   static getMonthName(monthNumber: number): string {
     const monthNames = [
-      "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-      "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
     ];
     return monthNames[monthNumber - 1] || "Unknown";
   }
@@ -56,31 +66,37 @@ export class ChartDataTransformer {
   /**
    * Transform flat key-value objects to array format
    */
-  static transformKeyValueToArray(data: Record<string, any>, valueKey = 'count'): PieChartData[] {
-    if (!data || typeof data !== 'object') return [];
-    
+  static transformKeyValueToArray(
+    data: Record<string, any>,
+    valueKey = "count"
+  ): PieChartData[] {
+    if (!data || typeof data !== "object") return [];
+
     return Object.entries(data).map(([key, value]) => ({
       name: key.charAt(0).toUpperCase() + key.slice(1),
-      value: typeof value === 'object' ? (value[valueKey] || 0) : (value || 0)
+      value: typeof value === "object" ? value[valueKey] || 0 : value || 0,
     }));
   }
 
   /**
    * Extract nested distribution arrays
    */
-  static extractDistributionArray(data: any, distributionKey = 'distribution'): any[] {
+  static extractDistributionArray(
+    data: any,
+    distributionKey = "distribution"
+  ): any[] {
     if (!data) return [];
-    
+
     // Handle nested structure like { data: { distribution: [...] } }
     if (data.data && data.data[distributionKey]) {
       return data.data[distributionKey];
     }
-    
+
     // Handle direct distribution array
     if (data[distributionKey] && Array.isArray(data[distributionKey])) {
       return data[distributionKey];
     }
-    
+
     return [];
   }
 
@@ -94,16 +110,16 @@ export class ChartDataTransformer {
 
     // Handle different data structures based on chart type
     switch (chartId) {
-      case 'solicitation-status':
+      case "solicitation-status":
         return this.transformSolicitationStatusPie(rawData);
-      case 'vendors-distribution':
-      case 'vendors-bid-intent-status':
+      case "vendors-distribution":
+      case "vendors-bid-intent-status":
         return this.transformVendorsDistributionPie(rawData);
-      case 'sub-distribution':
+      case "sub-distribution":
         return this.transformSubscriptionDistributionPie(rawData);
-      case 'portal-role-distribution':
+      case "portal-role-distribution":
         return this.transformRoleDistributionPie(rawData);
-      case 'bid-intent':
+      case "bid-intent":
         return this.transformBidIntentPie(rawData);
       default:
         return this.transformGenericPieData(rawData);
@@ -120,27 +136,30 @@ export class ChartDataTransformer {
 
     return rawData.map((item: any) => {
       const transformedItem: LineChartData = {};
-      
+
       // Handle month conversion
-      if (item.month && typeof item.month === 'number') {
+      if (item.month && typeof item.month === "number") {
         transformedItem.month = this.getMonthName(item.month);
       } else if (item.month) {
         transformedItem.month = item.month;
       }
-      
+
       // Handle date formatting
       if (item.year && item.month) {
-        const monthName = typeof item.month === 'number' ? this.getMonthName(item.month) : item.month;
+        const monthName =
+          typeof item.month === "number"
+            ? this.getMonthName(item.month)
+            : item.month;
         transformedItem.date = `${monthName} ${item.year}`;
       }
-      
+
       // Copy all other properties
-      Object.keys(item).forEach(key => {
-        if (key !== 'month' && key !== 'year') {
+      Object.keys(item).forEach((key) => {
+        if (key !== "month" && key !== "year") {
           transformedItem[key] = item[key] || 0;
         }
       });
-      
+
       return transformedItem;
     });
   }
@@ -154,48 +173,52 @@ export class ChartDataTransformer {
     }
 
     // Handle stacked bar charts (like company-status)
-    if (chartId === 'company-status' || chartId === 'total-evaluation') {
+    if (chartId === "company-status" || chartId === "total-evaluation") {
       return this.transformStackedBarData(rawData);
     }
 
     // Handle vertical bar charts (like role-distribution)
-    if (chartId === 'role-distribution' || chartId === 'module-usage') {
+    if (chartId === "role-distribution" || chartId === "module-usage") {
       return this.transformVerticalBarData(rawData);
     }
 
     // Handle array data
     if (Array.isArray(rawData)) {
       return rawData.map((item: any) => ({
-        name: item.name || item.roleName || 'Unknown',
+        name: item.name || item.roleName || "Unknown",
         value: item.value || item.count || 0,
-        ...item
+        ...item,
       }));
     }
 
     // Handle object data - transform to bar chart format
-     const keyValueData = this.transformKeyValueToArray(rawData);
-     return keyValueData.map(item => ({
-       name: item.name,
-       value: item.value
-     })) as BarChartData[];
+    const keyValueData = this.transformKeyValueToArray(rawData);
+    return keyValueData.map((item) => ({
+      name: item.name,
+      value: item.value,
+    })) as BarChartData[];
   }
 
   /**
    * Main transformation method - routes to appropriate chart transformer
    */
-  static transformChart(chartId: string, rawApiData: any, chartType?: string): RechartsData[] {
+  static transformChart(
+    chartId: string,
+    rawApiData: any,
+    chartType?: string
+  ): RechartsData[] {
     try {
       // Determine chart type from chartId if not provided
       const inferredType = chartType || this.inferChartType(chartId);
-      
+
       switch (inferredType) {
-        case 'pie':
-        case 'donut':
+        case "pie":
+        case "donut":
           return this.transformPieChart(rawApiData, chartId);
-        case 'line':
-        case 'area':
+        case "line":
+        case "area":
           return this.transformLineChart(rawApiData, chartId);
-        case 'bar':
+        case "bar":
           return this.transformBarChart(rawApiData, chartId);
         default:
           console.warn(`Unknown chart type for chartId: ${chartId}`);
@@ -209,16 +232,20 @@ export class ChartDataTransformer {
 
   // Private helper methods
   private static inferChartType(chartId: string): string {
-    if (chartId.includes('status') || chartId.includes('distribution') || chartId.includes('intent')) {
-      return chartId.includes('donut') ? 'donut' : 'pie';
+    if (
+      chartId.includes("status") ||
+      chartId.includes("distribution") ||
+      chartId.includes("intent")
+    ) {
+      return chartId.includes("donut") ? "donut" : "pie";
     }
-    if (chartId.includes('activities') || chartId.includes('submission')) {
-      return chartId.includes('line') ? 'line' : 'area';
+    if (chartId.includes("activities") || chartId.includes("submission")) {
+      return chartId.includes("line") ? "line" : "area";
     }
-    if (chartId.includes('evaluation') || chartId.includes('usage')) {
-      return 'bar';
+    if (chartId.includes("evaluation") || chartId.includes("usage")) {
+      return "bar";
     }
-    return 'pie'; // default
+    return "pie"; // default
   }
 
   private static transformSolicitationStatusPie(data: any): PieChartData[] {
@@ -227,7 +254,7 @@ export class ChartDataTransformer {
       { name: "Active", value: 0 },
       { name: "Under Evaluation", value: 0 },
       { name: "Closed", value: 0 },
-      { name: "Awarded", value: 0 }
+      { name: "Awarded", value: 0 },
     ];
 
     if (!data) return applyConsistentColors(defaultData);
@@ -235,9 +262,12 @@ export class ChartDataTransformer {
     const chartData = [
       { name: "Draft", value: data.draft || 0 },
       { name: "Active", value: data.active || 0 },
-      { name: "Under Evaluation", value: data.evaluating || data.underEvaluating || 0 },
+      {
+        name: "Under Evaluation",
+        value: data.evaluating || data.underEvaluating || 0,
+      },
       { name: "Closed", value: data.closed || 0 },
-      { name: "Awarded", value: data.awarded || 0 }
+      { name: "Awarded", value: data.awarded || 0 },
     ];
 
     return applyConsistentColors(chartData);
@@ -247,46 +277,73 @@ export class ChartDataTransformer {
     const defaultData = [
       { name: "Active", value: 0, percentage: 0 },
       { name: "Pending", value: 0, percentage: 0 },
-      { name: "Inactive", value: 0, percentage: 0 }
+      { name: "Inactive", value: 0, percentage: 0 },
     ];
 
     if (!data) return applyConsistentColors(defaultData);
 
     // Handle different API response structures
-    if (data.active && typeof data.active === 'object') {
+    if (data.active && typeof data.active === "object") {
       const chartData = [
-        { name: "Active", value: data.active.count || 0, percentage: data.active.percentage || 0 },
-        { name: "Pending", value: data.pending?.count || 0, percentage: data.pending?.percentage || 0 },
-        { name: "Inactive", value: data.inactive?.count || 0, percentage: data.inactive?.percentage || 0 }
+        {
+          name: "Active",
+          value: data.active.count || 0,
+          percentage: data.active.percentage || 0,
+        },
+        {
+          name: "Pending",
+          value: data.pending?.count || 0,
+          percentage: data.pending?.percentage || 0,
+        },
+        {
+          name: "Inactive",
+          value: data.inactive?.count || 0,
+          percentage: data.inactive?.percentage || 0,
+        },
       ];
       return applyConsistentColors(chartData);
     }
 
     // Handle flat structure
-    const total = (data.invited || 0) + (data.confirmed || 0) + (data.declined || 0);
+    const total =
+      (data.invited || 0) + (data.confirmed || 0) + (data.declined || 0);
     const chartData = [
-      { name: "Invited", value: data.invited || 0, percentage: this.calculatePercentage(data.invited || 0, total) },
-      { name: "Confirmed", value: data.confirmed || 0, percentage: this.calculatePercentage(data.confirmed || 0, total) },
-      { name: "Declined", value: data.declined || 0, percentage: this.calculatePercentage(data.declined || 0, total) }
+      {
+        name: "Invited",
+        value: data.invited || 0,
+        percentage: this.calculatePercentage(data.invited || 0, total),
+      },
+      {
+        name: "Confirmed",
+        value: data.confirmed || 0,
+        percentage: this.calculatePercentage(data.confirmed || 0, total),
+      },
+      {
+        name: "Declined",
+        value: data.declined || 0,
+        percentage: this.calculatePercentage(data.declined || 0, total),
+      },
     ];
 
     return applyConsistentColors(chartData);
   }
 
-  private static transformSubscriptionDistributionPie(data: any): PieChartData[] {
+  private static transformSubscriptionDistributionPie(
+    data: any
+  ): PieChartData[] {
     const distributionArray = this.extractDistributionArray(data);
-    
+
     if (distributionArray.length === 0) {
       return applyConsistentColors([
         { name: "Basic", value: 0 },
         { name: "Pro", value: 0 },
-        { name: "Enterprise", value: 0 }
+        { name: "Enterprise", value: 0 },
       ]);
     }
 
     const chartData = distributionArray.map((item: any) => ({
-      name: item.plan || item.name || 'Unknown',
-      value: item.count || item.value || 0
+      name: item.plan || item.name || "Unknown",
+      value: item.count || item.value || 0,
     }));
 
     return applyConsistentColors(chartData);
@@ -297,7 +354,7 @@ export class ChartDataTransformer {
       return applyConsistentColors([
         { name: "Admin", value: 0 },
         { name: "Procurement Lead", value: 0 },
-        { name: "Vendor", value: 0 }
+        { name: "Vendor", value: 0 },
       ]);
     }
 
@@ -306,12 +363,15 @@ export class ChartDataTransformer {
       super_admin: "Super Admin",
       company_admin: "Company Admin",
       evaluator: "Evaluator",
-      vendor: "Vendor"
+      vendor: "Vendor",
     };
 
     const chartData = data.map((item: any) => ({
-      name: roleTitle[item.roleName as keyof typeof roleTitle] || item.roleName || "Unknown Role",
-      value: parseInt(item.count) || 0
+      name:
+        roleTitle[item.roleName as keyof typeof roleTitle] ||
+        item.roleName ||
+        "Unknown Role",
+      value: parseInt(item.count) || 0,
     }));
 
     return applyConsistentColors(chartData);
@@ -322,15 +382,28 @@ export class ChartDataTransformer {
       return applyConsistentColors([
         { name: "Invited", value: 0, percentage: 0 },
         { name: "Confirmed", value: 0, percentage: 0 },
-        { name: "Declined", value: 0, percentage: 0 }
+        { name: "Declined", value: 0, percentage: 0 },
       ]);
     }
 
-    const total = (data.invited || 0) + (data.confirmed || 0) + (data.declined || 0);
+    const total =
+      (data.invited || 0) + (data.confirmed || 0) + (data.declined || 0);
     const chartData = [
-      { name: "Invited", value: data.invited || 0, percentage: this.calculatePercentage(data.invited || 0, total) },
-      { name: "Confirmed", value: data.confirmed || 0, percentage: this.calculatePercentage(data.confirmed || 0, total) },
-      { name: "Declined", value: data.declined || 0, percentage: this.calculatePercentage(data.declined || 0, total) }
+      {
+        name: "Invited",
+        value: data.invited || 0,
+        percentage: this.calculatePercentage(data.invited || 0, total),
+      },
+      {
+        name: "Confirmed",
+        value: data.confirmed || 0,
+        percentage: this.calculatePercentage(data.confirmed || 0, total),
+      },
+      {
+        name: "Declined",
+        value: data.declined || 0,
+        percentage: this.calculatePercentage(data.declined || 0, total),
+      },
     ];
 
     return applyConsistentColors(chartData);
@@ -338,11 +411,13 @@ export class ChartDataTransformer {
 
   private static transformGenericPieData(data: any): PieChartData[] {
     if (Array.isArray(data)) {
-      return applyConsistentColors(data.map((item: any) => ({
-        name: item.name || item.label || 'Unknown',
-        value: item.value || item.count || 0,
-        percentage: item.percentage
-      })));
+      return applyConsistentColors(
+        data.map((item: any) => ({
+          name: item.name || item.label || "Unknown",
+          value: item.value || item.count || 0,
+          percentage: item.percentage,
+        }))
+      );
     }
 
     return applyConsistentColors(this.transformKeyValueToArray(data));
@@ -358,12 +433,12 @@ export class ChartDataTransformer {
         const active = item.active || 0;
         const expiring = item.expiring || 0;
         const suspended = Math.max(0, total - active - expiring);
-        
+
         return {
           month,
           active,
           suspended,
-          pending: expiring
+          pending: expiring,
         };
       });
     }
@@ -372,17 +447,20 @@ export class ChartDataTransformer {
     if (Array.isArray(data)) {
       return data.map((item: any) => {
         const result: BarChartData = {};
-        
+
         if (item.month) {
-          result.month = typeof item.month === 'number' ? this.getMonthName(item.month) : item.month;
+          result.month =
+            typeof item.month === "number"
+              ? this.getMonthName(item.month)
+              : item.month;
         }
-        
-        Object.keys(item).forEach(key => {
-          if (key !== 'month') {
+
+        Object.keys(item).forEach((key) => {
+          if (key !== "month") {
             result[key] = item[key] || 0;
           }
         });
-        
+
         return result;
       });
     }
@@ -393,18 +471,18 @@ export class ChartDataTransformer {
   private static transformVerticalBarData(data: any): BarChartData[] {
     if (Array.isArray(data)) {
       return data.map((item: any) => ({
-        name: item.name || item.roleName || 'Unknown',
-        value: item.value || item.count || 0
+        name: item.name || item.roleName || "Unknown",
+        value: item.value || item.count || 0,
       }));
     }
 
     // Handle module usage type data
-    if (data && typeof data === 'object') {
+    if (data && typeof data === "object") {
       return [
         { name: "Solicitation", value: data.solicitationUsage || 0 },
         { name: "Evaluation", value: data.evaluationUsage || 0 },
         { name: "Vendor", value: data.vendorUage || 0 }, // Keep original typo from API
-        { name: "Addendum", value: data.adendumUsage || 0 }
+        { name: "Addendum", value: data.adendumUsage || 0 },
       ];
     }
 
@@ -413,71 +491,99 @@ export class ChartDataTransformer {
 
   private static getDefaultPieData(chartId?: string): PieChartData[] {
     const defaults: Record<string, PieChartData[]> = {
-      'solicitation-status': [
+      "solicitation-status": [
         { name: "Draft", value: 0 },
         { name: "Active", value: 0 },
         { name: "Under Evaluation", value: 0 },
-        { name: "Closed", value: 0 }
+        { name: "Closed", value: 0 },
       ],
-      'vendors-distribution': [
+      "vendors-distribution": [
         { name: "Active", value: 0 },
         { name: "Pending", value: 0 },
-        { name: "Inactive", value: 0 }
+        { name: "Inactive", value: 0 },
       ],
-      'default': [
+      default: [
         { name: "Category A", value: 0 },
         { name: "Category B", value: 0 },
-        { name: "Category C", value: 0 }
-      ]
+        { name: "Category C", value: 0 },
+      ],
     };
 
-    return applyConsistentColors(defaults[chartId || 'default'] || defaults.default);
+    return applyConsistentColors(
+      defaults[chartId || "default"] || defaults.default
+    );
   }
 
   private static getDefaultLineData(chartId?: string): LineChartData[] {
-    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-    
-    if (chartId === 'proposal-submission') {
-      return months.slice(0, 6).map(month => ({
+    const months = [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
+    ];
+
+    if (chartId === "proposal-submission") {
+      return months.slice(0, 6).map((month) => ({
         month,
         submitted: 0,
         declined: 0,
-        missedDeadline: 0
+        missedDeadline: 0,
       }));
     }
 
-    return months.slice(0, 7).map(month => ({
+    return months.slice(0, 7).map((month) => ({
       month,
-      activities: 0
+      activities: 0,
     }));
   }
 
   private static getDefaultBarData(chartId?: string): BarChartData[] {
-    if (chartId === 'company-status') {
-      const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-      return months.map(month => ({
+    if (chartId === "company-status") {
+      const months = [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun",
+        "Jul",
+        "Aug",
+        "Sep",
+        "Oct",
+        "Nov",
+        "Dec",
+      ];
+      return months.map((month) => ({
         month,
         active: 0,
         suspended: 0,
-        pending: 0
+        pending: 0,
       }));
     }
 
     return [
       { name: "Category A", value: 0 },
       { name: "Category B", value: 0 },
-      { name: "Category C", value: 0 }
+      { name: "Category C", value: 0 },
     ];
   }
 
   private static getDefaultDataForChart(chartId: string): RechartsData[] {
-    if (chartId.includes('status') || chartId.includes('distribution')) {
+    if (chartId.includes("status") || chartId.includes("distribution")) {
       return this.getDefaultPieData(chartId);
     }
-    if (chartId.includes('activities') || chartId.includes('submission')) {
+    if (chartId.includes("activities") || chartId.includes("submission")) {
       return this.getDefaultLineData(chartId);
     }
-    if (chartId.includes('evaluation') || chartId.includes('usage')) {
+    if (chartId.includes("evaluation") || chartId.includes("usage")) {
       return this.getDefaultBarData(chartId);
     }
     return this.getDefaultPieData(chartId);
@@ -664,12 +770,8 @@ export class DashboardDataTransformer {
   static transformCompanyStatus(data: any) {
     // Handle new API structure: data is an array with timeStats inside
     const timeStats = data?.[0]?.timeStats;
-    
-    if (
-      !timeStats ||
-      !Array.isArray(timeStats) ||
-      timeStats.length === 0
-    ) {
+
+    if (!timeStats || !Array.isArray(timeStats) || timeStats.length === 0) {
       return Array.from({ length: 12 }, (_, i) => ({
         month: [
           "Jan",
@@ -693,29 +795,31 @@ export class DashboardDataTransformer {
 
     return timeStats.map((item: any, index: number) => {
       // Use the label from API or fallback to month names
-      const month = item.label || [
-        "Jan",
-        "Feb",
-        "Mar",
-        "Apr",
-        "May",
-        "Jun",
-        "Jul",
-        "Aug",
-        "Sep",
-        "Oct",
-        "Nov",
-        "Dec",
-      ][index % 12];
+      const month =
+        item.label ||
+        [
+          "Jan",
+          "Feb",
+          "Mar",
+          "Apr",
+          "May",
+          "Jun",
+          "Jul",
+          "Aug",
+          "Sep",
+          "Oct",
+          "Nov",
+          "Dec",
+        ][index % 12];
 
       // Calculate suspended and pending from actual API data
       const total = item.total || 0;
       const active = item.active || 0;
       const expiring = item.expiring || 0;
-      
+
       // Calculate suspended as total minus active minus expiring
       const suspended = Math.max(0, total - active - expiring);
-      
+
       return {
         month,
         active,
@@ -944,23 +1048,36 @@ export class DashboardDataTransformer {
     if (!data || !Array.isArray(data)) {
       return [];
     }
-    
+
     return data.map((item: any) => {
       // Create month-year label for x-axis
       const monthNames = [
-        "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-        "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun",
+        "Jul",
+        "Aug",
+        "Sep",
+        "Oct",
+        "Nov",
+        "Dec",
       ];
       const monthLabel = monthNames[item.month - 1] || "Unknown";
       const dateLabel = `${monthLabel} ${item.year}`;
-      
+
       return {
         date: dateLabel,
         submitted: item.submitted || 0,
         missedDeadline: item.missedDeadline || 0,
         declined: item.declined || 0,
         // Keep backward compatibility
-        count: (item.submitted || 0) + (item.missedDeadline || 0) + (item.declined || 0),
+        count:
+          (item.submitted || 0) +
+          (item.missedDeadline || 0) +
+          (item.declined || 0),
         ...item,
       };
     });
@@ -1117,7 +1234,7 @@ export class DashboardDataTransformer {
       },
     ];
 
-    console.log({ chartData, data, total })
+    console.log({ chartData, data, total });
 
     return applyConsistentColors(chartData);
   }
@@ -1205,12 +1322,22 @@ export class DashboardDataTransformer {
     return data.map((item: any) => {
       // Create month-year label for x-axis
       const monthNames = [
-        "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-        "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun",
+        "Jul",
+        "Aug",
+        "Sep",
+        "Oct",
+        "Nov",
+        "Dec",
       ];
       const monthLabel = monthNames[item.month - 1] || "Unknown";
       const dateLabel = `${monthLabel} ${item.year}`;
-      
+
       return {
         day: dateLabel,
         submitted: item.submitted || 0,
@@ -1409,13 +1536,22 @@ export class DashboardDataTransformer {
       created: "A new solicitation has been created",
     };
 
+    const getFormattedText = (text: string, data: { id: string; name: string }) => {
+      return text + ' ' +`<a href="/dashboard/solicitation/${data.id}" class="underline underline-offset-4 text-blue-400 ">${data.name}</a>`;
+    }
+
     return data.map((update: any, index: number) => ({
       id: update.id || `update-${index}`,
       title: update.solicitation.name,
       to: `/dashboard/solicitation/${update.solicitation._id}`,
-      action:
+      text: getFormattedText(
         actionDescriptions[update.action as keyof typeof actionDescriptions] ||
         "Unknown Action",
+        {
+          id: update.solicitation._id,
+          name: update.solicitation.name,
+        }
+      ),
       type: update.type || "evaluation",
       date:
         update.date || update.updatedAt || update.createdAt
@@ -1512,46 +1648,34 @@ export class DashboardDataTransformer {
       return [];
     }
 
-    const actionDescriptions = {
-      invited: "You've been invited to bid on",
-      confirmed: "You've accepted to bid on",
-      vendor_reminder: "Reminder to evaluate",
-      vendor_feedback: "Feedback received",
-      declined: "You've declined to bid on",
-      reminder_expiring: "Reminder of expiring",
-      reminder_no_response: "This is a reminder to respond to",
-      proposal_submitted: "You've submitted the proposal for",
-      proposal_drafted: "You've drafted the proposal for",
-    };
+    const getFormattedText = (
+      statusText: string,
+      data: { id: string; name: string }
+    ) => {
+      if (statusText.includes("invited")) {
+        return statusText.replace(
+          data.name,
+          `<a href="/dashboard/invitations/${data.id}" class="underline underline-offset-4 text-blue-600 ">${data.name}</a>`
+        );
+      }
 
-    const actionLinkToSolicitation = (action: any) => ({
-      invited: `/dashboard/invitations/${action.solicitationId}`,
-      confirmed: `/dashboard/solicitation/${action.solicitationId}`,
-      vendor_reminder: `/dashboard/solicitation/${action.solicitationId}`,
-      vendor_feedback: `/dashboard/solicitation/${action.solicitationId}`,
-      declined: `/dashboard/solicitation/${action.solicitationId}`,
-      reminder_expiring: `/dashboard/solicitation/${action.solicitationId}`,
-      reminder_no_response: `/dashboard/solicitation/${action.solicitationId}`,
-      proposal_submitted: `/dashboard/solicitation/${action.solicitationId}`,
-      proposal_drafted: `/dashboard/solicitation/${action.solicitationId}`,
-    });
+      return statusText.replace(
+        data.name,
+        `<a href="/dashboard/solicitation/${data.id}" class="underline underline-offset-4 text-blue-600">${data.name}</a>`
+      );
+    };
 
     return data.map((action, index) => {
       return {
         id: action._id || `vendor-action-${index}`,
-        action:
-          actionDescriptions[
-            action.action as keyof typeof actionDescriptions
-          ] || "You've been invited to bid",
-        // status: action.solicitation?.vendors?.[0].status || "Pending",
-        // type: action.action?.replace("_", " ") || "Invitation",
+        text: getFormattedText(action.statusText, {
+          id: action.solicitation._id,
+          name: action.solicitation.name,
+        }),
         date: action.createdAt
-          ? format(new Date(action.createdAt), "MMM d, yyyy h:mm a 'GMT'xxx")
+          ? format(new Date(action.createdAt), "MMM d, yyyy h:mm a")
           : null,
         title: action.solicitation || "Unknown Solicitation",
-        to: actionLinkToSolicitation(action)[
-          action.action as keyof typeof actionDescriptions
-        ],
       };
     });
   }
@@ -1564,34 +1688,30 @@ export class DashboardDataTransformer {
       return [];
     }
 
-    const actionDescriptions = {
-      vendor_invitation: "A vendor has been invited to bid on",
-      vendor_accept: "A vendor has accepted to bid on",
-      vendor_reminder: "Reminder to respond to solicitation",
-      vendor_feedback: "You've received feedback on",
-      evaluation: "Evaluation has been updated",
-      update: "Evaluation updated",
-      vendor_declined: "A vendor declined on",
-      vendor_submitted: "A vendor submitted on",
-      proposal_submitted: "A proposal submitted on",
-      proposal_draft: "A proposal draft on",
-      proporsal_updated: "A proposal has been updated on",
-      scored: "A score has been received on",
-      awarded: "You've been awarded the",
-      question: "A question has been received on",
-      response: "A a response has been received on",
-      invite: "An invitation has been sent on",
-      addendum: "An addendum has been received on",
-      created: "A new solicitation has been created",
+    const getFormattedText = (
+      statusText: string,
+      data: { id: string; name: string }
+    ) => {
+      if (statusText.includes("invited")) {
+        return statusText.replace(
+          data.name,
+          `<a href="/dashboard/invitations/${data.id}" class="underline underline-offset-4 text-blue-600 ">${data.name}</a>`
+        );
+      }
+
+      return statusText.replace(
+        data.name,
+        `<a href="/dashboard/solicitation/${data.id}" class="underline underline-offset-4 text-blue-600">${data.name}</a>`
+      );
     };
 
     return data.map((update: any, index: number) => ({
       id: update.id || `vendor-update-${index}`,
-      action:
-        actionDescriptions[update.action as keyof typeof actionDescriptions] ||
-        "Unknown Action",
+      text: getFormattedText(update.statusText, {
+        id: update.solicitation._id,
+        name: update.solicitation.name,
+      }),
       title: update.solicitation.name,
-      to: `/dashboard/solicitation/${update.solicitation._id}`,
       time:
         update.time ||
         (update.date
@@ -1612,34 +1732,31 @@ export class DashboardDataTransformer {
       return [];
     }
 
-    const actionDescriptions = {
-      vendor_invitation: "You've been invited to bid on",
-      vendor_accept: "You've accepted to bid on",
-      vendor_reminder: "Reminder to respond to solicitation",
-      vendor_feedback: "You've received feedback on",
-      evaluation: "Evaluation has been updated",
-      update: "Evaluation updated",
-      vendor_declined: "Vendor declined",
-      vendor_submitted: "Vendor submitted",
-      proposal_submitted: "Proposal submitted",
-      proposal_draft: "Proposal draft",
-      proporsal_updated: "You're proposal has been updated on",
-      scored: "You've received a score on",
-      awarded: "You've been awarded the",
-      question: "You've received a question on",
-      response: "You've received a response on",
-      invite: "You've been invited to bid on",
-      addendum: "You've received an addendum on",
-      created: "A new solicitation has been created",
+    const getFormattedText = (
+      statusText: string,
+      data: { id: string; name: string }
+    ) => {
+      if (statusText.includes("evaluation")) {
+        return statusText.replace(
+          data.name,
+          `<a href="/dashboard/evaluations/${data.id}" class="underline underline-offset-4 text-blue-600 ">${data.name}</a>`
+        );
+      }
+
+      return statusText.replace(
+        data.name,
+        `<a href="/dashboard/solicitation/${data.id}" class="underline underline-offset-4 text-blue-600">${data.name}</a>`
+      );
     };
 
     return data.map((action: any, index: number) => ({
-      id: action._id || action.id || `action-${index}`,
-      action:
-        actionDescriptions[action.type as keyof typeof actionDescriptions] ||
-        "",
-      type: action.type.replace("_", " ") || "",
-      title: action.solicitation,
+      id: action.solicitation._id || `action-${index}`,
+      text: getFormattedText(action.statusText, {
+        id: action.solicitation._id || action.evaluation._id,
+        name: action.solicitation.name || action.evaluation.name,
+      }),
+      type: action.replace("_", " ") || "",
+      title: action.solicitation.name,
       date:
         action.createdAt || action.date
           ? format(
@@ -1659,57 +1776,36 @@ export class DashboardDataTransformer {
       return [];
     }
 
-    const actionDescriptions = (vendor: string) => ({
-      vendor_invitation: `${vendor} has been invited to bid on`,
-      vendor_accept: `${vendor} has accepted to bid on`,
-      vendor_reminder: `${vendor} reminder to respond to solicitation`,
-      vendor_feedback: "You've received feedback on",
-      evaluation: "Evaluation has been updated",
-      update: "Evaluation updated",
-      vendor_declined: `${vendor} declined on`,
-      vendor_submitted: `${vendor} submitted on`,
-      proposal_submitted: `A proposal submitted by ${vendor} on`,
-      proposal_draft: "A proposal draft on",
-      scored: "A score has been received on",
-      awarded: `${vendor} has been awarded the`,
-      question: "A question has been received on",
-      response: "A a response has been received on",
-      invite: "An invitation has been sent on",
-      addendum: "An addendum has been received on",
-      created: "A new solicitation has been created",
-      declined: "You've declined to bid on",
-      reminder_expiring: "Reminder of expiring",
-      reminder_no_response: "This is a reminder to respond to",
-      proposal_drafted: "You've drafted the proposal for",
-      proposal_updated: "Proposal updated for"
-    });
+    const getFormattedText = (
+      statusText: string,
+      data: { id: string; name: string }
+    ) => {
+      if (statusText.includes("evaluation")) {
+        return statusText.replace(
+          data.name,
+          `<a href="/dashboard/evaluations/${data.id}" class="underline underline-offset-4 text-blue-600 ">${data.name}</a>`
+        );
+      }
 
-    // const actionLinkToSolicitation = (action: any) => ({
-    //   invited: `/dashboard/invitations/${action.solicitationId}`,
-    //   confirmed: `/dashboard/solicitation/${action.solicitationId}`,
-    //   vendor_reminder: `/dashboard/solicitation/${action.solicitationId}`,
-    //   vendor_feedback: `/dashboard/solicitation/${action.solicitationId}`,
-    //   declined: `/dashboard/solicitation/${action.solicitationId}`,
-    //   reminder_expiring: `/dashboard/solicitation/${action.solicitationId}`,
-    //   reminder_no_response: `/dashboard/solicitation/${action.solicitationId}`,
-    //   proposal_submitted: `/dashboard/solicitation/${action.solicitationId}`,
-    //   proposal_drafted: `/dashboard/solicitation/${action.solicitationId}`,
-    // });
+      return statusText.replace(
+        data.name,
+        `<a href="/dashboard/solicitation/${data.id}" class="underline underline-offset-4 text-blue-600">${data.name}</a>`
+      );
+    };
 
     return data.map((update: any, index: number) => ({
       id: update._id || update.id || `update-${index}`,
       title: update.solicitation.name,
-      to: `/dashboard/solicitation/${update.solicitation._id}`,
-      action:
-        actionDescriptions(update.vendor?.name)[
-          update.action as keyof typeof actionDescriptions
-        ] || "Unknown Action",
+      text: getFormattedText(update.statusText, {
+        id: update.solicitation._id || update.evaluation._id,
+        name: update.solicitation.name || update.evaluation.name,
+      }),
       date:
         update.updatedAt || update.date || update.createdAt
-          ? format(
+          ? `${format(
               new Date(update.updatedAt || update.date || update.createdAt),
-              "MMM d, yyyy h:mm a 'GMT'xxx"
-            )
+              "MMM d, yyyy h:mm a"
+            )} ${update.timezone || "GMT"}`
           : format(new Date(), "MMM d, yyyy h:mm a 'GMT'xxx"),
       status: update.status || "active",
     }));

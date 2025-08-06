@@ -100,6 +100,7 @@ export interface VendorMyActions {
     }[];
   };
   _id: string;
+  statusText: string;
   createdAt: "2025-06-26T08:09:06.611Z";
 }
 
