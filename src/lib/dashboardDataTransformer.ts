@@ -1487,13 +1487,29 @@ export class DashboardDataTransformer {
       created: "A new solicitation has been created",
     };
 
+    const getFormattedText = (
+      text: string,
+      data: { id: string; name: string }
+    ) => {
+      return (
+        text +
+        " " +
+        `<a href="/dashboard/solicitation/${data.id}" class="underline underline-offset-4 text-blue-600 ">${data.name}</a>`
+      );
+    };
+
     return data.map((action: any, index: number) => ({
       id: action.id || `action-${index}`,
       title: action.solicitation.name,
       to: `/dashboard/solicitation/${action.solicitation._id}`,
-      action:
+      action: getFormattedText(
         actionDescriptions[action.action as keyof typeof actionDescriptions] ||
-        "Unknown Action",
+          "Unknown Action",
+        {
+          id: action.solicitation._id,
+          name: action.solicitation.name,
+        }
+      ),
       type: action.type || "unknown",
       date:
         action.date || action.createdAt
@@ -1536,9 +1552,16 @@ export class DashboardDataTransformer {
       created: "A new solicitation has been created",
     };
 
-    const getFormattedText = (text: string, data: { id: string; name: string }) => {
-      return text + ' ' +`<a href="/dashboard/solicitation/${data.id}" class="underline underline-offset-4 text-blue-400 ">${data.name}</a>`;
-    }
+    const getFormattedText = (
+      text: string,
+      data: { id: string; name: string }
+    ) => {
+      return (
+        text +
+        " " +
+        `<a href="/dashboard/solicitation/${data.id}" class="underline underline-offset-4 text-blue-400 ">${data.name}</a>`
+      );
+    };
 
     return data.map((update: any, index: number) => ({
       id: update.id || `update-${index}`,
@@ -1546,7 +1569,7 @@ export class DashboardDataTransformer {
       to: `/dashboard/solicitation/${update.solicitation._id}`,
       text: getFormattedText(
         actionDescriptions[update.action as keyof typeof actionDescriptions] ||
-        "Unknown Action",
+          "Unknown Action",
         {
           id: update.solicitation._id,
           name: update.solicitation.name,
@@ -1755,7 +1778,7 @@ export class DashboardDataTransformer {
         id: action.solicitation._id || action.evaluation._id,
         name: action.solicitation.name || action.evaluation.name,
       }),
-      type: action.replace("_", " ") || "",
+      type: action?.replace("_", " ") || "",
       title: action.solicitation.name,
       date:
         action.createdAt || action.date
