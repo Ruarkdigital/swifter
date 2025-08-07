@@ -1466,50 +1466,30 @@ export class DashboardDataTransformer {
       return [];
     }
 
-    const actionDescriptions = {
-      vendor_invitation: "You've been invited to bid on",
-      vendor_accept: "You've accepted to bid on",
-      vendor_reminder: "Reminder to respond to solicitation",
-      vendor_feedback: "You've received feedback on",
-      evaluation: "Evaluation has been updated",
-      update: "Evaluation updated",
-      vendor_declined: "Vendor declined",
-      vendor_submitted: "Vendor submitted",
-      proposal_submitted: "Proposal submitted",
-      proposal_draft: "Proposal draft",
-      proporsal_updated: "You're proposal has been updated on",
-      scored: "You've received a score on",
-      awarded: "You've been awarded the",
-      question: "You've received a question on",
-      response: "You've received a response on",
-      invite: "You've been invited to bid on",
-      addendum: "You've received an addendum on",
-      created: "A new solicitation has been created",
-    };
-
     const getFormattedText = (
-      text: string,
+      statusText: string,
       data: { id: string; name: string }
     ) => {
-      return (
-        text +
-        " " +
-        `<a href="/dashboard/solicitation/${data.id}" class="underline underline-offset-4 text-blue-600 ">${data.name}</a>`
+      if (statusText.includes("evaluation")) {
+        return statusText.replace(
+          data.name,
+          `<a href="/dashboard/evaluation/assigned/${data.id}" class="underline underline-offset-4 text-blue-600 ">${data.name}</a>`
+        );
+      }
+
+      return statusText.replace(
+        data.name,
+        `<a href="/dashboard/evaluation/assigned/${data.id}" class="underline underline-offset-4 text-blue-600">${data.name}</a>`
       );
     };
 
     return data.map((action: any, index: number) => ({
-      id: action.id || `action-${index}`,
-      title: action.solicitation.name,
-      to: `/dashboard/solicitation/${action.solicitation._id}`,
-      action: getFormattedText(
-        actionDescriptions[action.action as keyof typeof actionDescriptions] ||
-          "Unknown Action",
-        {
-          id: action.solicitation._id,
-          name: action.solicitation.name,
-        }
-      ),
+      id: action?.evaluation._id || `action-${index}`,
+      title: action?.evaluation.solicitation.name,
+      action: getFormattedText(action.statusText, {
+        id: action?.evaluation?._id,
+        name: action?.evaluation?.solicitation?.name,
+      }),
       type: action.type || "unknown",
       date:
         action.date || action.createdAt
@@ -1531,50 +1511,30 @@ export class DashboardDataTransformer {
       return [];
     }
 
-    const actionDescriptions = {
-      vendor_invitation: "A vendor has been invited to bid on",
-      vendor_accept: "A vendor has accepted to bid on",
-      vendor_reminder: "Reminder to respond to solicitation",
-      vendor_feedback: "You've received feedback on",
-      evaluation: "Evaluation has been updated",
-      update: "Evaluation updated",
-      vendor_declined: "A vendor declined on",
-      vendor_submitted: "A vendor submitted on",
-      proposal_submitted: "A proposal submitted on",
-      proposal_draft: "A proposal draft on",
-      proporsal_updated: "A proposal has been updated on",
-      scored: "A score has been received on",
-      awarded: "You've been awarded the",
-      question: "A question has been received on",
-      response: "A a response has been received on",
-      invite: "An invitation has been sent on",
-      addendum: "An addendum has been received on",
-      created: "A new solicitation has been created",
-    };
-
     const getFormattedText = (
-      text: string,
+      statusText: string,
       data: { id: string; name: string }
     ) => {
-      return (
-        text +
-        " " +
-        `<a href="/dashboard/solicitation/${data.id}" class="underline underline-offset-4 text-blue-400 ">${data.name}</a>`
+      if (statusText.includes("evaluation")) {
+        return statusText.replace(
+          data.name,
+          `<a href="/dashboard/evaluation/assigned/${data.id}" class="underline underline-offset-4 text-blue-600 ">${data.name}</a>`
+        );
+      }
+
+      return statusText.replace(
+        data.name,
+        `<a href="/dashboard/evaluation/assigned/${data.id}" class="underline underline-offset-4 text-blue-600">${data.name}</a>`
       );
     };
 
     return data.map((update: any, index: number) => ({
-      id: update.id || `update-${index}`,
-      title: update.solicitation.name,
-      to: `/dashboard/solicitation/${update.solicitation._id}`,
-      text: getFormattedText(
-        actionDescriptions[update.action as keyof typeof actionDescriptions] ||
-          "Unknown Action",
-        {
-          id: update.solicitation._id,
-          name: update.solicitation.name,
-        }
-      ),
+      id: update?.evaluation._id || `update-${index}`,
+      title: update?.evaluation.solicitation.name,
+      text: getFormattedText(update.statusText, {
+        id: update?.evaluation?._id,
+        name: update?.evaluation?.solicitation?.name,
+      }),
       type: update.type || "evaluation",
       date:
         update.date || update.updatedAt || update.createdAt
