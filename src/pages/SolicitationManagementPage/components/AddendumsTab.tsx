@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { DataTable } from "@/components/layouts/DataTable";
 import { ColumnDef, PaginationState } from "@tanstack/react-table";
-import { Search, Plus, FileText, Edit } from "lucide-react";
+import { Search, Plus, FileText, Edit, Upload } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getRequest, deleteRequest, putRequest } from "@/lib/axiosInstance";
 import { ApiResponse, ApiResponseError } from "@/types";
@@ -24,11 +24,17 @@ import AddendumDetailsSheet from "./AddendumDetailsSheet";
 import { format } from "date-fns";
 import { useUserRole } from "@/hooks/useUserRole";
 import { truncate } from "lodash";
-import { TextInput, TextArea, TextDatePicker } from "@/components/layouts/FormInputs/TextInput";
+import {
+  TextInput,
+  TextArea,
+  TextDatePicker,
+} from "@/components/layouts/FormInputs/TextInput";
 import { TextSelect } from "@/components/layouts/FormInputs/TextSelect";
-import { useForge } from "@/lib/forge";
+import { TextFileUploader } from "@/components/layouts/FormInputs/TextFileInput";
+import { useForge, Forge, Forger } from "@/lib/forge";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
+import { useWatch } from "react-hook-form";
 
 // Addendum type definition based on API schema
 type SolicitationAddendum = {
@@ -38,7 +44,7 @@ type SolicitationAddendum = {
   submissionDeadline?: string;
   questionDeadline?: string;
   questions?: string;
-  status: "draft" | "published";
+  status: "draft" | "publish";
   files?: Array<{
     _id: string;
     name: string;
@@ -55,9 +61,10 @@ type Addendum = {
   title: string;
   description?: string;
   submissionDeadline?: string;
+  questionAcceptanceDeadline?: string;
   linkedQuestion: boolean;
   datePublished: string;
-  status: "draft" | "published";
+  status: "draft" | "publish";
 };
 
 interface AddendumsTabProps {
@@ -84,9 +91,10 @@ const transformAddendumData = (apiAddendum: SolicitationAddendum): Addendum => {
     title: apiAddendum.title,
     description: apiAddendum.description,
     submissionDeadline: apiAddendum.submissionDeadline,
+    questionAcceptanceDeadline: apiAddendum.questionDeadline,
     linkedQuestion: !!apiAddendum.questions,
     datePublished: formatDate(apiAddendum.createdAt),
-    status: apiAddendum.status === "published" ? "published" : "draft",
+    status: apiAddendum.status,
   };
 };
 
@@ -94,9 +102,9 @@ const transformAddendumData = (apiAddendum: SolicitationAddendum): Addendum => {
 const AddendumStatusBadge = ({ status }: { status: Addendum["status"] }) => {
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "Published":
+      case "publish":
         return "bg-blue-100 text-blue-800";
-      case "Draft":
+      case "draft":
         return "bg-gray-100 text-gray-800";
       default:
         return "bg-gray-100 text-gray-800";
@@ -104,7 +112,9 @@ const AddendumStatusBadge = ({ status }: { status: Addendum["status"] }) => {
   };
 
   return (
-    <Badge className={`${getStatusColor(status)} border-0`}>{status}</Badge>
+    <Badge className={`${getStatusColor(status)} border-0 capitalize`}>
+      {status}
+    </Badge>
   );
 };
 
@@ -130,25 +140,26 @@ const editAddendumSchema = yup.object().shape({
     .string()
     .optional()
     .max(2000, "Description must not exceed 2000 characters"),
-  submissionDeadline: yup
-    .string()
-    .optional(),
+  submissionDeadline: yup.string().optional(),
+  questionAcceptanceDeadline: yup.string().optional(),
   status: yup
     .string()
-    .oneOf(["draft", "published"], "Status must be either draft or published")
+    .oneOf(["draft", "publish"], "Status must be either draft or publish")
     .optional(),
+  documents: yup.array().nullable().default(null),
 });
 
 type EditAddendumFormValues = {
   title: string;
   description?: string;
   submissionDeadline?: string;
-  status?: "draft" | "published";
+  questionAcceptanceDeadline?: string;
+  status?: "draft" | "publish";
+  documents: any[] | null;
 };
 
 // Create useAddendums hook
 const useAddendums = (solicitationId: string) => {
-
   return useQuery<ApiResponse<SolicitationAddendum[]>, ApiResponseError>({
     queryKey: ["addendums", solicitationId],
     queryFn: async () => {
@@ -215,9 +226,9 @@ const AddendumsTab: React.FC<AddendumsTabProps> = ({ solicitationId }) => {
     EditAddendumFormValues
   >({
     mutationFn: async (requestData: EditAddendumFormValues) => {
-        if (!editingAddendum) throw new Error('No addendum selected for editing');
-        const endpoint = `/procurement/solicitations/${solicitationId}/addendums/${editingAddendum.id}`;
-        return await putRequest({ url: endpoint, payload: requestData });
+      if (!editingAddendum) throw new Error("No addendum selected for editing");
+      const endpoint = `/procurement/solicitations/${solicitationId}/addendums/${editingAddendum.id}`;
+      return await putRequest({ url: endpoint, payload: requestData });
     },
     onSuccess: () => {
       toast.success("Success", "Addendum updated successfully");
@@ -290,7 +301,7 @@ const AddendumsTab: React.FC<AddendumsTabProps> = ({ solicitationId }) => {
       accessorKey: "status",
       header: "Status",
       cell(props) {
-        return <AddendumStatusBadge status={props.row.original.status} />
+        return <AddendumStatusBadge status={props.row.original.status} />;
       },
     },
     {
@@ -324,6 +335,7 @@ const AddendumsTab: React.FC<AddendumsTabProps> = ({ solicitationId }) => {
                 <DialogContent className="max-w-md">
                   <EditAddendumDialog
                     addendum={editingAddendum}
+                    solicitationId={solicitationId!}
                     onSubmit={handleUpdateAddendum}
                     isLoading={updateAddendumMutation.isPending}
                   />
@@ -481,40 +493,142 @@ const AddendumsTab: React.FC<AddendumsTabProps> = ({ solicitationId }) => {
 // Edit Addendum Dialog Component
 interface EditAddendumDialogProps {
   addendum: Addendum | null;
+  solicitationId: string;
   onSubmit: (data: EditAddendumFormValues) => Promise<void>;
   isLoading: boolean;
 }
 
 const EditAddendumDialog: React.FC<EditAddendumDialogProps> = ({
   addendum,
+  solicitationId,
   onSubmit,
   isLoading,
 }) => {
-  const { control, handleSubmit, reset } = useForge<EditAddendumFormValues>({
+  // Fetch addendum details
+  const { data: addendumData } = useQuery<
+    ApiResponse<SolicitationAddendum>,
+    ApiResponseError
+  >({
+    queryKey: ["addendum", solicitationId, addendum?.id],
+    queryFn: async () =>
+      await getRequest({
+        url: `/procurement/solicitations/${solicitationId}/addendums/${addendum?.id}`,
+      }),
+    enabled: !!addendum?.id,
+  });
+
+  // Fetch solicitation details to prefill deadline fields if addendum doesn't have them
+  const { data: solicitationData } = useQuery<
+    ApiResponse<any>,
+    ApiResponseError
+  >({
+    queryKey: ["solicitation", solicitationId],
+    queryFn: async () =>
+      await getRequest({
+        url: `/procurement/solicitations/${solicitationId}/`,
+      }),
+    enabled: !!addendum?.id, // Only fetch when we have an addendum to edit
+  });
+
+  const solicitation = solicitationData?.data?.data;
+  const addendumDetails = addendumData?.data?.data;
+
+  // Helper function to format date for input
+  const formatDateForInput = (dateString: string) => {
+    if (!dateString) return "";
+    const date = new Date(dateString);
+    // Return in local datetime format for datetime-local input
+    return format(date, "yyyy-MM-dd'T'HH:mm");
+  };
+
+  const { control, reset } = useForge<EditAddendumFormValues>({
     resolver: yupResolver(editAddendumSchema),
     defaultValues: {
-      title: addendum?.title || "",
-      description: addendum?.description || "",
-      submissionDeadline: addendum?.submissionDeadline || "",
-      status: addendum?.status === "published" ? "published" : "draft",
+      title: "",
+      description: "",
+      submissionDeadline: "",
+      status: "draft",
+      documents: null,
     },
   });
 
-  // Reset form when addendum changes
-  React.useEffect(() => {
-    if (addendum) {
+  const submissionDeadlineDate = useWatch({
+    name: "submissionDeadline",
+    control,
+  });
+  const maxDate = submissionDeadlineDate
+    ? new Date(submissionDeadlineDate)
+    : undefined;
+
+  // Reset form when addendum data loads
+  useEffect(() => {
+    if (addendumDetails) {
+      // Use addendum data from API, fallback to solicitation data for deadlines if not set
+      const submissionDeadline = addendumDetails.submissionDeadline
+        ? formatDateForInput(addendumDetails.submissionDeadline)
+        : solicitation?.submissionDeadline
+        ? formatDateForInput(solicitation.submissionDeadline)
+        : "";
+
+      const questionAcceptanceDeadline = addendumDetails.questionDeadline
+        ? formatDateForInput(addendumDetails.questionDeadline)
+        : solicitation?.questionDeadline
+        ? formatDateForInput(solicitation.questionDeadline)
+        : "";
+
       reset({
-        title: addendum.title,
-        description: addendum.description || "",
-        submissionDeadline: addendum.submissionDeadline || "",
-        status: addendum.status === "published" ? "published" : "draft",
+        title: addendumDetails.title,
+        description: addendumDetails.description || "",
+        submissionDeadline,
+        questionAcceptanceDeadline,
+        status: addendumDetails.status,
+        documents: addendumDetails.files || null,
       });
     }
-  }, [addendum, reset]);
+  }, [addendumDetails, solicitation, reset]);
 
   const handleFormSubmit = async (data: EditAddendumFormValues) => {
-    await onSubmit(data);
+    const payload = {
+      ...data,
+      submissionDeadline: data.submissionDeadline
+        ? new Date(data.submissionDeadline).toISOString()
+        : undefined,
+      questionAcceptanceDeadline: data.questionAcceptanceDeadline
+        ? new Date(data.questionAcceptanceDeadline).toISOString()
+        : undefined,
+      files:
+        data.documents?.map((file) => ({
+          name: file.name,
+          url: file.url,
+          size: file.size.toString(),
+          type: file.type,
+        })) || [],
+    };
+    await onSubmit(payload);
   };
+
+  const FileUploadElement = () => (
+    <>
+      <Upload className="h-8 w-8 text-gray-400 mb-2" />
+      <div className="text-sm text-gray-600">
+        <span className="font-medium text-blue-600 cursor-pointer hover:text-blue-500">
+          Drag & Drop or Click to choose file
+        </span>
+      </div>
+      <p className="text-xs text-gray-500">
+        Supported formats: DOC, PDF, XLS, XLSLS, ZIP, PNG, JPEG
+      </p>
+    </>
+  );
+
+  const FileListItem = ({ file }: { file: File }) => (
+    <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
+      <span className="text-sm text-gray-700">{file.name}</span>
+      <span className="text-xs text-gray-500">
+        {(file.size / 1024).toFixed(1)} KB
+      </span>
+    </div>
+  );
 
   if (!addendum) return null;
 
@@ -524,46 +638,66 @@ const EditAddendumDialog: React.FC<EditAddendumDialogProps> = ({
         <DialogTitle>Edit Addendum</DialogTitle>
       </DialogHeader>
 
-      <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
+      <Forge control={control} onSubmit={handleFormSubmit}>
         <div className="space-y-4">
-          <TextInput
-            control={control as any}
+          <Forger
             name="title"
+            component={TextInput}
             label="Title"
             placeholder="Enter addendum title (5-200 characters)"
             required
           />
-          
-          <TextArea
-            control={control as any}
+
+          <Forger
             name="description"
+            component={TextArea}
             label="Description"
             placeholder="Enter addendum description (optional, max 2000 characters)"
             rows={4}
           />
 
-          <TextDatePicker
-            control={control as any}
+          <Forger
             name="submissionDeadline"
+            component={TextDatePicker}
+            showTime
             label="Submission Deadline"
+            minDate={new Date()}
             placeholder="Select new submission deadline (optional)"
           />
 
+          <Forger
+            name="questionAcceptanceDeadline"
+            component={TextDatePicker}
+            showTime
+            label="Question Acceptance Deadline"
+            dependencies={[maxDate]}
+            maxDate={maxDate}
+            placeholder="Select new question acceptance deadline (optional)"
+          />
 
+          <Forger
+            name="documents"
+            component={TextFileUploader}
+            element={<FileUploadElement />}
+            List={FileListItem}
+            label="Documents"
+            placeholder="Upload documents (optional)"
+            multiple
+          />
 
-          <TextSelect
-            control={control as any}
+          <Forger
             name="status"
+            component={TextSelect}
             label="Status"
             placeholder="Select addendum status"
             options={[
               { value: "draft", label: "Draft" },
-              { value: "published", label: "Published" },
+              { value: "publish", label: "Publish" },
             ]}
           />
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="mt-5">
           <Button
             type="button"
             variant="outline"
@@ -580,7 +714,7 @@ const EditAddendumDialog: React.FC<EditAddendumDialogProps> = ({
             {isLoading ? "Updating..." : "Update Addendum"}
           </Button>
         </DialogFooter>
-      </form>
+      </Forge>
     </>
   );
 };

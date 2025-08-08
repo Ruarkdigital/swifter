@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React, { useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Upload, Users } from "lucide-react";
@@ -11,21 +11,19 @@ import { TextFileUploader } from "@/components/layouts/FormInputs/TextFileInput"
 import { Forge, Forger, useForge } from "@/lib/forge";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { postRequest } from "@/lib/axiosInstance";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { postRequest, getRequest } from "@/lib/axiosInstance";
 import { ApiResponse, ApiResponseError } from "@/types";
 import { useToastHandler } from "@/hooks/useToaster";
 import { useWatch } from "react-hook-form";
 import { useUserRole } from "@/hooks/useUserRole";
 
-// Base schema for form validation
+// Base schema for form validation - deadline fields are now optional
 const baseSchema = {
   title: yup.string().required("Title is required"),
   description: yup.string().required("Description is required"),
-  submissionDeadline: yup.string().required("Submission deadline is required"),
-  questionAcceptanceDeadline: yup
-    .string()
-    .required("Question acceptance deadline is required"),
+  submissionDeadline: yup.string().optional(),
+  questionAcceptanceDeadline: yup.string().optional(),
   documents: yup.array().nullable().default(null),
 };
 
@@ -43,8 +41,8 @@ const createSchema = (isReplyMode: boolean) => {
 type FormValues = {
   title: string;
   description: string;
-  submissionDeadline: string;
-  questionAcceptanceDeadline: string;
+  submissionDeadline?: string;
+  questionAcceptanceDeadline?: string;
   documents: any[] | null;
   question?: string;
 };
@@ -66,7 +64,32 @@ const CreateAddendumDialog: React.FC<CreateAddendumDialogProps> = ({
   const queryClient = useQueryClient();
   const { isVendor } = useUserRole();
 
-  const { control } = useForge<FormValues>({
+  // Fetch solicitation details to auto-populate deadline fields
+  const { data: solicitationData } = useQuery<
+    ApiResponse<any>,
+    ApiResponseError
+  >({
+    queryKey: ["solicitation", solicitationId],
+    queryFn: async () =>
+      await getRequest({ url: `/procurement/solicitations/${solicitationId}` }),
+  });
+
+  const solicitation = solicitationData?.data?.data;
+
+  // Helper function to format date for input
+  const formatDateForInput = (dateString: string) => {
+    if (!dateString) return "";
+    const date = new Date(dateString);
+    // Return in local datetime format for datetime-local input
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    const hours = String(date.getHours()).padStart(2, "0");
+    const minutes = String(date.getMinutes()).padStart(2, "0");
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+  };
+
+  const { control, reset, getValues } = useForge<FormValues>({
     resolver: yupResolver(createSchema(isReplyMode)),
     defaultValues: {
       title: "",
@@ -77,6 +100,24 @@ const CreateAddendumDialog: React.FC<CreateAddendumDialogProps> = ({
       question: "",
     },
   });
+
+  // Auto-populate deadline fields when solicitation data is loaded
+  useEffect(() => {
+    if (solicitation) {
+      reset({
+        title: "",
+        description: "",
+        documents: null,
+        submissionDeadline: formatDateForInput(
+          solicitation.submissionDeadline || ""
+        ),
+        questionAcceptanceDeadline: formatDateForInput(
+          solicitation.questionDeadline || ""
+        ),
+        question: "",
+      });
+    }
+  }, [solicitation, reset]);
 
   const submissionDeadlineDate = useWatch({
     name: "submissionDeadline",
@@ -95,17 +136,17 @@ const CreateAddendumDialog: React.FC<CreateAddendumDialogProps> = ({
     mutationFn: async (files: File[]) => {
       const formData = new FormData();
       files.forEach((file) => {
-        formData.append('file', file);
+        formData.append("file", file);
       });
-      
+
       return await postRequest({
-        url: '/upload',
+        url: "/upload",
         payload: formData,
         config: {
           headers: {
-            'Content-Type': 'multipart/form-data',
+            "Content-Type": "multipart/form-data",
           },
-        }
+        },
       });
     },
   });
@@ -118,32 +159,38 @@ const CreateAddendumDialog: React.FC<CreateAddendumDialogProps> = ({
   >({
     mutationFn: async ({ data, status }) => {
       let uploadedFiles: any[] = [];
-      
+
       // Upload files first if any
       if (data.documents && data.documents.length > 0) {
-        const uploadResponse = await uploadFilesMutation.mutateAsync(data.documents);
+        const uploadResponse = await uploadFilesMutation.mutateAsync(
+          data.documents
+        );
         uploadedFiles = uploadResponse.data?.data || [];
       }
-      
+
       const payload = {
         title: data.title,
         description: data.description,
-        submissionDeadline: new Date(data.submissionDeadline).toISOString(),
-        questionDeadline: new Date(data.questionAcceptanceDeadline).toISOString(),
-        status: status,
-        files: uploadedFiles.map(file => ({
+        submissionDeadline: data.submissionDeadline
+          ? new Date(data.submissionDeadline).toISOString()
+          : undefined,
+        questionDeadline: data.questionAcceptanceDeadline
+          ? new Date(data.questionAcceptanceDeadline).toISOString()
+          : undefined,
+        status: status === "publish" ? "publish" : "draft",
+        files: uploadedFiles.map((file) => ({
           name: file.name,
           url: file.url,
           size: file.size.toString(),
-          type: file.type
+          type: file.type,
         })),
       };
-      
+
       // Use different API endpoint based on user role
       const endpoint = isVendor
         ? `/vendor/solicitations/${solicitationId}/addendums` // Vendor-specific endpoint
         : `/procurement/solicitations/${solicitationId}/addendums`; // Default procurement endpoint
-      
+
       return await postRequest({
         url: endpoint,
         payload,
@@ -153,7 +200,11 @@ const CreateAddendumDialog: React.FC<CreateAddendumDialogProps> = ({
       const action =
         variables.status === "draft" ? "saved as draft" : "published";
       toast.success("Success", `Addendum ${action} successfully`);
+      // Auto-fetch addendum after successful creation
       queryClient.invalidateQueries({
+        queryKey: ["addendums", solicitationId],
+      });
+      queryClient.refetchQueries({
         queryKey: ["addendums", solicitationId],
       });
       onClose();
@@ -175,31 +226,37 @@ const CreateAddendumDialog: React.FC<CreateAddendumDialogProps> = ({
   >({
     mutationFn: async ({ data, status }) => {
       let uploadedFiles: any[] = [];
-      
+
       // Upload files first if any
       if (data.documents && data.documents.length > 0) {
-        const uploadResponse = await uploadFilesMutation.mutateAsync(data.documents);
+        const uploadResponse = await uploadFilesMutation.mutateAsync(
+          data.documents
+        );
         uploadedFiles = uploadResponse.data?.data || [];
       }
-      
+
       const payload = {
         title: data.title,
         description: data.description,
-        submissionDeadline: new Date(data.submissionDeadline).toISOString(),
-        questionDeadline: new Date(data.questionAcceptanceDeadline).toISOString(),
+        submissionDeadline: data.submissionDeadline
+          ? new Date(data.submissionDeadline).toISOString()
+          : undefined,
+        questionDeadline: data.questionAcceptanceDeadline
+          ? new Date(data.questionAcceptanceDeadline).toISOString()
+          : undefined,
         question: data.question,
         status: status,
-        files: uploadedFiles.map(file => ({
+        files: uploadedFiles.map((file) => ({
           name: file.name,
           url: file.url,
           size: file.size.toString(),
-          type: file.type
+          type: file.type,
         })),
       };
-      
+
       // Reply addendum to question endpoint
       const endpoint = `/procurement/solicitations/${solicitationId}/addendums/${questionId}`;
-      
+
       return await postRequest({
         url: endpoint,
         payload,
@@ -209,11 +266,15 @@ const CreateAddendumDialog: React.FC<CreateAddendumDialogProps> = ({
       const action =
         variables.status === "draft" ? "saved as draft" : "published";
       toast.success("Success", `Reply addendum ${action} successfully`);
+      // Auto-fetch addendum after successful creation
       queryClient.invalidateQueries({
         queryKey: ["addendums", solicitationId],
       });
       queryClient.invalidateQueries({
         queryKey: ["questions", solicitationId],
+      });
+      queryClient.refetchQueries({
+        queryKey: ["addendums", solicitationId],
       });
       onClose();
     },
@@ -226,12 +287,9 @@ const CreateAddendumDialog: React.FC<CreateAddendumDialogProps> = ({
     },
   });
 
-  const handleSaveAsDraft = async (data: FormValues) => {
-    if (isReplyMode) {
-      await replyAddendumMutation.mutateAsync({ data, status: "draft" });
-    } else {
-      await createAddendumMutation.mutateAsync({ data, status: "draft" });
-    }
+  const handleSaveAsDraft = async () => {
+    const data = getValues();
+    await createAddendumMutation.mutateAsync({ data, status: "draft" });
   };
 
   const handlePublishAddendum = async (data: FormValues) => {
@@ -365,33 +423,60 @@ const CreateAddendumDialog: React.FC<CreateAddendumDialogProps> = ({
 
         {/* Footer */}
         <div className="flex items-center justify-between p-6">
-          <Button
+          {!isReplyMode && (
+            <Button
               type="button"
               variant="outline"
-              onClick={() => formRef.current?.onSubmit(handleSaveAsDraft)}
+              onClick={() => handleSaveAsDraft()}
               className="text-gray-700 border-gray-300"
-              disabled={createAddendumMutation.isPending || replyAddendumMutation.isPending || uploadFilesMutation.isPending}
+              disabled={
+                createAddendumMutation.isPending ||
+                replyAddendumMutation.isPending ||
+                uploadFilesMutation.isPending
+              }
             >
-              {createAddendumMutation.isPending || replyAddendumMutation.isPending || uploadFilesMutation.isPending ? "Saving..." : "Save as Draft"}
+              {createAddendumMutation.isPending ||
+              replyAddendumMutation.isPending ||
+              uploadFilesMutation.isPending
+                ? "Saving..."
+                : "Save as Draft"}
             </Button>
+          )}
+          {isReplyMode && <div className="w-10 h-10"></div>}
           <div className="flex items-center space-x-3">
             <Button
               type="button"
               variant="outline"
               onClick={handleBack}
               className="text-gray-700 border-gray-300"
-              disabled={createAddendumMutation.isPending || replyAddendumMutation.isPending || uploadFilesMutation.isPending}
+              disabled={
+                createAddendumMutation.isPending ||
+                replyAddendumMutation.isPending ||
+                uploadFilesMutation.isPending
+              }
             >
               Back
             </Button>
             <Button
               type="submit"
               className="bg-[#2A4467] hover:bg-[#1e3252] text-white"
-              disabled={createAddendumMutation.isPending || replyAddendumMutation.isPending || uploadFilesMutation.isPending}
+              disabled={
+                createAddendumMutation.isPending ||
+                replyAddendumMutation.isPending ||
+                uploadFilesMutation.isPending
+              }
             >
-              {createAddendumMutation.isPending || replyAddendumMutation.isPending || uploadFilesMutation.isPending
-                ? uploadFilesMutation.isPending ? "Uploading files..." : isReplyMode ? "Publishing Reply..." : "Publishing..."
-                : isReplyMode ? "Publish Reply" : "Publish Addendum"}
+              {createAddendumMutation.isPending ||
+              replyAddendumMutation.isPending ||
+              uploadFilesMutation.isPending
+                ? uploadFilesMutation.isPending
+                  ? "Uploading files..."
+                  : isReplyMode
+                  ? "Publishing Reply..."
+                  : "Publishing..."
+                : isReplyMode
+                ? "Publish Reply"
+                : "Publish Addendum"}
             </Button>
           </div>
         </div>

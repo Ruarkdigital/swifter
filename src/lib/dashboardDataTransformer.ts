@@ -15,6 +15,128 @@ import { DashboardConfig } from "@/config/dashboardConfig";
 import { applyConsistentColors } from "./chartColorUtils";
 import { format } from "date-fns";
 
+// Dynamic link generation utility
+type UserRole = 'procurement' | 'evaluator' | 'vendor';
+type ActivityType = 'general' | 'myActions';
+
+interface LinkMapping {
+  [role: string]: {
+    [activityType: string]: {
+      [action: string]: string;
+    };
+  };
+}
+
+const ACTIVITY_LINK_MAPPINGS: LinkMapping = {
+  procurement: {
+    general: {
+      published: '/dashboard/solicitation',
+      addendum: '/dashboard/solicitation',
+      question: '/dashboard/solicitation',
+      vendor_accept: '/dashboard/solicitation',
+      proposal_submitted: '/dashboard/solicitation',
+      scored: '/dashboard/evaluation',
+    },
+    myActions: {
+      create_evaluation: '/dashboard/evaluation',
+      create_evaluation_group: '/dashboard/evaluation',
+      release_group: '/dashboard/evaluation',
+    },
+  },
+  evaluator: {
+    general: {
+      Scored: '/dashboard/evaluation',
+      Created: '/dashboard/evaluation',
+    },
+    myActions: {
+      'score solicitation': '/dashboard/evaluation',
+    },
+  },
+  vendor: {
+    general: {
+      vendor_accept: '/dashboard/solicitation',
+      vendor_decline: '/dashboard/solicitation',
+      addendum_question: '/dashboard/solicitation',
+    },
+    myActions: {
+      draft: '/dashboard/solicitation',
+      invited: '/dashboard/invitations',
+      no_response: '/dashboard/solicitation',
+      submit_proposal: '/dashboard/solicitation',
+    },
+  },
+};
+
+/**
+ * Generate dynamic link based on user role, activity type, and action
+ * @param userRole - The user's role (procurement, evaluator, vendor)
+ * @param activityType - Type of activity (general, myActions)
+ * @param action - The specific action from statusText
+ * @param data - Object containing id and name for the link
+ * @returns The complete href or null if no mapping exists
+ */
+function generateDynamicLink(
+  userRole: UserRole,
+  activityType: ActivityType,
+  action: string,
+  data: { id: string; name: string }
+): string | null {
+  const roleMapping = ACTIVITY_LINK_MAPPINGS[userRole];
+  if (!roleMapping) return null;
+
+  const activityMapping = roleMapping[activityType];
+  if (!activityMapping) return null;
+
+  const basePath = activityMapping[action];
+  if (!basePath) return null;
+
+  return `${basePath}/${data.id}`;
+}
+
+/**
+ * Apply dynamic status text replacement based on user role and activity action
+ * @param statusText - The original status text
+ * @param userRole - The user's role
+ * @param activityType - Type of activity (general or myActions)
+ * @param data - Object containing id and name
+ * @returns Modified status text with dynamic links
+ */
+function applyDynamicStatusTextReplacement(
+  statusText: string,
+  userRole: UserRole,
+  activityType: ActivityType,
+  data: { id: string; name: string }
+): string {
+  // Extract potential actions from statusText to match against mappings
+  const roleMapping = ACTIVITY_LINK_MAPPINGS[userRole]?.[activityType];
+  if (!roleMapping) {
+    // Fallback to original behavior if no mapping exists
+    return statusText.replace(
+      data.name,
+      `<a href="/dashboard/solicitation/${data.id}" class="underline underline-offset-4 text-blue-600">${data.name}</a>`
+    );
+  }
+
+  // Find matching action in statusText (case-sensitive)
+  for (const action of Object.keys(roleMapping)) {
+    if (statusText.includes(action)) {
+      const href = generateDynamicLink(userRole, activityType, action, data);
+      if (href) {
+        return statusText.replace(
+          data.name,
+          `<a href="${href}" class="underline underline-offset-4 text-blue-600">${data.name}</a>`
+        );
+      }
+    }
+  }
+
+  // Fallback to original behavior if no action matches
+  return statusText.replace(
+    data.name,
+    `<a href="/dashboard/solicitation/${data.id}" class="underline underline-offset-4 text-blue-600">${data.name}</a>`
+  );
+}
+
 // Types for Recharts-compatible data formats
 export interface PieChartData {
   [key: string]: string | number | undefined;
@@ -1234,8 +1356,6 @@ export class DashboardDataTransformer {
       },
     ];
 
-    console.log({ chartData, data, total });
-
     return applyConsistentColors(chartData);
   }
 
@@ -1470,16 +1590,11 @@ export class DashboardDataTransformer {
       statusText: string,
       data: { id: string; name: string }
     ) => {
-      if (statusText.includes("evaluation")) {
-        return statusText.replace(
-          data.name,
-          `<a href="/dashboard/evaluation/assigned/${data.id}" class="underline underline-offset-4 text-blue-600 ">${data.name}</a>`
-        );
-      }
-
-      return statusText.replace(
-        data.name,
-        `<a href="/dashboard/evaluation/assigned/${data.id}" class="underline underline-offset-4 text-blue-600">${data.name}</a>`
+      return applyDynamicStatusTextReplacement(
+        statusText,
+        'evaluator',
+        'myActions',
+        data
       );
     };
 
@@ -1511,30 +1626,18 @@ export class DashboardDataTransformer {
       return [];
     }
 
-    const getFormattedText = (
-      statusText: string,
-      data: { id: string; name: string }
-    ) => {
-      if (statusText.includes("evaluation")) {
-        return statusText.replace(
-          data.name,
-          `<a href="/dashboard/evaluation/assigned/${data.id}" class="underline underline-offset-4 text-blue-600 ">${data.name}</a>`
-        );
-      }
-
-      return statusText.replace(
-        data.name,
-        `<a href="/dashboard/evaluation/assigned/${data.id}" class="underline underline-offset-4 text-blue-600">${data.name}</a>`
-      );
-    };
-
     return data.map((update: any, index: number) => ({
       id: update?.evaluation._id || `update-${index}`,
       title: update?.evaluation.solicitation.name,
-      text: getFormattedText(update.statusText, {
-        id: update?.evaluation?._id,
-        name: update?.evaluation?.solicitation?.name,
-      }),
+      text: applyDynamicStatusTextReplacement(
+        update.statusText,
+        'evaluator',
+        'general',
+        {
+          id: update?.evaluation?._id,
+          name: update?.evaluation?.solicitation?.name,
+        }
+      ),
       type: update.type || "evaluation",
       date:
         update.date || update.updatedAt || update.createdAt
@@ -1635,16 +1738,11 @@ export class DashboardDataTransformer {
       statusText: string,
       data: { id: string; name: string }
     ) => {
-      if (statusText.includes("invited")) {
-        return statusText.replace(
-          data.name,
-          `<a href="/dashboard/invitations/${data.id}" class="underline underline-offset-4 text-blue-600 ">${data.name}</a>`
-        );
-      }
-
-      return statusText.replace(
-        data.name,
-        `<a href="/dashboard/solicitation/${data.id}" class="underline underline-offset-4 text-blue-600">${data.name}</a>`
+      return applyDynamicStatusTextReplacement(
+        statusText,
+        'vendor',
+        'myActions',
+        data
       );
     };
 
@@ -1671,29 +1769,17 @@ export class DashboardDataTransformer {
       return [];
     }
 
-    const getFormattedText = (
-      statusText: string,
-      data: { id: string; name: string }
-    ) => {
-      if (statusText.includes("invited")) {
-        return statusText.replace(
-          data.name,
-          `<a href="/dashboard/invitations/${data.id}" class="underline underline-offset-4 text-blue-600 ">${data.name}</a>`
-        );
-      }
-
-      return statusText.replace(
-        data.name,
-        `<a href="/dashboard/solicitation/${data.id}" class="underline underline-offset-4 text-blue-600">${data.name}</a>`
-      );
-    };
-
     return data.map((update: any, index: number) => ({
       id: update.id || `vendor-update-${index}`,
-      text: getFormattedText(update.statusText, {
-        id: update.solicitation._id,
-        name: update.solicitation.name,
-      }),
+      text: applyDynamicStatusTextReplacement(
+        update.statusText,
+        'vendor',
+        'general',
+        {
+          id: update.solicitation._id,
+          name: update.solicitation.name,
+        }
+      ),
       title: update.solicitation.name,
       time:
         update.time ||
@@ -1719,16 +1805,11 @@ export class DashboardDataTransformer {
       statusText: string,
       data: { id: string; name: string }
     ) => {
-      if (statusText.includes("evaluation")) {
-        return statusText.replace(
-          data.name,
-          `<a href="/dashboard/evaluations/${data.id}" class="underline underline-offset-4 text-blue-600 ">${data.name}</a>`
-        );
-      }
-
-      return statusText.replace(
-        data.name,
-        `<a href="/dashboard/solicitation/${data.id}" class="underline underline-offset-4 text-blue-600">${data.name}</a>`
+      return applyDynamicStatusTextReplacement(
+        statusText,
+        'procurement',
+        'myActions',
+        data
       );
     };
 
@@ -1759,30 +1840,18 @@ export class DashboardDataTransformer {
       return [];
     }
 
-    const getFormattedText = (
-      statusText: string,
-      data: { id: string; name: string }
-    ) => {
-      if (statusText.includes("evaluation")) {
-        return statusText.replace(
-          data.name,
-          `<a href="/dashboard/evaluations/${data.id}" class="underline underline-offset-4 text-blue-600 ">${data.name}</a>`
-        );
-      }
-
-      return statusText.replace(
-        data.name,
-        `<a href="/dashboard/solicitation/${data.id}" class="underline underline-offset-4 text-blue-600">${data.name}</a>`
-      );
-    };
-
     return data.map((update: any, index: number) => ({
       id: update._id || update.id || `update-${index}`,
       title: update.solicitation.name,
-      text: getFormattedText(update.statusText, {
-        id: update.solicitation._id || update.evaluation._id,
-        name: update.solicitation.name || update.evaluation.name,
-      }),
+      text: applyDynamicStatusTextReplacement(
+        update.statusText,
+        'procurement',
+        'general',
+        {
+          id: update.solicitation._id || update.evaluation._id,
+          name: update.solicitation.name || update.evaluation.name,
+        }
+      ),
       date:
         update.updatedAt || update.date || update.createdAt
           ? `${format(

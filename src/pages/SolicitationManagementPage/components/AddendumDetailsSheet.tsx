@@ -9,9 +9,16 @@ import { ApiResponse, ApiResponseError } from "@/types";
 import { format } from "date-fns";
 import { PageLoader } from "@/components/ui/PageLoader";
 import { useUserRole } from "@/hooks/useUserRole";
+import { DocSVG } from "@/assets/icons/Doc";
+import { PdfSVG } from "@/assets/icons/Pdf";
+import { ExcelSVG } from "@/assets/icons/Excel";
+import PowerPointSVG from "@/assets/icons/PowerPoint";
 
 // Safe date formatting utility
-const safeFormatDate = (dateString: string | undefined, formatStr: string): string => {
+const safeFormatDate = (
+  dateString: string | undefined,
+  formatStr: string
+): string => {
   if (!dateString) return "N/A";
   try {
     const date = new Date(dateString);
@@ -48,7 +55,7 @@ interface AddendumDetailsSheetProps {
     title: string;
     linkedQuestion: boolean;
     datePublished: string;
-    status: "draft" | "published";
+    status: "draft" | "publish";
   };
   solicitationId: string;
   onClose: () => void;
@@ -56,18 +63,11 @@ interface AddendumDetailsSheetProps {
 
 // Helper function to format file size
 const formatFileSize = (bytes: number): string => {
-  if (bytes === 0) return '0 Bytes';
+  if (bytes === 0) return "0 Bytes";
   const k = 1024;
-  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const sizes = ["Bytes", "KB", "MB", "GB"];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-};
-
-// Helper function to get file extension from type or name
-const getFileExtension = (fileName: string, fileType?: string): string => {
-  if (fileType) return fileType.toUpperCase();
-  const extension = fileName.split('.').pop();
-  return extension ? extension.toUpperCase() : 'FILE';
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
 };
 
 const AddendumDetailsSheet: React.FC<AddendumDetailsSheetProps> = ({
@@ -89,53 +89,43 @@ const AddendumDetailsSheet: React.FC<AddendumDetailsSheetProps> = ({
       const endpoint = isVendor
         ? `/vendor/solicitations/${solicitationId}/addendums/${addendum.id}` // Vendor-specific endpoint
         : `/procurement/solicitations/${solicitationId}/addendums/${addendum.id}`; // Default procurement endpoint
-      
+
       return await getRequest({ url: endpoint });
     },
     enabled: !!solicitationId && !!addendum.id,
   });
 
   const addendumDetail = addendumDetailData?.data?.data;
-  const getFileIcon = (type: string) => {
-    switch (type) {
+  // Helper function to get file extension from name or type
+  const getFileExtension = (fileName: string, fileType: string): string => {
+    const extension = fileName.split(".").pop()?.toUpperCase();
+    if (extension) return extension;
+
+    // Fallback to type if no extension in name
+    if (fileType.includes("pdf")) return "PDF";
+    if (fileType.includes("doc")) return "DOC";
+    if (fileType.includes("excel") || fileType.includes("sheet")) return "XLS";
+    if (fileType.includes("powerpoint") || fileType.includes("presentation"))
+      return "PPT";
+
+    return "FILE";
+  };
+
+  const getFileIcon = (fileExtension: string) => {
+    switch (fileExtension) {
       case "DOC":
-        return (
-          <div className="w-10 h-10 bg-blue-100 rounded flex items-center justify-center">
-            <div className="w-6 h-6 bg-blue-500 rounded-sm flex items-center justify-center">
-              <span className="text-white text-xs font-bold">W</span>
-            </div>
-          </div>
-        );
+      case "DOCX":
+        return <DocSVG />;
       case "PDF":
-        return (
-          <div className="w-10 h-10 bg-red-100 rounded flex items-center justify-center">
-            <div className="w-6 h-6 bg-red-500 rounded-sm flex items-center justify-center">
-              <span className="text-white text-xs font-bold">PDF</span>
-            </div>
-          </div>
-        );
+        return <PdfSVG />;
       case "XLS":
-        return (
-          <div className="w-10 h-10 bg-green-100 rounded flex items-center justify-center">
-            <div className="w-6 h-6 bg-green-500 rounded-sm flex items-center justify-center">
-              <span className="text-white text-xs font-bold">X</span>
-            </div>
-          </div>
-        );
-      case "ZIP":
-        return (
-          <div className="w-10 h-10 bg-purple-100 rounded flex items-center justify-center">
-            <div className="w-6 h-6 bg-purple-500 rounded-sm flex items-center justify-center">
-              <span className="text-white text-xs font-bold">ZIP</span>
-            </div>
-          </div>
-        );
+      case "XLSX":
+        return <ExcelSVG />;
+      case "PPT":
+      case "PPTX":
+        return <PowerPointSVG />;
       default:
-        return (
-          <div className="w-10 h-10 bg-gray-100 rounded flex items-center justify-center">
-            <div className="w-6 h-6 bg-gray-500 rounded-sm"></div>
-          </div>
-        );
+        return <DocSVG />;
     }
   };
 
@@ -159,27 +149,25 @@ const AddendumDetailsSheet: React.FC<AddendumDetailsSheetProps> = ({
       {/* Content */}
       <div className="flex-1 p-6 space-y-6 overflow-y-auto">
         {/* Title and Status */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-start justify-between">
           <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-200">
             {addendum.title}
           </h2>
-          <Badge className="bg-gray-100 text-gray-800 hover:bg-gray-100 border-0">
+          <Badge className="bg-gray-100 text-gray-800 hover:bg-gray-100 border-0 capitalize">
             {addendum.status}
           </Badge>
         </div>
 
         {/* Date and Time */}
         <div className="text-sm text-gray-500">
-          {addendumDetail ? 
-            safeFormatDate(addendumDetail.createdAt, "MMMM d, yyyy") + ' • ' + 
-            safeFormatDate(addendumDetail.createdAt, "pppp") :
-            addendum.datePublished
-          }
+          {addendumDetail
+            ? safeFormatDate(addendumDetail.createdAt, "MMMM d, yyyy")
+            : addendum.datePublished}
         </div>
 
         {/* Loading State */}
         {isLoading && (
-          <PageLoader 
+          <PageLoader
             showHeader={false}
             message="Loading addendum details..."
             className="py-8"
@@ -198,32 +186,57 @@ const AddendumDetailsSheet: React.FC<AddendumDetailsSheetProps> = ({
         {/* Addendum Details Section */}
         {addendumDetail && (
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-900">Addendum Details</h3>
-            
+            <h3 className="text-lg font-semibold text-gray-900">
+              Addendum Details
+            </h3>
+
             <div className="grid grid-cols-2 gap-6">
               <div>
-                <h4 className="text-sm font-medium text-gray-500 mb-2">Addendum Title</h4>
-                <p className="text-sm font-medium text-gray-900">{addendumDetail.title}</p>
+                <h4 className="text-sm font-medium text-gray-500 mb-2">
+                  Addendum Title
+                </h4>
+                <p className="text-sm font-medium text-gray-900">
+                  {addendumDetail.title}
+                </p>
               </div>
               <div>
-                <h4 className="text-sm font-medium text-gray-500 mb-2">Publish Date</h4>
+                <h4 className="text-sm font-medium text-gray-500 mb-2">
+                  Publish Date
+                </h4>
                 <p className="text-sm font-medium text-gray-900">
                   {safeFormatDate(addendumDetail.createdAt, "MMMM d, yyyy")}
                 </p>
               </div>
               {addendumDetail.submissionDeadline && (
                 <div>
-                  <h4 className="text-sm font-medium text-gray-500 mb-2">Submissions Deadline</h4>
+                  <h4 className="text-sm font-medium text-gray-500 mb-2">
+                    Submissions Deadline
+                  </h4>
                   <p className="text-sm font-medium text-gray-900">
-                    {safeFormatDate(addendumDetail.submissionDeadline, "MMMM d, yyyy")} | {safeFormatDate(addendumDetail.submissionDeadline, "h:mm a")}
+                    {safeFormatDate(
+                      addendumDetail.submissionDeadline,
+                      "MMMM d, yyyy"
+                    )}{" "}
+                    |{" "}
+                    {safeFormatDate(
+                      addendumDetail.submissionDeadline,
+                      "h:mm a"
+                    )}
                   </p>
                 </div>
               )}
               {addendumDetail.questionDeadline && (
                 <div>
-                  <h4 className="text-sm font-medium text-gray-500 mb-2">Question Acceptance Deadline</h4>
+                  <h4 className="text-sm font-medium text-gray-500 mb-2">
+                    Question Acceptance Deadline
+                  </h4>
                   <p className="text-sm font-medium text-gray-900">
-                    {safeFormatDate(addendumDetail.questionDeadline, "MMMM d, yyyy")} | {safeFormatDate(addendumDetail.questionDeadline, "h:mm a")}
+                    {safeFormatDate(
+                      addendumDetail.questionDeadline,
+                      "MMMM d, yyyy"
+                    )}{" "}
+                    |{" "}
+                    {safeFormatDate(addendumDetail.questionDeadline, "h:mm a")}
                   </p>
                 </div>
               )}
@@ -231,7 +244,9 @@ const AddendumDetailsSheet: React.FC<AddendumDetailsSheetProps> = ({
 
             {addendumDetail.description && (
               <div>
-                <h4 className="text-sm font-medium text-gray-500 mb-2">Description</h4>
+                <h4 className="text-sm font-medium text-gray-500 mb-2">
+                  Description
+                </h4>
                 <p className="text-sm text-gray-900 leading-relaxed dark:text-gray-200">
                   {addendumDetail.description}
                 </p>
@@ -243,11 +258,14 @@ const AddendumDetailsSheet: React.FC<AddendumDetailsSheetProps> = ({
         {/* Linked Question Section */}
         {addendumDetail?.questions && (
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-400">Linked Question</h3>
-            
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-400">
+              Linked Question
+            </h3>
+
             <div className="space-y-3">
               <div className="text-xs text-gray-500">
-                {safeFormatDate(addendumDetail.createdAt, "MMMM d, yyyy")} • {safeFormatDate(addendumDetail.createdAt, "h:mm a")}
+                {safeFormatDate(addendumDetail.createdAt, "MMMM d, yyyy")} •{" "}
+                {safeFormatDate(addendumDetail.createdAt, "h:mm a")}
               </div>
               <p className="text-sm text-gray-900 leading-relaxed dark:text-gray-200">
                 {addendumDetail.questions}
@@ -259,35 +277,46 @@ const AddendumDetailsSheet: React.FC<AddendumDetailsSheetProps> = ({
         {/* Uploaded Documents Section */}
         {addendumDetail?.files && addendumDetail.files.length > 0 && (
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-400">Uploaded Documents</h3>
-            
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-400">
+              Uploaded Documents
+            </h3>
+
             <div className="space-y-3">
               {addendumDetail.files.map((file) => {
                 const fileExtension = getFileExtension(file.name, file.type);
                 return (
-                  <div key={file._id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+                  <div
+                    key={file._id}
+                    className="flex items-center justify-between p-3 border border-gray-200 rounded-lg"
+                  >
                     <div className="flex items-center space-x-3">
                       {getFileIcon(fileExtension)}
                       <div>
-                        <p className="text-sm font-medium text-gray-900 dark:text-gray-200">{file.name}</p>
-                        <p className="text-xs text-gray-500">{fileExtension} • {formatFileSize(file.size)}</p>
+                        <p className="text-sm font-medium text-gray-900 dark:text-gray-200">
+                          {file.name}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {fileExtension} • {formatFileSize(file.size)}
+                        </p>
                       </div>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="h-8 w-8 p-0"
-                        onClick={() => window.open(file.url, '_blank')}
-                      >
-                        <Eye className="h-4 w-4 text-gray-500" />
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
+                      {fileExtension === "PDF" && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 w-8 p-0"
+                          onClick={() => window.open(file.url, "_blank")}
+                        >
+                          <Eye className="h-4 w-4 text-gray-500" />
+                        </Button>
+                      )}
+                      <Button
+                        variant="ghost"
+                        size="sm"
                         className="h-8 w-8 p-0"
                         onClick={() => {
-                          const link = document.createElement('a');
+                          const link = document.createElement("a");
                           link.href = file.url;
                           link.download = file.name;
                           document.body.appendChild(link);
