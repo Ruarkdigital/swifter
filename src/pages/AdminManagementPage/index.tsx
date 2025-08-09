@@ -315,7 +315,7 @@ const AdminManagementPage = () => {
     useMutation<
       ApiResponse<any>,
       ApiResponseError,
-      { adminId: string; status: "active" | "inactive" }
+      { adminId: string; status: "active" | "inactive" | "suspended" }
     >({
       mutationKey: ["updateAdminStatus"],
       mutationFn: async ({ adminId, status }) =>
@@ -329,7 +329,6 @@ const AdminManagementPage = () => {
         queryClient.invalidateQueries({ queryKey: ["adminDashboard"] });
       },
       onError: (error) => {
-        console.log(error);
         const err = error as ApiResponseError;
         toast.error(
           "Error",
@@ -372,7 +371,7 @@ const AdminManagementPage = () => {
   // Handle admin status update
   const handleUpdateAdminStatus = async (
     adminId: string,
-    status: "active" | "inactive"
+    status: "active" | "inactive" | "suspended"
   ) => {
     try {
       await updateAdminStatus({ adminId, status });

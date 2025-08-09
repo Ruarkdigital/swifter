@@ -49,7 +49,7 @@ interface AdminDetailsSheetProps {
   adminId?: string;
   admin?: AdminDetails | null;
   children?: React.ReactNode;
-  onStatusUpdate?: (adminId: string, status: "active" | "inactive") => void;
+  onStatusUpdate?: (adminId: string, status: "active" | "inactive" | "suspended") => void;
   onDelete?: (adminId: string) => void;
 }
 
@@ -180,7 +180,7 @@ const AdminDetailsSheet: React.FC<AdminDetailsSheetProps> = ({
 
   const handleSuspendUser = () => {
     if (onStatusUpdate && adminData) {
-      onStatusUpdate(adminData._id || adminData._id!, "inactive");
+      onStatusUpdate(adminData._id || adminData._id!, "suspended");
       setIsActive(false);
     }
   };
@@ -196,7 +196,7 @@ const AdminDetailsSheet: React.FC<AdminDetailsSheetProps> = ({
     queryClient.invalidateQueries({ queryKey: ["dashboard-count"] });
     queryClient.invalidateQueries({ queryKey: ["admins"] });
     queryClient.invalidateQueries({ queryKey: ["admin-details", adminId] });
-    console.log("User updated:", adminId, updatedData);
+    onOpenChange?.(false)
   };
 
   return (
