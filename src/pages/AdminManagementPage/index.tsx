@@ -271,12 +271,14 @@ const AdminManagementPage = () => {
       }
 
       // Add date range if selected
-      if (dateRange.startDate) {
-        params.startDate = formatDate(dateRange.startDate, "yyyy-MM-dd");
-      }
-
-      if (dateRange.endDate) {
-        params.endDate = formatDate(dateRange.endDate, "yyyy-MM-dd");
+      const start = dateRange.startDate
+        ? formatDate(dateRange.startDate, "yyyy-MM-dd")
+        : undefined;
+      const end = dateRange.endDate
+        ? formatDate(dateRange.endDate, "yyyy-MM-dd")
+        : undefined;
+      if (start || end) {
+        params.date = `${start ?? ""}-${end ?? ""}`;
       }
 
       return await getRequest({
