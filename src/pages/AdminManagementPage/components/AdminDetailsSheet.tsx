@@ -191,7 +191,7 @@ const AdminDetailsSheet: React.FC<AdminDetailsSheetProps> = ({
     }
   };
 
-  const handleUserUpdate = (adminId: string, updatedData: any) => {
+  const handleUserUpdate = (adminId: string) => {
     // Invalidate queries to refresh data after user update
     queryClient.invalidateQueries({ queryKey: ["dashboard-count"] });
     queryClient.invalidateQueries({ queryKey: ["admins"] });
