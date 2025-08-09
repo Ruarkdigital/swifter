@@ -332,7 +332,7 @@ const CompanyDetailPage = () => {
 
   // Format date helper
   const formatDate = (dateString: string) => {
-    return dateString ? "N/A" : format(new Date(dateString), "MMMM d, yyyy, pppp");
+    return !dateString ? "N/A" : format(new Date(dateString), "MMMM d, yyyy, pppp");
   };
 
   // Get status badge color
