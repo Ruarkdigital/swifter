@@ -16,6 +16,7 @@ import DocumentsTab from "./components/DocumentsTab";
 import QuestionsTab from "./components/QuestionsTab";
 import AddendumsTab from "./components/AddendumsTab";
 import EditSolicitationDialog from "./components/EditSolicitationDialog";
+import ExtendDeadlineDialog from "./components/ExtendDeadlineDialog";
 import ProposalDetailsSheet from "./components/ProposalDetailsSheet";
 import {
   ChevronRight,
@@ -355,6 +356,7 @@ export const SolicitationDetailPage = () => {
     pageIndex: 0,
     pageSize: 10,
   });
+  const [extendOpen, setExtendOpen] = useState(false);
 
   // Fetch solicitation details from API
   const {
@@ -599,7 +601,7 @@ export const SolicitationDetailPage = () => {
       id: "actions",
       header: "Actions",
       cell: ({ row }) => (
-        <div className="flex items-center ">
+        <div className="flex items-center gap-2">
           {isOwner && row.original.status !== "invited" && (
             <Button
               variant="link"
@@ -614,6 +616,15 @@ export const SolicitationDetailPage = () => {
               }
             >
               View
+            </Button>
+          )}
+          {isCompanyAdmin && (
+            <Button
+              variant="link"
+              className=""
+              onClick={() => setExtendOpen(true)}
+            >
+              Extend Deadline
             </Button>
           )}
         </div>
@@ -996,9 +1007,9 @@ export const SolicitationDetailPage = () => {
                     </DropdownMenuContent>
                   </DropdownMenu>
                   {isOwner && (
-                    <EditSolicitationDialog
-                      solicitation={solicitation as any}
-                    />
+                    <>
+                      <EditSolicitationDialog solicitation={solicitation as any} />
+                    </>
                   )}
                 </div>
               )}
@@ -1468,6 +1479,14 @@ export const SolicitationDetailPage = () => {
           <AddendumsTab solicitationId={id} />
         </TabsContent>
       </Tabs>
+
+      {/* Extend Deadline Dialog mounted at page level */}
+      <ExtendDeadlineDialog
+        solicitation={solicitation as any}
+        open={extendOpen}
+        onOpenChange={setExtendOpen}
+      />
+
       <div className="h-10" />
     </div>
   );
