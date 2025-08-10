@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import EditVendorDialog from "./components/EditVendorDialog";
 import { PageLoader } from "@/components/ui/PageLoader";
+import PowerPointSVG from "@/assets/icons/PowerPoint";
 
 // Vendor detail type extending the base Vendor type
 type VendorDetail = Vendor & {
@@ -152,14 +153,34 @@ const OverviewTab = ({ vendor }: { vendor: VendorDetail }) => {
 const DocumentsTab = ({ vendor }: { vendor: VendorDetail }) => {
   const documents = vendor?.documents ?? [];
 
-  const getFileIcon = (type: VendorDetail["documents"][0]["type"]) => {
-    switch (type) {
+   // Helper function to get file extension from name or type
+  const getFileExtension = (fileName: string, fileType: string): string => {
+    const extension = fileName.split(".").pop()?.toUpperCase();
+    if (extension) return extension;
+
+    // Fallback to type if no extension in name
+    if (fileType.includes("pdf")) return "PDF";
+    if (fileType.includes("doc")) return "DOC";
+    if (fileType.includes("excel") || fileType.includes("sheet")) return "XLS";
+    if (fileType.includes("powerpoint") || fileType.includes("presentation"))
+      return "PPT";
+
+    return "FILE";
+  };
+
+  const getFileIcon = (fileExtension: string) => {
+    switch (fileExtension) {
       case "DOC":
+      case "DOCX":
         return <DocSVG />;
       case "PDF":
         return <PdfSVG />;
       case "XLS":
+      case "XLSX":
         return <ExcelSVG />;
+      case "PPT":
+      case "PPTX":
+        return <PowerPointSVG />;
       default:
         return <DocSVG />;
     }
@@ -186,7 +207,7 @@ const DocumentsTab = ({ vendor }: { vendor: VendorDetail }) => {
                 {/* Left side - Icon and Info */}
                 <div className="flex items-start gap-3 flex-1">
                   <div className="flex-shrink-0">
-                    {getFileIcon(document.type)}
+                    {getFileIcon(getFileExtension(document.name, document.type))}
                   </div>
                   <div className="flex-1 min-w-0">
                     <h4 className="text-sm font-medium text-gray-900 dark:text-gray-200 truncate">
@@ -206,16 +227,18 @@ const DocumentsTab = ({ vendor }: { vendor: VendorDetail }) => {
 
                 {/* Right side - Action Buttons */}
                 <div className="flex items-center gap-2 ml-2">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className={cn(
-                      "h-8 w-8 p-0 bg-gray-100 rounded-full hover:bg-gray-200"
-                    )}
-                    title="View"
-                  >
-                    <Eye className="w-4 h-4 text-gray-500" />
-                  </Button>
+                  {getFileExtension(document.name, document.type) === "PDF" && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className={cn(
+                        "h-8 w-8 p-0 bg-gray-100 rounded-full hover:bg-gray-200"
+                      )}
+                      title="View"
+                    >
+                      <Eye className="w-4 h-4 text-gray-500" />
+                    </Button>
+                  )}
                   <Button
                     variant="ghost"
                     size="icon"
