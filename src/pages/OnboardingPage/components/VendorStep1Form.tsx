@@ -26,7 +26,7 @@ const VendorStep1Form: React.FC<VendorStep1FormProps> = ({}) => {
   >({
     queryKey: ["vendorCategories"],
     queryFn: async () =>
-      await getRequest({ url: "/vendor/solicitations/meta/categories" }),
+      await getRequest({ url: "/procurement/solicitations/meta/categories" }),
   });
 
   const categoryOptions =
