@@ -361,7 +361,7 @@ const VendorOnboardingPage = () => {
         </div>
       </div>
 
-      <div className="text-center mt-6 absolute bottom-10 mx-auto w-fit right-[47%]">
+      <div className="text-center mt-6 mx-auto w-fit ">
         <p className="text-xs text-gray-500 dark:text-gray-400">
           Powered by{" "}
           <a 
