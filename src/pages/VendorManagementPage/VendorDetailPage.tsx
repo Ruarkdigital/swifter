@@ -27,9 +27,16 @@ import { PageLoader } from "@/components/ui/PageLoader";
 import PowerPointSVG from "@/assets/icons/PowerPoint";
 
 // Vendor detail type extending the base Vendor type
-type VendorDetail = Vendor & {
+type VendorDetail = Omit<Vendor, "documents"> & {
   registrationDate?: string;
   vendorContact?: string;
+  documents?: {
+    name: string;
+    fileType: string;
+    fileSize: string;
+    link: string;
+    _id: string;
+  }[];
 };
 
 // Status badge component
@@ -199,7 +206,7 @@ const DocumentsTab = ({ vendor }: { vendor: VendorDetail }) => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {documents.map((document) => (
           <Card
-            key={document.id}
+            key={document._id}
             className="border hover:shadow-md transition-shadow bg-white"
           >
             <CardContent className="p-4">
@@ -207,7 +214,7 @@ const DocumentsTab = ({ vendor }: { vendor: VendorDetail }) => {
                 {/* Left side - Icon and Info */}
                 <div className="flex items-start gap-3 flex-1">
                   <div className="flex-shrink-0">
-                    {getFileIcon(getFileExtension(document.name, document.type))}
+                    {getFileIcon(getFileExtension(document.name, document.fileType))}
                   </div>
                   <div className="flex-1 min-w-0">
                     <h4 className="text-sm font-medium text-gray-900 dark:text-gray-200 truncate">
@@ -215,11 +222,11 @@ const DocumentsTab = ({ vendor }: { vendor: VendorDetail }) => {
                     </h4>
                     <div className="flex items-center gap-2 mt-1">
                       <span className="text-xs text-gray-500">
-                        {document.type}
+                        {document.fileType}
                       </span>
                       <span className="text-xs text-gray-400">•</span>
                       <span className="text-xs text-gray-500">
-                        {document.size}
+                        {document.fileSize}
                       </span>
                     </div>
                   </div>
@@ -227,7 +234,7 @@ const DocumentsTab = ({ vendor }: { vendor: VendorDetail }) => {
 
                 {/* Right side - Action Buttons */}
                 <div className="flex items-center gap-2 ml-2">
-                  {getFileExtension(document.name, document.type) === "PDF" && (
+                  {getFileExtension(document.name, document.fileType) === "PDF" && (
                     <Button
                       variant="ghost"
                       size="icon"
@@ -424,7 +431,7 @@ export const VendorDetailPage = () => {
     isLoading,
     error,
   } = useQuery<
-    ApiResponse<{ vendor: Vendor; submissions: Vendor["submissions"] }>,
+    ApiResponse<{ vendor: VendorDetail; submissions: VendorDetail["submissions"] }>,
     ApiResponseError
   >({
     queryKey: ["vendor", id],
