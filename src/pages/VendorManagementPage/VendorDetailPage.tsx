@@ -30,6 +30,12 @@ import PowerPointSVG from "@/assets/icons/PowerPoint";
 type VendorDetail = Omit<Vendor, "documents"> & {
   registrationDate?: string;
   vendorContact?: string;
+  user: {
+    name: string;
+    email: string;
+    phone: string;
+    _id: string
+  };
   documents?: {
     name: string;
     fileType: string;
@@ -113,7 +119,7 @@ const OverviewTab = ({ vendor }: { vendor: VendorDetail }) => {
       <div>
         <h4 className="text-sm font-medium text-gray-500 mb-2">Phone Number</h4>
         <p className="text-sm text-gray-900 font-medium dark:text-gray-200">
-          {vendor.phone || "N/A"}
+          {vendor?.user?.phone || "N/A"}
         </p>
       </div>
 
