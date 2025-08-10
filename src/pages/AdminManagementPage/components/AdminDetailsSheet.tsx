@@ -22,7 +22,7 @@ interface AdminDetails {
     company?: string;
     lastLoginAt?: string;
     lastLogin?: string;
-    status: "pending" | "active" | "inactive";
+    status: "pending" | "active" | "inactive" | "suspended";
     userId?: string;
     dateCreated?: string;
     createdAt: string;
@@ -51,6 +51,7 @@ interface AdminDetailsSheetProps {
   children?: React.ReactNode;
   onStatusUpdate?: (adminId: string, status: "active" | "inactive" | "suspended") => void;
   onDelete?: (adminId: string) => void;
+  isUpdatingAdminStatus?: boolean;
 }
 
 const AdminDetailsSheet: React.FC<AdminDetailsSheetProps> = ({
@@ -60,6 +61,7 @@ const AdminDetailsSheet: React.FC<AdminDetailsSheetProps> = ({
   children,
   onStatusUpdate,
   onDelete,
+  isUpdatingAdminStatus
 }) => {
   // All hooks must be called before any conditional logic
   const toast = useToastHandler();
@@ -288,6 +290,8 @@ const AdminDetailsSheet: React.FC<AdminDetailsSheetProps> = ({
                     ? "Active"
                     : adminData.status === "inactive"
                     ? "Inactive"
+                    : adminData.status === "suspended"
+                    ? "Suspended"
                     : "Pending"}
                 </Badge>
               </div>
@@ -412,6 +416,7 @@ const AdminDetailsSheet: React.FC<AdminDetailsSheetProps> = ({
                   text="Are you sure you want to suspend this admin? They will lose access to the system."
                   type="warning"
                   onPrimaryAction={handleSuspendUser}
+                  isLoading={isUpdatingAdminStatus}
                   trigger={
                     <Button
                       variant="outline"
@@ -427,6 +432,7 @@ const AdminDetailsSheet: React.FC<AdminDetailsSheetProps> = ({
                   text="Are you sure you want to activate this admin? They will regain access to the system."
                   type="success"
                   onPrimaryAction={handleActivateUser}
+                  isLoading={isUpdatingAdminStatus}
                   trigger={
                     <Button
                       variant="outline"

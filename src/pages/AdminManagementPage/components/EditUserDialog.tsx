@@ -38,7 +38,7 @@ interface EditUserDialogProps {
     company?: string;
     lastLoginAt?: string;
     lastLogin?: string;
-    status: "pending" | "active" | "inactive";
+    status: "pending" | "active" | "inactive" | "suspended";
     userId?: string;
     dateCreated?: string;
     createdAt: string;

@@ -722,6 +722,7 @@ const AdminManagementPage = () => {
       {/* Admin Details Sheet */}
       <AdminDetailsSheet
         open={isAdminDetailsOpen}
+        isUpdatingAdminStatus={isUpdatingAdminStatus}
         onOpenChange={setIsAdminDetailsOpen}
         adminId={selectedAdmin?.adminId || selectedAdmin?.id}
         onStatusUpdate={handleUpdateAdminStatus}
