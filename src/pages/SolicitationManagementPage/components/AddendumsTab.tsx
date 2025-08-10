@@ -332,7 +332,7 @@ const AddendumsTab: React.FC<AddendumsTabProps> = ({ solicitationId }) => {
                     Edit
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="max-w-md">
+                <DialogContent className="max-w-md sm:max-h-[min(640px,80vh)] sm:max-w-lg sm:overflow-auto">
                   <EditAddendumDialog
                     addendum={editingAddendum}
                     solicitationId={solicitationId!}
@@ -533,14 +533,6 @@ const EditAddendumDialog: React.FC<EditAddendumDialogProps> = ({
   const solicitation = solicitationData?.data?.data;
   const addendumDetails = addendumData?.data?.data;
 
-  // Helper function to format date for input
-  const formatDateForInput = (dateString: string) => {
-    if (!dateString) return "";
-    const date = new Date(dateString);
-    // Return in local datetime format for datetime-local input
-    return format(date, "yyyy-MM-dd'T'HH:mm");
-  };
-
   const { control, reset } = useForge<EditAddendumFormValues>({
     resolver: yupResolver(editAddendumSchema),
     defaultValues: {
@@ -564,17 +556,9 @@ const EditAddendumDialog: React.FC<EditAddendumDialogProps> = ({
   useEffect(() => {
     if (addendumDetails) {
       // Use addendum data from API, fallback to solicitation data for deadlines if not set
-      const submissionDeadline = addendumDetails.submissionDeadline
-        ? formatDateForInput(addendumDetails.submissionDeadline)
-        : solicitation?.submissionDeadline
-        ? formatDateForInput(solicitation.submissionDeadline)
-        : "";
+      const submissionDeadline = solicitation?.solicitation?.submissionDeadline || "";
 
-      const questionAcceptanceDeadline = addendumDetails.questionDeadline
-        ? formatDateForInput(addendumDetails.questionDeadline)
-        : solicitation?.questionDeadline
-        ? formatDateForInput(solicitation.questionDeadline)
-        : "";
+      const questionAcceptanceDeadline = solicitation?.solicitation?.questionDeadline || "";
 
       reset({
         title: addendumDetails.title,
@@ -638,7 +622,7 @@ const EditAddendumDialog: React.FC<EditAddendumDialogProps> = ({
         <DialogTitle>Edit Addendum</DialogTitle>
       </DialogHeader>
 
-      <Forge control={control} onSubmit={handleFormSubmit}>
+      <Forge control={control} onSubmit={handleFormSubmit} >
         <div className="space-y-4">
           <Forger
             name="title"

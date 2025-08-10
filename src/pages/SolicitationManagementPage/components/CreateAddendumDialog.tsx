@@ -17,6 +17,7 @@ import { ApiResponse, ApiResponseError } from "@/types";
 import { useToastHandler } from "@/hooks/useToaster";
 import { useWatch } from "react-hook-form";
 import { useUserRole } from "@/hooks/useUserRole";
+import { format } from "date-fns";
 
 // Base schema for form validation - deadline fields are now optional
 const baseSchema = {
@@ -81,12 +82,7 @@ const CreateAddendumDialog: React.FC<CreateAddendumDialogProps> = ({
     if (!dateString) return "";
     const date = new Date(dateString);
     // Return in local datetime format for datetime-local input
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const day = String(date.getDate()).padStart(2, "0");
-    const hours = String(date.getHours()).padStart(2, "0");
-    const minutes = String(date.getMinutes()).padStart(2, "0");
-    return `${year}-${month}-${day}T${hours}:${minutes}`;
+    return format(date, "yyyy-MM-dd'T'HH:mm");
   };
 
   const { control, reset, getValues } = useForge<FormValues>({
