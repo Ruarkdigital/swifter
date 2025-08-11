@@ -35,6 +35,7 @@ import { ConfirmAlert } from "@/components/layouts/ConfirmAlert";
 import EditSolicitationDialog from "./components/EditSolicitationDialog";
 import { truncate } from "lodash";
 import { putRequest } from "@/lib/axiosInstance";
+import { getStatusLabel, getStatusColorClass } from "@/lib/solicitationStatusUtils";
 // import ExportReportSheet from "@/components/layouts/ExportReportSheet";
 
 // Safe date formatting utility
@@ -325,43 +326,9 @@ const StatusBadge = ({
 }: {
   status: "draft" | "active" | "closed" | "awarded" | "evaluating";
 }) => {
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "active":
-        return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300";
-      case "draft":
-        return "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300";
-      case "awarded":
-        return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300";
-      case "closed":
-        return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300";
-      case "evaluating":
-        return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300";
-      default:
-        return "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300";
-    }
-  };
-
-  const getStatusLabel = (status: string) => {
-    switch (status) {
-      case "active":
-        return "Active";
-      case "draft":
-        return "Draft";
-      case "awarded":
-        return "Awarded";
-      case "closed":
-        return "Closed";
-      case "evaluating":
-        return "Under Evaluation";
-      default:
-        return status;
-    }
-  };
-
   return (
     <Badge
-      className={`${getStatusColor(status)} border-0 !text-center mx-auto`}
+      className={`${getStatusColorClass(status)} border-0 !text-center mx-auto`}
     >
       {getStatusLabel(status)}
     </Badge>

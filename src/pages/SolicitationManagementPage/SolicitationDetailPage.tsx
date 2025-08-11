@@ -39,6 +39,7 @@ import { ColumnDef, PaginationState } from "@tanstack/react-table";
 import { useUserRole } from "@/hooks/useUserRole";
 import { format } from "date-fns";
 import { PageLoader } from "@/components/ui/PageLoader";
+import { getStatusLabel, getStatusColorClass } from "@/lib/solicitationStatusUtils";
 
 // Vendor proposal type definition
 type VendorProposal = {
@@ -154,6 +155,7 @@ type Solicitation = {
     email: string;
     phone?: string;
   };
+  evaluators: string[];
   participation?: {
     invitedVendors: number;
     proposalsReceived: number;
@@ -220,42 +222,8 @@ const StatusBadge = ({
 }: {
   status: "draft" | "active" | "closed" | "awarded" | "evaluating";
 }) => {
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "active":
-        return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300";
-      case "draft":
-        return "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300";
-      case "awarded":
-        return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300";
-      case "closed":
-        return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300";
-      case "evaluating":
-        return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300";
-      default:
-        return "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300";
-    }
-  };
-
-  const getStatusLabel = (status: string) => {
-    switch (status) {
-      case "active":
-        return "Active";
-      case "draft":
-        return "Draft";
-      case "awarded":
-        return "Awarded";
-      case "closed":
-        return "Closed";
-      case "evaluating":
-        return "Under Evaluation";
-      default:
-        return status;
-    }
-  };
-
   return (
-    <Badge className={`${getStatusColor(status)} border-0`}>
+    <Badge className={`${getStatusColorClass(status)} border-0`}>
       {getStatusLabel(status)}
     </Badge>
   );
@@ -370,6 +338,15 @@ export const SolicitationDetailPage = () => {
       requiredFiles: RequiredFile[];
       viewProposal: { _id: string } | null;
       owner: boolean;
+      vendorStatusCounts: {
+        confirmed: number;
+        declined: number;
+        invited: number
+      }
+      proposalStatusCounts: {
+        noResponse: number;
+        submitted: number
+      }
     }>,
     ApiResponseError
   >({
@@ -490,6 +467,8 @@ export const SolicitationDetailPage = () => {
   const requiredFiles = solicitationData?.data?.data?.requiredFiles || [];
   const viewProposal = solicitationData?.data?.data?.viewProposal;
   const isOwner = solicitationData?.data?.data?.owner;
+  // const vendorStatusCounts = solicitationData?.data?.data?.vendorStatusCounts;
+  const proposalStatusCounts = solicitationData?.data?.data?.proposalStatusCounts;
 
   // Use API data for evaluators or fallback to mock data
   const evaluators = useMemo(() => {
@@ -1193,7 +1172,7 @@ export const SolicitationDetailPage = () => {
                   />
                   <ParticipationCard
                     title="Proposal Received"
-                    value={solicitation.vendorConfirmed || 0}
+                    value={proposalStatusCounts?.submitted || 0}
                     icon={FileText}
                     iconColor="green"
                   />
@@ -1201,7 +1180,7 @@ export const SolicitationDetailPage = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <ParticipationCard
                     title="Evaluators"
-                    value={solicitation.participation?.evaluators || 0}
+                    value={solicitation?.evaluators?.length || 0}
                     icon={Users}
                     iconColor="purple"
                   />
@@ -1232,14 +1211,14 @@ export const SolicitationDetailPage = () => {
                 />
                 <InvitedVendorCard
                   title="Evaluators"
-                  count={solicitation.participation?.evaluators || 0}
+                  count={solicitation?.evaluators?.length || 0}
                   icon={Users}
                   iconBgColor="bg-blue-50"
                   iconColor="text-blue-600"
                 />
                 <InvitedVendorCard
                   title="Proposals Received"
-                  count={solicitation.vendorConfirmed || 0}
+                  count={proposalStatusCounts?.submitted || 0}
                   icon={FileText}
                   iconBgColor="bg-green-50"
                   iconColor="text-green-600"

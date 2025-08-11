@@ -47,6 +47,7 @@ import { PageLoader } from "@/components/ui/PageLoader";
 import { ConfirmAlert } from "@/components/layouts/ConfirmAlert";
 import { useToastHandler } from "@/hooks/useToaster";
 import { ApiResponseError } from "@/types";
+import { getEvaluationStatusLabel, getEvaluationStatusColorClass } from "@/lib/evaluationStatusUtils";
 
 // Component Types
 
@@ -95,6 +96,15 @@ const EvaluatorStatusBadge = ({ status }: { status: Evaluator["status"] }) => {
   };
 
   return <Badge className={`${getStatusColor(status)} border`}>{status}</Badge>;
+};
+
+// Status badge component for evaluation groups
+const EvaluationGroupStatusBadge = ({ status }: { status: string }) => {
+  return (
+    <Badge className={`${getEvaluationStatusColorClass(status)} border`}>
+      {getEvaluationStatusLabel(status)}
+    </Badge>
+  );
 };
 
 // Rank badge component for bid comparison
@@ -992,15 +1002,7 @@ const EvaluationDetailPage: React.FC = () => {
                     <h4 className="font-medium text-gray-700 dark:text-gray-300 mb-3">
                       Status
                     </h4>
-                    <Badge
-                      variant="secondary"
-                      className={group.status === 'Release' 
-                        ? "bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 border-green-200 dark:border-green-700"
-                        : "bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 border-yellow-200 dark:border-yellow-700"
-                      }
-                    >
-                      {group.status}
-                    </Badge>
+                    <EvaluationGroupStatusBadge status={group.status} />
                   </div>
                 </div>
               </CardContent>

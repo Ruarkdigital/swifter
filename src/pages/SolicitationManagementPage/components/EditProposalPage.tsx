@@ -15,6 +15,7 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import { useToastHandler } from "@/hooks/useToaster";
 import { SEOWrapper } from "@/components/SEO";
+import { getStatusLabel, getStatusColorClass } from "@/lib/solicitationStatusUtils";
 
 // Types for the proposal form
 interface UploadFileResponse {
@@ -303,13 +304,9 @@ const EditProposalPage: React.FC<EditProposalPageProps> = () => {
             <div className="flex items-center gap-3">
               <Badge
                 variant="secondary"
-                className={`${
-                  solicitationStatus?.toLowerCase() === "active"
-                    ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300"
-                    : "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300"
-                }`}
+                className={getStatusColorClass(solicitationStatus || "unknown")}
               >
-                {solicitationStatus || "Unknown"}
+                {getStatusLabel(solicitationStatus || "unknown")}
               </Badge>
             </div>
           </div>

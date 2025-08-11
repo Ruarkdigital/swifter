@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { FileText } from "lucide-react";
-import { format } from "date-fns";
+import { format, startOfDay, endOfDay, subDays } from "date-fns";
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import CreateEvaluationDialog from "./components/CreateEvaluationDialog";
@@ -24,6 +24,16 @@ import { StatusBadge } from "./components/StatusBadge";
 import { EmptyState } from "./components/EmptyState";
 // import { SearchInput } from "@/components/layouts/SearchInput";
 import { DropdownFilters } from "@/components/layouts/SolicitationFilters";
+import { normalizeEvaluationStatus } from "@/lib/evaluationStatusUtils";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Calendar } from "@/components/ui/calendar";
+import type { DateRange } from "react-day-picker";
 
 // Evaluation type definition
 type Evaluation = {
@@ -33,7 +43,7 @@ type Evaluation = {
   type: string;
   deadline: string;
   daysLeft: number;
-  status: "Active" | "Pending" | "Completed";
+  status: string;
   owner: boolean;
   timezone: string;
 };
@@ -49,7 +59,7 @@ type AssignedEvaluation = {
   assignedDate: string;
   deadline: string;
   progress: number;
-  status: "Active" | "Pending" | "Completed";
+  status: string;
 };
 
 // Helper function to calculate days left
@@ -133,12 +143,40 @@ export const EvaluationManagementPage = () => {
     pageSize: 10,
   });
 
+  // Date range picker states - separate for each tab
+  const [allEvaluationsDateRange, setAllEvaluationsDateRange] = useState<{
+    startDate?: Date;
+    endDate?: Date;
+  }>({ startDate: undefined, endDate: undefined });
+  const [myEvaluationsDateRange, setMyEvaluationsDateRange] = useState<{
+    startDate?: Date;
+    endDate?: Date;
+  }>({ startDate: undefined, endDate: undefined });
+  const [assignedEvaluationsDateRange, setAssignedEvaluationsDateRange] = useState<{
+    startDate?: Date;
+    endDate?: Date;
+  }>({ startDate: undefined, endDate: undefined });
+  
+  const [allEvaluationsDateFilter, setAllEvaluationsDateFilter] = useState<string>("all");
+  const [myEvaluationsDateFilter, setMyEvaluationsDateFilter] = useState<string>("all");
+  const [assignedEvaluationsDateFilter, setAssignedEvaluationsDateFilter] = useState<string>("all");
+  
+  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
+  const [tempDateRange, setTempDateRange] = useState<DateRange | undefined>();
+  const [activeTab, setActiveTab] = useState<string>(
+    isEvaluator
+      ? "assigned_evaluation"
+      : isCompanyAdmin
+      ? "all_evaluations"
+      : "all_evaluations"
+  );
+
   // Initialize filters from URL parameters
   useEffect(() => {
     const statusParam = searchParams.get("status");
     if (
       statusParam &&
-      ["Active", "Pending", "Completed"].includes(statusParam)
+      ["active", "pending", "completed"].includes(normalizeEvaluationStatus(statusParam))
     ) {
       setStatusFilter(statusParam);
       setActiveStatCard(statusParam);
@@ -148,12 +186,46 @@ export const EvaluationManagementPage = () => {
   // API Queries
   const { data: dashboardStats } = useEvaluationDashboard();
 
+  // Helper function to format date range for API
+  const getDateParam = (dateFilter: string, dateRange: { startDate?: Date; endDate?: Date }) => {
+    if (!dateFilter || dateFilter === "all") return undefined;
+    
+    if (dateFilter === "custom" && dateRange.startDate && dateRange.endDate) {
+      return `${format(dateRange.startDate, "yyyy-MM-dd")}-${format(dateRange.endDate, "yyyy-MM-dd")}`;
+    }
+    
+    if (dateFilter === "today") {
+      const today = format(new Date(), "yyyy-MM-dd");
+      return `${today}-${today}`;
+    }
+    
+    if (dateFilter === "last7days") {
+      const endDate = format(new Date(), "yyyy-MM-dd");
+      const startDate = format(subDays(new Date(), 7), "yyyy-MM-dd");
+      return `${startDate}-${endDate}`;
+    }
+    
+    if (dateFilter === "last30days") {
+      const endDate = format(new Date(), "yyyy-MM-dd");
+      const startDate = format(subDays(new Date(), 30), "yyyy-MM-dd");
+      return `${startDate}-${endDate}`;
+    }
+    
+    return undefined;
+  };
+
+  // Tab-specific date param getters
+  const getAllEvaluationsDateParam = () => getDateParam(allEvaluationsDateFilter, allEvaluationsDateRange);
+  const getMyEvaluationsDateParam = () => getDateParam(myEvaluationsDateFilter, myEvaluationsDateRange);
+  const getAssignedEvaluationsDateParam = () => getDateParam(assignedEvaluationsDateFilter, assignedEvaluationsDateRange);
+
   const { data: evaluationsResponse, isLoading: isEvaluationsLoading } =
     useEvaluationsList({
       page: pagination.pageIndex + 1,
       limit: pagination.pageSize,
       name: searchQuery || undefined,
       status: statusFilter || undefined,
+      date: getAllEvaluationsDateParam(),
     });
 
   const { data: myEvaluationsResponse, isLoading: isMyEvaluationsLoading } =
@@ -161,6 +233,7 @@ export const EvaluationManagementPage = () => {
       page: pagination.pageIndex + 1,
       limit: pagination.pageSize,
       status: statusFilter || undefined,
+      date: getMyEvaluationsDateParam(),
     });
 
   // Removed useEvaluatorMyEvaluations as it's redundant with useAssignedEvaluationsList
@@ -172,6 +245,7 @@ export const EvaluationManagementPage = () => {
     page: pagination.pageIndex + 1,
     limit: pagination.pageSize,
     status: statusFilter || undefined,
+    date: getAssignedEvaluationsDateParam(),
   });
 
   // Transform API data
@@ -218,13 +292,13 @@ export const EvaluationManagementPage = () => {
         setStatusFilter("");
         break;
       case "active":
-        setStatusFilter("Active");
+        setStatusFilter("active");
         break;
       case "pending":
-        setStatusFilter("Pending");
+        setStatusFilter("pending");
         break;
       case "completed":
-        setStatusFilter("Completed");
+        setStatusFilter("completed");
         break;
       default:
         setStatusFilter("");
@@ -256,6 +330,99 @@ export const EvaluationManagementPage = () => {
 
     return () => clearTimeout(timeoutId);
   }, [searchQuery, statusFilter]);
+
+  // Get current tab's date filter state and setters
+  const getCurrentTabDateState = () => {
+    switch (activeTab) {
+      case "all_evaluations":
+        return {
+          dateFilter: allEvaluationsDateFilter,
+          setDateFilter: setAllEvaluationsDateFilter,
+          dateRange: allEvaluationsDateRange,
+          setDateRange: setAllEvaluationsDateRange,
+        };
+      case "my_evaluations":
+        return {
+          dateFilter: myEvaluationsDateFilter,
+          setDateFilter: setMyEvaluationsDateFilter,
+          dateRange: myEvaluationsDateRange,
+          setDateRange: setMyEvaluationsDateRange,
+        };
+      case "assigned_evaluation":
+        return {
+          dateFilter: assignedEvaluationsDateFilter,
+          setDateFilter: setAssignedEvaluationsDateFilter,
+          dateRange: assignedEvaluationsDateRange,
+          setDateRange: setAssignedEvaluationsDateRange,
+        };
+      default:
+        return {
+          dateFilter: allEvaluationsDateFilter,
+          setDateFilter: setAllEvaluationsDateFilter,
+          dateRange: allEvaluationsDateRange,
+          setDateRange: setAllEvaluationsDateRange,
+        };
+    }
+  };
+
+  const handleClearFilters = () => {
+    setSearchQuery("");
+    setStatusFilter("");
+    const { setDateFilter, setDateRange } = getCurrentTabDateState();
+    setDateFilter("all");
+    setDateRange({ startDate: undefined, endDate: undefined });
+    setPagination({ pageIndex: 0, pageSize: 10 });
+  };
+
+  // Date filter handlers
+  const handleDateFilterChange = (value: string) => {
+    const { setDateFilter, setDateRange } = getCurrentTabDateState();
+    setDateFilter(value);
+    setPagination({ pageIndex: 0, pageSize: 10 });
+
+    if (value === "today") {
+      const today = new Date();
+      setDateRange({ startDate: today, endDate: today });
+    } else if (value === "last7days") {
+      const endDate = new Date();
+      const startDate = subDays(endDate, 7);
+      setDateRange({ startDate, endDate });
+    } else if (value === "last30days") {
+      const endDate = new Date();
+      const startDate = subDays(endDate, 30);
+      setDateRange({ startDate, endDate });
+    } else if (value === "custom") {
+      setIsDatePickerOpen(true);
+      setTempDateRange(undefined);
+    } else {
+      setDateRange({ startDate: undefined, endDate: undefined });
+    }
+  };
+
+  const handleDateRangeConfirm = () => {
+    const { setDateRange } = getCurrentTabDateState();
+    if (tempDateRange?.from && tempDateRange?.to) {
+      setDateRange({
+        startDate: startOfDay(tempDateRange.from),
+        endDate: endOfDay(tempDateRange.to),
+      });
+      setPagination({ pageIndex: 0, pageSize: 10 });
+    }
+    setIsDatePickerOpen(false);
+  };
+
+  const handleDateRangeCancel = () => {
+    const { dateRange, setDateFilter } = getCurrentTabDateState();
+    setIsDatePickerOpen(false);
+    if (!dateRange.startDate || !dateRange.endDate) {
+      setDateFilter("all");
+    }
+  };
+
+  // Tab change handler
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+  };
 
   const assignedEvaluationData = useMemo(() => {
     if (!assignedEvaluationsResponse?.data.data) return [];
@@ -507,13 +674,8 @@ export const EvaluationManagementPage = () => {
       </div>
 
       <Tabs
-        defaultValue={
-          isEvaluator
-            ? "assigned_evaluation"
-            : isCompanyAdmin
-            ? "all_evaluations"
-            : "all_evaluations"
-        }
+        value={activeTab}
+        onValueChange={handleTabChange}
         className="w-full bg-transparent"
       >
         <TabsList className="h-auto rounded-none border-b border-gray-300 dark:border-gray-600 !bg-transparent p-0 w-full justify-start">
@@ -550,10 +712,15 @@ export const EvaluationManagementPage = () => {
               <DataTable
                 header={() => (
                   <Header
-                    title="All Evaluations"
-                    searchQuery={searchQuery}
-                    setSearchQuery={setSearchQuery}
-                  />
+                  title="All Evaluations"
+                  searchQuery={searchQuery}
+                  setSearchQuery={setSearchQuery}
+                  dateFilter={allEvaluationsDateFilter}
+                  statusFilter={statusFilter}
+                  onDateFilterChange={handleDateFilterChange}
+                  onStatusFilterChange={setStatusFilter}
+                  onClearFilters={handleClearFilters}
+                />
                 )}
                 emptyPlaceholder={<EmptyState />}
                 classNames={{
@@ -586,6 +753,11 @@ export const EvaluationManagementPage = () => {
                   title="My Evaluations"
                   searchQuery={searchQuery}
                   setSearchQuery={setSearchQuery}
+                  dateFilter={myEvaluationsDateFilter}
+                  statusFilter={statusFilter}
+                  onDateFilterChange={handleDateFilterChange}
+                  onStatusFilterChange={setStatusFilter}
+                  onClearFilters={handleClearFilters}
                 />
               )}
               emptyPlaceholder={<EmptyState />}
@@ -619,6 +791,11 @@ export const EvaluationManagementPage = () => {
                   title="Assigned Evaluations"
                   searchQuery={searchQuery}
                   setSearchQuery={setSearchQuery}
+                  dateFilter={assignedEvaluationsDateFilter}
+                  statusFilter={statusFilter}
+                  onDateFilterChange={handleDateFilterChange}
+                  onStatusFilterChange={setStatusFilter}
+                  onClearFilters={handleClearFilters}
                 />
               )}
               classNames={{
@@ -638,9 +815,35 @@ export const EvaluationManagementPage = () => {
                 pagination,
               }}
             />
-          </TabsContent>
-        )}
+           </TabsContent>
+         )}
       </Tabs>
+
+      {/* Custom Date Range Picker Dialog */}
+      <Dialog open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Select Date Range</DialogTitle>
+          </DialogHeader>
+          <div className="flex justify-center py-4">
+            <Calendar
+              mode="range"
+              selected={tempDateRange}
+              onSelect={setTempDateRange}
+              numberOfMonths={2}
+              className="rounded-md border"
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={handleDateRangeCancel}>
+              Cancel
+            </Button>
+            <Button onClick={handleDateRangeConfirm}>
+              Apply
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
@@ -651,9 +854,20 @@ type HeaderProps = {
   title: string;
   searchQuery: string;
   setSearchQuery: (value: string) => void;
+  dateFilter: string;
+  statusFilter: string;
+  onDateFilterChange: (value: string) => void;
+  onStatusFilterChange: (value: string) => void;
+  onClearFilters: () => void;
 };
 
-const Header = ({ title }: HeaderProps) => {
+const Header = ({ 
+  title, 
+  dateFilter, 
+  statusFilter, 
+  onDateFilterChange, 
+  onStatusFilterChange,
+}: HeaderProps) => {
   return (
     <div className="flex items-center w-full justify-between border-b border-[#E9E9EB] dark:border-slate-600 p-3 pt-0">
       <div className="flex items-center justify-between w-full">
@@ -684,8 +898,24 @@ const Header = ({ title }: HeaderProps) => {
                   label: "Date Published",
                   subOptions: [
                     {
-                      title: "Date Published",
-                      value: "date_published",
+                      title: "All",
+                      value: "all",
+                    },
+                    {
+                      title: "Today",
+                      value: "today",
+                    },
+                    {
+                      title: "Last 7 Days",
+                      value: "last7days",
+                    },
+                    {
+                      title: "Last 30 Days",
+                      value: "last30days",
+                    },
+                    {
+                      title: "Custom",
+                      value: "custom",
                     },
                   ],
                 },
@@ -700,20 +930,31 @@ const Header = ({ title }: HeaderProps) => {
                   value: "active",
                 },
                 {
-                  label: "Suspended",
-                  value: "suspended",
+                  label: "Completed",
+                  value: "completed",
                 },
                 {
                   label: "Pending",
                   value: "pending",
                 },
+                {
+                  label: "Draft",
+                  value: "draft",
+                },
               ],
             },
-            // {
-            //   title: "Plan",
-            //   options: [],
-            // },
           ]}
+          onFilterChange={(filterTitle, value) => {
+            if (filterTitle === "Date") {
+              onDateFilterChange(value);
+            } else if (filterTitle === "Status") {
+              onStatusFilterChange(value);
+            }
+          }}
+          selectedValues={{
+            Date: dateFilter,
+            Status: statusFilter,
+          }}
         />
       </div>
     </div>

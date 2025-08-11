@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Loader2 } from "lucide-react";
 import { useEvaluationScorecard } from "../hooks/useEvaluationScorecard";
 import { format } from "date-fns";
+import { getEvaluationStatusLabel, getEvaluationStatusColorClass } from "@/lib/evaluationStatusUtils";
 
 interface EvaluationScorecardSheetProps {
   evaluatorId: string;
@@ -104,8 +105,8 @@ const EvaluationScorecardSheet: React.FC<EvaluationScorecardSheetProps> = ({
                      </div>
                      <div>
                        <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Status</p>
-                       <Badge variant="secondary" className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
-                         {activeData.data.evaluator.status}
+                       <Badge className={getEvaluationStatusColorClass(activeData.data.evaluator.status)}>
+                         {getEvaluationStatusLabel(activeData.data.evaluator.status)}
                        </Badge>
                      </div>
                      <div className="col-span-2">
