@@ -429,6 +429,7 @@ const CreateSolicitationDialog = () => {
         questionDeadline: formData.questionAcceptanceDeadlineDate
           ? new Date(formData.questionAcceptanceDeadlineDate).toISOString()
           : undefined,
+        bidIntent: formData.bidIntent as "required" | "not-required",
         bidIntentDeadline: formData.bidIntentDeadlineDate
           ? new Date(formData.bidIntentDeadlineDate).toISOString()
           : undefined,

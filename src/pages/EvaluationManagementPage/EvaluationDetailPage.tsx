@@ -868,6 +868,7 @@ const EvaluationDetailPage: React.FC = () => {
                         text={`This action will unseal the proposal documents, the evaluators will be notified to begin review and evaluation of the proposal.`}
                         primaryButtonText="Release"
                         secondaryButtonText="Cancel"
+                        isLoading={releaseGroupMutation.isPending}
                         onPrimaryAction={handleReleaseGroup}
                         open={
                           releaseDialogOpen && selectedGroupId === group.groupId
@@ -897,6 +898,7 @@ const EvaluationDetailPage: React.FC = () => {
                         text={`This action will enable the evaluators assigned to this group and criteria to evaluate`}
                         primaryButtonText="Withhold"
                         secondaryButtonText="Cancel"
+                        isLoading={withholdGroupMutation.isPending}
                         onPrimaryAction={handleWithholdGroup}
                         open={
                           withholdDialogOpen &&

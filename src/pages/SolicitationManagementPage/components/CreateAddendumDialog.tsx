@@ -4,7 +4,6 @@ import { DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Upload, Users } from "lucide-react";
 import {
   TextDatePicker,
-  TextInput,
 } from "@/components/layouts/FormInputs/TextInput";
 import { TextArea } from "@/components/layouts/FormInputs/TextInput";
 import { TextFileUploader } from "@/components/layouts/FormInputs/TextFileInput";
@@ -21,7 +20,7 @@ import { format } from "date-fns";
 
 // Base schema for form validation - deadline fields are now optional
 const baseSchema = {
-  title: yup.string().required("Title is required"),
+  // title: yup.string().required("Title is required"),
   description: yup.string().required("Description is required"),
   submissionDeadline: yup.string().optional(),
   questionAcceptanceDeadline: yup.string().optional(),
@@ -40,7 +39,7 @@ const createSchema = (isReplyMode: boolean) => {
 };
 
 type FormValues = {
-  title: string;
+  // title: string;
   description: string;
   submissionDeadline?: string;
   questionAcceptanceDeadline?: string;
@@ -88,7 +87,7 @@ const CreateAddendumDialog: React.FC<CreateAddendumDialogProps> = ({
   const { control, reset, getValues } = useForge<FormValues>({
     resolver: yupResolver(createSchema(isReplyMode)),
     defaultValues: {
-      title: "",
+      // title: "",
       description: "",
       documents: null,
       submissionDeadline: "",
@@ -101,14 +100,14 @@ const CreateAddendumDialog: React.FC<CreateAddendumDialogProps> = ({
   useEffect(() => {
     if (solicitation) {
       reset({
-        title: "",
+        // title: "",
         description: "",
         documents: null,
         submissionDeadline: formatDateForInput(
-          solicitation.submissionDeadline || ""
+          solicitation?.solicitation?.submissionDeadline || ""
         ),
         questionAcceptanceDeadline: formatDateForInput(
-          solicitation.questionDeadline || ""
+          solicitation?.solicitation?.questionDeadline || ""
         ),
         question: "",
       });
@@ -165,7 +164,7 @@ const CreateAddendumDialog: React.FC<CreateAddendumDialogProps> = ({
       }
 
       const payload = {
-        title: data.title,
+        // title: data.title,
         description: data.description,
         submissionDeadline: data.submissionDeadline
           ? new Date(data.submissionDeadline).toISOString()
@@ -232,7 +231,7 @@ const CreateAddendumDialog: React.FC<CreateAddendumDialogProps> = ({
       }
 
       const payload = {
-        title: data.title,
+        // title: data.title,
         description: data.description,
         submissionDeadline: data.submissionDeadline
           ? new Date(data.submissionDeadline).toISOString()
@@ -341,7 +340,7 @@ const CreateAddendumDialog: React.FC<CreateAddendumDialogProps> = ({
   return (
     <div className="w-full">
       {/* Header */}
-      <DialogHeader className="flex flex-row items-center justify-between p-6">
+      <DialogHeader className="flex flex-row items-center justify-between ">
         <DialogTitle className="text-lg font-semibold text-gray-900 dark:text-gray-200">
           {isReplyMode ? "Response with Addendum" : "Create Addendum"}
         </DialogTitle>
@@ -349,14 +348,14 @@ const CreateAddendumDialog: React.FC<CreateAddendumDialogProps> = ({
 
       <Forge control={control} onSubmit={handlePublishAddendum} ref={formRef}>
         {/* Form Content */}
-        <div className="p-6 space-y-6">
+        <div className="space-y-6 mt-3">
           {/* Title */}
-          <Forger
+          {/* <Forger
             name="title"
             component={TextInput}
             label="Title"
             placeholder="Enter Title"
-          />
+          /> */}
 
           {/* Description */}
           <div className="relative">
@@ -418,7 +417,7 @@ const CreateAddendumDialog: React.FC<CreateAddendumDialogProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between p-6">
+        <div className="flex items-center justify-between mt-5">
           {!isReplyMode && (
             <Button
               type="button"
