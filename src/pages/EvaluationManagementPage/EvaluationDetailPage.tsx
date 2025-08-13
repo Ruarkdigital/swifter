@@ -302,12 +302,14 @@ const EvaluationDetailPage: React.FC = () => {
 
   // Transform the API response to flat evaluator list for the table
   const evaluators = useMemo(() => {
-    if (!evaluatorsResponse?.data?.data) return [];
+    const data = evaluatorsResponse?.data?.data;
+    if (!data) return [];
 
     const flatEvaluators: Evaluator[] = [];
-    evaluatorsResponse.data.data.forEach((item) => {
-      item.groups.forEach((group) => {
-        group.evaluators.forEach((evaluator) => {
+    const groups = Array.isArray((data as any).groups) ? (data as any).groups : [];
+    groups.forEach((group: any) => {
+      if (Array.isArray(group.evaluators)) {
+        group.evaluators.forEach((evaluator: any) => {
           flatEvaluators.push({
             _id: evaluator._id,
             name: evaluator.name,
@@ -318,7 +320,7 @@ const EvaluationDetailPage: React.FC = () => {
             status: evaluator.status === null ? "Pending" : "Completed",
           });
         });
-      });
+      }
     });
     return flatEvaluators;
   }, [evaluatorsResponse]);

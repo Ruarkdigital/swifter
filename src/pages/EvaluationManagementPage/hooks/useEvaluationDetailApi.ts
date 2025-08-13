@@ -131,7 +131,7 @@ export const useEvaluationDetail = (evaluationId: string) => {
 };
 
 export const useEvaluationEvaluators = (evaluationId: string) => {
-  return useQuery<ApiResponse<EvaluatorResponse[]>, ApiResponseError>({
+  return useQuery<ApiResponse<EvaluatorResponse>, ApiResponseError>({
     queryKey: ["evaluation-evaluators", evaluationId],
     queryFn: async () => {
       const response = await getRequest({
