@@ -39,7 +39,10 @@ import { ColumnDef, PaginationState } from "@tanstack/react-table";
 import { useUserRole } from "@/hooks/useUserRole";
 import { format } from "date-fns";
 import { PageLoader } from "@/components/ui/PageLoader";
-import { getStatusLabel, getStatusColorClass } from "@/lib/solicitationStatusUtils";
+import {
+  getStatusLabel,
+  getStatusColorClass,
+} from "@/lib/solicitationStatusUtils";
 
 // Vendor proposal type definition
 type VendorProposal = {
@@ -64,27 +67,40 @@ type VendorProposal = {
 export interface Evaluator {
   _id: null;
   groups: Group[];
-  averageProgress: null;
-  totalEvaluatorsInEvaluation: number;
+  summary: Summary;
+}
+
+export interface Summary {
+  totalEvaluators: number;
+  completedEvaluators: number;
+  pendingEvaluators: number;
+  averageProgress: number;
+  overallCompletionRate: number;
 }
 
 export interface Group {
   groupId: string;
   groupName: string;
+  groupStatus: "withhold" | "release";
   evaluators: EvaluatorElement[];
   criteriaCount: null;
   totalEvaluators: number;
-  groupProgress: null;
+  groupCreatedAt: string;
+  groupProgress: null | number;
   completedEvaluators: number;
+  groupCompletionRate: number;
 }
 
 export interface EvaluatorElement {
   _id: string;
   name: string;
   email: string;
-  progress: null;
-  status: null;
-  assignnOn: Date;
+  progress: number;
+  status: string;
+  totalScorings: number;
+  submittedScorings: number;
+  assignedOnFormatted: null;
+  submittedAtFormatted: null;
 }
 
 // Define Solicitation type based on API response
@@ -341,12 +357,12 @@ export const SolicitationDetailPage = () => {
       vendorStatusCounts: {
         confirmed: number;
         declined: number;
-        invited: number
-      }
+        invited: number;
+      };
       proposalStatusCounts: {
         noResponse: number;
-        submitted: number
-      }
+        submitted: number;
+      };
     }>,
     ApiResponseError
   >({
@@ -362,7 +378,7 @@ export const SolicitationDetailPage = () => {
 
   // Fetch evaluators data from API
   const { data: evaluatorsData, isLoading: isLoadingEvaluators } = useQuery<
-    ApiResponse<Evaluator[]>,
+    ApiResponse<Evaluator>,
     ApiResponseError
   >({
     queryKey: ["evaluators", id],
@@ -468,12 +484,17 @@ export const SolicitationDetailPage = () => {
   const viewProposal = solicitationData?.data?.data?.viewProposal;
   const isOwner = solicitationData?.data?.data?.owner;
   // const vendorStatusCounts = solicitationData?.data?.data?.vendorStatusCounts;
-  const proposalStatusCounts = solicitationData?.data?.data?.proposalStatusCounts;
+  const proposalStatusCounts =
+    solicitationData?.data?.data?.proposalStatusCounts;
 
   // Use API data for evaluators or fallback to mock data
   const evaluators = useMemo(() => {
-    if (evaluatorsData?.data?.data) {
-      return evaluatorsData.data.data?.[0]?.groups[0].evaluators;
+    const evaluation = evaluatorsData?.data?.data;
+    if (evaluation) {
+      return evaluation?.groups?.[0]?.evaluators.map((item) => ({
+        ...item,
+        groupName: evaluation?.groups?.[0]?.groupName,
+      })) || [];
     }
     // Fallback to mock data if API is not available
     return [];
@@ -680,8 +701,8 @@ export const SolicitationDetailPage = () => {
         <div className="flex flex-col">
           <span className="text-sm">
             Assigned:{" "}
-            {row.original.assignnOn
-              ? format(new Date(row.original.assignnOn), "MMM d, yyyy pppp")
+            {row.original.assignedOnFormatted
+              ? format(new Date(row.original.assignedOnFormatted), "MMM d, yyyy pppp")
               : "-"}
           </span>
           <span className="text-sm text-gray-400">
@@ -695,7 +716,7 @@ export const SolicitationDetailPage = () => {
       header: "Status",
       cell: ({ row }) => (
         <EvaluatorStatusBadge
-          status={(row.original?.progress ?? 0) > 0 ? "submitted" : "pending"}
+          status={row.original?.status}
         />
       ),
     },
@@ -707,11 +728,13 @@ export const SolicitationDetailPage = () => {
           {isOwner && (
             <div className="flex items-center">
               <Sheet>
-                <SheetTrigger asChild>
-                  <Button variant="link" className="text-green-600">
-                    View
-                  </Button>
-                </SheetTrigger>
+                {row.original.status !== "Not Started" && (
+                  <SheetTrigger asChild>
+                    <Button variant="link" className="text-green-600">
+                      View
+                    </Button>
+                  </SheetTrigger>
+                )}
                 <SheetContent side="right" className="sm:max-w-2xl p-0">
                   <EvaluationScorecard
                     solicitationId={id!}
@@ -722,9 +745,9 @@ export const SolicitationDetailPage = () => {
                       submissionDate:
                         row.original.progress === 100
                           ? format(new Date(), "MMM d, yyyy pppp")
-                          : row.original.assignnOn
+                          : row.original.assignedOnFormatted
                           ? format(
-                              new Date(row.original.assignnOn),
+                              new Date(row.original.assignedOnFormatted),
                               "MMM d, yyyy pppp"
                             )
                           : format(new Date(), "MMM d, yyyy pppp"),
@@ -987,7 +1010,9 @@ export const SolicitationDetailPage = () => {
                   </DropdownMenu>
                   {isOwner && (
                     <>
-                      <EditSolicitationDialog solicitation={solicitation as any} />
+                      <EditSolicitationDialog
+                        solicitation={solicitation as any}
+                      />
                     </>
                   )}
                 </div>
@@ -1031,7 +1056,6 @@ export const SolicitationDetailPage = () => {
                     Status
                   </label>
                   <StatusBadge status={solicitation.status} />
-                  
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-500 mb-1 block">
@@ -1332,7 +1356,7 @@ export const SolicitationDetailPage = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <InvitedVendorCard
                 title="Evaluation Progress"
-                count={evaluatorsData?.data.data?.[0]?.averageProgress || 0}
+                count={evaluatorsData?.data.data?.summary?.averageProgress || 0}
                 icon={Folder}
                 iconBgColor="bg-blue-50"
                 iconColor="text-blue-600"
@@ -1340,8 +1364,7 @@ export const SolicitationDetailPage = () => {
               <InvitedVendorCard
                 title="Evaluators"
                 count={
-                  evaluatorsData?.data.data?.[0]?.totalEvaluatorsInEvaluation ||
-                  0
+                  evaluatorsData?.data.data?.summary?.totalEvaluators || 0
                 }
                 icon={Users}
                 iconBgColor="bg-blue-50"
@@ -1380,7 +1403,7 @@ export const SolicitationDetailPage = () => {
               options={{
                 disableSelection: true,
                 isLoading: isLoadingEvaluators,
-                totalCounts: filteredEvaluators.length,
+                totalCounts: filteredEvaluators?.length || 0,
                 manualPagination: false,
                 setPagination,
                 pagination,

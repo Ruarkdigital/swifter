@@ -126,6 +126,8 @@ function applyDynamicStatusTextReplacement(
           data.name,
           `<a href="${href}" class="underline underline-offset-4 text-blue-600">${data.name}</a>`
         );
+      } else {
+        return statusText
       }
     }
   }
@@ -1590,18 +1592,20 @@ export class DashboardDataTransformer {
       statusText: string,
       data: { id: string; name: string }
     ) => {
-      return applyDynamicStatusTextReplacement(
+      const actions = applyDynamicStatusTextReplacement(
         statusText,
         'evaluator',
         'myActions',
         data
-      );
+      )
+
+      return actions;
     };
 
     return data.map((action: any, index: number) => ({
       id: action?.evaluation._id || `action-${index}`,
-      title: action?.evaluation.solicitation.name,
-      action: getFormattedText(action.statusText, {
+      title: action?.evaluation.solicitation?.name,
+      text: getFormattedText(action.statusText, {
         id: action?.evaluation?._id,
         name: action?.evaluation?.solicitation?.name,
       }),

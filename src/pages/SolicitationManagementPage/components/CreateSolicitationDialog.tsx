@@ -62,10 +62,11 @@ const step3Schema = yup.object({
 });
 
 const documentSchema = yup.mixed().test({
-  name: "isFile",
+  name: "isFileOrUploaded",
   message: "Document is required",
   test: (value) => {
-    return value instanceof File;
+    // Accept both File objects and UploadedFile objects
+    return value instanceof File || (value && typeof value === 'object' && 'url' in value);
   },
 }); // Allow additional properties without validation
 
@@ -205,32 +206,6 @@ const CreateSolicitationDialog = () => {
     mode: "onChange",
   });
 
-  // File upload mutation
-  const { mutateAsync: uploadFiles, isPending: isUploading } = useMutation<
-    ApiResponse<
-      {
-        name: string;
-        url: string;
-        size: string;
-        type: string;
-      }[]
-    >,
-    ApiResponseError,
-    FormData
-  >({
-    mutationKey: ["uploadFiles"],
-    mutationFn: async (formData) =>
-      await postRequest({
-        url: "/upload",
-        payload: formData,
-        config: {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        },
-      }),
-  });
-
   const { mutateAsync: createSolicitation, isPending } = useMutation<
     ApiResponse<any>,
     ApiResponseError,
@@ -252,26 +227,6 @@ const CreateSolicitationDialog = () => {
         ...formData,
         ...data,
       };
-
-      // Handle file uploads first if there are files
-      let uploadedFiles: Array<{
-        name: string;
-        url: string;
-        size: string;
-        type: string;
-      }> = [];
-
-      if (completeData.documents && completeData.documents.length > 0) {
-        const fileFormData = new FormData();
-        completeData.documents.forEach((file: File) => {
-          fileFormData.append("file", file);
-        });
-
-        const uploadResponse = await uploadFiles(fileFormData);
-        if (uploadResponse?.data?.data) {
-          uploadedFiles = uploadResponse.data.data;
-        }
-      }
 
       // Transform form data to match API schema
       const apiPayload: SolicitationCreateRequest = {
@@ -331,7 +286,15 @@ const CreateSolicitationDialog = () => {
             };
           })
           .filter(Boolean), // Remove null entries
-        files: uploadedFiles.length > 0 ? uploadedFiles : undefined,
+        // Use already uploaded files from Step4Form
+        files: completeData.documents && completeData.documents.length > 0 
+          ? completeData.documents.map((doc: any) => ({
+              name: doc.name,
+              url: doc.url,
+              size: doc.size,
+              type: doc.type,
+            }))
+          : undefined,
         vendors:
           completeData.vendor?.map((item: any) => ({ id: item.value })) ||
           undefined,
@@ -385,28 +348,6 @@ const CreateSolicitationDialog = () => {
         setCurrentStep(1);
         forge.reset();
         return;
-      }
-
-      // Handle file uploads first if there are files
-      let uploadedFiles: Array<{
-        name: string;
-        url: string;
-        size: string;
-        type: string;
-      }> = [];
-
-      if (formData.documents && formData.documents.length > 0) {
-        const fileFormData = new FormData();
-        formData.documents.forEach((file: any) => {
-          if (file instanceof File) {
-            fileFormData.append("file", file);
-          }
-        });
-
-        const uploadResponse = await uploadFiles(fileFormData);
-        if (uploadResponse?.data?.data) {
-          uploadedFiles = uploadResponse.data.data;
-        }
       }
 
       // Transform form data to match API schema for draft
@@ -471,7 +412,15 @@ const CreateSolicitationDialog = () => {
             eventDescription: evt.note || undefined,
           };
         }),
-        files: uploadedFiles.length > 0 ? uploadedFiles : undefined,
+        // Use already uploaded files from Step4Form
+        files: formData.documents && formData.documents.length > 0
+          ? formData.documents.map((doc: any) => ({
+              name: doc.name,
+              url: doc.url,
+              size: doc.size,
+              type: doc.type,
+            }))
+          : undefined,
         vendors:
           formData.vendor?.map((item: any) => ({ id: item.value })) ||
           undefined,
@@ -632,7 +581,7 @@ const CreateSolicitationDialog = () => {
 
           {currentStep === 4 && (
             <>
-              <Step4Form />
+              <Step4Form control={forge.control} />
             </>
           )}
 
@@ -681,11 +630,11 @@ const CreateSolicitationDialog = () => {
               <Button
                 type={currentStep === 6 ? "submit" : "button"}
                 onClick={currentStep === 6 ? undefined : validateAndProceed}
-                disabled={isPending || isUploading}
+                disabled={isPending}
                 className="px-8 py-2 bg-[#2A4467] hover:bg-[#1e3147] text-white rounded-lg"
               >
                 {currentStep === 6
-                  ? isPending || isUploading
+                  ? isPending
                     ? "Publishing..."
                     : "Publish"
                   : "Continue"}

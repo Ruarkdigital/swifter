@@ -100,7 +100,7 @@ const DocumentsTab: React.FC<DocumentsTabProps> = ({ files = [] }) => {
                           {getFileIcon(fileExtension)}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <h4 className="text-sm font-medium text-gray-900 dark:text-gray-200 truncate">
+                          <h4 className="text-sm font-medium max-w-md text-gray-900 dark:text-gray-200 !truncate">
                             {file.name}
                           </h4>
                           <div className="flex items-center gap-2 mt-1">

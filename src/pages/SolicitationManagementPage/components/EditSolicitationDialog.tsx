@@ -65,9 +65,12 @@ const step3Schema = yup.object({
   event: yup.array().of(eventSchema).optional(),
 });
 
-const documentSchema = yup.object({
-  path: yup.string().required("Document path is required"),
-  relativePath: yup.string().required("Relative path is required"),
+const documentSchema = yup.mixed().test({
+  name: 'isFileOrUploaded',
+  message: 'Document must be a valid file or uploaded document',
+  test: (value) => {
+    return value instanceof File || (value && typeof value === 'object' && 'url' in value);
+  },
 });
 
 const vendorSchema = yup.object({
@@ -299,7 +302,12 @@ const EditSolicitationDialog = ({
         time: formatTimeForInput(evt.eventDate),
         note: evt.eventDescription || "",
       })) || [{ event: "", location: "", date: "", time: "", note: "" }],
-      documents: [],
+      documents: solicitation.files?.map((file) => ({
+        name: file.name,
+        url: file.url,
+        size: file.size,
+        type: file.type,
+      })) || [],
       vendor:
         solicitation.vendors?.map((vendor) => ({
           value: vendor._id,
@@ -379,22 +387,43 @@ const EditSolicitationDialog = ({
         type: string;
       }> = [];
 
-      if (completeData.files && completeData.files.length > 0) {
-        const fileFormData = new FormData();
-        completeData.files.forEach((file: File) => {
-          fileFormData.append("file", file);
-        });
+      if (completeData.documents && completeData.documents.length > 0) {
+        // Separate files that need upload from already uploaded files
+        const filesToUpload = completeData.documents.filter((doc: any) => doc instanceof File);
+        const alreadyUploaded = (completeData.documents as any[])
+          .filter(
+            (doc: any): doc is { name: string; url: string; size: string | number; type: string } =>
+              doc && typeof doc === "object" && "url" in doc && "name" in doc && "size" in doc && "type" in doc
+          )
+          .map((doc) => ({
+            name: String(doc.name),
+            url: String(doc.url),
+            size: typeof doc.size === "number" ? String(doc.size) : String(doc.size),
+            type: String(doc.type),
+          }));
 
-        const uploadResponse = await uploadFiles(fileFormData);
-        if (uploadResponse?.data?.data) {
-          uploadedFiles = completeData.files.map(
-            (file: File, index: number) => ({
-              name: file.name,
-              url: uploadResponse.data.data[index],
-              size: file.size.toString(),
-              type: file.type,
-            })
-          );
+        // Upload new files if any
+        if (filesToUpload.length > 0) {
+          const fileFormData = new FormData();
+          filesToUpload.forEach((file: File) => {
+            fileFormData.append("file", file);
+          });
+
+          const uploadResponse = await uploadFiles(fileFormData);
+          if (uploadResponse?.data?.data) {
+            const newlyUploaded = filesToUpload.map(
+              (file: File, index: number) => ({
+                name: file.name,
+                url: uploadResponse.data.data[index],
+                size: file.size.toString(),
+                type: file.type,
+              })
+            );
+            uploadedFiles = [...alreadyUploaded, ...newlyUploaded];
+          }
+        } else {
+          // Only pre-uploaded files
+          uploadedFiles = alreadyUploaded;
         }
       }
 
@@ -509,22 +538,41 @@ const EditSolicitationDialog = ({
         type: string;
       }> = [];
 
-      if (formData.files && formData.files.length > 0) {
-        const fileFormData = new FormData();
-        formData.files.forEach((file: File) => {
-          fileFormData.append("file", file);
-        });
+      if (formData.documents && formData.documents.length > 0) {
+        // Separate files that need upload from already uploaded files
+        const filesToUpload = formData.documents.filter((doc: any) => doc instanceof File);
+        const alreadyUploaded = (formData.documents as any[])
+          .filter(
+            (doc: any): doc is { name: string; url: string; size: string | number; type: string } =>
+              doc && typeof doc === "object" && "url" in doc && "name" in doc && "size" in doc && "type" in doc
+          )
+          .map((doc) => ({
+            name: String(doc.name),
+            url: String(doc.url),
+            size: typeof doc.size === "number" ? String(doc.size) : String(doc.size),
+            type: String(doc.type),
+          }));
 
-        const uploadResponse = await uploadFiles(fileFormData);
-        if (uploadResponse?.data?.data) {
-          uploadedFiles = formData.files.map(
-            (file: File, index: number) => ({
-              name: file.name,
-              url: uploadResponse.data.data[index],
-              size: file.size.toString(),
-              type: file.type,
-            })
-          );
+        if (filesToUpload.length > 0) {
+          const fileFormData = new FormData();
+          filesToUpload.forEach((file: File) => {
+            fileFormData.append("file", file);
+          });
+
+          const uploadResponse = await uploadFiles(fileFormData);
+          if (uploadResponse?.data?.data) {
+            const newlyUploaded = filesToUpload.map(
+              (file: File, index: number) => ({
+                name: file.name,
+                url: uploadResponse.data.data[index],
+                size: file.size.toString(),
+                type: file.type,
+              })
+            );
+            uploadedFiles = [...alreadyUploaded, ...newlyUploaded];
+          }
+        } else {
+          uploadedFiles = alreadyUploaded;
         }
       }
 
