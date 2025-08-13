@@ -175,6 +175,7 @@ const CreateEvaluationDialog = () => {
         submissionDeadline: string;
         questionDeadline: string;
         bidIntentDeadline: string;
+        status: string
       }[]
     >,
     ApiResponseError
@@ -216,7 +217,8 @@ const CreateEvaluationDialog = () => {
 
   // Transform solicitations data for dropdown options
   const solicitationOptions =
-    solicitationsData?.data?.data?.map((solicitation) => ({
+    solicitationsData?.data?.data
+      .filter((item) => item.status === "published")?.map((solicitation) => ({
       label: solicitation.name,
       value: solicitation._id,
     })) || [];

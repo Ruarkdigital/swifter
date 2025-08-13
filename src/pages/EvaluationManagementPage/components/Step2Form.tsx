@@ -40,9 +40,8 @@ const Step2Form = ({ control }: Step2FormProps) => {
   // Transform evaluators data to options format
   const evaluatorOptions =
     evaluatorsData?.data?.data
-      .filter((item) => item.status === "published")
       ?.map((evaluator) => ({
-        label: `${evaluator.email}`,
+        label: evaluator.email,
         value: evaluator._id,
       })) || [];
 
