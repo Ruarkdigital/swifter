@@ -309,7 +309,7 @@ const AddendumsTab: React.FC<AddendumsTabProps> = ({ solicitationId }) => {
       header: "Actions",
       cell: ({ row }) => (
         <div className="flex items-center gap-2">
-          {row.original.status === "draft" ? (
+          {row.original.status === "draft" && !isVendor ? (
             <>
               <Dialog
                 open={

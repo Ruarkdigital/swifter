@@ -8,7 +8,6 @@ import { getRequest } from "@/lib/axiosInstance";
 import { ApiResponse, ApiResponseError } from "@/types";
 import { format } from "date-fns";
 import { PageLoader } from "@/components/ui/PageLoader";
-import { useUserRole } from "@/hooks/useUserRole";
 import { DocSVG } from "@/assets/icons/Doc";
 import { PdfSVG } from "@/assets/icons/Pdf";
 import { ExcelSVG } from "@/assets/icons/Excel";
@@ -75,8 +74,6 @@ const AddendumDetailsSheet: React.FC<AddendumDetailsSheetProps> = ({
   solicitationId,
   // onClose,
 }) => {
-  // Get user role
-  const { isVendor } = useUserRole();
   // Fetch detailed addendum data from API
   const {
     data: addendumDetailData,
@@ -86,9 +83,7 @@ const AddendumDetailsSheet: React.FC<AddendumDetailsSheetProps> = ({
     queryKey: ["addendum-detail", solicitationId, addendum.id],
     queryFn: async () => {
       // Use different API endpoint based on user role
-      const endpoint = isVendor
-        ? `/vendor/solicitations/${solicitationId}/addendums/${addendum.id}` // Vendor-specific endpoint
-        : `/procurement/solicitations/${solicitationId}/addendums/${addendum.id}`; // Default procurement endpoint
+      const endpoint = `/procurement/solicitations/${solicitationId}/addendums/${addendum.id}`; // Default procurement endpoint
 
       return await getRequest({ url: endpoint });
     },

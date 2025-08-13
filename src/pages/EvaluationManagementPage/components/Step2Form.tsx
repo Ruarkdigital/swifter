@@ -1,11 +1,9 @@
 import { Button } from "@/components/ui/button";
-import { Trash2, Plus, } from "lucide-react";
+import { Trash2, Plus } from "lucide-react";
 import { useFieldArray, Control } from "react-hook-form";
 import { useQuery } from "@tanstack/react-query";
 import { Forger } from "@/lib/forge";
-import {
-  TextInput,
-} from "@/components/layouts/FormInputs/TextInput";
+import { TextInput } from "@/components/layouts/FormInputs/TextInput";
 import { TextMultiSelect } from "@/components/layouts/FormInputs/TextSelect";
 import { getRequest } from "@/lib/axiosInstance";
 import { ApiResponse, ApiResponseError } from "@/types";
@@ -14,6 +12,7 @@ import { ApiResponse, ApiResponseError } from "@/types";
 type Evaluator = {
   _id: string;
   email: string;
+  status: string;
 };
 
 interface Step2FormProps {
@@ -39,11 +38,13 @@ const Step2Form = ({ control }: Step2FormProps) => {
   });
 
   // Transform evaluators data to options format
-  const evaluatorOptions = evaluatorsData?.data?.data
-    ?.map((evaluator) => ({
-      label: `${evaluator.email}`,
-      value: evaluator._id,
-    })) || [];
+  const evaluatorOptions =
+    evaluatorsData?.data?.data
+      .filter((item) => item.status === "published")
+      ?.map((evaluator) => ({
+        label: `${evaluator.email}`,
+        value: evaluator._id,
+      })) || [];
 
   const addGroup = () => {
     append({ name: "", evaluators: [] });
@@ -76,14 +77,22 @@ const Step2Form = ({ control }: Step2FormProps) => {
             <div className="space-y-2 flex-1">
               <Forger
                 name={`group.${index}.evaluators`}
-                placeholder={isLoadingEvaluators ? "Loading evaluators..." : "Select evaluators"}
+                placeholder={
+                  isLoadingEvaluators
+                    ? "Loading evaluators..."
+                    : "Select evaluators"
+                }
                 component={TextMultiSelect}
                 options={evaluatorOptions}
                 maxCount={10}
                 hideClearAllButton={false}
                 creatable={true}
                 createLabel="Add email"
-                emptyIndicator={<p className="text-center text-sm text-gray-500">No evaluators found</p>}
+                emptyIndicator={
+                  <p className="text-center text-sm text-gray-500">
+                    No evaluators found
+                  </p>
+                }
               />
             </div>
 

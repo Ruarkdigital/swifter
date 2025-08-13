@@ -13,6 +13,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { postRequest, getRequest } from "@/lib/axiosInstance";
 import { ApiResponse, ApiResponseError } from "@/types";
 import { useToastHandler } from "@/hooks/useToaster";
+import { format } from "date-fns";
 import Step1Form from "./Step1Form";
 import Step2Form from "./Step2Form";
 import Step3Form from "./Step3Form";
@@ -39,23 +40,26 @@ const step2Schema = yup.object({
     .required("Question acceptance deadline date is required"),
   timezone: yup.string().required("Timezone is required"),
   bidIntent: yup.string().required("Bid intent is required"),
-  bidIntentDeadlineDate: yup
-    .string()
-    .when("bidIntent", {
-      is: "required",
-      then: (schema) => schema.required("Bid intent deadline date is required when bid intent is required"),
-      otherwise: (schema) => schema.optional(),
-    }),
+  bidIntentDeadlineDate: yup.string().when("bidIntent", {
+    is: "required",
+    then: (schema) =>
+      schema.required(
+        "Bid intent deadline date is required when bid intent is required"
+      ),
+    otherwise: (schema) => schema.optional(),
+  }),
   visibility: yup.string().required("Visibility is required"),
 });
 
-const eventSchema = yup.object({
-  event: yup.string().required("Event is required"),
-  location: yup.string().required("Location is required"),
-  date: yup.string().required("Date is required"),
-  time: yup.string().required("Time is required"),
-  note: yup.string().optional(),
-}).optional();
+const eventSchema = yup
+  .object({
+    event: yup.string().required("Event is required"),
+    location: yup.string().required("Location is required"),
+    date: yup.string().required("Date is required"),
+    time: yup.string().required("Time is required"),
+    note: yup.string().optional(),
+  })
+  .optional();
 
 const step3Schema = yup.object({
   event: yup.array().of(eventSchema).optional(),
@@ -66,7 +70,10 @@ const documentSchema = yup.mixed().test({
   message: "Document is required",
   test: (value) => {
     // Accept both File objects and UploadedFile objects
-    return value instanceof File || (value && typeof value === 'object' && 'url' in value);
+    return (
+      value instanceof File ||
+      (value && typeof value === "object" && "url" in value)
+    );
   },
 }); // Allow additional properties without validation
 
@@ -252,49 +259,64 @@ const CreateSolicitationDialog = () => {
           ? new Date(completeData.bidIntentDeadlineDate).toISOString()
           : undefined,
         timezone: completeData.timezone || "Africa/Lagos",
-        events: completeData.event
-          ?.map((evt: any) => {
-            // Validate date and time before creating Date object
-            if (!evt.date || !evt.time) {
-              console.warn("Invalid event date or time:", {
-                date: evt.date,
-                time: evt.time,
-              });
-              return null;
-            }
+        events: (() => {
+             if (!completeData.event) return undefined;
+             
+             const validEvents: Array<{
+               eventType: string;
+               eventLocation: string;
+               eventDate: string;
+               eventDescription?: string;
+             }> = [];
+             
+             for (const evt of completeData.event) {
+                if (!evt) continue;
+                
+                // Validate date and time before creating Date object
+                if (!evt.date || !evt.time) {
+                  console.warn("Invalid event date or time:", {
+                    date: evt.date,
+                    time: evt.time,
+                  });
+                  continue;
+                }
 
-            // Handle Date object from TextDatePicker
-            const dateStr =
-              evt.date instanceof Date
-                ? evt.date.toISOString().split("T")[0] // Extract YYYY-MM-DD
-                : evt.date;
+                // Handle Date object from TextDatePicker
+                   const dateStr =
+                     (evt.date as any) instanceof Date
+                       ? format(evt.date as Date, 'yyyy-MM-dd') // Extract YYYY-MM-DD
+                       : evt.date;
 
-            // Validate the constructed date string
-            const dateTimeStr = `${dateStr}T${evt.time}`;
-            const eventDate = new Date(dateTimeStr);
+                // Validate the constructed date string
+                const dateTimeStr = `${dateStr}T${evt.time}`;
+                const eventDate = new Date(dateTimeStr);
 
-            if (isNaN(eventDate.getTime())) {
-              console.warn("Invalid date constructed:", dateTimeStr);
-              return null;
-            }
+                if (isNaN(eventDate.getTime())) {
+                  console.warn("Invalid date constructed:", dateTimeStr);
+                  continue;
+                }
 
-            return {
-              eventType: evt.event,
-              eventLocation: evt.location,
-              eventDate: eventDate.toISOString(),
-              eventDescription: evt.note || undefined,
-            };
-          })
-          .filter(Boolean), // Remove null entries
+                validEvents.push({
+                  eventType: evt.event,
+                  eventLocation: evt.location,
+                  eventDate: eventDate.toISOString(),
+                  eventDescription: evt.note || undefined,
+                });
+              }
+             
+             // Return undefined if no valid events exist
+             return validEvents.length > 0 ? validEvents : undefined;
+           })(),
         // Use already uploaded files from Step4Form
-        files: completeData.documents && completeData.documents.length > 0 
-          ? completeData.documents.map((doc: any) => ({
-              name: doc.name,
-              url: doc.url,
-              size: doc.size,
-              type: doc.type,
-            }))
-          : undefined,
+        files:
+          completeData.documents && completeData.documents.length > 0
+            ? completeData.documents.map((doc: any) => ({
+                name: doc.name,
+                url: doc.url,
+                size: doc.size,
+                type: doc.type,
+              }))
+            : undefined,
         vendors:
           completeData.vendor?.map((item: any) => ({ id: item.value })) ||
           undefined,
@@ -351,7 +373,9 @@ const CreateSolicitationDialog = () => {
       }
 
       // Transform form data to match API schema for draft
-      const apiPayload: SolicitationCreateRequest = {
+      const apiPayload: Omit<SolicitationCreateRequest, "events"> & {
+        events?: SolicitationCreateRequest["events"];
+      } = {
         name: formData.solicitationName,
         typeId: formData.solicitationType,
         categoryIds: Array.isArray(formData.category)
@@ -375,52 +399,59 @@ const CreateSolicitationDialog = () => {
           ? new Date(formData.bidIntentDeadlineDate).toISOString()
           : undefined,
         timezone: formData.timezone || "Africa/Lagos",
-        events: formData.event?.map((evt: any) => {
-          // Validate date and time before creating Date object
-          if (!evt.date || !evt.time) {
-            return {
-              eventType: "",
-              eventLocation: "",
-              eventDate: "",
-              eventDescription: undefined,
-            };
-          }
+        events: (() => {
+             if (!formData.event) return undefined;
+             
+             const validEvents: Array<{
+               eventType: string;
+               eventLocation: string;
+               eventDate: string;
+               eventDescription?: string;
+             }> = [];
+             
+             for (const evt of formData.event) {
+                if (!evt) continue;
+                
+                // Validate date and time before creating Date object
+                if (!evt.date || !evt.time) {
+                  continue;
+                }
 
-          // Handle Date object from TextDatePicker
-          const dateStr =
-            evt.date instanceof Date
-              ? evt.date.toISOString().split("T")[0] // Extract YYYY-MM-DD
-              : evt.date;
+                // Handle Date object from TextDatePicker
+                  const dateStr =
+                    evt.date && typeof evt.date === 'object' && evt.date as any
+                      ? format(evt.date, 'yyyy-MM-dd') // Extract YYYY-MM-DD
+                      : evt.date;
 
-          // Validate the constructed date string
-          const dateTimeStr = `${dateStr}T${evt.time}`;
-          const eventDate = new Date(dateTimeStr);
+                // Validate the constructed date string
+                const dateTimeStr = `${dateStr}T${evt.time}`;
+                const eventDate = new Date(dateTimeStr);
 
-          if (isNaN(eventDate.getTime())) {
-            return {
-              eventType: "",
-              eventLocation: "",
-              eventDate: "",
-              eventDescription: undefined,
-            };
-          }
+                if (isNaN(eventDate.getTime())) {
+                  continue;
+                }
 
-          return {
-            eventType: evt.event,
-            eventLocation: evt.location,
-            eventDate: eventDate.toISOString(),
-            eventDescription: evt.note || undefined,
-          };
-        }),
+                validEvents.push({
+                  eventType: evt.event,
+                  eventLocation: evt.location,
+                  eventDate: eventDate.toISOString(),
+                  eventDescription: evt.note || undefined,
+                });
+              }
+             
+             // Return undefined if no valid events exist
+             return validEvents.length > 0 ? validEvents : undefined;
+           })(),
         // Use already uploaded files from Step4Form
-        files: formData.documents && formData.documents.length > 0
-          ? formData.documents.map((doc: any) => ({
-              name: doc.name,
-              url: doc.url,
-              size: doc.size,
-              type: doc.type,
-            }))
-          : undefined,
+        files:
+          formData.documents && formData.documents.length > 0
+            ? formData.documents.map((doc: any) => ({
+                name: doc.name,
+                url: doc.url,
+                size: doc.size,
+                type: doc.type,
+              }))
+            : undefined,
         vendors:
           formData.vendor?.map((item: any) => ({ id: item.value })) ||
           undefined,
