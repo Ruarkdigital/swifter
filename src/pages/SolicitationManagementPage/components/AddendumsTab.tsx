@@ -13,9 +13,9 @@ import {
 } from "@/components/ui/dialog";
 import { DataTable } from "@/components/layouts/DataTable";
 import { ColumnDef, PaginationState } from "@tanstack/react-table";
-import { Search, Plus, FileText, Edit, Upload } from "lucide-react";
+import { Search, Plus, FileText, Edit, Upload, FileIcon, CheckCircle, AlertCircle } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getRequest, deleteRequest, putRequest } from "@/lib/axiosInstance";
+import { getRequest, deleteRequest, putRequest, postRequest } from "@/lib/axiosInstance";
 import { ApiResponse, ApiResponseError } from "@/types";
 import { useToastHandler } from "@/hooks/useToaster";
 import { ConfirmAlert } from "@/components/layouts/ConfirmAlert";
@@ -35,6 +35,8 @@ import { useForge, Forge, Forger } from "@/lib/forge";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import { useWatch } from "react-hook-form";
+import { Progress } from "@/components/ui/progress";
+import { cn } from "@/lib/utils";
 
 // Addendum type definition based on API schema
 type SolicitationAddendum = {
@@ -504,6 +506,75 @@ const EditAddendumDialog: React.FC<EditAddendumDialogProps> = ({
   onSubmit,
   isLoading,
 }) => {
+  const toast = useToastHandler();
+  
+  // Upload progress state
+  const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
+  const [uploadingFiles, setUploadingFiles] = useState<string[]>([]);
+  const [uploadErrors, setUploadErrors] = useState<Record<string, string>>({});
+
+  // File upload mutation with progress tracking
+  const uploadFilesMutation = useMutation<
+    ApiResponse<any[]>,
+    ApiResponseError,
+    File[]
+  >({
+    mutationFn: async (files: File[]) => {
+      const formData = new FormData();
+      files.forEach((file) => {
+        formData.append("file", file);
+      });
+
+      // Reset upload states
+      setUploadProgress({});
+      setUploadingFiles(files.map(f => f.name));
+      setUploadErrors({});
+
+      return await postRequest({
+        url: "/upload",
+        payload: formData,
+        config: {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+          onUploadProgress: (progressEvent) => {
+            if (progressEvent.total) {
+              const percentCompleted = Math.round(
+                (progressEvent.loaded * 100) / progressEvent.total
+              );
+              
+              // Update progress for all files being uploaded
+              const newProgress: Record<string, number> = {};
+              files.forEach(file => {
+                newProgress[file.name] = percentCompleted;
+              });
+              setUploadProgress(newProgress);
+            }
+          },
+        },
+      });
+    },
+    onSuccess: () => {
+      // Mark all files as complete
+      setUploadingFiles([]);
+      toast.success("Success", "Files uploaded successfully");
+    },
+    onError: (error) => {
+      // Mark upload as failed
+      setUploadingFiles([]);
+      const errorMessage = error?.response?.data?.message ?? "Failed to upload files";
+      toast.error("Upload Error", errorMessage);
+      
+      // Set error for all files
+      const currentFiles = getValues().documents || [];
+      const newErrors: Record<string, string> = {};
+      currentFiles.forEach((file: File) => {
+        newErrors[file.name] = errorMessage;
+      });
+      setUploadErrors(newErrors);
+    }
+  });
+
   // Fetch addendum details
   const { data: addendumData } = useQuery<
     ApiResponse<SolicitationAddendum>,
@@ -533,7 +604,7 @@ const EditAddendumDialog: React.FC<EditAddendumDialogProps> = ({
   const solicitation = solicitationData?.data?.data;
   const addendumDetails = addendumData?.data?.data;
 
-  const { control, reset } = useForge<EditAddendumFormValues>({
+  const { control, reset, getValues } = useForge<EditAddendumFormValues>({
     resolver: yupResolver(editAddendumSchema),
     defaultValues: {
       title: "",
@@ -572,6 +643,23 @@ const EditAddendumDialog: React.FC<EditAddendumDialogProps> = ({
   }, [addendumDetails, solicitation, reset]);
 
   const handleFormSubmit = async (data: EditAddendumFormValues) => {
+    let uploadedFiles: any[] = [];
+
+    // Upload files first if any new files are added
+    if (data.documents && data.documents.length > 0) {
+      // Filter only File objects (new uploads), not existing file objects
+      const newFiles = data.documents.filter((file: any) => file instanceof File) as File[];
+      
+      if (newFiles.length > 0) {
+        const uploadResponse = await uploadFilesMutation.mutateAsync(newFiles);
+        uploadedFiles = uploadResponse.data?.data || [];
+      }
+      
+      // Include existing files (non-File objects)
+      const existingFiles = data.documents.filter((file: any) => !(file instanceof File));
+      uploadedFiles = [...uploadedFiles, ...existingFiles];
+    }
+
     const payload = {
       ...data,
       submissionDeadline: data.submissionDeadline
@@ -580,39 +668,124 @@ const EditAddendumDialog: React.FC<EditAddendumDialogProps> = ({
       questionAcceptanceDeadline: data.questionAcceptanceDeadline
         ? new Date(data.questionAcceptanceDeadline).toISOString()
         : undefined,
-      files:
-        data.documents?.map((file) => ({
-          name: file.name,
-          url: file.url,
-          size: file.size.toString(),
-          type: file.type,
-        })) || [],
+      files: uploadedFiles.map((file) => ({
+        name: file.name,
+        url: file.url,
+        size: file.size?.toString?.() || file.size,
+        type: file.type,
+      })),
     };
     await onSubmit(payload);
   };
 
   const FileUploadElement = () => (
-    <>
-      <Upload className="h-8 w-8 text-gray-400 mb-2" />
-      <div className="text-sm text-gray-600">
-        <span className="font-medium text-blue-600 cursor-pointer hover:text-blue-500">
-          Drag & Drop or Click to choose file
-        </span>
+    <div className="flex flex-col items-center justify-center p-8">
+      <Upload className="h-12 w-12 text-blue-500 mb-4" />
+      <div className="text-center">
+        <p className="text-lg font-medium text-gray-900 mb-2">
+          Upload Documents
+        </p>
+        <p className="text-sm text-gray-600 mb-4">
+          <span className="font-medium text-blue-600 cursor-pointer hover:text-blue-700">
+            Click to browse
+          </span>{" "}
+          or drag and drop files here
+        </p>
+        <p className="text-xs text-gray-500">
+-          Supported: PDF, DOC, DOCX, XLS, XLSX, ZIP, PNG, JPEG (Max 10MB each)
++          Supported: PDF, DOC, DOCX, XLS, XLSX, ZIP, PNG, JPEG
+         </p>
       </div>
-      <p className="text-xs text-gray-500">
-        Supported formats: DOC, PDF, XLS, XLSLS, ZIP, PNG, JPEG
-      </p>
-    </>
-  );
-
-  const FileListItem = ({ file }: { file: File }) => (
-    <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
-      <span className="text-sm text-gray-700">{file.name}</span>
-      <span className="text-xs text-gray-500">
-        {(file.size / 1024).toFixed(1)} KB
-      </span>
     </div>
   );
+
+  const FileListItem = ({ file }: { file: File | any }) => {
+    const fileName = file.name;
+    const fileSize = file instanceof File 
+      ? (file.size / 1024 / 1024).toFixed(2) 
+      : ((file.size || 0) / 1024 / 1024).toFixed(2); // Convert to MB
+    const isNewFile = file instanceof File;
+    const isUploading = isNewFile && uploadingFiles.includes(fileName);
+    const progress = uploadProgress[fileName] || 0;
+    const hasError = uploadErrors[fileName];
+    const isComplete = isNewFile && !isUploading && !hasError && progress === 100;
+
+    return (
+      <div className="border border-gray-200 rounded-lg p-4 bg-white hover:bg-gray-50 transition-colors">
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center space-x-3">
+            <div className={cn(
+              "p-2 rounded-full",
+              hasError ? "bg-red-100" : isComplete ? "bg-green-100" : isNewFile ? "bg-blue-100" : "bg-gray-100"
+            )}>
+              {hasError ? (
+                <AlertCircle className="h-4 w-4 text-red-600" />
+              ) : isComplete ? (
+                <CheckCircle className="h-4 w-4 text-green-600" />
+              ) : (
+                <FileIcon className="h-4 w-4 text-blue-600" />
+              )}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-gray-900 truncate">
+                {fileName}
+              </p>
+              <p className="text-xs text-gray-500">
+                {fileSize} MB {!isNewFile && "(existing)"}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Progress bar for new uploads */}
+        {isUploading && (
+          <div className="mb-2">
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-xs text-gray-500">Uploading...</span>
+              <span className="text-xs text-gray-700 font-medium">{progress}%</span>
+            </div>
+            <Progress 
+              value={progress} 
+              className="h-2"
+              variant="default" 
+            />
+          </div>
+        )}
+
+        {/* Error message */}
+        {hasError && (
+          <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded text-xs text-red-700">
+            {hasError}
+          </div>
+        )}
+
+        {/* Success indicator */}
+        {isComplete && (
+          <div className="mt-2 flex items-center text-xs text-green-700">
+            <CheckCircle className="h-3 w-3 mr-1" />
+            Upload complete
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const acceptedFileTypes = {
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": [
+      ".xlsx",
+    ],
+    "application/vnd.ms-excel": [".xls"],
+    "application/zip": [".zip"],
+    "application/pdf": [".pdf"],
+    "application/msword": [".doc"],
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document": [
+      ".docx",
+    ],
+    "image/png": [".png"],
+    "image/jpeg": [".jpg", ".jpeg"],
+  };
+
+  const isUploading = uploadFilesMutation.isPending || uploadingFiles.length > 0;
 
   if (!addendum) return null;
 
@@ -659,15 +832,28 @@ const EditAddendumDialog: React.FC<EditAddendumDialogProps> = ({
             placeholder="Select new question acceptance deadline (optional)"
           />
 
-          <Forger
-            name="documents"
-            component={TextFileUploader}
-            element={<FileUploadElement />}
-            List={FileListItem}
-            label="Documents"
-            placeholder="Upload documents (optional)"
-            multiple
-          />
+          <div className="space-y-2">
+            <Forger
+              name="documents"
+              component={TextFileUploader}
+              element={<FileUploadElement />}
+              List={FileListItem}
+              label="Documents"
+              placeholder="Upload documents (optional)"
+              accept={acceptedFileTypes as any}
+              dropzoneOptions={{
+                multiple: true,
+                maxFiles: 10,
+              }}
+            />
+            {/* Upload status indicator */}
+            {isUploading && (
+              <div className="flex items-center space-x-2 text-sm text-blue-600">
+                <div className="animate-spin h-4 w-4 border-2 border-blue-600 border-t-transparent rounded-full"></div>
+                <span>Uploading files...</span>
+              </div>
+            )}
+          </div>
 
           <Forger
             name="status"
@@ -686,16 +872,20 @@ const EditAddendumDialog: React.FC<EditAddendumDialogProps> = ({
             type="button"
             variant="outline"
             onClick={() => reset()}
-            disabled={isLoading}
+            disabled={isLoading || isUploading}
           >
             Cancel
           </Button>
           <Button
             type="submit"
-            disabled={isLoading}
+            disabled={isLoading || isUploading}
             className="bg-[#2A4467] hover:bg-[#1e3252] text-white"
           >
-            {isLoading ? "Updating..." : "Update Addendum"}
+            {isLoading || isUploading 
+              ? isUploading 
+                ? "Uploading files..." 
+                : "Updating..." 
+              : "Update Addendum"}
           </Button>
         </DialogFooter>
       </Forge>

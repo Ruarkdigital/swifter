@@ -1,12 +1,13 @@
-import React, { useRef, useEffect } from "react";
+import React, { useRef, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Upload, Users } from "lucide-react";
+import { Upload, Users, X, FileIcon, CheckCircle, AlertCircle } from "lucide-react";
 import {
   TextDatePicker,
 } from "@/components/layouts/FormInputs/TextInput";
 import { TextArea } from "@/components/layouts/FormInputs/TextInput";
 import { TextFileUploader } from "@/components/layouts/FormInputs/TextFileInput";
+import { Progress } from "@/components/ui/progress";
 import { Forge, Forger, useForge } from "@/lib/forge";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
@@ -17,6 +18,7 @@ import { useToastHandler } from "@/hooks/useToaster";
 import { useWatch } from "react-hook-form";
 import { useUserRole } from "@/hooks/useUserRole";
 import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 
 // Base schema for form validation - deadline fields are now optional
 const baseSchema = {
@@ -63,6 +65,11 @@ const CreateAddendumDialog: React.FC<CreateAddendumDialogProps> = ({
   const toast = useToastHandler();
   const queryClient = useQueryClient();
   const { isVendor } = useUserRole();
+
+  // Upload progress state
+  const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
+  const [uploadingFiles, setUploadingFiles] = useState<string[]>([]);
+  const [uploadErrors, setUploadErrors] = useState<Record<string, string>>({});
 
   // Fetch solicitation details to auto-populate deadline fields
   const { data: solicitationData } = useQuery<
@@ -122,7 +129,7 @@ const CreateAddendumDialog: React.FC<CreateAddendumDialogProps> = ({
     ? new Date(submissionDeadlineDate)
     : undefined;
 
-  // File upload mutation
+  // File upload mutation with progress tracking
   const uploadFilesMutation = useMutation<
     ApiResponse<any[]>,
     ApiResponseError,
@@ -134,6 +141,11 @@ const CreateAddendumDialog: React.FC<CreateAddendumDialogProps> = ({
         formData.append("file", file);
       });
 
+      // Reset upload states
+      setUploadProgress({});
+      setUploadingFiles(files.map(f => f.name));
+      setUploadErrors({});
+
       return await postRequest({
         url: "/upload",
         payload: formData,
@@ -141,9 +153,42 @@ const CreateAddendumDialog: React.FC<CreateAddendumDialogProps> = ({
           headers: {
             "Content-Type": "multipart/form-data",
           },
+          onUploadProgress: (progressEvent) => {
+            if (progressEvent.total) {
+              const percentCompleted = Math.round(
+                (progressEvent.loaded * 100) / progressEvent.total
+              );
+              
+              // Update progress for all files being uploaded
+              const newProgress: Record<string, number> = {};
+              files.forEach(file => {
+                newProgress[file.name] = percentCompleted;
+              });
+              setUploadProgress(newProgress);
+            }
+          },
         },
       });
     },
+    onSuccess: () => {
+      // Mark all files as complete
+      setUploadingFiles([]);
+      toast.success("Success", "Files uploaded successfully");
+    },
+    onError: (error) => {
+      // Mark upload as failed
+      setUploadingFiles([]);
+      const errorMessage = error?.response?.data?.message ?? "Failed to upload files";
+      toast.error("Upload Error", errorMessage);
+      
+      // Set error for all files
+      const currentFiles = getValues().documents || [];
+      const newErrors: Record<string, string> = {};
+      currentFiles.forEach((file: File) => {
+        newErrors[file.name] = errorMessage;
+      });
+      setUploadErrors(newErrors);
+    }
   });
 
   // Create addendum mutation
@@ -300,27 +345,92 @@ const CreateAddendumDialog: React.FC<CreateAddendumDialogProps> = ({
   };
 
   const FileUploadElement = () => (
-    <>
-      <Upload className="h-8 w-8 text-gray-400 mb-2" />
-      <div className="text-sm text-gray-600">
-        <span className="font-medium text-blue-600 cursor-pointer hover:text-blue-500">
-          Drag & Drop or Click to choose file
-        </span>
+    <div className="flex flex-col items-center justify-center p-8">
+      <Upload className="h-12 w-12 text-blue-500 mb-4" />
+      <div className="text-center">
+        <p className="text-lg font-medium text-gray-900 mb-2">
+          Upload Documents
+        </p>
+        <p className="text-sm text-gray-600 mb-4">
+          <span className="font-medium text-blue-600 cursor-pointer hover:text-blue-700">
+            Click to browse
+          </span>{" "}
+          or drag and drop files here
+        </p>
+        <p className="text-xs text-gray-500">
+          Supported: PDF, DOC, DOCX, XLS, XLSX, ZIP, PNG, JPEG
+        </p>
       </div>
-      <p className="text-xs text-gray-500">
-        Supported formats: DOC, PDF, XLS, XLSLS, ZIP, PNG, JPEG
-      </p>
-    </>
-  );
-
-  const FileListItem = ({ file }: { file: File }) => (
-    <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
-      <span className="text-sm text-gray-700">{file.name}</span>
-      <span className="text-xs text-gray-500">
-        {(file.size / 1024).toFixed(1)} KB
-      </span>
     </div>
   );
+
+  const FileListItem = ({ file }: { file: File }) => {
+    const fileName = file.name;
+    const fileSize = (file.size / 1024 / 1024).toFixed(2); // Convert to MB
+    const isUploading = uploadingFiles.includes(fileName);
+    const progress = uploadProgress[fileName] || 0;
+    const hasError = uploadErrors[fileName];
+    const isComplete = !isUploading && !hasError && progress === 100;
+
+    return (
+      <div className="border border-gray-200 rounded-lg p-4 bg-white hover:bg-gray-50 transition-colors">
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center space-x-3">
+            <div className={cn(
+              "p-2 rounded-full",
+              hasError ? "bg-red-100" : isComplete ? "bg-green-100" : "bg-blue-100"
+            )}>
+              {hasError ? (
+                <AlertCircle className="h-4 w-4 text-red-600" />
+              ) : isComplete ? (
+                <CheckCircle className="h-4 w-4 text-green-600" />
+              ) : (
+                <FileIcon className="h-4 w-4 text-blue-600" />
+              )}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-gray-900 truncate">
+                {fileName}
+              </p>
+              <p className="text-xs text-gray-500">
+                {fileSize} MB
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Progress bar */}
+        {isUploading && (
+          <div className="mb-2">
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-xs text-gray-500">Uploading...</span>
+              <span className="text-xs text-gray-700 font-medium">{progress}%</span>
+            </div>
+            <Progress 
+              value={progress} 
+              className="h-2"
+              variant="default" 
+            />
+          </div>
+        )}
+
+        {/* Error message */}
+        {hasError && (
+          <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded text-xs text-red-700">
+            {hasError}
+          </div>
+        )}
+
+        {/* Success indicator */}
+        {isComplete && (
+          <div className="mt-2 flex items-center text-xs text-green-700">
+            <CheckCircle className="h-3 w-3 mr-1" />
+            Upload complete
+          </div>
+        )}
+      </div>
+    );
+  };
 
   const acceptedFileTypes = {
     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": [
@@ -337,6 +447,8 @@ const CreateAddendumDialog: React.FC<CreateAddendumDialogProps> = ({
     "image/jpeg": [".jpg", ".jpeg"],
   };
 
+  const isUploading = uploadFilesMutation.isPending || uploadingFiles.length > 0;
+
   return (
     <div className="w-full">
       {/* Header */}
@@ -349,14 +461,6 @@ const CreateAddendumDialog: React.FC<CreateAddendumDialogProps> = ({
       <Forge control={control} onSubmit={handlePublishAddendum} ref={formRef}>
         {/* Form Content */}
         <div className="space-y-6 mt-3">
-          {/* Title */}
-          {/* <Forger
-            name="title"
-            component={TextInput}
-            label="Title"
-            placeholder="Enter Title"
-          /> */}
-
           {/* Description */}
           <div className="relative">
             <Forger
@@ -383,15 +487,28 @@ const CreateAddendumDialog: React.FC<CreateAddendumDialogProps> = ({
           )}
 
           {/* Upload Documents */}
-          <Forger
-            name="documents"
-            component={TextFileUploader}
-            label="Upload New/Revised Documents"
-            containerClass="dark:border-gray-200"
-            element={<FileUploadElement />}
-            List={FileListItem}
-            accept={acceptedFileTypes as any}
-          />
+          <div className="space-y-2">
+            <Forger
+              name="documents"
+              component={TextFileUploader}
+              label="Upload New/Revised Documents"
+              containerClass="dark:border-gray-200"
+              element={<FileUploadElement />}
+              List={FileListItem}
+              accept={acceptedFileTypes as any}
+              dropzoneOptions={{
+                multiple: true,
+                maxFiles: 10,
+              }}
+            />
+            {/* Upload status indicator */}
+            {isUploading && (
+              <div className="flex items-center space-x-2 text-sm text-blue-600">
+                <div className="animate-spin h-4 w-4 border-2 border-blue-600 border-t-transparent rounded-full"></div>
+                <span>Uploading files...</span>
+              </div>
+            )}
+          </div>
 
           {/* Submission Deadline */}
           <Forger
@@ -427,12 +544,12 @@ const CreateAddendumDialog: React.FC<CreateAddendumDialogProps> = ({
               disabled={
                 createAddendumMutation.isPending ||
                 replyAddendumMutation.isPending ||
-                uploadFilesMutation.isPending
+                isUploading
               }
             >
               {createAddendumMutation.isPending ||
               replyAddendumMutation.isPending ||
-              uploadFilesMutation.isPending
+              isUploading
                 ? "Saving..."
                 : "Save as Draft"}
             </Button>
@@ -447,7 +564,7 @@ const CreateAddendumDialog: React.FC<CreateAddendumDialogProps> = ({
               disabled={
                 createAddendumMutation.isPending ||
                 replyAddendumMutation.isPending ||
-                uploadFilesMutation.isPending
+                isUploading
               }
             >
               Back
@@ -458,13 +575,13 @@ const CreateAddendumDialog: React.FC<CreateAddendumDialogProps> = ({
               disabled={
                 createAddendumMutation.isPending ||
                 replyAddendumMutation.isPending ||
-                uploadFilesMutation.isPending
+                isUploading
               }
             >
               {createAddendumMutation.isPending ||
               replyAddendumMutation.isPending ||
-              uploadFilesMutation.isPending
-                ? uploadFilesMutation.isPending
+              isUploading
+                ? isUploading
                   ? "Uploading files..."
                   : isReplyMode
                   ? "Publishing Reply..."

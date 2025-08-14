@@ -98,22 +98,23 @@ export type EditEvaluationFormData = Step1FormData &
 
 // API Types
 type UpdateEvaluationPayload = {
-  solicitation: string;
-  timezone: string;
-  start_date: string;
-  end_date: string;
-  group: Array<{
+  id: string; // Required field according to API docs
+  timezone?: string;
+  start_date?: string;
+  end_date?: string;
+  reason?: string;
+  status: "published" | "draft";
+  group?: Array<{
     name: string;
     evaluators: string[];
   }>;
-  documents: Array<{
+  documents?: Array<{
     title: string;
     type: string;
     group: string;
     required: boolean;
-    multiple: boolean;
   }>;
-  criteria: Array<{
+  criteria?: Array<{
     title: string;
     description: string;
     type: "pass_fail" | "weight";
@@ -216,26 +217,19 @@ const EditEvaluationDialog = ({
   // Update form values when evaluation data is loaded
   useEffect(() => {
     if (evaluationData && open) {
-      // Format dates for form inputs
-      const formatDateForInput = (dateString: string) => {
-        if (!dateString) return "";
-        const date = new Date(dateString);
-        return date.toISOString().split("T")[0];
-      };
-
       // Set basic evaluation info
       forge.setValue(
         "solicitation",
-        evaluationData?.data?.data?.solicitation?.name || ""
+        evaluationData?.data?.data?.solicitation?._id || ""
       );
-      forge.setValue("timezone", ""); // timezone not available in current data structure
+      forge.setValue("timezone", evaluationData?.data?.data?.timezone || "Africa/Lagos");
       forge.setValue(
         "start_date",
-        formatDateForInput(evaluationData?.data?.data?.startDate)
+        evaluationData?.data?.data?.startDate || ""
       );
       forge.setValue(
         "end_date",
-        formatDateForInput(evaluationData?.data?.data?.endDate)
+        evaluationData?.data?.data?.endDate || ""
       );
 
       // Set groups data
@@ -259,7 +253,7 @@ const EditEvaluationDialog = ({
         const documents = evaluationData.data.data.requiredDocuments.map(
           (doc: any) => ({
             title: doc.title || "",
-            type: "file", // default type
+            type: "DOC", // default type
             group: doc.groupName || "",
             required: true, // required documents are always required
             multiple: false, // default value
@@ -276,7 +270,7 @@ const EditEvaluationDialog = ({
             description: criterion.description || "",
             type: criterion.criteria?.pass_fail ? "pass_fail" : "weight",
             score:
-              criterion.criteria?.weight || criterion.criteria?.pass_fail || 0,
+              criterion.criteria?.weight || criterion.criteria?.pass_fail || "pass",
             group: criterion.evaluationGroup || "",
           })
         );
@@ -290,22 +284,45 @@ const EditEvaluationDialog = ({
 
   const onSubmit = async (data: EditEvaluationFormData) => {
     try {
-      await updateEvaluation({
-        ...data,
+      const payload: UpdateEvaluationPayload = {
+        id: evaluationId,
+        timezone: data.timezone || undefined,
+        start_date: data.start_date ? new Date(data.start_date as any).toISOString() : undefined,
+        end_date: data.end_date ? new Date(data.end_date as any).toISOString() : undefined,
         group:
           data.group?.map((item) => ({
             name: item.name,
             evaluators:
               item.evaluators
                 ?.filter((evaluator) => evaluator !== undefined)
-                .map((item) => item.value) ?? [],
-          })) ?? [],
-        documents: data.documents?.map(doc => ({
-          ...doc,
-          required: doc.required ?? false,
-          multiple: doc.multiple ?? false
-        })) || [],
-        criteria: data.criteria as unknown as any || []
+                .map((it) => it.value) ?? [],
+          })) ?? undefined,
+        documents:
+          data.documents?.map((doc) => ({
+            title: doc.title,
+            type: doc.type,
+            group: doc.group,
+            required: !!doc.required,
+          })) || undefined,
+        criteria:
+          data.criteria?.map((c) => {
+            const base = {
+              title: c.title,
+              description: c.description,
+              type: c.type as "pass_fail" | "weight",
+              group: c.group,
+            } as const;
+            if (c.type === "pass_fail") {
+              return { ...base, score: (c.score === "pass" || c.score === "fail") ? c.score : "pass" };
+            }
+            const num = typeof c.score === "number" ? c.score : parseFloat(String(c.score));
+            return { ...base, score: isNaN(num) ? 0 : num };
+          }) || undefined,
+          status: "published"
+      };
+
+      await updateEvaluation({
+        ...payload,
       });
       toast.success(
         "Evaluation Updated",

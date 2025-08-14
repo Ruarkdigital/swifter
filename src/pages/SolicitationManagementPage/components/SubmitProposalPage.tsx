@@ -362,12 +362,31 @@ const SubmitProposalPage: React.FC<SubmitProposalPageProps> = () => {
     {
       id: "uploads",
       header: "Uploads",
-      cell: ({  }) => {
-        // const doc = row.original;
-        const uploadCount = 0;
+      cell: ({ row }) => {
+        const doc = row.original;
+        const currentDocuments = forge.watch("document") || [];
+        const documentFiles = currentDocuments.find(
+          (document) => document.requiredDocumentId === doc._id
+        )?.files || [];
+        
+        const uploadCount = documentFiles.length;
+        
         return (
           <div className="text-sm text-gray-600 dark:text-gray-400">
-            {uploadCount > 0 ? `${uploadCount} file(s)` : "-"}
+            {uploadCount > 0 ? (
+              <div className="space-y-1">
+                <div className="font-medium">{uploadCount} file(s)</div>
+                <div className="space-y-0.5">
+                  {documentFiles.map((file, index) => (
+                    <div key={index} className="text-xs text-gray-500 dark:text-gray-500 truncate max-w-[200px]" title={file.name}>
+                      {file.name}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              "-"
+            )}
           </div>
         );
       },

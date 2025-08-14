@@ -193,7 +193,6 @@ const CreateVendorDialog: React.FC<CreateVendorDialogProps> = ({
   // File upload for multiple vendors
   const [fileUploadState, fileUploadActions] = useFileUpload({
     maxFiles: 1,
-    maxSize: 10 * 1024 * 1024, // 10MB
     accept: ".xls,.xlsx,.csv",
     multiple: false,
     onFilesChange: () => {
