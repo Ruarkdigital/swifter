@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Upload, Users, X, FileIcon, CheckCircle, AlertCircle } from "lucide-react";
+import { Upload, Users, FileIcon, CheckCircle, AlertCircle } from "lucide-react";
 import {
   TextDatePicker,
 } from "@/components/layouts/FormInputs/TextInput";
