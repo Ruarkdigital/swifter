@@ -105,7 +105,7 @@ function applyDynamicStatusTextReplacement(
   statusText: string,
   userRole: UserRole,
   activityType: ActivityType,
-  data: { id: string; name: string }
+  data: { id: string; name: string, solId?: string }
 ): string {
   // Extract potential actions from statusText to match against mappings
   const roleMapping = ACTIVITY_LINK_MAPPINGS[userRole]?.[activityType];
@@ -130,6 +130,13 @@ function applyDynamicStatusTextReplacement(
         return statusText
       }
     }
+  }
+
+  if(userRole === "evaluator") {
+    return statusText.replace(
+      data.name,
+      `<a href="/dashboard/evaluation/assigned/${data.solId}/${data.id}" class="underline underline-offset-4 text-blue-600">${data.name}</a>`
+    );
   }
 
   // Fallback to original behavior if no action matches
@@ -1640,6 +1647,7 @@ export class DashboardDataTransformer {
         {
           id: update?.evaluation?._id,
           name: update?.evaluation?.solicitation?.name,
+          solId: update?.evaluation?.solicitation?._id
         }
       ),
       type: update.type || "evaluation",

@@ -9,7 +9,11 @@ import { useToastHandler } from "@/hooks/useToaster";
 import { StatCard } from "./components/StatCard";
 import { useUserRole } from "@/hooks/useUserRole";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { DataTable } from "@/components/layouts/DataTable";
+import {
+  createExpandButton,
+  DataTable,
+  hasChildren,
+} from "@/components/layouts/DataTable";
 import { ColumnDef, PaginationState } from "@tanstack/react-table";
 import {
   useEvaluationDashboard,
@@ -34,6 +38,14 @@ import {
 } from "@/components/ui/dialog";
 import { Calendar } from "@/components/ui/calendar";
 import type { DateRange } from "react-day-picker";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 // Evaluation type definition
 type Evaluation = {
@@ -60,11 +72,31 @@ type AssignedEvaluation = {
   deadline: string;
   progress: number;
   status: string;
+  // Include groups for expansion
+  evaluationGroups?: AssignedEvaluationApiResponse["evaluationGroups"];
+};
+
+// Helper function to safely format dates with validation
+const safeFormatDate = (
+  dateInput: any,
+  pattern: string,
+  fallback: string = "N/A"
+): string => {
+  if (!dateInput) return fallback;
+
+  const date = new Date(dateInput);
+  if (isNaN(date.getTime())) return fallback;
+
+  return format(date, pattern);
 };
 
 // Helper function to calculate days left
 const calculateDaysLeft = (deadline: string): number => {
+  if (!deadline) return 0;
+
   const deadlineDate = new Date(deadline);
+  if (isNaN(deadlineDate.getTime())) return 0;
+
   const today = new Date();
   const diffTime = deadlineDate.getTime() - today.getTime();
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
@@ -86,7 +118,7 @@ const transformEvaluationData = (
     name: item.solicitationName,
     solicitationId: item._id,
     type: item.solicitationType,
-    deadline: format(new Date(item.endDate), "MMM dd, yyyy"),
+    deadline: safeFormatDate(item.endDate, "MMM dd, yyyy", "N/A"),
     daysLeft: calculateDaysLeft(item.endDate),
     status: item.status as "Active" | "Pending" | "Completed",
     owner: item.owner,
@@ -118,13 +150,16 @@ const transformAssignedEvaluationData = (
       type: item.solicitationType,
       evaluationGroup: item.evaluationGroups?.[0]?.name || "No Group Assigned",
       groupId: item.evaluationGroups?.[0]?._id || "",
-      assignedDate: format(
-        new Date(item.evaluationGroups?.[0]?.assignedOn),
-        "MMM dd, yyyy"
-      ), // API doesn't provide assignedDate
-      deadline: format(new Date(item.endDate), "MMM dd, yyyy pppp") ?? "N/A", // API doesn't provide deadline
+      assignedDate: safeFormatDate(
+        item.evaluationGroups?.[0]?.assignedOn,
+        "MMM dd, yyyy",
+        "N/A"
+      ),
+      deadline: safeFormatDate(item.endDate, "MMM dd, yyyy pppp", "N/A"),
       progress: Math.round(item.averageProgress || 0),
       status,
+      // Preserve groups for expansion
+      evaluationGroups: item.evaluationGroups || [],
     };
   });
 };
@@ -152,15 +187,19 @@ export const EvaluationManagementPage = () => {
     startDate?: Date;
     endDate?: Date;
   }>({ startDate: undefined, endDate: undefined });
-  const [assignedEvaluationsDateRange, setAssignedEvaluationsDateRange] = useState<{
-    startDate?: Date;
-    endDate?: Date;
-  }>({ startDate: undefined, endDate: undefined });
-  
-  const [allEvaluationsDateFilter, setAllEvaluationsDateFilter] = useState<string>("all");
-  const [myEvaluationsDateFilter, setMyEvaluationsDateFilter] = useState<string>("all");
-  const [assignedEvaluationsDateFilter, setAssignedEvaluationsDateFilter] = useState<string>("all");
-  
+  const [assignedEvaluationsDateRange, setAssignedEvaluationsDateRange] =
+    useState<{
+      startDate?: Date;
+      endDate?: Date;
+    }>({ startDate: undefined, endDate: undefined });
+
+  const [allEvaluationsDateFilter, setAllEvaluationsDateFilter] =
+    useState<string>("all");
+  const [myEvaluationsDateFilter, setMyEvaluationsDateFilter] =
+    useState<string>("all");
+  const [assignedEvaluationsDateFilter, setAssignedEvaluationsDateFilter] =
+    useState<string>("all");
+
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const [tempDateRange, setTempDateRange] = useState<DateRange | undefined>();
   const [activeTab, setActiveTab] = useState<string>(
@@ -176,7 +215,9 @@ export const EvaluationManagementPage = () => {
     const statusParam = searchParams.get("status");
     if (
       statusParam &&
-      ["active", "pending", "completed"].includes(normalizeEvaluationStatus(statusParam))
+      ["active", "pending", "completed"].includes(
+        normalizeEvaluationStatus(statusParam)
+      )
     ) {
       setStatusFilter(statusParam);
       setActiveStatCard(statusParam);
@@ -187,37 +228,46 @@ export const EvaluationManagementPage = () => {
   const { data: dashboardStats } = useEvaluationDashboard();
 
   // Helper function to format date range for API
-  const getDateParam = (dateFilter: string, dateRange: { startDate?: Date; endDate?: Date }) => {
+  const getDateParam = (
+    dateFilter: string,
+    dateRange: { startDate?: Date; endDate?: Date }
+  ) => {
     if (!dateFilter || dateFilter === "all") return undefined;
-    
+
     if (dateFilter === "custom" && dateRange.startDate && dateRange.endDate) {
-      return `${format(dateRange.startDate, "yyyy-MM-dd")}-${format(dateRange.endDate, "yyyy-MM-dd")}`;
+      return `${format(dateRange.startDate, "yyyy-MM-dd")}-${format(
+        dateRange.endDate,
+        "yyyy-MM-dd"
+      )}`;
     }
-    
+
     if (dateFilter === "today") {
       const today = format(new Date(), "yyyy-MM-dd");
       return `${today}-${today}`;
     }
-    
+
     if (dateFilter === "last7days") {
       const endDate = format(new Date(), "yyyy-MM-dd");
       const startDate = format(subDays(new Date(), 7), "yyyy-MM-dd");
       return `${startDate}-${endDate}`;
     }
-    
+
     if (dateFilter === "last30days") {
       const endDate = format(new Date(), "yyyy-MM-dd");
       const startDate = format(subDays(new Date(), 30), "yyyy-MM-dd");
       return `${startDate}-${endDate}`;
     }
-    
+
     return undefined;
   };
 
   // Tab-specific date param getters
-  const getAllEvaluationsDateParam = () => getDateParam(allEvaluationsDateFilter, allEvaluationsDateRange);
-  const getMyEvaluationsDateParam = () => getDateParam(myEvaluationsDateFilter, myEvaluationsDateRange);
-  const getAssignedEvaluationsDateParam = () => getDateParam(assignedEvaluationsDateFilter, assignedEvaluationsDateRange);
+  const getAllEvaluationsDateParam = () =>
+    getDateParam(allEvaluationsDateFilter, allEvaluationsDateRange);
+  const getMyEvaluationsDateParam = () =>
+    getDateParam(myEvaluationsDateFilter, myEvaluationsDateRange);
+  const getAssignedEvaluationsDateParam = () =>
+    getDateParam(assignedEvaluationsDateFilter, assignedEvaluationsDateRange);
 
   const { data: evaluationsResponse, isLoading: isEvaluationsLoading } =
     useEvaluationsList({
@@ -602,20 +652,7 @@ export const EvaluationManagementPage = () => {
     {
       id: "actions",
       header: "Actions",
-      cell: ({ row }) => (
-        <Button
-          variant="ghost"
-          size="sm"
-          className="text-green-600 hover:text-green-800 font-medium w-full"
-          onClick={() =>
-            navigate(
-              `/dashboard/evaluation/assigned/${row.original.id}/${row.original.groupId}`
-            )
-          }
-        >
-          View
-        </Button>
-      ),
+      cell: ({ row }) => createExpandButton(row),
     },
   ];
 
@@ -712,15 +749,15 @@ export const EvaluationManagementPage = () => {
               <DataTable
                 header={() => (
                   <Header
-                  title="All Evaluations"
-                  searchQuery={searchQuery}
-                  setSearchQuery={setSearchQuery}
-                  dateFilter={allEvaluationsDateFilter}
-                  statusFilter={statusFilter}
-                  onDateFilterChange={handleDateFilterChange}
-                  onStatusFilterChange={setStatusFilter}
-                  onClearFilters={handleClearFilters}
-                />
+                    title="All Evaluations"
+                    searchQuery={searchQuery}
+                    setSearchQuery={setSearchQuery}
+                    dateFilter={allEvaluationsDateFilter}
+                    statusFilter={statusFilter}
+                    onDateFilterChange={handleDateFilterChange}
+                    onStatusFilterChange={setStatusFilter}
+                    onClearFilters={handleClearFilters}
+                  />
                 )}
                 emptyPlaceholder={<EmptyState />}
                 classNames={{
@@ -801,8 +838,9 @@ export const EvaluationManagementPage = () => {
               classNames={{
                 container:
                   "bg-white dark:bg-slate-950 rounded-xl px-3 border border-gray-300 dark:border-slate-600",
-                tCell: "text-center",
-                tHead: "text-center",
+                expandedCell: "px-5",
+                // tCell: "text-center",
+                // tHead: "text-center",
               }}
               data={assignedEvaluationData}
               columns={assignedEvaluationColumns}
@@ -813,10 +851,42 @@ export const EvaluationManagementPage = () => {
                 manualPagination: true,
                 setPagination,
                 pagination,
+                enableExpanding: true,
+                // getSubRows: (originalRow) => getSubRows(originalRow, "evaluationGroups"),
+                getRowCanExpand: (row) =>
+                  hasChildren(row.original, "evaluationGroups"),
+                renderSubComponent: ({ row }) => {
+                  const evaluationGroups = row.original.evaluationGroups || [];
+                  return (
+                    <AssignedSubRows
+                      {...{
+                        headers: ["name", "status", "assigned On", "action"],
+                        body: evaluationGroups.map((group) => ({
+                          ...group,
+                          "assigned On": format(group.assignedOn, "dd MMMM yyyy"),
+                          action: (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-green-600 hover:text-green-800 font-medium "
+                              onClick={() =>
+                                navigate(
+                                  `/dashboard/evaluation/assigned/${row.original.id}/${group._id}`
+                                )
+                              }
+                            >
+                              View
+                            </Button>
+                          ),
+                        })),
+                      }}
+                    />
+                  );
+                },
               }}
             />
-           </TabsContent>
-         )}
+          </TabsContent>
+        )}
       </Tabs>
 
       {/* Custom Date Range Picker Dialog */}
@@ -838,9 +908,7 @@ export const EvaluationManagementPage = () => {
             <Button variant="outline" onClick={handleDateRangeCancel}>
               Cancel
             </Button>
-            <Button onClick={handleDateRangeConfirm}>
-              Apply
-            </Button>
+            <Button onClick={handleDateRangeConfirm}>Apply</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -861,11 +929,11 @@ type HeaderProps = {
   onClearFilters: () => void;
 };
 
-const Header = ({ 
-  title, 
-  dateFilter, 
-  statusFilter, 
-  onDateFilterChange, 
+const Header = ({
+  title,
+  dateFilter,
+  statusFilter,
+  onDateFilterChange,
   onStatusFilterChange,
 }: HeaderProps) => {
   return (
@@ -958,5 +1026,45 @@ const Header = ({
         />
       </div>
     </div>
+  );
+};
+
+type AssignedSubRowsProps = {
+  headers: string[];
+  body: AssignedEvaluationApiResponse["evaluationGroups"];
+};
+
+const AssignedSubRows = ({ headers, body }: AssignedSubRowsProps) => {
+  return (
+    <Table>
+      <TableHeader>
+        {headers.map((header) => {
+          return (
+            <TableHead className={"h-10 bg-gray-200 capitalize"} key={header}>
+              {header}
+            </TableHead>
+          );
+        })}
+      </TableHeader>
+      <TableBody>
+        {body.map((item) => {
+          return (
+            <TableRow className="bg-white dark:bg-slate-950 px-3 border-b border-gray-50" key={item._id}>
+              {headers.map((header) => {
+                return (
+                  <TableCell key={header} className="border-gray-50">
+                    {
+                      item[
+                        header as keyof AssignedEvaluationApiResponse["evaluationGroups"][0]
+                      ]
+                    }
+                  </TableCell>
+                );
+              })}
+            </TableRow>
+          );
+        })}
+      </TableBody>
+    </Table>
   );
 };

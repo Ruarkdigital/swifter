@@ -34,7 +34,7 @@ export type AssignedEvaluationApiResponse = {
   endDate: string;
   evaluationGroups: {
     name: string;
-    progress: number;
+    status: string;
     assignedOn: string;
     _id: string;
   }[];
