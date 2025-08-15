@@ -127,16 +127,25 @@ type EvaluationCriteriaResponse = {
   submissionStatus: "Submitted" | "In Progress";
 };
 
-const useEvaluationCriteria = (evaluationId: string) => {
+const useEvaluationCriteria = (
+  evaluatorId: string,
+  evaluationGroupId: string,
+  vendorId: string
+) => {
   return useQuery<ApiResponse<EvaluationCriteriaResponse>, ApiResponseError>({
-    queryKey: ["evaluation-criteria", evaluationId],
+    queryKey: [
+      "evaluation-criteria",
+      evaluatorId,
+      evaluationGroupId,
+      vendorId,
+    ],
     queryFn: async () => {
       const response = await getRequest({
-        url: `/evaluator/${evaluationId}/criteria`,
+        url: `/evaluator/${evaluatorId}/evaluation-group/${evaluationGroupId}/vendor/${vendorId}/criteria`,
       });
       return response;
     },
-    enabled: !!evaluationId,
+    enabled: !!evaluatorId && !!evaluationGroupId && !!vendorId,
   });
 };
 
@@ -191,7 +200,7 @@ const SubmittedDocumentPage: React.FC = () => {
     data: criteriaData,
     isLoading: criteriaLoading,
     error: criteriaError,
-  } = useEvaluationCriteria(id || "");
+  } = useEvaluationCriteria(id || "", groupId || "", vendorId || "");
 
   const submitScoreMutation = useSubmitCriteriaScore();
 

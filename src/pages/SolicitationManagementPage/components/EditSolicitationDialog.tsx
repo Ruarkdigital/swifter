@@ -27,14 +27,6 @@ const step1Schema = yup.object({
   solicitationType: yup.string().required("Solicitation type is required"),
   estimatedCost: yup.string().optional(),
   category: yup.string().required("Category is required"),
-  procurementLead: yup.string().required("Procurement lead is required"),
-  jobTitle: yup.string().required("Job title is required"),
-  emailAddress: yup
-    .string()
-    .email("Valid email is required")
-    .required("Email is required"),
-  phoneNumber: yup.string().required("Phone number is required"),
-  projectOwner: yup.string().optional(),
   description: yup.string().required("Description is required"),
 });
 
@@ -47,9 +39,14 @@ const step2Schema = yup.object({
     .required("Question acceptance deadline date is required"),
   timezone: yup.string().required("Timezone is required"),
   bidIntent: yup.string().required("Bid intent is required"),
-  bidIntentDeadlineDate: yup
-    .string()
-    .required("Bid intent deadline date is required"),
+  bidIntentDeadlineDate: yup.string().when("bidIntent", {
+    is: "required",
+    then: (schema) =>
+      schema.required(
+        "Bid intent deadline date is required when bid intent is required"
+      ),
+    otherwise: (schema) => schema.optional(),
+  }),
   visibility: yup.string().required("Visibility is required"),
 });
 
@@ -231,7 +228,7 @@ const EditSolicitationDialog = ({
 
   const bidIntentOptions = [
     { label: "Required", value: "required" },
-    { label: "Not Required", value: "not-required" },
+    { label: "Not Required", value: "not required" },
   ];
 
   const visibilityOptions = [
@@ -244,6 +241,18 @@ const EditSolicitationDialog = ({
     { label: "Technical Presentation", value: "technical-presentation" },
     { label: "Q&A Session", value: "qa-session" },
   ];
+
+  // Fetch full solicitation details when dialog opens to ensure all fields are available
+  const { data: solicitationData } = useQuery<ApiResponse<any>, ApiResponseError>({
+    queryKey: ["solicitation", solicitation._id],
+    queryFn: async () =>
+      await getRequest({ url: `/procurement/solicitations/${solicitation._id}` }),
+    enabled: !!open && !!solicitation?._id,
+  });
+
+  const detailedSolicitation =
+    solicitationData?.data?.data?.solicitation || solicitationData?.data?.data;
+  const effectiveSolicitation = detailedSolicitation || solicitation;
 
   // Helper function to format date for input
   const formatDateForInput = (dateString: string) => {
@@ -261,55 +270,48 @@ const EditSolicitationDialog = ({
 
   // Prepare default values from solicitation data
   const getDefaultValues = (): EditSolicitationFormData => {
+    const s: any = effectiveSolicitation || {};
     const typeId =
-      typeof solicitation.typeId === "object"
-        ? solicitation.typeId._id
-        : solicitation.typeId;
-    const categories =
-      solicitation.categories || solicitation.categoryIds || [];
+      typeof s.typeId === "object" ? s.typeId._id : s.typeId;
+    const categories = s.categories || s.categoryIds || [];
     const categoryId = categories.length > 0 ? categories[0]._id : "";
 
     return {
-      solicitationName: solicitation.name || "",
+      solicitationName: s.name || "",
       solicitationType: typeId || "",
-      estimatedCost: solicitation.estimatedCost?.toString() || "",
+      estimatedCost: s.estimatedCost?.toString() || "",
       category: categoryId,
-      procurementLead: "", // This might need to be fetched from user data
-      jobTitle: "", // This might need to be fetched from user data
-      emailAddress: "", // This might need to be fetched from user data
-      phoneNumber: "", // This might need to be fetched from user data
-      projectOwner: "",
-      description: solicitation.description || "",
-      submissionDeadlineDate: formatDateForInput(
-        solicitation.submissionDeadline
-      ),
+      description: s.description || "",
+      submissionDeadlineDate: formatDateForInput(s.submissionDeadline),
       questionAcceptanceDeadlineDate: formatDateForInput(
-        solicitation.questionDeadline || ""
+        s.questionDeadline || ""
       ),
-      timezone: solicitation.timezone || "Africa/Lagos",
-      bidIntent: "required", // Default value, might need to be determined from data
+      timezone: s.timezone || "Africa/Lagos",
+      bidIntent: s.bidIntent
+        ? (s.bidIntent === "not-required" ? "not required" : s.bidIntent)
+        : "",
       bidIntentDeadlineDate: formatDateForInput(
-        solicitation.bidIntentDeadline || ""
+        s.bidIntentDeadline || ""
       ),
       visibility:
-        solicitation.visibility === "private"
-          ? "invite-only"
-          : solicitation.visibility || "public",
-      event: solicitation.events?.map((evt) => ({
-        event: evt.eventType || "",
-        location: evt.eventLocation || "",
-        date: formatDateForInput(evt.eventDate),
-        time: formatTimeForInput(evt.eventDate),
-        note: evt.eventDescription || "",
-      })) || [{ event: "", location: "", date: "", time: "", note: "" }],
-      documents: solicitation.files?.map((file) => ({
-        name: file.name,
-        url: file.url,
-        size: file.size,
-        type: file.type,
-      })) || [],
+        s.visibility === "private" ? "invite-only" : s.visibility || "public",
+      event:
+        s.events?.map((evt: any) => ({
+          event: evt.eventType || "",
+          location: evt.eventLocation || "",
+          date: formatDateForInput(evt.eventDate),
+          time: formatTimeForInput(evt.eventDate),
+          note: evt.eventDescription || "",
+        })) || [{ event: "", location: "", date: "", time: "", note: "" }],
+      documents:
+        s.files?.map((file: any) => ({
+          name: file.name,
+          url: file.url,
+          size: file.size,
+          type: file.type,
+        })) || [],
       vendor:
-        solicitation.vendors?.map((vendor) => ({
+        s.vendors?.map((vendor: any) => ({
           value: vendor._id,
         })) || [],
       message: "",
@@ -321,10 +323,10 @@ const EditSolicitationDialog = ({
     defaultValues: getDefaultValues(),
   });
 
-  // Reset form when solicitation changes
+  // Reset form when solicitation changes or when detailed data loads
   useEffect(() => {
     forge.reset(getDefaultValues());
-  }, [solicitation]);
+  }, [effectiveSolicitation]);
 
   // File upload mutation
   const { mutateAsync: uploadFiles } = useMutation<
@@ -353,7 +355,7 @@ const EditSolicitationDialog = ({
     mutationKey: ["updateSolicitation"],
     mutationFn: async (data) =>
       await putRequest({
-        url: `/procurement/solicitations/${solicitation._id}`,
+        url: `/procurement/solicitations/${effectiveSolicitation._id}`,
         payload: data,
       }),
   });
@@ -366,7 +368,7 @@ const EditSolicitationDialog = ({
     mutationKey: ["saveSolicitationDraft"],
     mutationFn: async (data) =>
       await putRequest({
-        url: `/procurement/solicitations/${solicitation._id}`,
+        url: `/procurement/solicitations/${effectiveSolicitation._id}`,
         payload: data,
       }),
   });
@@ -446,6 +448,9 @@ const EditSolicitationDialog = ({
         questionDeadline: completeData.questionAcceptanceDeadlineDate
           ? new Date(completeData.questionAcceptanceDeadlineDate).toISOString()
           : undefined,
+        bidIntent: completeData.bidIntent === "not required" 
+          ? "not-required" 
+          : completeData.bidIntent as "required" | "not-required",
         bidIntentDeadline: completeData.bidIntentDeadlineDate
           ? new Date(completeData.bidIntentDeadlineDate).toISOString()
           : undefined,
@@ -578,87 +583,100 @@ const EditSolicitationDialog = ({
 
       // Transform form data to match API schema with draft status
       const apiPayload: SolicitationUpdateRequest = {
-        name: formData.solicitationName || solicitation.name,
-        typeId: formData.solicitationType || (typeof solicitation.typeId === "object" ? solicitation.typeId._id : solicitation.typeId),
-        categoryIds: formData.category ? 
-          (Array.isArray(formData.category) ? formData.category : [formData.category]) :
-          (solicitation.categories || solicitation.categoryIds || []).map(cat => cat._id),
+        name: formData.solicitationName || effectiveSolicitation.name,
+        typeId:
+          formData.solicitationType ||
+          (typeof effectiveSolicitation.typeId === "object"
+            ? effectiveSolicitation.typeId._id
+            : effectiveSolicitation.typeId),
+        categoryIds: formData.category
+          ? Array.isArray(formData.category)
+            ? formData.category
+            : [formData.category]
+          : (effectiveSolicitation.categories || effectiveSolicitation.categoryIds || []).map(
+              (cat: any) => cat._id
+            ),
         estimatedCost: formData.estimatedCost
           ? parseFloat(formData.estimatedCost)
-          : solicitation.estimatedCost,
-        description: formData.description || solicitation.description,
-        visibility: (formData.visibility as "public" | "invite-only") || 
-          (solicitation.visibility === "private" ? "invite-only" : solicitation.visibility),
+          : effectiveSolicitation.estimatedCost,
+        description: formData.description || effectiveSolicitation.description,
+        visibility:
+          (formData.visibility as "public" | "invite-only") ||
+          (effectiveSolicitation.visibility === "private"
+            ? "invite-only"
+            : effectiveSolicitation.visibility),
         status: "draft", // Always save as draft
         submissionDeadline: formData.submissionDeadlineDate
           ? new Date(formData.submissionDeadlineDate).toISOString()
-          : solicitation.submissionDeadline,
+          : effectiveSolicitation.submissionDeadline,
         questionDeadline: formData.questionAcceptanceDeadlineDate
           ? new Date(formData.questionAcceptanceDeadlineDate).toISOString()
-          : solicitation.questionDeadline,
-          bidIntent: formData.bidIntent || solicitation.bidIntent,
+          : effectiveSolicitation.questionDeadline,
+        bidIntent:
+          (formData.bidIntent === "not required"
+            ? "not-required"
+            : (formData.bidIntent as "required" | "not-required")) ||
+          effectiveSolicitation.bidIntent,
         bidIntentDeadline: formData.bidIntentDeadlineDate
           ? new Date(formData.bidIntentDeadlineDate).toISOString()
-          : solicitation.bidIntentDeadline,
-        timezone: formData.timezone || solicitation.timezone || "Africa/Lagos",
-        events: formData.event && formData.event.length > 0
-          ? formData.event
-              ?.map((evt: any) => {
-                // Validate date and time before creating Date object
-                if (!evt.date || !evt.time) {
-                  return null;
-                }
-
-                // Handle Date object from TextDatePicker
-                const dateStr =
-                  evt.date instanceof Date
-                    ? evt.date.toISOString().split("T")[0] // Extract YYYY-MM-DD
-                    : evt.date;
-
-                // Validate the constructed date string
-                const dateTimeStr = `${dateStr}T${evt.time}`;
-                const eventDate = new Date(dateTimeStr);
-
-                if (isNaN(eventDate.getTime())) {
-                  return null;
-                }
-
-                return {
-                  eventType: evt.event,
-                  eventLocation: evt.location,
-                  eventDate: eventDate.toISOString(),
-                  eventDescription: evt.note || undefined,
-                };
-              })
-              .filter((event) => event !== null) // Remove null entries with proper type guard
-          : solicitation.events?.map(evt => ({
-              eventType: evt.eventType,
-              eventLocation: evt.eventLocation,
-              eventDate: evt.eventDate,
-              eventDescription: evt.eventDescription,
-            })),
-        files: uploadedFiles.length > 0 ? uploadedFiles : 
-          solicitation.files?.map(file => ({
-            name: file.name,
-            url: file.url,
-            size: file.size.toString(),
-            type: file.type,
-          })),
+          : effectiveSolicitation.bidIntentDeadline,
+        timezone:
+          formData.timezone || effectiveSolicitation.timezone || "Africa/Lagos",
+        events:
+          formData.event && formData.event.length > 0
+            ? formData.event
+                ?.map((evt: any) => {
+                  if (!evt.date || !evt.time) {
+                    return null;
+                  }
+                  const dateStr =
+                    evt.date instanceof Date
+                      ? evt.date.toISOString().split("T")[0]
+                      : evt.date;
+                  const dateTimeStr = `${dateStr}T${evt.time}`;
+                  const eventDate = new Date(dateTimeStr);
+                  if (isNaN(eventDate.getTime())) {
+                    return null;
+                  }
+                  return {
+                    eventType: evt.event,
+                    eventLocation: evt.location,
+                    eventDate: eventDate.toISOString(),
+                    eventDescription: evt.note || undefined,
+                  };
+                })
+                .filter((event) => event !== null)
+            : effectiveSolicitation.events?.map((evt: any) => ({
+                eventType: evt.eventType,
+                eventLocation: evt.eventLocation,
+                eventDate: evt.eventDate,
+                eventDescription: evt.eventDescription,
+              })),
+        files:
+          uploadedFiles.length > 0
+            ? uploadedFiles
+            : effectiveSolicitation.files?.map((file: any) => ({
+                name: file.name,
+                url: file.url,
+                size: file.size.toString(),
+                type: file.type,
+              })),
         vendors:
           formData.vendor && formData.vendor.length > 0
             ? formData.vendor.map((item: any) => ({ id: item.value }))
-            : solicitation.vendors?.map(vendor => ({ id: vendor._id })),
+            : effectiveSolicitation.vendors?.map((vendor: any) => ({
+                id: vendor._id,
+              })),
       };
 
       const response = await saveDraft(apiPayload);
 
       if (response?.data) {
-        // Invalidate queries to refresh the solicitation data
         queryClient.invalidateQueries({ queryKey: ["solicitations"] });
         queryClient.invalidateQueries({ queryKey: ["my-solicitations"] });
         queryClient.invalidateQueries({ queryKey: ["dashboard-stats"] });
         queryClient.invalidateQueries({
-          queryKey: ["solicitation", solicitation._id],
+          queryKey: ["solicitation", effectiveSolicitation._id],
         });
 
         toast.success(
@@ -676,6 +694,73 @@ const EditSolicitationDialog = ({
         "Save Failed",
         err?.message ?? "Failed to save solicitation as draft. Please try again."
       );
+    }
+  };
+
+  // Validate current step before proceeding to the next step
+  const validateAndProceed = async () => {
+    try {
+      // Get current form values
+      const formValues = forge.getValues();
+
+      // Validate based on current step
+      switch (currentStep) {
+        case 1:
+          await step1Schema.validate(formValues, { abortEarly: false });
+          break;
+        case 2:
+          await step2Schema.validate(formValues, { abortEarly: false });
+          break;
+        case 3:
+          // No validation for step 3 (events optional)
+          break;
+        case 4:
+          // Skip validation for step 4 if no documents are uploaded
+          if (formValues.documents && formValues.documents.length > 0) {
+            await step4Schema.validate(formValues, { abortEarly: false });
+          }
+          break;
+        case 5:
+          await step5Schema.validate(formValues, { abortEarly: false });
+          break;
+        default:
+          break;
+      }
+
+      // If we reach here, validation passed, proceed to next step
+      setCurrentStep((prev) => prev + 1);
+    } catch (error) {
+      // Handle validation errors
+      if (error instanceof yup.ValidationError) {
+        // Set errors in the form
+        const fieldErrors: Record<string, string> = {};
+
+        error.inner.forEach((err) => {
+          if (err.path) {
+            fieldErrors[err.path] = err.message;
+          }
+        });
+
+        // Set errors in the form
+        Object.keys(fieldErrors).forEach((field) => {
+          forge.setError(field as any, {
+            type: "manual",
+            message: fieldErrors[field],
+          });
+        });
+
+        // Show toast with first error
+        if (error.inner.length > 0) {
+          toast.error(
+            "Validation Error",
+            error.inner[0].message || "Please check the form for errors."
+          );
+        }
+      } else {
+        // Handle unexpected errors
+        console.error("Validation error:", error);
+        toast.error("Error", "An unexpected error occurred. Please try again.");
+      }
     }
   };
 
@@ -770,10 +855,10 @@ const EditSolicitationDialog = ({
           {/* Footer Buttons */}
           <div
             className={cn("flex items-center justify-end pt-6  px-6 py-6", {
-              "justify-between": currentStep > 1 && solicitation.status === "draft",
+              "justify-between": currentStep > 1 && effectiveSolicitation.status === "draft",
             })}
           >
-            {currentStep > 1 && solicitation.status === "draft" && (
+            {currentStep > 1 && effectiveSolicitation.status === "draft" && (
               <Button
                 type="button"
                 variant="outline"
@@ -798,7 +883,7 @@ const EditSolicitationDialog = ({
                 onClick={
                   currentStep === 6
                     ? undefined
-                    : () => setCurrentStep((prev) => prev + 1)
+                    : validateAndProceed
                 }
                 disabled={isPending}
                 className="px-8 py-2 bg-[#2A4467] hover:bg-[#1e3147] text-white rounded-lg"
