@@ -121,6 +121,16 @@ const schema = yup.object().shape({
 
 export type FormValues = yup.InferType<typeof schema>;
 
+// Helper to map document types to accepted file extensions used by FileUploadDialog/TextFileUploader
+const getAcceptedTypesForDocType = (docType?: string): string[] => {
+  const t = (docType || "").toUpperCase();
+  if (t.includes("PDF")) return [".pdf"];
+  if (t.includes("DOC")) return [".doc", ".docx"];
+  if (t.includes("XLS")) return [".xls", ".xlsx"];
+  // Fallback to default allowed list
+  return [".pdf", ".doc", ".docx", ".xls", ".xlsx"]; 
+};
+
 const EditProposalPage: React.FC<EditProposalPageProps> = () => {
   const { id: solicitationId, proposalId } = useParams<{
     id: string;
@@ -657,7 +667,7 @@ const ProposalForm = ({
         requiredDocumentId={selectedDocumentId || ""}
         maxFiles={5}
         type={type}
-        acceptedTypes={[".pdf", ".doc", ".docx", ".xls", ".xlsx"]}
+        acceptedTypes={getAcceptedTypesForDocType(type)}
       />
     </>
   );

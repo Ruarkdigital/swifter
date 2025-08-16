@@ -317,7 +317,7 @@ const EvaluationDetailPage: React.FC = () => {
             evaluationGroup: group.groupName,
             criteriaAssigned: group.criteriaCount,
             progress: evaluator.progress ?? 0,
-            status: evaluator.status === null ? "Pending" : "Completed",
+            status: evaluator.status,
           });
         });
       }

@@ -808,7 +808,7 @@ const EditSolicitationDialog = ({
         </div>
 
         {/* Form Content */}
-        <Forge control={forge.control} onSubmit={onSubmit}>
+        <Forge control={forge.control} onSubmit={onSubmit} debug>
           {currentStep === 1 && (
             <Step1Form
               solicitationTypes={solicitationTypes}
