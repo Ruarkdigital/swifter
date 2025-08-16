@@ -2,6 +2,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getRequest, putRequest } from "@/lib/axiosInstance";
 import { ApiResponse, ApiResponseError } from "@/types";
 import { useMutation } from "@tanstack/react-query";
+import { Solicitation } from "@/pages/SolicitationManagementPage/SolicitationDetailPage";
 
 // API Types
 type EvaluationDetail = {
@@ -11,6 +12,7 @@ type EvaluationDetail = {
     name: string;
     type: string;
   };
+  solicitationDetails: Solicitation
   startDate: string;
   endDate: string;
   timezone: string;

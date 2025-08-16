@@ -140,7 +140,7 @@ type SolicitationVendor = {
   owner: boolean;
 };
 
-type Solicitation = {
+export type Solicitation = {
   _id: string;
   name: string;
   typeId: SolicitationType;
