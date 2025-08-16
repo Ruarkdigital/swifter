@@ -352,7 +352,7 @@ export const SolicitationDetailPage = () => {
       solicitation: Solicitation;
       details: Solicitation;
       requiredFiles: RequiredFile[];
-      viewProposal: { _id: string } | null;
+      viewProposal: { _id: string, status: string } | null;
       owner: boolean;
       vendorStatusCounts: {
         confirmed: number;
@@ -897,7 +897,7 @@ export const SolicitationDetailPage = () => {
             )}
 
           {solicitation?.status?.toLowerCase() !== "awarded" &&
-            viewProposal &&
+            viewProposal?.status === "draft" &&
             isOwner && (
               <Link
                 to={`/dashboard/solicitations/${id}/edit-proposal/${viewProposal._id}`}
