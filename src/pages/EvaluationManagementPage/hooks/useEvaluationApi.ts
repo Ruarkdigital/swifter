@@ -22,6 +22,7 @@ export type EvaluationApiResponse = {
   solicitationType: string;
   owner: boolean;
   timezone: string;
+  solId: string
 };
 
 export type AssignedEvaluationApiResponse = {

@@ -58,6 +58,7 @@ type Evaluation = {
   status: string;
   owner: boolean;
   timezone: string;
+  solId: string;
 };
 
 // Assigned Evaluation type definition
@@ -123,6 +124,7 @@ const transformEvaluationData = (
     status: item.status as "Active" | "Pending" | "Completed",
     owner: item.owner,
     timezone: item.timezone,
+    solId: item.solId
   }));
 };
 
@@ -490,7 +492,7 @@ export const EvaluationManagementPage = () => {
         <div className="flex flex-col">
           <span className="font-medium">{row.original.name}</span>
           <span className="text-sm text-gray-500 dark:text-gray-400">
-            {row.original.solicitationId} • {row.original.type}
+            {row.original.solId} • {row.original.type}
           </span>
         </div>
       ),
