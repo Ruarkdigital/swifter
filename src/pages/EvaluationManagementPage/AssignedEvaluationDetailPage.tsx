@@ -18,7 +18,7 @@ type EvaluatorEvaluationGroup = {
   _id: string;
   name: string;
   email: string;
-  count: number;
+  uploadCount: number;
   action: string;
   vendorId: string
 };
@@ -82,7 +82,7 @@ const AssignedEvaluationDetailPage: React.FC = () => {
       id: vendor?.vendorId,
       vendorName: vendor.name,
       email: vendor.email,
-      submittedDocument: vendor.count,
+      submittedDocument: vendor.uploadCount,
       action: "View",
     }));
   }, [evaluationGroupData]);
