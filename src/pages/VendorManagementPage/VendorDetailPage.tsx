@@ -25,6 +25,14 @@ import {
 import EditVendorDialog from "./components/EditVendorDialog";
 import { PageLoader } from "@/components/ui/PageLoader";
 import PowerPointSVG from "@/assets/icons/PowerPoint";
+import { Solicitation } from "../SolicitationManagementPage/SolicitationDetailPage";
+
+type VendorSubmission = {
+  _id: string;
+  status: string;
+  solicitation: Solicitation;
+  createdAt: string;
+};
 
 // Vendor detail type extending the base Vendor type
 type VendorDetail = Omit<Vendor, "documents"> & {
@@ -34,7 +42,7 @@ type VendorDetail = Omit<Vendor, "documents"> & {
     name: string;
     email: string;
     phone: string;
-    _id: string
+    _id: string;
   };
   documents?: {
     name: string;
@@ -99,7 +107,9 @@ const OverviewTab = ({ vendor }: { vendor: VendorDetail }) => {
 
       {/* Business Address */}
       <div>
-        <h4 className="text-sm font-medium text-gray-500 mb-2">Business Address</h4>
+        <h4 className="text-sm font-medium text-gray-500 mb-2">
+          Business Address
+        </h4>
         <p className="text-sm text-gray-900 font-medium dark:text-gray-200">
           {vendor.location || "N/A"}
         </p>
@@ -166,7 +176,7 @@ const OverviewTab = ({ vendor }: { vendor: VendorDetail }) => {
 const DocumentsTab = ({ vendor }: { vendor: VendorDetail }) => {
   const documents = vendor?.documents ?? [];
 
-   // Helper function to get file extension from name or type
+  // Helper function to get file extension from name or type
   const getFileExtension = (fileName: string, fileType: string): string => {
     const extension = fileName.split(".").pop()?.toUpperCase();
     if (extension) return extension;
@@ -220,7 +230,9 @@ const DocumentsTab = ({ vendor }: { vendor: VendorDetail }) => {
                 {/* Left side - Icon and Info */}
                 <div className="flex items-start gap-3 flex-1">
                   <div className="flex-shrink-0">
-                    {getFileIcon(getFileExtension(document.name, document.fileType))}
+                    {getFileIcon(
+                      getFileExtension(document.name, document.fileType)
+                    )}
                   </div>
                   <div className="flex-1 min-w-0">
                     <h4 className="text-sm font-medium text-gray-900 dark:text-gray-200 truncate">
@@ -240,7 +252,8 @@ const DocumentsTab = ({ vendor }: { vendor: VendorDetail }) => {
 
                 {/* Right side - Action Buttons */}
                 <div className="flex items-center gap-2 ml-2">
-                  {getFileExtension(document.name, document.fileType) === "PDF" && (
+                  {getFileExtension(document.name, document.fileType) ===
+                    "PDF" && (
                     <Button
                       variant="ghost"
                       size="icon"
@@ -299,23 +312,35 @@ const SubmissionStatusBadge = ({
 };
 
 // Submissions Tab Component
-const SubmissionsTab = ({ submissions }: { submissions: Vendor["submissions"] }) => {
+const SubmissionsTab = ({
+  submissions,
+}: {
+  submissions: VendorSubmission[];
+}) => {
+  const navigate = useNavigate();
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
     pageSize: 10,
   });
 
+  const submissionData =
+    submissions?.map?.((data) => ({
+      ...data.solicitation,
+      status: data.status,
+      createdAt: data.createdAt,
+    })) ?? [];
+
   // Define table columns
-  const columns: ColumnDef<Submission>[] = [
+  const columns: ColumnDef<(typeof submissionData)[0]>[] = [
     {
       accessorKey: "solicitationName",
       header: "Solicitation Name",
       cell: ({ row }) => (
         <div className="flex flex-col">
           <span className="font-medium">{row.original.name}</span>
-          {/* <span className="text-sm text-gray-500">
-            {row.original.fileType} • RFP
-          </span> */}
+          <span className="text-sm text-gray-500">
+            {row.original.solId} • RFP
+          </span>
         </div>
       ),
     },
@@ -323,7 +348,11 @@ const SubmissionsTab = ({ submissions }: { submissions: Vendor["submissions"] })
       accessorKey: "submissionDate",
       header: "Submission Date",
       cell: ({ row }) => (
-        <span className="text-sm">{row.original.createdAt}</span>
+        <span className="text-sm">
+          {row.original.createdAt
+            ? format(row?.original?.createdAt, "dd MMMM, yyyy hh:mm aaa")
+            : "N/A"}
+        </span>
       ),
     },
     {
@@ -334,7 +363,7 @@ const SubmissionsTab = ({ submissions }: { submissions: Vendor["submissions"] })
     {
       id: "actions",
       header: "Actions",
-      cell: () => (
+      cell: ({ row }) => (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="h-8 w-8 p-0">
@@ -342,7 +371,12 @@ const SubmissionsTab = ({ submissions }: { submissions: Vendor["submissions"] })
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-44 rounded-2xl">
-            <DropdownMenuItem className="p-3">
+            <DropdownMenuItem
+              className="p-3"
+              onClick={() =>
+                navigate(`/dashboard/solicitation/${row.original._id}`)
+              }
+            >
               <Eye className="h-4 w-4 mr-2" />
               View Details
             </DropdownMenuItem>
@@ -355,7 +389,6 @@ const SubmissionsTab = ({ submissions }: { submissions: Vendor["submissions"] })
   // Empty state component
   const EmptySubmissions = () => (
     <div className="">
-
       <div className="flex flex-col items-center justify-center py-12 px-6">
         <div className="text-center">
           <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center">
@@ -378,7 +411,9 @@ const SubmissionsTab = ({ submissions }: { submissions: Vendor["submissions"] })
             No Submissions Yet
           </h3>
           <p className="text-sm text-gray-500 dark:text-gray-400 max-w-md mx-auto">
-            This vendor hasn't submitted any proposals for solicitations yet. Submissions will appear here once they participate in procurement opportunities.
+            This vendor hasn't submitted any proposals for solicitations yet.
+            Submissions will appear here once they participate in procurement
+            opportunities.
           </p>
         </div>
       </div>
@@ -388,7 +423,7 @@ const SubmissionsTab = ({ submissions }: { submissions: Vendor["submissions"] })
   return (
     <div className="pt-6">
       <DataTable
-        data={submissions}
+        data={submissionData ?? []}
         columns={columns}
         header={() => (
           <div className="flex items-center justify-between border-b border-[#E9E9EB] pb-3 w-full px-6">
@@ -399,7 +434,7 @@ const SubmissionsTab = ({ submissions }: { submissions: Vendor["submissions"] })
                     className="text-base font-semibold text-[#0F0F0F] dark:text-gray-400"
                     style={{ fontFamily: "Quicksand" }}
                   >
-                    Solicitations ({submissions.length})
+                    Solicitations ({submissionData.length})
                   </h2>
                 </div>
               </div>
@@ -409,13 +444,13 @@ const SubmissionsTab = ({ submissions }: { submissions: Vendor["submissions"] })
         classNames={{
           container:
             "bg-white dark:bg-slate-950 rounded-xl px-3 border border-gray-300 dark:border-gray-700",
-            tCell: "text-center",
-            tHead: "text-center",
+          // tCell: "text-center",
+          // tHead: "text-center",
         }}
         options={{
           disableSelection: true,
           isLoading: false,
-          totalCounts: submissions.length,
+          totalCounts: submissionData.length,
           manualPagination: false,
           setPagination,
           pagination,
@@ -437,7 +472,7 @@ export const VendorDetailPage = () => {
     isLoading,
     error,
   } = useQuery<
-    ApiResponse<{ vendor: VendorDetail; submissions: VendorDetail["submissions"] }>,
+    ApiResponse<{ vendor: VendorDetail; submissions: VendorSubmission[] }>,
     ApiResponseError
   >({
     queryKey: ["vendor", id],
@@ -455,8 +490,8 @@ export const VendorDetailPage = () => {
 
   if (isLoading) {
     return (
-      <PageLoader 
-        title="Vendor Details" 
+      <PageLoader
+        title="Vendor Details"
         message="Loading vendor details..."
         className="p-6 min-h-full"
       />
@@ -617,7 +652,9 @@ export const VendorDetailPage = () => {
           </TabsContent>
 
           <TabsContent value="submissions" className="mt-0 border-0 p-0">
-            <SubmissionsTab {...{ submissions }} />
+            <SubmissionsTab
+              {...{ submissions: submissions as VendorSubmission[] }}
+            />
           </TabsContent>
         </Tabs>
       </div>
