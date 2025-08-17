@@ -20,6 +20,7 @@ import { getRequest, postRequest, getAxiosInstance } from "@/lib/axiosInstance";
 import { ApiResponse, ApiResponseError } from "@/types";
 import { useToastHandler } from "@/hooks/useToaster";
 import { useFileUpload } from "@/hooks/use-file-upload";
+import { yupResolver } from "@hookform/resolvers/yup";
 
 // Types
 type VendorCategory = {
@@ -182,6 +183,7 @@ const CreateVendorDialog: React.FC<CreateVendorDialogProps> = ({
 
   // Form instance
   const forge = useForge<VendorFormData>({
+    resolver: yupResolver(vendorSchema),
     defaultValues: {
       name: "",
       categoryId: "",
