@@ -42,6 +42,12 @@ type VendorDashboard = {
   suspendedVendor: number;
 };
 
+export interface InvitedEmail {
+  _id:   string;
+  email: string;
+}
+
+
 // Vendor type definition (matching API schema)
 type Vendor = {
   _id: string;
@@ -53,6 +59,7 @@ type Vendor = {
   location: string;
   secondaryEmail: string;
   lastActive: string;
+  invite: InvitedEmail;
   user: {
     _id: string;
     email: string;
@@ -433,9 +440,9 @@ export const VendorManagementPage = () => {
       header: "Vendor Name",
       cell: ({ row }) => (
         <div className="flex flex-col">
-          <span className="font-medium">{row.original.name}</span>
+          <span className="font-medium">{row.original.name || "N/A"}</span>
           <span className="text-sm text-blue-500 underline underline-offset-2">
-            {row.original.user?.email}
+            {row.original.user?.email || row.original.invite?.email}
           </span>
         </div>
       ),
