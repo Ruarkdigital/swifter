@@ -1260,28 +1260,48 @@
         "items": {
           "type": "object",
           "properties": {
-            "action": {
-              "type": "string"
-            },
-            "createdAt": {
+            "_id": {
               "type": "string"
             },
             "solicitation": {
               "type": "object",
               "properties": {
+                "_id": {
+                  "type": "string"
+                },
                 "name": {
                   "type": "string"
                 },
                 "timezone": {
                   "type": "string"
-                },
-                "status": {
-                  "type": "string"
                 }
               }
+            },
+            "action": {
+              "type": "string"
+            },
+            "createdAt": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "statusText": {
+              "type": "string"
             }
           }
-        }
+        },
+        "example": [
+          {
+            "_id": "688c8f4905f098eecda9b326",
+            "solicitation": {
+              "_id": "6889df4f73dd0fca61551a77",
+              "name": "Testing draft",
+              "timezone": "America/Los_Angeles"
+            },
+            "action": "vendor_accept",
+            "createdAt": "2025-08-01T09:56:25.377Z",
+            "statusText": "You have accepted to bid for Testing draft"
+          }
+        ]
       },
       "EvaluationCriteriaOverview": {
         "type": "array",
@@ -1373,6 +1393,167 @@
             }
           }
         }
+      },
+      "EvaluatorAction": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "evaluation": {
+              "type": "object",
+              "properties": {
+                "_id": {
+                  "type": "string"
+                },
+                "timezone": {
+                  "type": "string"
+                },
+                "endDate": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "evaluationGroup": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            },
+            "action": {
+              "type": "string"
+            },
+            "statusText": {
+              "type": "string"
+            },
+            "evaluationGroup": {
+              "type": "object",
+              "properties": {
+                "_id": {
+                  "type": "string"
+                },
+                "companyId": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "evaluators": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "vendors": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "status": {
+                  "type": "string"
+                },
+                "__v": {
+                  "type": "integer"
+                },
+                "createdAt": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "updatedAt": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              }
+            }
+          }
+        },
+        "example": [
+          {
+            "evaluation": {
+              "_id": "6880281ce3a390a2f5c72c1a",
+              "timezone": "Africa/Lagos",
+              "endDate": "2025-07-28T17:53:03.782Z",
+              "evaluationGroup": [
+                "6880281be3a390a2f5c72c18"
+              ]
+            },
+            "action": "score solicitation",
+            "statusText": "Group A is awaiting evaluation",
+            "evaluationGroup": {
+              "_id": "6880281be3a390a2f5c72c18",
+              "companyId": "687f4fa9dd21a41971d55348",
+              "name": "Group A",
+              "evaluators": [
+                "687fc2c640570c047e290850"
+              ],
+              "vendors": [],
+              "status": "Release",
+              "__v": 0,
+              "createdAt": "2025-07-23T00:09:00.567Z",
+              "updatedAt": "2025-07-23T00:09:00.567Z"
+            }
+          }
+        ]
+      },
+      "EvaluatorGeneralUpdate": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "statusText": {
+              "type": "string"
+            },
+            "action": {
+              "type": "string"
+            },
+            "evaluation": {
+              "type": "object",
+              "properties": {
+                "_id": {
+                  "type": "string"
+                },
+                "solicitation": {
+                  "type": "object",
+                  "properties": {
+                    "_id": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "timezone": {
+                  "type": "string"
+                },
+                "status": {
+                  "type": "string"
+                }
+              }
+            },
+            "createdAt": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        },
+        "example": [
+          {
+            "statusText": "Evaluation for Testing draft has been created",
+            "action": "Created",
+            "evaluation": {
+              "_id": "688aac9bf4698abf4cd16677",
+              "solicitation": {
+                "_id": "6889df4f73dd0fca61551a77",
+                "name": "Testing draft"
+              },
+              "timezone": "Africa/Lagos",
+              "status": "Pending"
+            },
+            "createdAt": "2025-07-30T23:36:59.564Z"
+          }
+        ]
       },
       "Subscription": {
         "type": "object",
@@ -2213,12 +2394,137 @@
                   "type": "string"
                 },
                 "score": {
-                  "type": null
+                  "type": "number"
                 }
               }
             }
           }
         }
+      },
+      "ProcurementUpdateResponse": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "_id": {
+              "type": "string"
+            },
+            "statusText": {
+              "type": "string"
+            },
+            "solicitation": {
+              "type": "object",
+              "properties": {
+                "_id": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "timezone": {
+                  "type": "string"
+                },
+                "vendors": {
+                  "type": "array",
+                  "items": {
+                    "type": "object"
+                  }
+                }
+              }
+            },
+            "action": {
+              "type": "string"
+            },
+            "createdAt": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        },
+        "example": [
+          {
+            "_id": "688feb82bc6eadbaf8c779a0",
+            "statusText": "Invite External Vendor 4 has been created",
+            "solicitation": {
+              "_id": "688feb82bc6eadbaf8c7799b",
+              "name": "Invite External Vendor 4",
+              "timezone": "Africa/Lagos",
+              "vendors": []
+            },
+            "action": "created",
+            "createdAt": "2025-08-03T23:06:42.407Z"
+          }
+        ]
+      },
+      "ProcurementActionResponse": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "action": {
+              "type": "string"
+            },
+            "solicitation": {
+              "type": "object",
+              "properties": {
+                "_id": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "status": {
+                  "type": "string"
+                },
+                "submissionDeadline": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "timezone": {
+                  "type": "string"
+                },
+                "vendors": {
+                  "type": "array",
+                  "items": {
+                    "type": "object"
+                  }
+                },
+                "createdAt": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              }
+            },
+            "evaluation": {
+              "type": "object",
+              "nullable": true
+            },
+            "statusText": {
+              "type": "string"
+            },
+            "createdAt": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        },
+        "example": [
+          {
+            "action": "create_evaluation",
+            "solicitation": {
+              "_id": "688fec142b6f753ead9b8bc5",
+              "name": "Invite External Vendor 4",
+              "status": "draft",
+              "submissionDeadline": "2025-08-09T22:40:35.204Z",
+              "timezone": "Africa/Lagos",
+              "vendors": [null],
+              "createdAt": "2025-08-03T23:09:08.110Z"
+            },
+            "evaluation": null,
+            "statusText": "Deadline approaching for Invite External Vendor 4, create evaluation",
+            "createdAt": "2025-08-03T23:09:08.110Z"
+          }
+        ]
       }
     }
   },
@@ -3691,6 +3997,161 @@
         }
       }
     },
+    "/campaigns/email": {
+      "post": {
+        "summary": "Send an email campaign",
+        "description": "Sends a customizable email campaign to recipients based on selection criteria (all users, company users, specific users).",
+        "tags": [
+          "Campaign"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "subject",
+                  "message",
+                  "recipientType"
+                ],
+                "properties": {
+                  "subject": {
+                    "type": "string",
+                    "description": "The subject line of the email"
+                  },
+                  "message": {
+                    "type": "string",
+                    "description": "The HTML or text content of the email body"
+                  },
+                  "bannerUrl": {
+                    "type": "string",
+                    "nullable": true,
+                    "description": "Optional URL to a banner image displayed at the top of the email"
+                  },
+                  "recipientType": {
+                    "type": "string",
+                    "enum": [
+                      "all_users",
+                      "company_users",
+                      "specific_users"
+                    ],
+                    "description": "Determines which recipients will receive the campaign"
+                  },
+                  "companyId": {
+                    "type": "string",
+                    "nullable": true,
+                    "description": "Required when recipientType is company_users; ignored otherwise"
+                  },
+                  "userIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "nullable": true,
+                    "description": "Required when recipientType is specific_users; array of user IDs to target"
+                  }
+                }
+              },
+              "example": {
+                "subject": "New Feature Release",
+                "message": "\u003Cp\u003EHello team, we have launched new features!\u003C/p\u003E",
+                "bannerUrl": "https://cdn.example.com/banner.png",
+                "recipientType": "company_users",
+                "companyId": "60f7c2e1234567890abcde12"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Campaign send result summary",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "sent": {
+                          "type": "number"
+                        },
+                        "total": {
+                          "type": "number"
+                        },
+                        "failures": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "email": {
+                                "type": "string"
+                              },
+                              "reason": {
+                                "type": "string"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated user",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Unauthorized user",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizeError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something bad went wrong",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/companies/me": {
       "get": {
         "summary": "Retrieve company detail",
@@ -4808,7 +5269,7 @@
                       "type": "string"
                     },
                     "data": {
-                      "$ref": "#/components/schemas/MyAction"
+                      "$ref": "#/components/schemas/EvaluatorAction"
                     }
                   }
                 }
@@ -4871,7 +5332,7 @@
                       "type": "string"
                     },
                     "data": {
-                      "$ref": "#/components/schemas/EvaluationActivity"
+                      "$ref": "#/components/schemas/EvaluatorGeneralUpdate"
                     }
                   }
                 }
@@ -5241,7 +5702,7 @@
         }
       }
     },
-    "/evaluator/{evaluationId}/criteria": {
+    "/evaluator/{evaluationId}/evaluation-group/{evaluationGroupId}/vendor/{vendorId}/criteria": {
       "get": {
         "summary": "View Criteria details",
         "description": "Evaluation criteria",
@@ -5262,6 +5723,24 @@
             "schema": {
               "type": "string",
               "description": "evaluationId"
+            }
+          },
+          {
+            "in": "path",
+            "name": "evaluationGroupId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "evaluationGroupId"
+            }
+          },
+          {
+            "in": "path",
+            "name": "vendorId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "vendorId"
             }
           }
         ],
@@ -7139,14 +7618,12 @@
             "schema": {
               "type": "string",
               "enum": [
-                "Draft",
-                "Pending",
-                "InActive",
-                "Completed",
-                "Active",
-                "Suspended"
+                "draft",
+                "pending",
+                "active",
+                "completed"
               ],
-              "description": "status - Draft | Pending | InActive | Completed | Active | Suspended"
+              "description": "status - draft | pending | active | completed"
             }
           },
           {
@@ -7500,7 +7977,7 @@
         ],
         "requestBody": {
           "required": true,
-          "description": "Evaluation update payload containing all necessary information to update an existing evaluation process. \u003Cbr\u003E\u003Cbr\u003E \u003Cb\u003ERequired fields:\u003C/b\u003E \u003Cul\u003E\n    \u003Cli\u003E\u003Cb\u003Eid\u003C/b\u003E - The ID of the evaluation to update\u003C/li\u003E\n\u003C/ul\u003E \u003Cbr\u003E \u003Cb\u003EOptional fields:\u003C/b\u003E \u003Cul\u003E\n    \u003Cli\u003E\u003Cb\u003Etimezone\u003C/b\u003E - Timezone for the evaluation in IANA format (e.g., \"Africa/Lagos\")\u003C/li\u003E\n    \u003Cli\u003E\u003Cb\u003Estart_date\u003C/b\u003E - Evaluation start date in ISO 8601 format\u003C/li\u003E\n    \u003Cli\u003E\u003Cb\u003Eend_date\u003C/b\u003E - Evaluation end date in ISO 8601 format\u003C/li\u003E\n    \u003Cli\u003E\u003Cb\u003Ereason\u003C/b\u003E - Reason for update\u003C/li\u003E\n    \u003Cli\u003E\u003Cb\u003Egroup\u003C/b\u003E - Array of evaluation groups with their assigned evaluators\u003C/li\u003E\n    \u003Cli\u003E\u003Cb\u003Edocuments\u003C/b\u003E - Array of documents required for the evaluation\u003C/li\u003E\n    \u003Cli\u003E\u003Cb\u003Ecriteria\u003C/b\u003E - Array of evaluation criteria with their configurations\u003C/li\u003E\n\u003C/ul\u003E \u003Cbr\u003E \u003Cb\u003EGroup structure:\u003C/b\u003E Each group may contain an id, name, and an array of evaluator IDs. \u003Cbr\u003E \u003Cb\u003EDocuments structure:\u003C/b\u003E Each document may specify id, title, type, assigned group, and whether it's required. \u003Cbr\u003E \u003Cb\u003ECriteria structure:\u003C/b\u003E Each criterion may include id, title, description, type (\"pass_fail\" or \"weight\"), score (string or number), and assigned group. \u003Cbr\u003E \u003Cb\u003EScore validation:\u003C/b\u003E If type is \"pass_fail\", score must be a string. If type is \"weight\", score must be a number.",
+          "description": "Evaluation update payload containing all necessary information to update an existing evaluation process. \u003Cbr\u003E\u003Cbr\u003E \u003Cb\u003ERequired fields:\u003C/b\u003E \u003Cul\u003E\n    \u003Cli\u003E\u003Cb\u003Eid\u003C/b\u003E - The ID of the evaluation to update\u003C/li\u003E\n\u003C/ul\u003E \u003Cbr\u003E \u003Cb\u003EOptional fields:\u003C/b\u003E \u003Cul\u003E\n    \u003Cli\u003E\u003Cb\u003Etimezone\u003C/b\u003E - Timezone for the evaluation in IANA format (e.g., \"Africa/Lagos\")\u003C/li\u003E\n    \u003Cli\u003E\u003Cb\u003Estart_date\u003C/b\u003E - Evaluation start date in ISO 8601 format\u003C/li\u003E\n    \u003Cli\u003E\u003Cb\u003Eend_date\u003C/b\u003E - Evaluation end date in ISO 8601 format\u003C/li\u003E\n    \u003Cli\u003E\u003Cb\u003Ereason\u003C/b\u003E - Reason for update\u003C/li\u003E\n    \u003Cli\u003E\u003Cb\u003Egroup\u003C/b\u003E - Array of evaluation groups with their assigned evaluators\u003C/li\u003E\n    \u003Cli\u003E\u003Cb\u003Edocuments\u003C/b\u003E - Array of documents required for the evaluation\u003C/li\u003E\n    \u003Cli\u003E\u003Cb\u003Ecriteria\u003C/b\u003E - Array of evaluation criteria with their configurations\u003C/li\u003E\n    \u003Cli\u003E\u003Cb\u003Estatus\u003C/b\u003E - Status of the evaluation (draft or published)\u003C/li\u003E\n\n\u003C/ul\u003E \u003Cbr\u003E \u003Cb\u003EGroup structure:\u003C/b\u003E Each group may contain an id, name, and an array of evaluator IDs. \u003Cbr\u003E \u003Cb\u003EDocuments structure:\u003C/b\u003E Each document may specify id, title, type, assigned group, and whether it's required. \u003Cbr\u003E \u003Cb\u003ECriteria structure:\u003C/b\u003E Each criterion may include id, title, description, type (\"pass_fail\" or \"weight\"), score (string or number), and assigned group. \u003Cbr\u003E \u003Cb\u003EScore validation:\u003C/b\u003E If type is \"pass_fail\", score must be a string. If type is \"weight\", score must be a number.",
           "content": {
             "application/json": {
               "schema": {
@@ -8795,93 +9272,6 @@
         }
       }
     },
-    "/procurement/evaluations/evaluation-group/{evaluationGroupId}/status/{status}": {
-      "put": {
-        "summary": "Update evaluation group status",
-        "description": "Update evaluation group",
-        "tags": [
-          "Procurement-Evaluation"
-        ],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "in": "path",
-            "name": "evaluationGroupId",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "description": "evaluationGroupId"
-            }
-          },
-          {
-            "in": "path",
-            "name": "status",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "enum": [
-                "withhold",
-                "release"
-              ],
-              "description": "evaluation group status"
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "content": {
-              "application/json": {
-                "schema": null
-              }
-            }
-          },
-          "401": {
-            "description": "unauthenticated user",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AuthenticatedError"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Unathorized user",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AuthorizeError"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Document group not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/NotFoundError"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Something bad went wrong",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ServerError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/procurement/evaluations/proposal/{proposalId}": {
       "get": {
         "summary": "Delete document on edit screen",
@@ -9863,6 +10253,175 @@
         }
       }
     },
+    "/procurement/evaluations/{evaluationId}/evaluation-group/{evaluationGroupId}/status/{status}": {
+      "put": {
+        "summary": "Update evaluation group status",
+        "description": "Update evaluation group status",
+        "tags": [
+          "Procurement-Evaluation"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "evaluationId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "evaluationId"
+            }
+          },
+          {
+            "in": "path",
+            "name": "evaluationGroupId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "evaluationGroupId"
+            }
+          },
+          {
+            "in": "path",
+            "name": "status",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "withhold",
+                "release"
+              ],
+              "description": "evaluation group status"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "content": {
+              "application/json": {
+                "schema": null
+              }
+            }
+          },
+          "401": {
+            "description": "unauthenticated user",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Unathorized user",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizeError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Document group not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something bad went wrong",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/procurement/solicitations/meta/categories": {
+      "get": {
+        "summary": "View  solicitation categories",
+        "description": "Solicitation categories",
+        "tags": [
+          "Procurement-Solicitations",
+          "Procurement-Vendor"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Solicitation categories",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "name": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthenticated user",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Unathorized user",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizeError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something bad went wrong",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/procurement/solicitations": {
       "post": {
         "summary": "create new solicitations",
@@ -10447,7 +11006,7 @@
     "/procurement/solicitations/my-actions": {
       "get": {
         "summary": "Vendor actions",
-        "description": "Vendor actions limit to 10 - Action types \"evaluation\", \"update\", \"vendor_accept\", \"vendor_declined\",\"vendor_submitted\",\"scored\", \"awarded\",\"question\", \"response\",\"invite\",\"addendum\",",
+        "description": "Vendor actions limit to 10 - Action types \"create_evaluation\" ,\"release_group\", \"create_evaluation_group\", \"\",",
         "tags": [
           "Procurement-Solicitations"
         ],
@@ -10530,7 +11089,7 @@
                       "type": "string"
                     },
                     "data": {
-                      "$ref": "#/components/schemas/VendorUpdate"
+                      "$ref": "#/components/schemas/ProcurementUpdateResponse"
                     }
                   }
                 }
@@ -13512,79 +14071,6 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ValidationError"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Something bad went wrong",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ServerError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/procurement/solicitations/meta/categories": {
-      "get": {
-        "summary": "View  solicitation categories",
-        "description": "Solicitation categories",
-        "tags": [
-          "Procurement-Solicitations",
-          "Procurement-Vendor"
-        ],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Solicitation categories",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "message": {
-                      "type": "string"
-                    },
-                    "data": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "name": {
-                            "type": "string"
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "unauthenticated user",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AuthenticatedError"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Unathorized user",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AuthorizeError"
                 }
               }
             }
@@ -17355,6 +17841,100 @@
         }
       }
     },
+    "/users/dashboard": {
+      "get": {
+        "summary": "Retrieve user dashboard card data",
+        "description": "Fetches user count statistics for the company dashboard including total users, status-based counts, and role-based counts.",
+        "tags": [
+          "CompanyAdmin",
+          "SuperAdmin"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "allUsers": {
+                          "type": "number",
+                          "description": "Total number of users in the company"
+                        },
+                        "activeUsers": {
+                          "type": "number",
+                          "description": "Number of active users"
+                        },
+                        "suspendedUsers": {
+                          "type": "number",
+                          "description": "Number of suspended (pending) users"
+                        },
+                        "inactiveUsers": {
+                          "type": "number",
+                          "description": "Number of inactive users"
+                        },
+                        "admins": {
+                          "type": "number",
+                          "description": "Number of company admin users"
+                        },
+                        "procurementLeads": {
+                          "type": "number",
+                          "description": "Number of procurement lead users"
+                        },
+                        "evaluators": {
+                          "type": "number",
+                          "description": "Number of evaluator users"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated user",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Unauthorized user",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizeError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something bad went wrong",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/users/change-password": {
       "put": {
         "summary": "Change user password",
@@ -19111,14 +19691,11 @@
             "schema": {
               "type": "string",
               "enum": [
-                "Draft",
-                "Pending",
-                "InActive",
-                "Completed",
-                "Active",
-                "Suspended"
+                "declined",
+                "confirmed",
+                "invited"
               ],
-              "description": "status - Draft | Pending | InActive | Completed | Active | Suspended"
+              "description": "status - declined | confirmed | invited"
             }
           },
           {
@@ -19378,7 +19955,7 @@
     "/vendor/solicitations/my-actions": {
       "get": {
         "summary": "Vendor actions",
-        "description": "Vendor actions limit to 10 - Action types \"evaluation\", \"update\", \"vendor_accept\", \"vendor_declined\",\"vendor_submitted\",\"scored\", \"awarded\",\"question\", \"response\",\"invite\",\"addendum\",",
+        "description": "Vendor actions limit to 10 - Action types \"invited\", \"no response\", \"draft\", \"question\", \"response\"",
         "tags": [
           "Vendor-Solicitation"
         ],
@@ -19398,7 +19975,32 @@
                       "type": "string"
                     },
                     "data": {
-                      "$ref": "#/components/schemas/VendorAction"
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "solicitation": {
+                            "type": "string",
+                            "description": "Solicitation name"
+                          },
+                          "user": {
+                            "type": "string",
+                            "description": "User name"
+                          },
+                          "type": {
+                            "type": "string",
+                            "enum": [
+                              "Replied",
+                              "Question"
+                            ],
+                            "description": "Action type based on user"
+                          },
+                          "action": {
+                            "type": "boolean",
+                            "description": "Question answered status"
+                          }
+                        }
+                      }
                     }
                   }
                 }
@@ -20292,6 +20894,10 @@
     {
       "name": "Notification",
       "description": "API endpoint for managing notifications"
+    },
+    {
+      "name": "Campaign",
+      "description": "API endpoints for managing communication campaigns"
     },
     {
       "name": "Admin",
