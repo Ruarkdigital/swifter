@@ -834,10 +834,7 @@
       "Evaluator": {
         "type": "object",
         "properties": {
-          "name": {
-            "type": "string"
-          },
-          "email": {
+          "evaluationId": {
             "type": "string"
           },
           "status": {
@@ -851,8 +848,18 @@
                 "groupName": {
                   "type": "string"
                 },
-                "criteriaCount": {
-                  "type": "number"
+                "groupId": {
+                  "type": "string"
+                },
+                "groupStatus": {
+                  "type": "string"
+                },
+                "groupCreatedAt": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "totalEvaluators": {
+                  "type": "integer"
                 },
                 "evaluators": {
                   "type": "array",
@@ -864,6 +871,27 @@
                       },
                       "email": {
                         "type": "string"
+                      },
+                      "id": {
+                        "type": "string"
+                      },
+                      "progress": {
+                        "type": "number",
+                        "nullable": true
+                      },
+                      "status": {
+                        "type": "string"
+                      },
+                      "totalScorings": {
+                        "type": "integer"
+                      },
+                      "submittedScorings": {
+                        "type": "integer"
+                      },
+                      "submittedAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
                       }
                     }
                   }
@@ -871,14 +899,99 @@
               }
             }
           },
-          "totalEvaluators": {
-            "type": "integer"
-          },
-          "totalEvaluatorsInEvaluation": {
-            "type": "integer"
-          },
-          "averageProgress": {
-            "type": "number"
+          "summary": {
+            "type": "object",
+            "properties": {
+              "totalEvaluators": {
+                "type": "integer"
+              },
+              "averageProgress": {
+                "type": "number"
+              },
+              "totalRequiredScorings": {
+                "type": "integer"
+              },
+              "completedScorings": {
+                "type": "integer"
+              }
+            }
+          }
+        },
+        "example": {
+          "evaluationId": "689a05019e41916335e4841b",
+          "status": "active",
+          "groups": [
+            {
+              "groupName": "Group a",
+              "groupId": "689a05019e41916335e48417",
+              "groupStatus": "Release",
+              "groupCreatedAt": "2025-08-11T14:58:09.341Z",
+              "totalEvaluators": 1,
+              "evaluators": [
+                {
+                  "name": "Pl Mars Inc",
+                  "email": "maytheu98@gmail.com",
+                  "id": "687f55dfdd21a41971d556bd",
+                  "progress": null,
+                  "status": "No Criteria",
+                  "totalScorings": 0,
+                  "submittedScorings": 0
+                }
+              ]
+            },
+            {
+              "groupName": "group b",
+              "groupId": "689a05019e41916335e48418",
+              "groupStatus": "Release",
+              "groupCreatedAt": "2025-08-11T14:58:09.342Z",
+              "totalEvaluators": 1,
+              "evaluators": [
+                {
+                  "name": "Ev3 Mars  Inc",
+                  "email": "ftrackhaul@gmail.com",
+                  "id": "687fc2c640570c047e290850",
+                  "progress": 50,
+                  "status": "In progress",
+                  "totalScorings": 2,
+                  "submittedScorings": 1,
+                  "submittedAt": "2025-08-18T08:44:51.438Z"
+                }
+              ]
+            },
+            {
+              "groupName": "group c",
+              "groupId": "689a05019e41916335e48419",
+              "groupStatus": "Release",
+              "groupCreatedAt": "2025-08-11T14:58:09.342Z",
+              "totalEvaluators": 2,
+              "evaluators": [
+                {
+                  "name": "Pl Mars Inc",
+                  "email": "maytheu98@gmail.com",
+                  "id": "687f55dfdd21a41971d556bd",
+                  "progress": 0,
+                  "status": "In progress",
+                  "totalScorings": 4,
+                  "submittedScorings": 0
+                },
+                {
+                  "name": "Ev3 Mars  Inc",
+                  "email": "ftrackhaul@gmail.com",
+                  "id": "687fc2c640570c047e290850",
+                  "progress": 100,
+                  "status": "Completed",
+                  "totalScorings": 4,
+                  "submittedScorings": 4,
+                  "submittedAt": "2025-08-16T06:51:55.022Z"
+                }
+              ]
+            }
+          ],
+          "summary": {
+            "totalEvaluators": 2,
+            "averageProgress": 41.6666666666667,
+            "totalRequiredScorings": 12,
+            "completedScorings": 5
           }
         }
       },
@@ -4010,6 +4123,7 @@
           }
         ],
         "requestBody": {
+          "description": "\u003Cb\u003EEmail Campaign Configuration:\u003C/b\u003E\n- Required subject line and message content\n- Optional subtitle for additional context\n- Recipient selection (all users, company users, or specific users)\n- Company ID (required for company-specific campaigns)\n- User IDs array (required when targeting specific users)\n- Optional banner image URL\n- Optional timezone setting\n",
           "required": true,
           "content": {
             "application/json": {
@@ -4101,6 +4215,153 @@
                               }
                             }
                           }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated user",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Unauthorized user",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizeError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something bad went wrong",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/campaigns/app": {
+      "post": {
+        "summary": "Create an in-app campaign",
+        "description": "Create a campaign to be delivered in the app. Recipients can be selected by type.\n- Required: subject and message\n- Optional: subtitle, bannerUrl, timezone\n- recipientType options: all_users, company_users, specific_users, vendors, evaluators, procurement_lead\n- companyId is required when recipientType is company_users\n- userIds is required when recipientType is specific_users\n",
+        "tags": [
+          "Campaign"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "subject",
+                  "message",
+                  "recipientType"
+                ],
+                "properties": {
+                  "subject": {
+                    "type": "string",
+                    "description": "The campaign title or subject"
+                  },
+                  "subtitle": {
+                    "type": "string",
+                    "description": "Optional subtitle for additional context"
+                  },
+                  "message": {
+                    "type": "string",
+                    "description": "The text/HTML content of the campaign"
+                  },
+                  "bannerUrl": {
+                    "type": "string",
+                    "description": "Optional URL to a banner image displayed at the top"
+                  },
+                  "recipientType": {
+                    "type": "string",
+                    "enum": [
+                      "all_users",
+                      "company_users",
+                      "specific_users",
+                      "vendors",
+                      "evaluators",
+                      "procurement_lead"
+                    ],
+                    "description": "Determines which recipients will receive the campaign"
+                  },
+                  "companyId": {
+                    "type": "string",
+                    "description": "Required when recipientType is company_users; ignored otherwise"
+                  },
+                  "userIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "Required when recipientType is specific_users; array of user IDs to target"
+                  },
+                  "timezone": {
+                    "type": "string",
+                    "description": "Optional timezone setting"
+                  }
+                }
+              },
+              "example": {
+                "subject": "New Feature Release",
+                "subtitle": "Improvements to your dashboard",
+                "message": "\u003Cp\u003EHello team, we have launched new features!\u003C/p\u003E",
+                "bannerUrl": "https://cdn.example.com/banner.png",
+                "recipientType": "all_users",
+                "timezone": "America/Toronto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Campaign created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "message": {
+                          "type": "string"
                         }
                       }
                     }
@@ -12244,7 +12505,7 @@
         }
       }
     },
-    "/procurement/solicitations/{solicitationId}/evaluator-score": {
+    "/procurement/solicitations/{solicitationId}/vendor/{vendorId}/evaluator-score": {
       "get": {
         "summary": "View evaluators score detail",
         "description": "Evaluator score",
@@ -12265,6 +12526,15 @@
             "schema": {
               "type": "string",
               "description": "solicitationId"
+            }
+          },
+          {
+            "in": "path",
+            "name": "vendorId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "vendorId"
             }
           }
         ],

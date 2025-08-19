@@ -168,6 +168,12 @@ const getNavigationForRole = (
         active: currentPath.startsWith("/dashboard/admin-management"),
       },
       {
+        icon: Mail,
+        title: "Communication Management",
+        to: "/dashboard/communication-management",
+        active: currentPath.startsWith("/dashboard/communication-management"),
+      },
+      {
         icon: BarChart3,
         title: "System Log",
         to: "/dashboard/system-log",

@@ -17,14 +17,14 @@ export const Dashboard = () => {
       fullWidth
       fullHeight
       display="flex"
-      className="overflow-x-hidden overflow-y-auto bg-[#F7F9FE] dark:bg-gray-950 relative transition-colors"
+      className="overflow-x-hidden overflow-y-hidden bg-[#F7F9FE] dark:bg-gray-950 relative transition-colors"
       as={SidebarProvider}
     >
       <SideBar />
-      <main className="flex-1 flex flex-col min-w-0 bg-white">
+      <main className="flex-1 flex flex-col min-w-0 bg-white dark:bg-gray-900">
         <Header />
         <ScrollArea>
-          <div className="flex-1 overflow-auto h-[86vh] flex flex-col bg-white dark:bg-gray-900 px-8 transition-colors">
+          <div className="flex-1 overflow-auto h-[calc(100vh-160px)] flex flex-col bg-white dark:bg-gray-900 px-8 transition-colors">
             <Outlet />
           </div>
         </ScrollArea>
