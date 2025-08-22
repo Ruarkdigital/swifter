@@ -17,7 +17,7 @@ interface UploadedFile {
 }
 
 // Type for selected files with upload state
-interface FileWithUploadState {
+export interface FileWithUploadState {
   file: File;
   status: 'pending' | 'uploading' | 'uploaded' | 'failed';
   progress: number;
@@ -277,7 +277,7 @@ const FileListItem = ({
 };
 
 // Main file upload manager component
-const FileUploadManager = ({ control }: { control: any }) => {
+export const FileUploadManager = ({ control }: { control: any }) => {
   const [filesWithState, setFilesWithState] = useState<FileWithUploadState[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const toast = useToastHandler();

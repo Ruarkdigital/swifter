@@ -1638,8 +1638,8 @@ export class DashboardDataTransformer {
     }
 
     return data.map((update: any, index: number) => ({
-      id: update?.evaluation._id || `update-${index}`,
-      title: update?.evaluation.solicitation.name,
+      id: update?.evaluation?._id || `update-${index}`,
+      title: update?.evaluation?.solicitation?.name ?? "Unknown",
       text: applyDynamicStatusTextReplacement(
         update.statusText,
         'evaluator',
@@ -1762,13 +1762,13 @@ export class DashboardDataTransformer {
       return {
         id: action._id || `vendor-action-${index}`,
         text: getFormattedText(action.statusText, {
-          id: action.solicitation._id,
-          name: action.solicitation.name,
+          id: action?.solicitation?._id ?? action?.evaluation?._id ?? "",
+          name: action?.solicitation?.name ?? action?.evaluation?.name ?? "Unknown",
         }),
         date: action.createdAt
           ? format(new Date(action.createdAt), "MMM d, yyyy h:mm a")
           : null,
-        title: action.solicitation || "Unknown Solicitation",
+        title: action?.solicitation?.name ?? "Unknown Solicitation",
       };
     });
   }
@@ -1781,28 +1781,73 @@ export class DashboardDataTransformer {
       return [];
     }
 
-    return data.map((update: any, index: number) => ({
-      id: update.id || `vendor-update-${index}`,
-      text: applyDynamicStatusTextReplacement(
-        update.statusText,
-        'vendor',
-        'general',
-        {
-          id: update.solicitation._id,
-          name: update.solicitation.name,
-        }
-      ),
-      title: update.solicitation.name,
-      time:
-        update.time ||
-        (update.date
-          ? format(new Date(update.date), "MMM d, yyyy") +
-            " • " +
-            format(new Date(update.date), "HH:mm 'GMT'xxx")
-          : format(new Date(), "MMM d, yyyy") +
-            " • " +
-            format(new Date(), "h:mm a 'GMT'xxx")),
-    }));
+    return data.map((update: any, index: number) => {
+      const isCampaign =
+        update?.action === "campaign" ||
+        update?.campaignType ||
+        (!!update?.subject && !!update?.message) ||
+        !!update?.campaign;
+
+      if (isCampaign) {
+        const campaign = {
+          subject: update?.subject ?? update?.campaign?.subject ?? "",
+          subtitle: update?.subtitle ?? update?.campaign?.subtitle,
+          message: update?.message ?? update?.campaign?.message ?? "",
+          recipientType:
+            update?.recipientType ?? update?.campaign?.recipientType ?? "all_users",
+          users: update?.users ?? update?.userIds ?? update?.campaign?.users ?? [],
+          bannerUrl: update?.bannerUrl ?? update?.campaign?.bannerUrl,
+          campaignType: update?.campaignType ?? update?.type ?? "campaign",
+          createdAt: update?.createdAt ?? update?.date ?? new Date().toISOString(),
+        };
+
+        return {
+          id: update?._id || update?.id || `vendor-update-${index}`,
+          action: "campaign",
+          campaign,
+          title: campaign.subject || "Campaign",
+          text:
+            update?.statusText ||
+            (campaign.subtitle
+              ? `<strong>${campaign.subject}</strong> — ${campaign.subtitle}`
+              : `<strong>${campaign.subject}</strong>`),
+          time:
+            update?.time ||
+            (campaign.createdAt
+              ? `${format(new Date(campaign.createdAt), "MMM d, yyyy")} • ${format(
+                  new Date(campaign.createdAt),
+                  "h:mm a 'GMT'xxx"
+                )}`
+              : `${format(new Date(), "MMM d, yyyy")} • ${format(
+                  new Date(),
+                  "h:mm a 'GMT'xxx"
+                )}`),
+        };
+      }
+
+      return {
+        id: update.id || `vendor-update-${index}`,
+        text: applyDynamicStatusTextReplacement(
+          update.statusText,
+          'vendor',
+          'general',
+          {
+            id: update?.solicitation?._id,
+            name: update?.solicitation?.name ?? "Unknown",
+          }
+        ),
+        title: update?.solicitation?.name ?? "Unknown",
+        time:
+          update.time ||
+          (update.date
+            ? format(new Date(update.date), "MMM d, yyyy") +
+              " • " +
+              format(new Date(update.date), "HH:mm 'GMT'xxx")
+            : format(new Date(), "MMM d, yyyy") +
+              " • " +
+              format(new Date(), "h:mm a 'GMT'xxx")),
+      };
+    });
   }
 
   /**
@@ -1826,13 +1871,13 @@ export class DashboardDataTransformer {
     };
 
     return data.map((action: any, index: number) => ({
-      id: action.solicitation._id || `action-${index}`,
+      id: action?.solicitation?._id || `action-${index}`,
       text: getFormattedText(action.statusText, {
-        id: action.solicitation._id || action.evaluation._id,
-        name: action.solicitation.name || action.evaluation.name,
+        id: action?.solicitation?._id || action?.evaluation?._id,
+        name: action?.solicitation?.name || action?.evaluation?.name || "Unknown",
       }),
       type: action?.replace?.("_", " ") || "",
-      title: action.solicitation.name,
+      title: action?.solicitation?.name ?? "Unknown",
       date:
         action.createdAt || action.date
           ? format(
@@ -1852,27 +1897,75 @@ export class DashboardDataTransformer {
       return [];
     }
 
-    return data.map((update: any, index: number) => ({
-      id: update._id || update.id || `update-${index}`,
-      title: update.solicitation.name,
-      text: applyDynamicStatusTextReplacement(
-        update.statusText,
-        'procurement',
-        'general',
-        {
-          id: update.solicitation._id || update.evaluation._id,
-          name: update.solicitation.name || update.evaluation.name,
-        }
-      ),
-      date:
-        update.updatedAt || update.date || update.createdAt
-          ? `${format(
-              new Date(update.updatedAt || update.date || update.createdAt),
-              "MMM d, yyyy h:mm a"
-            )} ${update.timezone || "GMT"}`
-          : format(new Date(), "MMM d, yyyy h:mm a 'GMT'xxx"),
-      status: update.status || "active",
-    }));
+    return data.map((update: any, index: number) => {
+      const isCampaign =
+        update?.action === "campaign" ||
+        update?.campaignType ||
+        (!!update?.subject && !!update?.message) ||
+        !!update?.campaign;
+
+      if (isCampaign) {
+        const campaign = {
+          subject: update?.subject ?? update?.campaign?.subject ?? "",
+          subtitle: update?.subtitle ?? update?.campaign?.subtitle,
+          message: update?.message ?? update?.campaign?.message ?? "",
+          recipientType:
+            update?.recipientType ?? update?.campaign?.recipientType ?? "all_users",
+          users: update?.users ?? update?.userIds ?? update?.campaign?.users ?? [],
+          bannerUrl: update?.bannerUrl ?? update?.campaign?.bannerUrl,
+          campaignType: update?.campaignType ?? update?.type ?? "campaign",
+          createdAt:
+            update?.updatedAt ?? update?.createdAt ?? update?.date ?? new Date().toISOString(),
+        };
+
+        return {
+          id: update?._id || update?.id || `update-${index}`,
+          action: "campaign",
+          title: campaign.subject || "Campaign",
+          text:
+            update?.statusText ||
+            (campaign.subtitle
+              ? `<strong>${campaign.subject}</strong> — ${campaign.subtitle}`
+              : `<strong>${campaign.subject}</strong>`),
+          date:
+            campaign.createdAt
+              ? `${format(new Date(campaign.createdAt), "MMM d, yyyy h:mm a")} GMT`
+              : format(new Date(), "MMM d, yyyy h:mm a 'GMT'xxx"),
+          status: update?.status || "active",
+          campaign,
+        };
+      }
+
+      const sol = update?.solicitation ?? null;
+      const evaluation = update?.evaluation ?? null;
+
+      const title = sol?.name ?? evaluation?.name ?? "Unknown";
+      const entityId = sol?._id ?? evaluation?._id ?? update?._id ?? `update-${index}`;
+      const entityName = sol?.name ?? evaluation?.name ?? "Unknown";
+
+      return {
+        id: update._id || update.id || `update-${index}`,
+        title,
+        text: applyDynamicStatusTextReplacement(
+          update?.statusText ?? "",
+          'procurement',
+          'general',
+          {
+            id: entityId,
+            name: entityName,
+            solId: sol?._id,
+          }
+        ),
+        date:
+          update?.updatedAt || update?.date || update?.createdAt
+            ? `${format(
+                new Date(update.updatedAt || update.date || update.createdAt),
+                "MMM d, yyyy h:mm a"
+              )} ${update.timezone || "GMT"}`
+            : format(new Date(), "MMM d, yyyy h:mm a 'GMT'xxx"),
+        status: update?.status || "active",
+      };
+    });
   }
 
   /**
@@ -1908,23 +2001,62 @@ export class DashboardDataTransformer {
       evaluation_completed: "Evaluation process completed for",
     };
 
-    return data.map((update: any, index: number) => ({
-      id: update._id || update.id || `admin-update-${index}`,
-      title: update.solicitation?.name || "Unknown Solicitation",
-      action:
-        actionDescriptions[update.action as keyof typeof actionDescriptions] ||
-        update.action ||
-        "Recent activity",
-      time: update.createdAt
-        ? format(new Date(update.createdAt), "MMM d, yyyy") +
-          " • " +
-          format(new Date(update.createdAt), "h:mm a 'GMT'xxx")
-        : format(new Date(), "MMM d, yyyy") +
-          " • " +
-          format(new Date(), "h:mm a 'GMT'xxx"),
-      status: update.solicitation?.status || "active",
-      timezone: update.solicitation?.timezone || "UTC",
-    }));
+    return data.map((update: any, index: number) => {
+      const isCampaign =
+        update?.action === "campaign" ||
+        update?.campaignType ||
+        (!!update?.subject && !!update?.message) ||
+        !!update?.campaign;
+
+      if (isCampaign) {
+        const campaign = {
+          subject: update?.subject ?? update?.campaign?.subject ?? "",
+          subtitle: update?.subtitle ?? update?.campaign?.subtitle,
+          message: update?.message ?? update?.campaign?.message ?? "",
+          recipientType:
+            update?.recipientType ?? update?.campaign?.recipientType ?? "all_users",
+          users: update?.users ?? update?.userIds ?? update?.campaign?.users ?? [],
+          bannerUrl: update?.bannerUrl ?? update?.campaign?.bannerUrl,
+          campaignType: update?.campaignType ?? update?.type ?? "campaign",
+          createdAt:
+            update?.updatedAt ?? update?.createdAt ?? update?.date ?? new Date().toISOString(),
+        };
+
+        return {
+          id: update._id || update.id || `admin-update-${index}`,
+          action: "campaign",
+          title: campaign.subject || "Campaign",
+          text:
+            update?.statusText ||
+            (campaign.subtitle
+              ? `<strong>${campaign.subject}</strong> — ${campaign.subtitle}`
+              : `<strong>${campaign.subject}</strong>`),
+          date: campaign.createdAt
+            ? `${format(new Date(campaign.createdAt), "MMM d, yyyy h:mm a")} GMT`
+            : format(new Date(), "MMM d, yyyy h:mm a 'GMT'xxx"),
+          status: update?.status || "active",
+          campaign,
+        };
+      }
+
+      return {
+        id: update._id || update.id || `admin-update-${index}`,
+        title: update.solicitation?.name || "Unknown Solicitation",
+        action:
+          actionDescriptions[update.action as keyof typeof actionDescriptions] ||
+          update.action ||
+          "Recent activity",
+        time: update.createdAt
+          ? format(new Date(update.createdAt), "MMM d, yyyy") +
+            " • " +
+            format(new Date(update.createdAt), "h:mm a 'GMT'xxx")
+          : format(new Date(), "MMM d, yyyy") +
+            " • " +
+            format(new Date(), "h:mm a 'GMT'xxx"),
+        status: update.solicitation?.status || "active",
+        timezone: update.solicitation?.timezone || "UTC",
+      };
+    });
   }
 
   /**

@@ -6,6 +6,7 @@ import {
   cloneElement,
   createElement,
   useImperativeHandle,
+  useEffect,
 } from "react";
 import { FieldValues, FormProvider } from "react-hook-form";
 import { ForgeProps } from "../types";
@@ -25,6 +26,9 @@ import {
 } from "../reactNative";
 import { Forger } from "../Forger";
 import { DevTool } from "@hookform/devtools";
+import { useEnhancedValidation } from "../hooks/useEnhancedValidation";
+import { ButtonValidationState } from "../types/validationTypes";
+import { getButtonValidationState } from "../utils/validationUtils";
 
 export const Forge = <TFieldValues extends FieldValues = FieldValues>({
   className,
@@ -35,14 +39,79 @@ export const Forge = <TFieldValues extends FieldValues = FieldValues>({
   isNative,
   debug,
   platform = 'auto',
+  // Enhanced validation options
+  validationStrategy = 'progressive',
+  fieldConfigs,
+  useEnhancedValidation: useEnhancedValidationProp = true,
+  smartEmptyHandling = true,
+  progressiveValidation = true,
+  debounceValidation = true,
+  contextAware = true,
   ...rest
 }: ForgeProps<TFieldValues>) => {
+  console.log({ control })
   // Determine the actual platform to use
   const actualPlatform = platform === 'auto' 
     ? (isReactNative ? 'react-native' : 'web')
     : platform;
   
   const isRNMode = actualPlatform === 'react-native' || (isNative && isReactNative);
+
+  // Initialize enhanced validation hook if enabled
+  const enhancedValidation = useEnhancedValidationProp ? useEnhancedValidation({
+    control,
+    strategy: validationStrategy,
+    options: {
+      fieldConfigs,
+      smartEmptyHandling,
+      progressiveValidation,
+      debounceValidation,
+      contextAware,
+      debouncingOptions: debounceValidation ? {
+        defaultDelay: 300,
+        maxDelay: 1000,
+      } : undefined,
+      contextAwareOptions: contextAware ? {
+         enableLearning: true,
+         minInteractionsForAdaptation: 5,
+         historicalWeight: 0.3,
+         adaptiveValidationTiming: true,
+         smartFieldPrioritization: true,
+         predictiveValidation: true,
+       } : undefined,
+    },
+  }) : null;
+
+  // Use enhanced validation state if available, otherwise fallback to control state
+  const enhancedValidationState = enhancedValidation?.validationState || control._enhancedValidationState;
+  const validationProgress = enhancedValidationState
+    ? enhancedValidationState.validationProgress
+    : 0;
+
+  const buttonValidationState: ButtonValidationState = enhancedValidationState
+    ? getButtonValidationState(
+        enhancedValidationState,
+        enhancedValidation?.validationContext || {
+          userInteractionCount: 0,
+          lastInteractionTime: Date.now(),
+          submissionAttempted: false,
+          validationMode: control._options.mode || 'onChange'
+        },
+        validationStrategy
+      )
+    : {
+        disabled: false,
+        variant: 'default',
+        message: undefined,
+      };
+
+  // Update control with enhanced validation state
+  useEffect(() => {
+    if (enhancedValidation && enhancedValidation.validationState) {
+      control._enhancedValidationState = enhancedValidation.validationState;
+      control._validationContext = enhancedValidation.validationContext;
+    }
+  }, [enhancedValidation?.validationState, enhancedValidation?.validationContext, control]);
   // Recursive function to traverse and process the entire nested tree of children
   const processChildrenRecursively = (children: any, depth = 0): any => {
     // Prevent infinite recursion with a reasonable depth limit
@@ -56,10 +125,44 @@ export const Forge = <TFieldValues extends FieldValues = FieldValues>({
         return child;
       }
 
-      // Handle button elements - attach form submit handler
+      // Handle button elements - attach form submit handler with enhanced validation
       if (isButtonSlot(child)) {
+        const childProps = (child as any).props as any;
+        const isSubmitButton = childProps.type === 'submit' || childProps.role === 'submit' || !childProps.type;
+        
+        if (isSubmitButton) {
+          const handleSubmit = (e: any) => {
+            e.preventDefault();
+            
+            // Record interaction for context-aware validation
+            if (enhancedValidation?.updateContext) {
+              enhancedValidation.updateContext({
+                submissionAttempted: true,
+                lastInteractionTime: Date.now(),
+              });
+            }
+            
+            // Only submit if validation allows it
+            if (!buttonValidationState.disabled) {
+              control.handleSubmit(onSubmit)(e);
+            }
+          };
+
+          return cloneElement(child, {
+            ...child.props,
+            onClick: handleSubmit,
+            disabled: buttonValidationState.disabled,
+            "data-validation-state": !buttonValidationState.disabled ? "valid" : "invalid",
+            "data-validation-progress": enhancedValidationState ? Math.round(enhancedValidationState.validationProgress) : 0,
+            "data-has-errors": enhancedValidationState ? !enhancedValidationState.isValid : false,
+            "data-has-critical-errors": enhancedValidationState ? !enhancedValidationState.criticalFieldsValid : false,
+            "data-has-warnings": enhancedValidationState ? (enhancedValidationState.isPartiallyValid && !enhancedValidationState.isValid) : false,
+            "data-validation-variant": buttonValidationState.variant,
+          });
+        }
+        
         return cloneElement(child, {
-          onClick: control.handleSubmit(onSubmit),
+          onClick: childProps.onClick,
         } as any);
       }
 
@@ -83,6 +186,63 @@ export const Forge = <TFieldValues extends FieldValues = FieldValues>({
           ...platformProps,
           key: childProps.name,
         });
+      }
+
+      // Handle input elements for web mode - enhanced validation integration
+      if (isInputSlot(child) && !isNative && !isRNMode) {
+        // Enhanced input props with validation integration
+        const childProps = (child as any).props as any;
+        const enhancedInputProps = {
+          ...childProps,
+          control,
+          // Add enhanced validation methods if available
+          ...(enhancedValidation && {
+            onFocus: (e: any) => {
+              // Record interaction for context-aware validation
+              if (childProps.name && enhancedValidation.recordInteraction) {
+                enhancedValidation.recordInteraction(childProps.name, 'focus', {
+                  timestamp: Date.now(),
+                });
+              }
+              // Call original onFocus if it exists
+              if (childProps.onFocus) {
+                childProps.onFocus(e);
+              }
+            },
+            onBlur: (e: any) => {
+              // Record interaction and trigger validation
+              if (childProps.name && enhancedValidation.recordInteraction) {
+                enhancedValidation.recordInteraction(childProps.name, 'blur', {
+                  timestamp: Date.now(),
+                });
+              }
+              // Call original onBlur if it exists
+              if (childProps.onBlur) {
+                childProps.onBlur(e);
+              }
+            },
+            onChange: (e: any) => {
+              // Record interaction for context-aware validation
+              if (childProps.name && enhancedValidation.recordInteraction) {
+                enhancedValidation.recordInteraction(childProps.name, 'change', {
+                  timestamp: Date.now(),
+                  value: e.target?.value || e,
+                });
+              }
+              // Call original onChange if it exists
+              if (childProps.onChange) {
+                childProps.onChange(e);
+              }
+            },
+          }),
+        };
+
+        return (
+          <Forger
+            key={(child as any).key || `input-${depth}`}
+            {...enhancedInputProps}
+          />
+        );
       }
 
       // Get child's children for recursive processing
@@ -109,8 +269,22 @@ export const Forge = <TFieldValues extends FieldValues = FieldValues>({
         } as any);
       }
 
-      // For leaf elements without children, just pass control prop
-      return cloneElement(child, { control } as any);
+      // For leaf elements without children, pass control prop and enhanced validation context
+      return cloneElement(child, { 
+        control,
+        enhancedValidationState,
+        validationProgress,
+        buttonValidationState,
+        // Enhanced validation methods if available
+        ...(enhancedValidation && {
+          setValid: enhancedValidation.setValid,
+          updateContext: enhancedValidation.updateContext,
+          getFieldConfig: enhancedValidation.getFieldConfig,
+          recordInteraction: enhancedValidation.recordInteraction,
+          getAdaptiveFieldPriority: enhancedValidation.getAdaptiveFieldPriority,
+          predictNextField: enhancedValidation.predictNextField,
+        }),
+      } as any);
     });
   };
 

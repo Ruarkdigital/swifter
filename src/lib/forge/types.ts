@@ -10,6 +10,12 @@ import {
   Resolver,
   UseFormReturn,
 } from "react-hook-form";
+import {
+  EnhancedValidationState,
+  ValidationContext,
+  FieldConfig,
+  ValidationStrategy
+} from "./types/validationTypes";
 
 export type FormPropsRef = {
   onSubmit: () => void;
@@ -21,6 +27,12 @@ export type ForgeControl<
 > = Control<T, any> & {
   fields?: FieldProps<TFieldProps>[];
   hasFields: boolean;
+  _enhancedValidationState?: EnhancedValidationState<T>;
+  _validationContext?: ValidationContext;
+  _fieldConfigs?: FieldConfig<T>[];
+  _validationStrategy?: ValidationStrategy;
+  _useEnhancedValidation?: boolean;
+  getValues?: () => T;
 };
 
 type AsyncDefaultValues<TFieldValues> = (
@@ -92,6 +104,14 @@ export type UseForgeProps<
   fields?: FieldProps<TFieldProps>[];
   mode?: "onBlur" | "onChange" | "onSubmit" | "onTouched" | "all";
   shouldUnregister?: boolean;
+  // Enhanced validation options
+  validationStrategy?: ValidationStrategy;
+  fieldConfigs?: FieldConfig<TFieldValues>[];
+  useEnhancedValidation?: boolean;
+  smartEmptyHandling?: boolean;
+  progressiveValidation?: boolean;
+  debounceValidation?: boolean;
+  contextAware?: boolean;
 };
 
 export type UseForgeResult<T extends FieldValues, TFieldProps = unknown> = Omit<
@@ -113,6 +133,14 @@ export type ForgeProps<
   isNative?: boolean;
   debug?: boolean;
   platform?: 'web' | 'react-native' | 'auto';
+  // Enhanced validation options
+  validationStrategy?: ValidationStrategy;
+  fieldConfigs?: FieldConfig<TFieldValues>[];
+  useEnhancedValidation?: boolean;
+  smartEmptyHandling?: boolean;
+  progressiveValidation?: boolean;
+  debounceValidation?: boolean;
+  contextAware?: boolean;
 };
 
 // React Native specific types

@@ -60,7 +60,7 @@ export interface User {
 type Admin = { name: string; email: string; _id: string };
 
 // Company type definition - Updated to match API documentation
-type Company = {
+export type Company = {
   _id: string;
   name: string;
   industry?: string;

@@ -111,7 +111,7 @@ const MemorizeController = memo<ForgerControllerProps<FieldValues>>(
 
 MemorizeController.displayName = "MemorizeController";
 
-export const Forger = (props: ForgerProps<FieldValues>) => {
+export const Forger =<T extends FieldValues> (props: ForgerProps<T>) => {
   const methods = useFormContext() ?? { control: props?.control };
 
   return (

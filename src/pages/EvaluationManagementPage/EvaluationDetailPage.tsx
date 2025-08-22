@@ -21,6 +21,7 @@ import {
   FileText,
   Edit,
   ChevronDown,
+  ChevronDownIcon,
 } from "lucide-react";
 import { useParams } from "react-router-dom";
 import { DataTable } from "@/components/layouts/DataTable";
@@ -29,7 +30,6 @@ import { useMemo, useState } from "react";
 import { format } from "date-fns";
 import { useMutation } from "@tanstack/react-query";
 import { getRequest } from "@/lib/axiosInstance";
-// TODO: integrate below api
 import EvaluationScorecardSheet from "./components/EvaluationScorecardSheet";
 import { BidComparisonSheet } from "./components/BidComparisonBreakdownSheet";
 import {
@@ -47,7 +47,15 @@ import { PageLoader } from "@/components/ui/PageLoader";
 import { ConfirmAlert } from "@/components/layouts/ConfirmAlert";
 import { useToastHandler } from "@/hooks/useToaster";
 import { ApiResponseError } from "@/types";
-import { getEvaluationStatusLabel, getEvaluationStatusColorClass } from "@/lib/evaluationStatusUtils";
+import {
+  getEvaluationStatusLabel,
+  getEvaluationStatusColorClass,
+} from "@/lib/evaluationStatusUtils";
+import {
+  DropdownMenuGroup,
+  DropdownMenuPortal,
+  DropdownMenuShortcut,
+} from "@/components/ui/dropdown-menu";
 
 // Component Types
 
@@ -158,6 +166,7 @@ const EvaluationDetailPage: React.FC = () => {
     isLoading: evaluationLoading,
     error: evaluationError,
   } = useEvaluationDetail(id);
+
   const evaluation = evaluationResponse?.data?.data;
   const isOwner = evaluation?.owner || false;
   const { data: evaluatorsResponse } = useEvaluationEvaluators(id);
@@ -166,7 +175,7 @@ const EvaluationDetailPage: React.FC = () => {
   const [releaseDialogOpen, setReleaseDialogOpen] = useState(false);
   const [withholdDialogOpen, setWithholdDialogOpen] = useState(false);
   const [selectedGroupId, setSelectedGroupId] = useState<string>("");
-  
+
   // State for tab management
   const [activeTab, setActiveTab] = useState("overview");
 
@@ -254,7 +263,10 @@ const EvaluationDetailPage: React.FC = () => {
       );
     },
     onError: (error) => {
-      toastHandlers.error("Export Failed", error.message || "An error occurred during export");
+      toastHandlers.error(
+        "Export Failed",
+        error.message || "An error occurred during export"
+      );
     },
   });
 
@@ -306,7 +318,9 @@ const EvaluationDetailPage: React.FC = () => {
     if (!data) return [];
 
     const flatEvaluators: Evaluator[] = [];
-    const groups = Array.isArray((data as any).groups) ? (data as any).groups : [];
+    const groups = Array.isArray((data as any).groups)
+      ? (data as any).groups
+      : [];
     groups.forEach((group: any) => {
       if (Array.isArray(group.evaluators)) {
         group.evaluators.forEach((evaluator: any) => {
@@ -437,11 +451,7 @@ const EvaluationDetailPage: React.FC = () => {
         const value = row.original.passFail;
         if (value === "-")
           return <span className="text-muted-foreground">-</span>;
-        return (
-          <span>
-            {value === "pass" ? "Pass / Fail" : value}
-          </span>
-        );
+        return <span>{value === "pass" ? "Pass / Fail" : value}</span>;
       },
     },
     {
@@ -504,11 +514,11 @@ const EvaluationDetailPage: React.FC = () => {
       cell: ({ row }) => {
         const proposalId = row.original.id; // This maps to proposalId from the bid comparison data
         const vendorName = row.original.vendorName;
-        
+
         return (
-          <BidComparisonSheet 
+          <BidComparisonSheet
             evaluationId={id}
-            proposalId={proposalId} 
+            proposalId={proposalId}
             vendorName={vendorName}
           />
         );
@@ -549,14 +559,14 @@ const EvaluationDetailPage: React.FC = () => {
       cell({ row }) {
         return (
           <div className="flex items-center gap-2">
-            <EvaluationScorecardSheet 
+            <EvaluationScorecardSheet
               evaluatorId={row.original._id}
               solicitationId={evaluation?.solicitation?._id || ""}
             />
           </div>
-        )
+        );
       },
-    }
+    },
   ];
 
   return (
@@ -590,19 +600,62 @@ const EvaluationDetailPage: React.FC = () => {
       </div>
 
       {/* Evaluation ID and Type */}
-      <div className="flex items-center gap-6 mb-8">
+      <div className="flex items-center gap-6 mb-2">
         <div className="text-sm text-gray-600 dark:text-gray-400">
-          <span className="font-medium">{evaluation?._id}</span> •{" "}
+          <span className="font-medium">{evaluation?.evalId}</span> •{" "}
           {evaluation?.solicitation?.type}
         </div>
-        {/* <Button
+        <Button
           variant="link"
           className="p-0 h-auto text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300"
-          onClick={() => navigate("/dashboard/evaluation")}
         >
           Download Submission Instruction
-        </Button> */}
+        </Button>
       </div>
+
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="outline" className="mb-7">
+            Action
+            <ChevronDownIcon
+              className="-me-1 opacity-60"
+              size={16}
+              aria-hidden="true"
+            />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent>
+          <DropdownMenuGroup>
+            <DropdownMenuItem>
+              <span>Edit</span>
+              <DropdownMenuShortcut>⌘E</DropdownMenuShortcut>
+            </DropdownMenuItem>
+            <DropdownMenuItem>
+              <span>Duplicate</span>
+              <DropdownMenuShortcut>⌘D</DropdownMenuShortcut>
+            </DropdownMenuItem>
+          </DropdownMenuGroup>
+          <DropdownMenuSeparator />
+          <DropdownMenuGroup>
+            <DropdownMenuItem>
+              <span>Archive</span>
+              <DropdownMenuShortcut>⌘A</DropdownMenuShortcut>
+            </DropdownMenuItem>
+            <DropdownMenuSub>
+              <DropdownMenuSubTrigger>More</DropdownMenuSubTrigger>
+              <DropdownMenuPortal>
+                <DropdownMenuSubContent>
+                  <DropdownMenuItem>Move to project</DropdownMenuItem>
+                  <DropdownMenuItem>Move to folder</DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem>Advanced options</DropdownMenuItem>
+                </DropdownMenuSubContent>
+              </DropdownMenuPortal>
+            </DropdownMenuSub>
+          </DropdownMenuGroup>
+          <DropdownMenuSeparator />
+        </DropdownMenuContent>
+      </DropdownMenu>
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -726,11 +779,15 @@ const EvaluationDetailPage: React.FC = () => {
                             new Date(evaluation.startDate),
                             "MMMM dd, yyyy"
                           )
-                        : "N/A"} {" "} {evaluation?.timezone}
+                        : "N/A"}{" "}
+                      {evaluation?.timezone}
                     </p>
                   </div>
 
-                  <Card className="p-4 cursor-pointer hover:shadow-md transition-shadow" onClick={() => setActiveTab("comparison")}>
+                  <Card
+                    className="p-4 cursor-pointer hover:shadow-md transition-shadow"
+                    onClick={() => setActiveTab("comparison")}
+                  >
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-sm text-gray-600 dark:text-gray-400">
@@ -746,7 +803,10 @@ const EvaluationDetailPage: React.FC = () => {
                     </div>
                   </Card>
 
-                  <Card className="p-4 cursor-pointer hover:shadow-md transition-shadow" onClick={() => setActiveTab("criteria")}>
+                  <Card
+                    className="p-4 cursor-pointer hover:shadow-md transition-shadow"
+                    onClick={() => setActiveTab("criteria")}
+                  >
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-sm text-gray-600 dark:text-gray-400">
@@ -762,7 +822,10 @@ const EvaluationDetailPage: React.FC = () => {
                     </div>
                   </Card>
 
-                  <Card className="p-4 cursor-pointer hover:shadow-md transition-shadow" onClick={() => setActiveTab("documents")}>
+                  <Card
+                    className="p-4 cursor-pointer hover:shadow-md transition-shadow"
+                    onClick={() => setActiveTab("documents")}
+                  >
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-sm text-gray-600 dark:text-gray-400">
@@ -787,15 +850,16 @@ const EvaluationDetailPage: React.FC = () => {
                     </h3>
                     <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                       {evaluation?.endDate
-                        ? format(
-                            new Date(evaluation.endDate),
-                            "MMMM dd, yyyy"
-                          )
-                        : "N/A"} {" "} {evaluation?.timezone}
+                        ? format(new Date(evaluation.endDate), "MMMM dd, yyyy")
+                        : "N/A"}{" "}
+                      {evaluation?.timezone}
                     </p>
                   </div>
 
-                  <Card className="p-4 cursor-pointer hover:shadow-md transition-shadow" onClick={() => setActiveTab("evaluationGroup")}>
+                  <Card
+                    className="p-4 cursor-pointer hover:shadow-md transition-shadow"
+                    onClick={() => setActiveTab("evaluationGroup")}
+                  >
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-sm text-gray-600 dark:text-gray-400">
@@ -811,15 +875,18 @@ const EvaluationDetailPage: React.FC = () => {
                     </div>
                   </Card>
 
-                  <Card className="p-4 cursor-pointer hover:shadow-md transition-shadow" onClick={() => setActiveTab("evaluators")}>
+                  <Card
+                    className="p-4 cursor-pointer hover:shadow-md transition-shadow"
+                    onClick={() => setActiveTab("evaluators")}
+                  >
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-sm text-gray-600 dark:text-gray-400">
                           Evaluators
                         </p>
                         <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                          {evaluation?.solicitationDetails?.evaluators?.length ||
-                            evaluators.length}
+                          {evaluation?.solicitationDetails?.evaluators
+                            ?.length || evaluators.length}
                         </p>
                       </div>
                       <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
@@ -996,7 +1063,7 @@ const EvaluationDetailPage: React.FC = () => {
                     </h4>
                     <p className="text-gray-600 dark:text-gray-400">
                       {/* Placeholder for progress - would need additional API data */}
-                     {group.averageProgress ?? 0}%
+                      {group.averageProgress ?? 0}%
                     </p>
                   </div>
 
@@ -1097,10 +1164,7 @@ const EvaluationDetailPage: React.FC = () => {
               <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                 Evaluators
               </h2>
-              <EditEvaluationDialog
-                evaluationId={id}
-                page="groups"
-              >
+              <EditEvaluationDialog evaluationId={id} page="groups">
                 <Button
                   variant="outline"
                   size="sm"
@@ -1162,12 +1226,16 @@ const EvaluationDetailPage: React.FC = () => {
                           disabled={exportBidComparisonMutation.isPending}
                         >
                           <Share2 className="h-4 w-4 mr-2" />
-                          {exportBidComparisonMutation.isPending ? "Exporting..." : "Export"}
+                          {exportBidComparisonMutation.isPending
+                            ? "Exporting..."
+                            : "Export"}
                           <ChevronDown className="h-4 w-4 ml-2" />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Export Bid Comparison</DropdownMenuLabel>
+                        <DropdownMenuLabel>
+                          Export Bid Comparison
+                        </DropdownMenuLabel>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
                           onClick={() => handleExportBidComparison("pdf")}
@@ -1196,7 +1264,6 @@ const EvaluationDetailPage: React.FC = () => {
                       Price Comparison
                     </span>
                   </div>
-                  
                 </div>
               )}
               options={{

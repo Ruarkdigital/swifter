@@ -17,6 +17,15 @@ import {
   UseFormTrigger,
 } from "react-hook-form";
 import { ForgeControl, UseForgeResult } from "../types";
+import {
+  FieldConfig,
+  ValidationStrategy
+} from "../types/validationTypes";
+import {
+  createEnhancedValidationState,
+  convertErrorsToFieldStates,
+  createFieldConfig
+} from "../utils/validationUtils";
 import deepEqual, {
   cloneObject,
   set,
@@ -181,7 +190,11 @@ export const useForgeValues = <TFieldValues extends FieldValues = FieldValues>({
     return shouldUpdateField ? output : {};
   };
 
-  const _setValid = async (shouldUpdateValid?: boolean) => {
+  const _setValid = async (shouldUpdateValid?: boolean, enhancedOptions?: {
+    strategy?: ValidationStrategy;
+    fieldConfigs?: FieldConfig<TFieldValues>[];
+    useEnhancedValidation?: boolean;
+  }) => {
     if (
       !control._options.disabled &&
       (_proxyFormState.isValid ||
@@ -192,10 +205,43 @@ export const useForgeValues = <TFieldValues extends FieldValues = FieldValues>({
         ? isEmptyObject((await _runSchema()).errors)
         : await executeBuiltInValidation(control._fields, true);
 
-      if (isValid !== control._formState.isValid) {
-        control._subjects.state.next({
-          isValid,
-        });
+      // Enhanced validation logic
+      if (enhancedOptions?.useEnhancedValidation) {
+        const fieldConfigs = enhancedOptions.fieldConfigs || 
+          Object.keys(control._fields).map(fieldName => 
+            createFieldConfig(fieldName as Path<TFieldValues>)
+          );
+
+        const fieldStates = convertErrorsToFieldStates<TFieldValues>(
+          control._formState.errors,
+          fieldConfigs,
+          getValues(),
+          control._formState.touchedFields as Record<string, boolean>
+        );
+
+        const enhancedState = createEnhancedValidationState(fieldStates);
+        
+        // Store enhanced state on control for access by components
+        (control as any)._enhancedValidationState = enhancedState;
+
+        // Use progressive validation based on strategy
+        const strategy = enhancedOptions.strategy || 'progressive';
+        const finalIsValid = strategy === 'progressive' 
+          ? enhancedState.isPartiallyValid 
+          : (strategy === 'lenient' ? enhancedState.criticalFieldsValid : isValid);
+
+        if (finalIsValid !== control._formState.isValid) {
+          control._subjects.state.next({
+            isValid: finalIsValid,
+          });
+        }
+      } else {
+        // Original validation logic
+        if (isValid !== control._formState.isValid) {
+          control._subjects.state.next({
+            isValid,
+          });
+        }
       }
     }
   };
@@ -350,7 +396,11 @@ export const useForgeValues = <TFieldValues extends FieldValues = FieldValues>({
           })
         )
       ).every(Boolean);
-      !(!validationResult && !control._formState.isValid) && _setValid();
+      !(!validationResult && !control._formState.isValid) && _setValid(true, {
+        strategy: (control as any)._validationStrategy,
+        fieldConfigs: (control as any)._fieldConfigs,
+        useEnhancedValidation: (control as any)._useEnhancedValidation
+      });
     } else {
       validationResult = isValid = await executeBuiltInValidation(
         control._fields

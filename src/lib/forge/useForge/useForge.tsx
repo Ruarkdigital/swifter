@@ -16,6 +16,13 @@ export const useForge = <
   resolver,
   mode,
   fields,
+  validationStrategy,
+  fieldConfigs,
+  useEnhancedValidation,
+  smartEmptyHandling,
+  progressiveValidation,
+  debounceValidation,
+  contextAware,
   ...props
 }: UseForgeProps<TFieldProps, TFieldValues>): UseForgeResult<TFieldValues> => {
   // Create form control using createFormControl instead of useForm
@@ -32,5 +39,22 @@ export const useForge = <
   const hasFields =
     (typeof fields !== "undefined" && fields?.length !== 0) ?? false;
 
-  return { ...methods, control: { ...methods.control, hasFields, fields } };
+  // Initialize enhanced validation properties on the control
+  const enhancedControl = {
+    ...methods.control,
+    hasFields,
+    fields,
+    _validationStrategy: validationStrategy || 'progressive',
+    _fieldConfigs: fieldConfigs || [],
+    _useEnhancedValidation: useEnhancedValidation || false,
+    _smartEmptyHandling: smartEmptyHandling || false,
+    _progressiveValidation: progressiveValidation || false,
+    _debounceValidation: debounceValidation || false,
+    _contextAware: contextAware || false,
+  };
+
+  return { 
+    ...methods, 
+    control: enhancedControl
+  };
 };

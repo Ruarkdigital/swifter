@@ -92,16 +92,34 @@ export interface EvaluatorEvaluationActivity {
 export interface VendorMyActions {
   action: string;
   solicitationId: string;
-  solicitation: {
+  solicitation?: {
     _id: string;
     name: string;
     vendors: {
       status: string;
     }[];
   };
+  evaluation?: {
+    _id: string;
+    name: string;
+    solicitation?: {
+      _id: string;
+      name: string;
+    };
+  };
+  campaign?: {
+    subject: string;
+    subtitle?: string;
+    message: string;
+    recipientType: "all_users" | "selected_users" | "company_users" | "specific_users" | "vendors" | "evaluators" | "procurement_lead";
+    users?: string[];
+    bannerUrl?: string;
+    campaignType: string;
+    createdAt: string;
+  };
   _id: string;
   statusText: string;
-  createdAt: "2025-06-26T08:09:06.611Z";
+  createdAt: string;
 }
 
 export interface VendorGeneralUpdates {

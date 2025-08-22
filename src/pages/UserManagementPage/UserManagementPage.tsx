@@ -46,8 +46,8 @@ type User = {
 };
 
 // API response types
-type UsersListResponse = {
-  data:Omit <User, "name">& { firstName: string }[];
+export type UsersListResponse = {
+  data:Omit<User, "name"> & { firstName: string }[];
   total: number;
   page: number;
   limit: number;

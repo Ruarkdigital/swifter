@@ -27,7 +27,7 @@ import SubscriptionDetailPage from "@/pages/SubscriptionsPage/SubscriptionDetail
 import AdminManagementPage from "@/pages/AdminManagementPage";
 import SystemLogPage from "@/pages/SystemLogPage";
 import PortalSettingsPage from "@/pages/PortalSettingsPage";
-// import CommunicationManagementPage from "@/pages/CommunicationManagementPage";
+import CommunicationManagementPage from "@/pages/CommunicationManagementPage";
 import OnboardingPage from "@/pages/OnboardingPage";
 import VendorOnboardingPage from "@/pages/OnboardingPage/VendorOnboardingPage";
 import SubmitProposalPage from "@/pages/SolicitationManagementPage/components/SubmitProposalPage";
@@ -292,14 +292,14 @@ export const routes = [
           </ProtectedRoute>
         ),
       },
-      // {
-      //   path: "/dashboard/communication-management",
-      //   element: (
-      //     <ProtectedRoute>
-      //       <CommunicationManagementPage />
-      //     </ProtectedRoute>
-      //   ),
-      // },
+      {
+        path: "/dashboard/communication-management",
+        element: (
+          <ProtectedRoute>
+            <CommunicationManagementPage />
+          </ProtectedRoute>
+        ),
+      },
       {
         path: "/dashboard/profile",
         element: (

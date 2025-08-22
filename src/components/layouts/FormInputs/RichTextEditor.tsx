@@ -1,5 +1,7 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import { cn } from '@/lib/utils';
+import Quill from 'quill';
+import 'quill/dist/quill.snow.css';
 
 interface RichTextEditorProps {
   value: string;
@@ -16,154 +18,107 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   placeholder = 'Type your message...',
   className,
   disabled = false,
-  minHeight = '120px'
+  minHeight = '120px',
 }) => {
-  const editorRef = useRef<HTMLDivElement>(null);
-  const isUpdatingRef = useRef(false);
+  const editorRef = useRef<HTMLDivElement | null>(null);
+  const quillRef = useRef<Quill | null>(null);
+  const isSettingRef = useRef(false);
 
+  const toolbarOptions = useMemo(
+    () => [
+      [{ header: [1, 2, 3, false] }],
+      ['bold', 'italic', 'underline'],
+      [{ list: 'ordered' }, { list: 'bullet' }],
+      ['link'],
+      ['clean'],
+    ],
+    []
+  );
+
+  const formats = useMemo(
+    () => ['header', 'bold', 'italic', 'underline', 'list', 'bullet', 'link'],
+    []
+  );
+
+  // Initialize Quill
   useEffect(() => {
-    if (editorRef.current && !isUpdatingRef.current) {
-      const currentContent = editorRef.current.innerHTML;
-      if (currentContent !== value) {
-        editorRef.current.innerHTML = value;
-      }
+    if (!editorRef.current || quillRef.current) return;
+
+    const q = new Quill(editorRef.current, {
+      theme: 'snow',
+      readOnly: disabled,
+      placeholder,
+      modules: {
+        toolbar: disabled ? false : toolbarOptions,
+        clipboard: { matchVisual: false },
+      },
+      formats,
+    });
+
+    quillRef.current = q;
+
+    // Set initial value
+    if (value) {
+      isSettingRef.current = true;
+      q.clipboard.dangerouslyPasteHTML(value);
+      // next tick to avoid firing change
+      setTimeout(() => {
+        isSettingRef.current = false;
+      }, 0);
+    }
+
+    // Change handler -> emit HTML
+    const handleChange = () => {
+      if (isSettingRef.current) return;
+      const html = q.root.innerHTML;
+      onChange(html);
+    };
+
+    q.on('text-change', handleChange);
+
+    return () => {
+      q.off('text-change', handleChange);
+      quillRef.current = null;
+    };
+    // We want to run only once on mount, toolbarOptions/formats are stable via useMemo
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Sync external value -> editor
+  useEffect(() => {
+    const q = quillRef.current;
+    if (!q) return;
+
+    const current = q.root.innerHTML;
+    if (value !== current) {
+      isSettingRef.current = true;
+      q.clipboard.dangerouslyPasteHTML(value || '');
+      setTimeout(() => {
+        isSettingRef.current = false;
+      }, 0);
     }
   }, [value]);
 
-  const handleInput = () => {
-    if (editorRef.current && !disabled) {
-      isUpdatingRef.current = true;
-      const content = editorRef.current.innerHTML;
-      onChange(content);
-      setTimeout(() => {
-        isUpdatingRef.current = false;
-      }, 0);
-    }
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (disabled) {
-      e.preventDefault();
-      return;
-    }
-
-    // Handle common formatting shortcuts
-    if (e.ctrlKey || e.metaKey) {
-      switch (e.key) {
-        case 'b':
-          e.preventDefault();
-          document.execCommand('bold');
-          break;
-        case 'i':
-          e.preventDefault();
-          document.execCommand('italic');
-          break;
-        case 'u':
-          e.preventDefault();
-          document.execCommand('underline');
-          break;
-      }
-    }
-  };
-
-  const formatText = (command: string, value?: string) => {
-    if (disabled) return;
-    document.execCommand(command, false, value);
-    editorRef.current?.focus();
-    handleInput();
-  };
+  // Sync disabled (readOnly) state
+  useEffect(() => {
+    const q = quillRef.current;
+    if (!q) return;
+    q.enable(!disabled);
+  }, [disabled]);
 
   return (
-    <div className={cn('border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-gray-900', className)}>
-      {/* Toolbar */}
-      <div className="flex items-center gap-1 p-2 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
-        <button
-          type="button"
-          onClick={() => formatText('bold')}
-          disabled={disabled}
-          className="p-1.5 rounded text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
-          title="Bold (Ctrl+B)"
-        >
-          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-            <path d="M5 3a1 1 0 000 2h1v10H5a1 1 0 100 2h6a4 4 0 001.866-7.539A3.5 3.5 0 0011 3H5zm6 6a1.5 1.5 0 100-3H8v3h3zm0 2H8v3h3a1.5 1.5 0 000-3z" />
-          </svg>
-        </button>
-        <button
-          type="button"
-          onClick={() => formatText('italic')}
-          disabled={disabled}
-          className="p-1.5 rounded text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
-          title="Italic (Ctrl+I)"
-        >
-          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-            <path d="M8 3a1 1 0 000 2h1.5l-2 10H6a1 1 0 100 2h6a1 1 0 100-2h-1.5l2-10H14a1 1 0 100-2H8z" />
-          </svg>
-        </button>
-        <button
-          type="button"
-          onClick={() => formatText('underline')}
-          disabled={disabled}
-          className="p-1.5 rounded text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
-          title="Underline (Ctrl+U)"
-        >
-          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-            <path d="M4 18h12a1 1 0 100-2H4a1 1 0 100 2zM6 4a1 1 0 011-1h6a1 1 0 110 2v4a3 3 0 11-6 0V5a1 1 0 01-1-1z" />
-          </svg>
-        </button>
-        <div className="w-px h-6 bg-gray-300 dark:bg-gray-600 mx-1" />
-        <button
-          type="button"
-          onClick={() => formatText('insertUnorderedList')}
-          disabled={disabled}
-          className="p-1.5 rounded text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
-          title="Bullet List"
-        >
-          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-            <path d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 16a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" />
-          </svg>
-        </button>
-        <button
-          type="button"
-          onClick={() => formatText('insertOrderedList')}
-          disabled={disabled}
-          className="p-1.5 rounded text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
-          title="Numbered List"
-        >
-          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-            <path d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 16a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" />
-          </svg>
-        </button>
-      </div>
-
-      {/* Editor */}
-      <div
-        ref={editorRef}
-        contentEditable={!disabled}
-        onInput={handleInput}
-        onKeyDown={handleKeyDown}
-        className={cn(
-          'p-3 outline-none focus:ring-0 overflow-auto bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100',
-          'prose prose-sm max-w-none dark:prose-invert',
-          disabled && 'opacity-50 cursor-not-allowed',
-          !value && 'text-gray-500 dark:text-gray-400'
-        )}
-        style={{ minHeight }}
-        data-placeholder={placeholder}
-        suppressContentEditableWarning
-      />
+    <div
+      className={cn(
+        'border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-gray-900',
+        disabled && 'rt-disabled',
+        className
+      )}
+    >
+      {/* Quill mounts toolbar + editor inside this container */}
+      <div ref={editorRef} className={cn('text-gray-900 dark:text-gray-100')} />
 
       <style>{`
-        [contenteditable]:empty:before {
-          content: attr(data-placeholder);
-          color: #9ca3af;
-          pointer-events: none;
-        }
-        .dark [contenteditable]:empty:before {
-          color: #6b7280;
-        }
-        [contenteditable]:focus:before {
-          content: none;
-        }
+        /* Quill styling overrides for light/dark themes and layout cohesion */
         .ql-toolbar {
           border: 1px solid #e2e8f0;
           border-bottom: none;
@@ -178,15 +133,17 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
           border: 1px solid #e2e8f0;
           border-radius: 0 0 0.5rem 0.5rem;
           font-family: inherit;
+          background: #ffffff;
         }
         .dark .ql-container {
           border-color: #374151;
           background: #111827;
         }
         .ql-editor {
-          min-height: 120px;
+          min-height: ${minHeight};
           font-size: 14px;
           line-height: 1.5;
+          color: inherit;
         }
         .ql-editor.ql-blank::before {
           color: #9ca3af;
@@ -195,9 +152,10 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
         .dark .ql-editor.ql-blank::before {
           color: #6b7280;
         }
-        .ql-snow .ql-tooltip {
-          z-index: 1000;
-        }
+        .ql-snow .ql-tooltip { z-index: 1000; }
+        /* Hide toolbar visually when disabled to mirror previous behavior */
+        .rt-disabled .ql-toolbar { display: none; }
+        .rt-disabled .ql-container { border-radius: 0.5rem; }
       `}</style>
     </div>
   );

@@ -217,20 +217,15 @@ const EditEvaluationDialog = ({
   // Update form values when evaluation data is loaded
   useEffect(() => {
     if (evaluationData && open) {
+      let payload: EditEvaluationFormData = {
+        solicitation: evaluationData?.data?.data?.solicitation?._id || "",
+        timezone: evaluationData?.data?.data?.timezone || "",
+        start_date: evaluationData?.data?.data?.startDate || "",
+        end_date:  evaluationData?.data?.data?.endDate || "",
+        group: [],
+        documents: []
+      }
       // Set basic evaluation info
-      forge.setValue(
-        "solicitation",
-        evaluationData?.data?.data?.solicitation?._id || ""
-      );
-      forge.setValue("timezone", evaluationData?.data?.data?.timezone || "Africa/Lagos");
-      forge.setValue(
-        "start_date",
-        evaluationData?.data?.data?.startDate || ""
-      );
-      forge.setValue(
-        "end_date",
-        evaluationData?.data?.data?.endDate || ""
-      );
 
       // Set groups data
       if (evaluationData?.data?.data?.evaluators?.length > 0) {
@@ -245,7 +240,9 @@ const EditEvaluationDialog = ({
                 })) || [],
             })
           );
-        forge.setValue("group", groups);
+
+        console.log("hi", groups);
+        payload.group = groups;
       }
 
       // Set documents data
@@ -259,7 +256,9 @@ const EditEvaluationDialog = ({
             multiple: false, // default value
           })
         );
-        forge.setValue("documents", documents);
+
+        
+        payload.documents = documents;
       }
 
       // Set criteria data
@@ -274,13 +273,19 @@ const EditEvaluationDialog = ({
             group: criterion.evaluationGroup || "",
           })
         );
-        forge.setValue("criteria", criteria.map(criterion => ({
+
+        payload.criteria = criteria.map(criterion => ({
           ...criterion,
           type: criterion.type as 'pass_fail' | 'weight'
-        })));
+        }));
       }
+
+      
+
+      forge.reset(payload);
+
     }
-  }, [evaluationData, open, forge]);
+  }, [evaluationData, open]);
 
   const onSubmit = async (data: EditEvaluationFormData) => {
     try {

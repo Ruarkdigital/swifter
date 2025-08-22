@@ -6,6 +6,7 @@ import { Solicitation } from "@/pages/SolicitationManagementPage/SolicitationDet
 
 // API Types
 type EvaluationDetail = {
+  evalId: string;
   _id: string;
   solicitation: {
     _id: string;
