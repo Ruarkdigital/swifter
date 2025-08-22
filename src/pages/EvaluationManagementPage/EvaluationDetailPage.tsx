@@ -21,7 +21,7 @@ import {
   FileText,
   Edit,
   ChevronDown,
-  ChevronDownIcon,
+  ArrowRightIcon,
 } from "lucide-react";
 import { useParams } from "react-router-dom";
 import { DataTable } from "@/components/layouts/DataTable";
@@ -53,8 +53,6 @@ import {
 } from "@/lib/evaluationStatusUtils";
 import {
   DropdownMenuGroup,
-  DropdownMenuPortal,
-  DropdownMenuShortcut,
 } from "@/components/ui/dropdown-menu";
 
 // Component Types
@@ -273,6 +271,63 @@ const EvaluationDetailPage: React.FC = () => {
   const handleExportBidComparison = (type: "pdf" | "docx") => {
     exportBidComparisonMutation.mutate({ type });
   };
+
+  // Download submission instruction (requirement) PDF
+  const downloadRequirementMutation = useMutation<Blob, Error, void>({
+    mutationFn: async () => {
+      const response = await getRequest({
+        url: `/procurement/evaluations/${id}/download-requirement`,
+        config: { responseType: "blob" },
+      });
+      return response.data;
+    },
+    onSuccess: (data) => {
+      const blob = new Blob([data], { type: "application/pdf" });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `submission-instruction-${id}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      toastHandlers.success(
+        "Download Ready",
+        "Submission instruction downloaded successfully"
+      );
+    },
+    onError: (error) => {
+      toastHandlers.error(
+        "Download Failed",
+        error.message || "An error occurred while downloading"
+      );
+    },
+  });
+
+  // Preview submission instruction (open in new tab)
+  const previewRequirementMutation = useMutation<Blob, Error, void>({
+    mutationFn: async () => {
+      const response = await getRequest({
+        url: `/procurement/evaluations/${id}/download-requirement`,
+        config: { responseType: "blob" },
+      });
+      return response.data;
+    },
+    onSuccess: (data) => {
+      const blob = new Blob([data], { type: "application/pdf" });
+      const url = window.URL.createObjectURL(blob);
+      window.open(url, "_blank", "noopener,noreferrer");
+      // It's generally safe to revoke after a short delay to let the new tab load
+      setTimeout(() => URL.revokeObjectURL(url), 10000);
+      toastHandlers.success("Preview Ready", "Opening submission instruction preview");
+    },
+    onError: (error) => {
+      toastHandlers.error(
+        "Preview Failed",
+        error.message || "An error occurred while opening the preview"
+      );
+    },
+  });
 
   // Handle release group
   const handleReleaseGroup = async () => {
@@ -605,55 +660,35 @@ const EvaluationDetailPage: React.FC = () => {
           <span className="font-medium">{evaluation?.evalId}</span> •{" "}
           {evaluation?.solicitation?.type}
         </div>
-        <Button
-          variant="link"
-          className="p-0 h-auto text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300"
-        >
-          Download Submission Instruction
-        </Button>
       </div>
 
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline" className="mb-7">
+          <Button variant="link" className="mb-7 space-x-2">
             Action
-            <ChevronDownIcon
-              className="-me-1 opacity-60"
+            <ArrowRightIcon
+              className="dark:text-gray-200"
+
               size={16}
               aria-hidden="true"
             />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent>
+        <DropdownMenuContent align="start">
           <DropdownMenuGroup>
-            <DropdownMenuItem>
-              <span>Edit</span>
-              <DropdownMenuShortcut>⌘E</DropdownMenuShortcut>
+            <DropdownMenuItem
+              onClick={() => downloadRequirementMutation.mutate()}
+              disabled={downloadRequirementMutation.isPending}
+            >
+              <span> Download Submission Instruction</span>
             </DropdownMenuItem>
-            <DropdownMenuItem>
-              <span>Duplicate</span>
-              <DropdownMenuShortcut>⌘D</DropdownMenuShortcut>
+            <DropdownMenuItem
+              onClick={() => previewRequirementMutation.mutate()}
+              disabled={previewRequirementMutation.isPending}
+            >
+              <span>Preview</span>
             </DropdownMenuItem>
           </DropdownMenuGroup>
-          <DropdownMenuSeparator />
-          <DropdownMenuGroup>
-            <DropdownMenuItem>
-              <span>Archive</span>
-              <DropdownMenuShortcut>⌘A</DropdownMenuShortcut>
-            </DropdownMenuItem>
-            <DropdownMenuSub>
-              <DropdownMenuSubTrigger>More</DropdownMenuSubTrigger>
-              <DropdownMenuPortal>
-                <DropdownMenuSubContent>
-                  <DropdownMenuItem>Move to project</DropdownMenuItem>
-                  <DropdownMenuItem>Move to folder</DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem>Advanced options</DropdownMenuItem>
-                </DropdownMenuSubContent>
-              </DropdownMenuPortal>
-            </DropdownMenuSub>
-          </DropdownMenuGroup>
-          <DropdownMenuSeparator />
         </DropdownMenuContent>
       </DropdownMenu>
 
