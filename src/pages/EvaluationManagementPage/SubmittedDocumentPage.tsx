@@ -108,16 +108,20 @@ const criteriaScoreSchema = yup.object({
 });
 
 // API Hooks
-const useSubmittedDocuments = (evaluationId: string, vendorId: string) => {
+const useSubmittedDocuments = (
+  evaluationId: string,
+  evaluationGroupId: string,
+  vendorId: string
+) => {
   return useQuery<ApiResponse<SubmittedDocumentResponse>, ApiResponseError>({
-    queryKey: ["submitted-documents", evaluationId, vendorId],
+    queryKey: ["submitted-documents", evaluationId, evaluationGroupId, vendorId],
     queryFn: async () => {
       const response = await getRequest({
-        url: `/evaluator/${evaluationId}/submitted-document/${vendorId}`,
+        url: `/evaluator/${evaluationId}/evaluation-group/${evaluationGroupId}/submitted-document/${vendorId}`,
       });
       return response;
     },
-    enabled: !!evaluationId && !!vendorId,
+    enabled: !!evaluationId && !!evaluationGroupId && !!vendorId,
   });
 };
 
@@ -194,7 +198,7 @@ const SubmittedDocumentPage: React.FC = () => {
     data: documentsData,
     isLoading: documentsLoading,
     error: documentsError,
-  } = useSubmittedDocuments(id || "", vendorId || "");
+  } = useSubmittedDocuments(id || "", groupId || "", vendorId || "");
 
   const {
     data: criteriaData,

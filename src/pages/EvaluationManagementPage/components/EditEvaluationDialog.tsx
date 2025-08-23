@@ -35,6 +35,7 @@ const step2Schema = yup.object({
     .array()
     .of(
       yup.object({
+        id: yup.string().optional(),
         name: yup.string().required("Group name is required"),
         evaluators: yup
           .array()
@@ -55,6 +56,7 @@ const step3Schema = yup.object({
     .array()
     .of(
       yup.object({
+        id: yup.string().optional(),
         title: yup.string().required("Document title is required"),
         type: yup.string().required("Document type is required"),
         group: yup.string().required("Evaluation group is required"),
@@ -70,6 +72,7 @@ const step4Schema = yup.object({
     .array()
     .of(
       yup.object({
+        id: yup.string().optional(),
         title: yup.string().required("Criteria title is required"),
         description: yup.string().required("Description is required"),
         type: yup
@@ -153,7 +156,7 @@ const EditEvaluationDialog = ({
   });
 
   // Fetch current evaluation data
-  const { data: evaluationData, isLoading: isLoadingEvaluation } =
+  const { data: evaluationData, isLoading: isLoadingEvaluation, isSuccess,  } =
     useEvaluationDetail(evaluationId);
 
   // Fetch available solicitations
@@ -216,7 +219,7 @@ const EditEvaluationDialog = ({
 
   // Update form values when evaluation data is loaded
   useEffect(() => {
-    if (evaluationData && open) {
+    if (isSuccess) {
       let payload: EditEvaluationFormData = {
         solicitation: evaluationData?.data?.data?.solicitation?._id || "",
         timezone: evaluationData?.data?.data?.timezone || "",
@@ -232,6 +235,7 @@ const EditEvaluationDialog = ({
         const groups =
           evaluationData?.data?.data?.evaluators.map(
             (group: any) => ({
+              id: group._id,
               name: group.groupName,
               evaluators:
                 group.evaluators?.map((evaluator: any) => ({
@@ -241,7 +245,6 @@ const EditEvaluationDialog = ({
             })
           );
 
-        console.log("hi", groups);
         payload.group = groups;
       }
 
@@ -249,8 +252,9 @@ const EditEvaluationDialog = ({
       if (evaluationData?.data?.data?.requiredDocuments?.length > 0) {
         const documents = evaluationData.data.data.requiredDocuments.map(
           (doc: any) => ({
+            id: doc._id,
             title: doc.title || "",
-            type: "DOC", // default type
+            type: doc?.type || "DOC", // default type
             group: doc.groupName || "",
             required: true, // required documents are always required
             multiple: false, // default value
@@ -265,6 +269,7 @@ const EditEvaluationDialog = ({
       if (evaluationData?.data?.data?.criterias?.length > 0) {
         const criteria = evaluationData.data.data.criterias.map(
           (criterion: any) => ({
+            id: criterion._id,
             title: criterion.title || "",
             description: criterion.description || "",
             type: criterion.criteria?.pass_fail ? "pass_fail" : "weight",
@@ -280,12 +285,9 @@ const EditEvaluationDialog = ({
         }));
       }
 
-      
-
       forge.reset(payload);
-
     }
-  }, [evaluationData, open]);
+  }, [evaluationData, isSuccess]);
 
   const onSubmit = async (data: EditEvaluationFormData) => {
     try {
@@ -295,7 +297,14 @@ const EditEvaluationDialog = ({
         start_date: data.start_date ? new Date(data.start_date as any).toISOString() : undefined,
         end_date: data.end_date ? new Date(data.end_date as any).toISOString() : undefined,
         group:
-          data.group?.map((item) => ({
+          data.group?.map((item) => item?.id ? ({
+            id: item.id,
+            name: item.name,
+            evaluators:
+              item.evaluators
+                ?.filter((evaluator) => evaluator !== undefined)
+                .map((it) => it.value) ?? [],
+          }) : ({
             name: item.name,
             evaluators:
               item.evaluators
@@ -303,7 +312,13 @@ const EditEvaluationDialog = ({
                 .map((it) => it.value) ?? [],
           })) ?? undefined,
         documents:
-          data.documents?.map((doc) => ({
+          data.documents?.map((doc) => doc.id ? ({
+            id: doc.id,
+            title: doc.title,
+            type: doc.type,
+            group: doc.group,
+            required: !!doc.required,
+          }) : ({
             title: doc.title,
             type: doc.type,
             group: doc.group,
@@ -312,6 +327,7 @@ const EditEvaluationDialog = ({
         criteria:
           data.criteria?.map((c) => {
             const base = {
+              id: c.id,
               title: c.title,
               description: c.description,
               type: c.type as "pass_fail" | "weight",
@@ -420,9 +436,9 @@ const EditEvaluationDialog = ({
               />
             )}
 
-            {currentStep === 2 && <Step2Form control={forge.control} />}
+            {currentStep === 2 && <Step2Form control={forge.control} isEdit />}
 
-            {currentStep === 3 && <Step3Form control={forge.control} />}
+            {currentStep === 3 && <Step3Form control={forge.control} isEdit />}
 
             {currentStep === 4 && <Step4Form control={forge.control} />}
 

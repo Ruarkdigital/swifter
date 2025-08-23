@@ -17,9 +17,10 @@ type Evaluator = {
 
 interface Step2FormProps {
   control: Control<any>;
+  isEdit?: boolean;
 }
 
-const Step2Form = ({ control }: Step2FormProps) => {
+const Step2Form = ({ control, isEdit = false }: Step2FormProps) => {
   const { fields, append, remove } = useFieldArray({
     control,
     name: "group",
@@ -96,7 +97,7 @@ const Step2Form = ({ control }: Step2FormProps) => {
             </div>
 
             <div className="min-w-10">
-              {index !== 0 && (
+              {index !== 0 && !isEdit && (
                 <Button
                   type="button"
                   variant="ghost"

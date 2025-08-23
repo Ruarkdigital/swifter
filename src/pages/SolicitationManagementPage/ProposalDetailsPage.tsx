@@ -143,7 +143,7 @@ const ProposalDetailsPage: React.FC = () => {
     queryKey: ["evaluator-scores", id],
     queryFn: () =>
       getRequest({
-        url: `/procurement/solicitations/${id}/evaluator-score`,
+        url: `/procurement/solicitations/${id}/vendor/${vendorId}/evaluator-score`,
       }),
     enabled: !!id,
   });

@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { getRequest, putRequest } from "@/lib/axiosInstance";
+import { getRequest, putRequest, deleteRequest } from "@/lib/axiosInstance";
 import { ApiResponse, ApiResponseError } from "@/types";
 import { useMutation } from "@tanstack/react-query";
 import { Solicitation } from "@/pages/SolicitationManagementPage/SolicitationDetailPage";
@@ -13,7 +13,7 @@ type EvaluationDetail = {
     name: string;
     type: string;
   };
-  solicitationDetails: Solicitation
+  solicitationDetails: Solicitation;
   startDate: string;
   endDate: string;
   timezone: string;
@@ -58,7 +58,7 @@ type EvaluationDetail = {
   evaluationGroups: {
     groupId: string;
     groupName: string;
-    status: "Release" | "Withhold"
+    status: "Release" | "Withhold";
     evaluators: {
       _id: string;
       name: string;
@@ -199,16 +199,20 @@ export const useEvaluationBidComparison = (evaluationId: string) => {
 // Release and Withhold API hooks
 export const useReleaseEvaluationGroup = () => {
   const queryClient = useQueryClient();
-  
-  return useMutation<ApiResponse<any>, ApiResponseError, {evaluationGroupId: string, evaluationId: string}>({
-    mutationFn: async ({evaluationGroupId, evaluationId}) => {
+
+  return useMutation<
+    ApiResponse<any>,
+    ApiResponseError,
+    { evaluationGroupId: string; evaluationId: string }
+  >({
+    mutationFn: async ({ evaluationGroupId, evaluationId }) => {
       const response = await putRequest({
         url: `/procurement/evaluations/${evaluationId}/evaluation-group/${evaluationGroupId}/status/release`,
         payload: {},
       });
       return response;
     },
-    onSuccess: (_, {evaluationId}) => {
+    onSuccess: (_, { evaluationId }) => {
       // Refetch evaluation details to get updated status
       queryClient.invalidateQueries({
         queryKey: ["evaluation-detail", evaluationId],
@@ -219,20 +223,70 @@ export const useReleaseEvaluationGroup = () => {
 
 export const useWithholdEvaluationGroup = () => {
   const queryClient = useQueryClient();
-  
-  return useMutation<ApiResponse<any>, ApiResponseError, {evaluationGroupId: string, evaluationId: string}>({
-    mutationFn: async ({evaluationGroupId, evaluationId}) => {
+
+  return useMutation<
+    ApiResponse<any>,
+    ApiResponseError,
+    { evaluationGroupId: string; evaluationId: string }
+  >({
+    mutationFn: async ({ evaluationGroupId, evaluationId }) => {
       const response = await putRequest({
         url: `/procurement/evaluations/${evaluationId}/evaluation-group/${evaluationGroupId}/status/withhold`,
         payload: {},
       });
       return response;
     },
-    onSuccess: (_, {evaluationId}) => {
+    onSuccess: (_, { evaluationId }) => {
       // Refetch evaluation details to get updated status
       queryClient.invalidateQueries({
         queryKey: ["evaluation-detail", evaluationId],
       });
+    },
+  });
+};
+
+// Delete Evaluation Group hook
+export const useDeleteEvaluationGroup = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation<
+    ApiResponse<any>,
+    ApiResponseError,
+    { evaluationId: string; groupId: string }
+  >({
+    mutationFn: async ({ evaluationId, groupId }) => {
+      const response = await deleteRequest({
+        url: `/procurement/evaluations/${evaluationId}/groups/${groupId}`,
+      });
+      return response;
+    },
+    onSuccess: (_, { evaluationId }) => {
+      // Refetch evaluation details to reflect deletion
+      queryClient.invalidateQueries({
+        queryKey: ["evaluation-detail", evaluationId],
+      });
+    },
+  });
+};
+
+export const useDeleteEvaluationCriteria = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation<
+    ApiResponse<any>,
+    ApiResponseError,
+    { evaluationId: string; criteriaId: string }
+  >({
+    mutationFn: async ({ evaluationId, criteriaId }) => {
+      const response = await deleteRequest({
+        url: `/procurement/evaluations/${evaluationId}/criteria/${criteriaId}`,
+      });
+      return response;
+    },
+    onSuccess: (_, { evaluationId }) => {
+      // Refetch evaluation details and criteria lists to reflect deletion
+      queryClient.invalidateQueries({ queryKey: ["evaluation-detail", evaluationId] });
+      queryClient.invalidateQueries({ queryKey: ["evaluation-criteria", evaluationId] });
     },
   });
 };

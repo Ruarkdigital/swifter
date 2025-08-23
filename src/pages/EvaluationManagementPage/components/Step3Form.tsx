@@ -13,9 +13,10 @@ import { useEffect } from "react";
 
 interface Step3FormProps {
   control: Control<CreateEvaluationFormData>;
+  isEdit?: boolean;
 }
 
-const Step3Form = ({ control }: Step3FormProps) => {
+const Step3Form = ({ control, isEdit = false }: Step3FormProps) => {
   const { fields, append, remove, update } = useFieldArray({
     control,
     name: "documents"
@@ -147,7 +148,7 @@ const Step3Form = ({ control }: Step3FormProps) => {
             </div>
             
             <div className="flex justify-center">
-             {index !== 0 && <Button
+             {index !== 0 && !isEdit && <Button
                 type="button"
                 variant="ghost"
                 size="sm"
