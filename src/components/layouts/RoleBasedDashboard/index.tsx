@@ -162,7 +162,7 @@ export const RoleBasedDashboard: React.FC = () => {
                     data: transformedVendorsDistribution,
                   };
                 }
-                if (property.title === "Recent Activity") {
+                if (property.title === "General Updates") {
                   return {
                     ...property,
                     items: transformedCompanyAdminGeneralUpdates,

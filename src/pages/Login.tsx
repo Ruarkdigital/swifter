@@ -10,7 +10,7 @@ import { ApiResponse, ApiResponseError, User } from "@/types";
 import { useMutation } from "@tanstack/react-query";
 import { postRequest } from "@/lib/axiosInstance";
 import { TextInput } from "@/components/layouts/FormInputs/TextInput";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useSetToken, useSetUser } from "@/store/authSlice";
 import { SEOWrapper } from "@/components/SEO";
 import { useRef } from "react";
@@ -29,6 +29,7 @@ const schema = yup.object().shape({
 const Login = () => {
   const toast = useToastHandler();
   const formRef = useRef<FormPropsRef>(null)
+  const navigate = useNavigate();
 
   const setToken = useSetToken();
   const setUser = useSetUser();
@@ -114,6 +115,7 @@ const Login = () => {
               placeholder="Enter Email Address"
               type="email"
               component={TextInput}
+              data-testid="email-input"
             />
             <Forger
               name="password"
@@ -121,6 +123,7 @@ const Login = () => {
               placeholder="Enter Password"
               type="password"
               component={TextInput}
+              data-testid="password-input"
             />
 
             <div className="flex items-center justify-between">
@@ -135,7 +138,7 @@ const Login = () => {
                 Forgot Password?
               </Link>
             </div>
-            <Button type="submit" isLoading={isPending} className="w-full">
+            <Button type="submit" isLoading={isPending} className="w-full" data-testid="login-button">
               Log In
             </Button>
           </Forge>

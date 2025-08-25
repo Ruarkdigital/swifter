@@ -3,3 +3,7 @@ api_documentation
 
 .env*
 /dist
+
+# Playwright artifacts
+playwright-report
+/test-results

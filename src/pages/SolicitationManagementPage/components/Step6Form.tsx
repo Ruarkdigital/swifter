@@ -70,6 +70,12 @@ const Step6Form = ({ formData, setStep, solicitationTypes, categoryOptions }: St
                   </p>
                 </div>
                 <div>
+                  <p className="text-sm text-gray-500">Solicitation ID</p>
+                  <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                    {formData?.solId || "Not specified"}
+                  </p>
+                </div>
+                <div>
                   <p className="text-sm text-gray-500">Type</p>
                   <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
                     {getNameFromId(formData?.solicitationType || "", solicitationTypes)}

@@ -25,6 +25,7 @@ import { cn } from "@/lib/utils";
 // Form validation schemas for each step
 const step1Schema = yup.object({
   solicitationName: yup.string().required("Solicitation name is required"),
+  solId: yup.string().optional(),
   solicitationType: yup.string().required("Solicitation type is required"),
   estimatedCost: yup.string().optional(),
   category: yup.string().required("Category is required"),
@@ -593,7 +594,8 @@ const CreateSolicitationDialog = () => {
           {currentStep === 1 && (
             <Step1Form
               solicitationTypes={solicitationTypes}
-              categoryOptions={[...categoryOptions]}
+              categoryOptions={categoryOptions}
+              showSolId
             />
           )}
 

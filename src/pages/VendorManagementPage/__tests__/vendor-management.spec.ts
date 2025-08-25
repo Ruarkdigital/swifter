@@ -25,7 +25,7 @@ async function login(page: Page) {
 
 // Helper function to navigate to vendor management page
 async function navigateToVendorManagement(page: Page) {
-  await page.goto('/dashboard/vendor-management');
+  await page.goto('/dashboard/vendor');
   await page.waitForLoadState('networkidle');
 }
 
@@ -156,7 +156,7 @@ test.describe('Vendor Management Page Tests', () => {
     await page.click('[data-testid="vendor-name-link"]:first-of-type');
     
     // Check if navigated to detail page
-    await expect(page).toHaveURL(/\/dashboard\/vendor-management\/\d+/);
+    await expect(page).toHaveURL(/\/dashboard\/vendor\/.+/);
   });
 
   test('should open edit vendor dialog', async ({ page }) => {
@@ -280,5 +280,57 @@ test.describe('Vendor Management Page Tests', () => {
     
     // Check if components are visible in dark mode
     await expect(page.locator('[data-testid="vendors-table"]')).toBeVisible();
+  });
+
+  test('should map "submit" status to "submitted" and apply capitalize class in submissions tab', async ({ page }) => {
+    // Mock vendor detail API with a submission having status 'submit'
+    await page.route('**/procurement/vendors/*', route => {
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          status: true,
+          message: 'ok',
+          data: {
+            vendor: {
+              vendorId: 'V-001',
+              name: 'Test Vendor Inc',
+              status: 'Active',
+              isSuspended: false,
+              submissions: [],
+              user: { name: 'John Doe', email: 'john@example.com', phone: '+1234567890', _id: 'u1' }
+            },
+            submissions: [
+              {
+                _id: 'sub1',
+                status: 'submit',
+                createdAt: '', // leave empty to avoid date formatting
+                solicitation: {
+                  _id: 'sol1',
+                  name: 'Annual IT Support',
+                  solId: 'SOL-2025-001'
+                }
+              }
+            ]
+          }
+        })
+      });
+    });
+
+    // Go directly to a vendor detail page (route param can be any id since we mock the API)
+    await page.goto('/dashboard/vendor/abc123');
+
+    // Open the Submissions tab
+    await page.getByRole('tab', { name: /Submissions/i }).click();
+
+    // Wait for the first row to appear
+    await expect(page.locator('table tbody tr').first()).toBeVisible();
+
+    // Locate the status badge in the first row
+    const statusBadge = page.locator('table tbody tr').first().locator('.capitalize').first();
+
+    // Assert the text is rendered as "submitted" (case-insensitive) and class includes 'capitalize'
+    await expect(statusBadge).toHaveText(/submitted/i);
+    await expect(statusBadge).toHaveClass(/capitalize/);
   });
 });

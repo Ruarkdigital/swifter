@@ -113,9 +113,21 @@ const AddendumStatusBadge = ({ status }: { status: Addendum["status"] }) => {
     }
   };
 
+  // Map API status to human-friendly label
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case "publish":
+        return "Published";
+      case "draft":
+        return "Draft";
+      default:
+        return status;
+    }
+  };
+
   return (
     <Badge className={`${getStatusColor(status)} border-0 capitalize`}>
-      {status}
+      {getStatusLabel(status)}
     </Badge>
   );
 };
@@ -692,8 +704,7 @@ const EditAddendumDialog: React.FC<EditAddendumDialogProps> = ({
           or drag and drop files here
         </p>
         <p className="text-xs text-gray-500">
--          Supported: PDF, DOC, DOCX, XLS, XLSX, ZIP, PNG, JPEG (Max 10MB each)
-+          Supported: PDF, DOC, DOCX, XLS, XLSX, ZIP, PNG, JPEG
+         Supported: PDF, DOC, DOCX, XLS, XLSX, ZIP, PNG, JPEG (Max 10MB each)
          </p>
       </div>
     </div>

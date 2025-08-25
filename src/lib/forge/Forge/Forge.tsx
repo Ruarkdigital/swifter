@@ -49,7 +49,6 @@ export const Forge = <TFieldValues extends FieldValues = FieldValues>({
   contextAware = true,
   ...rest
 }: ForgeProps<TFieldValues>) => {
-  console.log({ control })
   // Determine the actual platform to use
   const actualPlatform = platform === 'auto' 
     ? (isReactNative ? 'react-native' : 'web')

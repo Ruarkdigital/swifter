@@ -113,6 +113,10 @@ const SolicitationDetailsSheet: React.FC<SolicitationDetailsSheetProps> = ({
   const toastHandlers = useToastHandler();
   // const user = useUser();
 
+  // Manage open state for confirm/decline dialogs so we can control closing programmatically
+  const [confirmDialogOpen, setConfirmDialogOpen] = React.useState(false);
+  const [declineDialogOpen, setDeclineDialogOpen] = React.useState(false);
+
   // Fetch solicitation details from API
   const {
     data: solicitationData,
@@ -152,7 +156,8 @@ const SolicitationDetailsSheet: React.FC<SolicitationDetailsSheetProps> = ({
       queryClient.invalidateQueries({ queryKey: ["vendor-invitations"] });
       queryClient.invalidateQueries({ queryKey: ["vendor-invitation-dashboard"] });
       // queryClient.invalidateQueries({ queryKey: ["vendor-solicitations"] });
-      // Close the sheet
+      // Close the dialog and the sheet
+      setConfirmDialogOpen(false);
       onOpenChange?.(false);
     },
     onError: (error) => {
@@ -183,7 +188,8 @@ const SolicitationDetailsSheet: React.FC<SolicitationDetailsSheetProps> = ({
       queryClient.invalidateQueries({ queryKey: ["vendor-invitations"] });
       queryClient.invalidateQueries({ queryKey: ["vendor-invitation-dashboard"] });
       queryClient.invalidateQueries({ queryKey: ["vendor-solicitations"] });
-      // Close the sheet
+      // Close the dialog and the sheet
+      setDeclineDialogOpen(false);
       onOpenChange?.(false);
     },
     onError: (error) => {
@@ -607,6 +613,9 @@ const SolicitationDetailsSheet: React.FC<SolicitationDetailsSheetProps> = ({
                       primaryButtonText="Yes, Decline"
                       secondaryButtonText="Cancel"
                       onPrimaryAction={handleDecline}
+                      open={declineDialogOpen}
+                      onClose={setDeclineDialogOpen}
+                      primaryButtonLoading={declineMutation.isPending}
                       trigger={
                         <Button
                           variant="outline"
@@ -634,6 +643,9 @@ const SolicitationDetailsSheet: React.FC<SolicitationDetailsSheetProps> = ({
                       primaryButtonText="Yes, Confirm"
                       secondaryButtonText="Cancel"
                       onPrimaryAction={handleConfirm}
+                      open={confirmDialogOpen}
+                      onClose={setConfirmDialogOpen}
+                      primaryButtonLoading={confirmMutation.isPending}
                       trigger={
                         <Button
                           className="px-6 w-full"

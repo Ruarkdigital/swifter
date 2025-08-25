@@ -271,7 +271,7 @@ const companyAdminConfig: DashboardConfig = {
           visible: true,
         },
           {
-            title: "Recent Activity",
+            title: "General Updates",
             items: [],
           },
       ],

@@ -9,11 +9,13 @@ import CreateCategoryDialog from "./CreateCategoryDialog";
 interface Step1FormProps {
   solicitationTypes: Array<{ label: string; value: string }>;
   categoryOptions: Array<{ label: string; value: string }>;
+  showSolId?: boolean;
 }
 
 const Step1Form: React.FC<Step1FormProps> = ({
   solicitationTypes,
   categoryOptions,
+  showSolId = false,
 }) => {
   const [createCategoryOpen, setCreateCategoryOpen] = useState(false);
 
@@ -31,6 +33,17 @@ const Step1Form: React.FC<Step1FormProps> = ({
         placeholder="Enter Title"
         containerClass="space-y-2"
       />
+
+      {/* Solicitation ID (Optional) */}
+      {showSolId && (
+        <Forger
+          component={TextInput}
+          name="solId"
+          label="Solicitation ID (optional)"
+          placeholder="Enter Solicitation ID"
+          containerClass="space-y-2"
+        />
+      )}
 
       {/* Solicitation Type */}
       <Forger

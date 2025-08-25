@@ -304,9 +304,15 @@ const SubmissionStatusBadge = ({
     }
   };
 
+  // Map only 'submit' status to 'submitted' for display
+  const displayStatus =
+    typeof status === "string" && status.toLowerCase() === "submit"
+      ? "submitted"
+      : status;
+
   return (
-    <Badge className={`${getStatusColor(status)} border-0 p-2 px-4`}>
-      {status}
+    <Badge className={`${getStatusColor(status)} border-0 p-2 px-4 capitalize`}>
+      {displayStatus}
     </Badge>
   );
 };

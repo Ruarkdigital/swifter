@@ -813,6 +813,7 @@ const EditSolicitationDialog = ({
             <Step1Form
               solicitationTypes={solicitationTypes}
               categoryOptions={[...categoryOptions]}
+              showSolId={false}
             />
           )}
 

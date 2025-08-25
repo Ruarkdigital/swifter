@@ -15,7 +15,7 @@ import {
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getRequest, deleteRequest, putRequest } from "@/lib/axiosInstance";
+import { getRequest, deleteRequest, putRequest, postRequest } from "@/lib/axiosInstance";
 import { ApiResponse, ApiResponseError } from "@/types";
 import { useToastHandler } from "@/hooks/useToaster";
 import CreateVendorDialog from "./components/CreateVendorDialog";
@@ -142,6 +142,9 @@ export const VendorManagementPage = () => {
   );
   const [isSuspendModel, setIsSuspendModel] = useState(false);
   const [isUnsuspendModel, setIsUnsuspendModel] = useState(false);
+  // Add reminder dialog and selected vendor state
+  const [isReminderDialogOpen, setIsReminderDialogOpen] = useState(false);
+  const [selectedVendor, setSelectedVendor] = useState<Vendor | null>(null);
 
   // Initialize filters from URL parameters
   useEffect(() => {
@@ -319,6 +322,38 @@ export const VendorManagementPage = () => {
       },
     });
 
+  // Send reminder invite mutation
+  const { mutateAsync: sendReminderInvite, isPending: isSendingReminder } =
+    useMutation<ApiResponse<any>, ApiResponseError, string>({
+      mutationKey: ["sendReminderInvite"],
+      mutationFn: async (email) =>
+        await postRequest({
+          url: `/onboarding/remind-invite?email=${encodeURIComponent(email)}`,
+          payload: {},
+        }),
+      onSuccess: () => {
+        toast.success("Success", "Reminder invite sent successfully");
+      },
+      onError: (error) => {
+        console.log(error);
+        const err = error as ApiResponseError;
+        toast.error(
+          "Error",
+          err?.response?.data?.message ?? "Failed to send reminder invite"
+        );
+      },
+    });
+
+  // Handle sending reminder invite
+  const handleSendReminderInvite = async (email: string) => {
+    try {
+      await sendReminderInvite(email);
+      setIsReminderDialogOpen(false);
+    } catch (error) {
+      // Error handled in onError
+    }
+  };
+
   // Handle vendor suspension
   const handleSuspendVendor = async (vendorId: string) => {
     try {
@@ -494,22 +529,18 @@ export const VendorManagementPage = () => {
             >
               View Vendor
             </DropdownMenuItem>
-            {/* <EditVendorDialog
-              vendorId={row.original.vendorId}
-              vendorData={{
-                name: row.original.name,
-                website: row.original.website,
-                location: row.original.location,
-                // phone: row.original.,
-                businessType: row.original.businessType,
-                secondaryEmails: row.original.secondaryEmail ? [row.original.secondaryEmail] : [],
-              }}
-              trigger={
-                <DropdownMenuItem className="p-3">
-                  Edit Vendor
-                </DropdownMenuItem>
-              }
-            /> */}
+            {/** Send Reminder only for Pending vendors and not suspended */}
+            {!row.original.isSuspended && row.original.status === "Pending" && (
+              <DropdownMenuItem
+                onClick={() => {
+                  setSelectedVendor(row.original);
+                  setIsReminderDialogOpen(true);
+                }}
+                className="p-3"
+              >
+                Send Reminder
+              </DropdownMenuItem>
+            )}
             {row.original.isSuspended ? (
               <DropdownMenuItem
                 className="p-3 text-green-600"
@@ -696,8 +727,6 @@ export const VendorManagementPage = () => {
         classNames={{
           container:
             "bg-white dark:bg-slate-950 rounded-xl px-3 border border-gray-300 dark:border-slate-600",
-          // tCell: "text-center",
-          // tHead: "text-center",
         }}
         options={{
           disableSelection: true,
@@ -707,6 +736,24 @@ export const VendorManagementPage = () => {
           setPagination,
           pagination,
         }}
+      />
+
+      {/* Send Reminder Dialog */}
+      <ConfirmAlert
+        text={`Send a reminder email to ${selectedVendor?.name} (${selectedVendor?.user?.email || selectedVendor?.invite?.email}) about their pending invite?`}
+        title="Send Reminder Invite"
+        open={isReminderDialogOpen}
+        type="alert"
+        onClose={setIsReminderDialogOpen}
+        onPrimaryAction={() => {
+          const email = selectedVendor?.user?.email || selectedVendor?.invite?.email;
+          if (email) {
+            handleSendReminderInvite(email);
+          } else {
+            toast.error("Error", "No email found for this vendor");
+          }
+        }}
+        isLoading={isSendingReminder}
       />
 
       <ConfirmAlert

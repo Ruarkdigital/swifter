@@ -149,7 +149,7 @@ const AddendumDetailsSheet: React.FC<AddendumDetailsSheetProps> = ({
             {addendum.title}
           </h2>
           <Badge className="bg-gray-100 text-gray-800 hover:bg-gray-100 border-0 capitalize">
-            {addendum.status}
+            {addendum.status === "publish" ? "Published" : addendum.status}
           </Badge>
         </div>
 

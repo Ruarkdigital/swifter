@@ -2039,22 +2039,34 @@ export class DashboardDataTransformer {
         };
       }
 
+      const sol = update?.solicitation ?? null;
+      const evaluation = update?.evaluation ?? null;
+
+      const title = sol?.name ?? evaluation?.name ?? "Unknown";
+      const entityId = sol?._id ?? evaluation?._id ?? update?._id ?? `admin-update-${index}`;
+      const entityName = sol?.name ?? evaluation?.name ?? "Unknown";
+
       return {
         id: update._id || update.id || `admin-update-${index}`,
-        title: update.solicitation?.name || "Unknown Solicitation",
-        action:
-          actionDescriptions[update.action as keyof typeof actionDescriptions] ||
-          update.action ||
-          "Recent activity",
-        time: update.createdAt
-          ? format(new Date(update.createdAt), "MMM d, yyyy") +
-            " • " +
-            format(new Date(update.createdAt), "h:mm a 'GMT'xxx")
-          : format(new Date(), "MMM d, yyyy") +
-            " • " +
-            format(new Date(), "h:mm a 'GMT'xxx"),
-        status: update.solicitation?.status || "active",
-        timezone: update.solicitation?.timezone || "UTC",
+        title,
+        text: applyDynamicStatusTextReplacement(
+          update?.statusText ?? "",
+          'procurement',
+          'general',
+          {
+            id: entityId,
+            name: entityName,
+            solId: sol?._id,
+          }
+        ),
+        date:
+          update?.updatedAt || update?.date || update?.createdAt
+            ? `${format(
+                new Date(update.updatedAt || update.date || update.createdAt),
+                "MMM d, yyyy h:mm a"
+              )} ${update.timezone || "GMT"}`
+            : format(new Date(), "MMM d, yyyy h:mm a 'GMT'xxx"),
+        status: update?.status || "active",
       };
     });
   }
