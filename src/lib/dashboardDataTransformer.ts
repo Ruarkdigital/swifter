@@ -1977,30 +1977,6 @@ export class DashboardDataTransformer {
       return [];
     }
 
-    const actionDescriptions = {
-      vendor_invitation: "A vendor has been invited to bid on",
-      vendor_accept: "A vendor has accepted to bid on",
-      vendor_reminder: "Reminder sent to vendor for",
-      vendor_feedback: "Feedback received on",
-      evaluation: "Evaluation has been updated for",
-      update: "Update received for",
-      vendor_declined: "A vendor declined to bid on",
-      vendor_submitted: "A vendor submitted proposal for",
-      proposal_submitted: "A proposal was submitted for",
-      proposal_draft: "A proposal draft was created for",
-      proposal_updated: "A proposal was updated for",
-      scored: "A score was submitted for",
-      awarded: "Contract was awarded for",
-      question: "A question was received for",
-      response: "A response was received for",
-      invite: "An invitation was sent for",
-      addendum: "An addendum was published for",
-      created: "A new solicitation was created",
-      solicitation_published: "Solicitation was published",
-      evaluation_started: "Evaluation process started for",
-      evaluation_completed: "Evaluation process completed for",
-    };
-
     return data.map((update: any, index: number) => {
       const isCampaign =
         update?.action === "campaign" ||

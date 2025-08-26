@@ -1343,9 +1343,9 @@ const EvaluationDetailPage: React.FC = () => {
               }}
               classNames={{
                 container:
-                  "border-b border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-slate-950",
+                  "border-b border-gray-200 dark:border-gray-700 px-3 rounded-xl bg-white dark:bg-slate-950",
                 table: "w-full",
-                tHeader: "bg-gray-50 dark:bg-gray-800",
+                tHeader: "bg-gray-50 dark:bg-gray-800 px-4",
                 tHeadRow: "border-b border-gray-200 dark:border-gray-700",
                 tBody: "bg-white dark:bg-gray-900",
                 tRow: "border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800",

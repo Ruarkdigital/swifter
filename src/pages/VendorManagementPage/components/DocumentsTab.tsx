@@ -57,9 +57,16 @@ export const DocumentsTab: React.FC = () => {
                   </div>
                 </div>
                 <div className="flex items-center gap-2 ml-2">
-                  <Button variant="ghost" size="icon" className={cn("h-8 w-8 p-0 bg-gray-100 rounded-full hover:bg-gray-200")} title="View">
-                    <Eye className="w-4 h-4 text-gray-500" />
-                  </Button>
+                  {(() => {
+                    const extension = document.name.split(".").pop()?.toLowerCase();
+                    const isDocFile = extension === "doc" || extension === "docx";
+                    
+                    return !isDocFile ? (
+                      <Button variant="ghost" size="icon" className={cn("h-8 w-8 p-0 bg-gray-100 rounded-full hover:bg-gray-200")} title="View">
+                        <Eye className="w-4 h-4 text-gray-500" />
+                      </Button>
+                    ) : null;
+                  })()}
                   <Button variant="ghost" size="icon" className="h-8 w-8 p-0 bg-blue-100 rounded-full hover:bg-blue-200" title="Download">
                     <Download className="w-4 h-4 text-blue-500" />
                   </Button>

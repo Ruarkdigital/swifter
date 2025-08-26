@@ -773,22 +773,32 @@ const ProposalDetailsPage: React.FC = () => {
 
                           {/* Right side - Action Buttons */}
                           <div className="flex items-center gap-2 ml-2">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 p-0 bg-gray-100 dark:bg-slate-900 rounded-full hover:bg-gray-200"
-                              title="View"
-                              onClick={() => {
-                                if (document.fileUrl || document.url) {
-                                  window.open(
-                                    document.fileUrl || document.url,
-                                    "_blank"
-                                  );
-                                }
-                              }}
-                            >
-                              <Eye className="w-4 h-4 text-gray-500" />
-                            </Button>
+                            {(() => {
+                              const extension = (document.fileName || document.name || "file")
+                                .split(".")
+                                .pop()
+                                ?.toLowerCase();
+                              const isDocFile = extension === "doc" || extension === "docx";
+                              
+                              return !isDocFile ? (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 p-0 bg-gray-100 dark:bg-slate-900 rounded-full hover:bg-gray-200"
+                                  title="View"
+                                  onClick={() => {
+                                    if (document.fileUrl || document.url) {
+                                      window.open(
+                                        document.fileUrl || document.url,
+                                        "_blank"
+                                      );
+                                    }
+                                  }}
+                                >
+                                  <Eye className="w-4 h-4 text-gray-500" />
+                                </Button>
+                              ) : null;
+                            })()}
                             <Button
                               variant="ghost"
                               size="icon"

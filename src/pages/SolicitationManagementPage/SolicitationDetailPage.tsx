@@ -618,11 +618,12 @@ export const SolicitationDetailPage = () => {
               View
             </Button>
           )}
-          {isCompanyAdmin && (
+          {isCompanyAdmin && (solicitation.status !== "closed" || isCompanyAdmin) && (
             <Button
               variant="link"
               className=""
               onClick={() => setExtendOpen(true)}
+              disabled={solicitation.status === "closed" && !isCompanyAdmin}
             >
               Extend Deadline
             </Button>
@@ -776,7 +777,10 @@ export const SolicitationDetailPage = () => {
                     <Button
                       variant="link"
                       className="text-blue-600"
-                      disabled={remindEvaluatorMutation.isPending}
+                      disabled={
+                        remindEvaluatorMutation.isPending ||
+                        (solicitation.status === "closed" && !isCompanyAdmin)
+                      }
                     >
                       {remindEvaluatorMutation.isPending
                         ? "Sending..."
@@ -799,7 +803,10 @@ export const SolicitationDetailPage = () => {
                     <Button
                       variant="link"
                       className="text-red-600"
-                      disabled={removeEvaluatorMutation.isPending}
+                      disabled={
+                        removeEvaluatorMutation.isPending ||
+                        (solicitation.status === "closed" && !isCompanyAdmin)
+                      }
                     >
                       {removeEvaluatorMutation.isPending
                         ? "Removing..."
@@ -990,7 +997,10 @@ export const SolicitationDetailPage = () => {
                         size="lg"
                         variant="outline"
                         className="space-x-4 rounded-xl"
-                        disabled={exportSolicitationMutation.isPending}
+                        disabled={
+                          exportSolicitationMutation.isPending ||
+                          (solicitation.status === "closed" && !isCompanyAdmin)
+                        }
                       >
                         <Share2 className="h-4 w-4 mr-3" />
                         {exportSolicitationMutation.isPending
@@ -1008,7 +1018,7 @@ export const SolicitationDetailPage = () => {
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
-                  {isOwner && (
+                  {isOwner && (solicitation.status !== "closed" || isCompanyAdmin) && (
                     <>
                       <EditSolicitationDialog
                         solicitation={solicitation as any}

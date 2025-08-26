@@ -833,15 +833,17 @@ const Document = ({ document }: { document: VendorDocument }) => {
             </div>
           </div>
           <div className="flex items-center gap-2 ml-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 p-0 bg-gray-100 rounded-full hover:bg-gray-200"
-              title="View"
-              onClick={() => window.open(document.url, "_blank")}
-            >
-              <Eye className="w-4 h-4 text-gray-500" />
-            </Button>
+            {document.type !== "DOCX" && document.type !== "DOC" && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 p-0 bg-gray-100 rounded-full hover:bg-gray-200"
+                title="View"
+                onClick={() => window.open(document.url, "_blank")}
+              >
+                <Eye className="w-4 h-4 text-gray-500" />
+              </Button>
+            )}
             <Button
               variant="ghost"
               size="icon"

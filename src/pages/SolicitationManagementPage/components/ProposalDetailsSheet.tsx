@@ -154,13 +154,21 @@ const ProposalDetailsSheet: React.FC<ProposalDetailsSheetProps> = ({
                     </div>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 w-8 p-0 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
-                    >
-                      <Eye className="h-4 w-4" />
-                    </Button>
+                    {(() => {
+                      const extension = file.name.split('.').pop()?.toLowerCase();
+                      const isDocFile = extension === 'doc' || extension === 'docx';
+                      
+                      return !isDocFile ? (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 w-8 p-0 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+                          onClick={() => window.open(file.url, '_blank')}
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                      ) : null;
+                    })()}
                     <Button
                       variant="ghost"
                       size="sm"
