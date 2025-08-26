@@ -14,10 +14,22 @@ function AccordionItem({
   className,
   ...props
 }: React.ComponentProps<typeof AccordionPrimitive.Item>) {
+  // Check if custom border classes are provided to avoid conflicts
+  const hasCustomBorder = className && (
+    className.includes('border ') || 
+    className.includes('border-') ||
+    className.startsWith('border ') ||
+    className.includes(' border ') ||
+    /\bborder\b/.test(className)
+  )
+  
   return (
     <AccordionPrimitive.Item
       data-slot="accordion-item"
-      className={cn("border-b last:border-b-0", className)}
+      className={cn(
+        !hasCustomBorder && "border-b last:border-b-0",
+        className
+      )}
       {...props}
     />
   )
