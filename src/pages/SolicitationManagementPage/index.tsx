@@ -1001,11 +1001,11 @@ export const SolicitationManagementPage = () => {
               <div className="text-sm">
                 <div className="text-green-600">
                   Confirmed:{" "}
-                  {vendors.filter((v) => v.status === "confirmed").length}
+                  {vendors.filter((v) => v && v.status === "confirmed").length}
                 </div>
                 <div className="text-red-600">
                   Declined:{" "}
-                  {vendors.filter((v) => v.status === "declined").length}
+                  {vendors.filter((v) => v && v.status === "declined").length}
                 </div>
               </div>
             );
