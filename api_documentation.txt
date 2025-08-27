@@ -5857,7 +5857,7 @@
         }
       }
     },
-    "/evaluator/{evaluationId}/submitted-document/{vendorId}": {
+    "/evaluator/{evaluationId}/evaluation-group/{evaluationGroupId}/submitted-document/{vendorId}": {
       "get": {
         "summary": "View View vendor submitted document",
         "description": "Submitted document",
@@ -5887,6 +5887,15 @@
             "schema": {
               "type": "string",
               "description": "vendorId"
+            }
+          },
+          {
+            "in": "path",
+            "name": "evaluationGroupId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "evaluationGroupId"
             }
           }
         ],
@@ -9385,154 +9394,6 @@
         }
       }
     },
-    "/procurement/evaluations/criteria/{criteriaId}": {
-      "delete": {
-        "summary": "Delete criteria on edit screen",
-        "description": "Procurement lead should be promted before deleting all contentn as direclty related to this evaluation criteria",
-        "tags": [
-          "Procurement-Evaluation"
-        ],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "in": "path",
-            "name": "criteriaId",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "description": "criteriaId"
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "content": {
-              "application/json": {
-                "schema": null
-              }
-            }
-          },
-          "401": {
-            "description": "unauthenticated user",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AuthenticatedError"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Unathorized user",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AuthorizeError"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Criteria group not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/NotFoundError"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Something bad went wrong",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ServerError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/procurement/evaluations/document/{documentId}": {
-      "delete": {
-        "summary": "Delete document on edit screen",
-        "description": "Procurement lead should be promted before deleting all contentn as direclty related to this evaluation document",
-        "tags": [
-          "Procurement-Evaluation"
-        ],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "in": "path",
-            "name": "documentId",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "description": "documentId"
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "content": {
-              "application/json": {
-                "schema": null
-              }
-            }
-          },
-          "401": {
-            "description": "unauthenticated user",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AuthenticatedError"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Unathorized user",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AuthorizeError"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Document group not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/NotFoundError"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Something bad went wrong",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ServerError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/procurement/evaluations/proposal/{proposalId}": {
       "get": {
         "summary": "Delete document on edit screen",
@@ -10228,6 +10089,280 @@
         }
       }
     },
+    "/procurement/evaluations/{evaluationId}/criteria/{criteriaId}": {
+      "delete": {
+        "summary": "Delete criteria on edit screen",
+        "description": "Procurement lead should be promted before deleting all contentn as direclty related to this evaluation criteria",
+        "tags": [
+          "Procurement-Evaluation"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "evaluationId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "evaluationId"
+            }
+          },
+          {
+            "in": "path",
+            "name": "criteriaId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "criteriaId"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "content": {
+              "application/json": {
+                "schema": null
+              }
+            }
+          },
+          "401": {
+            "description": "unauthenticated user",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Unathorized user",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizeError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Criteria group not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something bad went wrong",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/procurement/evaluations/{evaluationId}/document/{documentId}": {
+      "delete": {
+        "summary": "Delete document on edit screen",
+        "description": "Procurement lead should be promted before deleting all contentn as direclty related to this evaluation document",
+        "tags": [
+          "Procurement-Evaluation"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "evaluationId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "evaluationId"
+            }
+          },
+          {
+            "in": "path",
+            "name": "documentId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "documentId"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "content": {
+              "application/json": {
+                "schema": null
+              }
+            }
+          },
+          "401": {
+            "description": "unauthenticated user",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Unathorized user",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizeError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Document group not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something bad went wrong",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/procurement/evaluations/{evaluationId}/vendor/{vendorId}/verify-submissions": {
+      "get": {
+        "summary": "Verify vendor submissions for evaluation",
+        "description": "Check vendor document submissions against evaluation group requirements",
+        "tags": [
+          "Procurement-Evaluation"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "evaluationId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "evaluationId"
+            }
+          },
+          {
+            "in": "path",
+            "name": "vendorId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "vendorId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Vendor submissions verified successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "evaluationGroupName": {
+                            "type": "string"
+                          },
+                          "files": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthenticated user",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Unauthorized user",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizeError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Evaluation or Vendor not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/procurement/evaluations/{evaluationId}/groups/{groupId}/{evaluatorId}": {
       "delete": {
         "summary": "Remove evaluator from evaluation group on edit screen",
@@ -10599,6 +10734,325 @@
           },
           "500": {
             "description": "Something bad went wrong",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/procurement/evaluations/{evaluationId}/send-requirement": {
+      "get": {
+        "summary": "Send submission requirements to proponents",
+        "description": "Send submission requirement PDF to all vendors/proponents associated with the evaluation, including their secondary emails",
+        "tags": [
+          "Procurement-Evaluation"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "evaluationId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "The unique identifier of the evaluation"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Submission requirements sent successfully to all proponents",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Submission requirements sent to proponents"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "message": {
+                          "type": "string",
+                          "example": "Submission requirements sent successfully to all proponents"
+                        },
+                        "evaluationId": {
+                          "type": "string",
+                          "example": "507f1f77bcf86cd799439011"
+                        },
+                        "attachmentTitle": {
+                          "type": "string",
+                          "example": "Submission_Instructions.pdf"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated user",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Unauthorized user - must be procurement lead or evaluation manager",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizeError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Evaluation not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/procurement/evaluations/{evaluationId}/download-requirement": {
+      "get": {
+        "summary": "Download submission requirement document",
+        "description": "Download submission requirement instructions for proponents in PDF or DOCX format",
+        "tags": [
+          "Procurement-Evaluation"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "evaluationId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "The evaluation ID"
+          },
+          {
+            "in": "query",
+            "name": "type",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "pdf",
+                "docx"
+              ],
+              "default": "pdf"
+            },
+            "description": "Document format (pdf or docx)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Document downloaded successfully",
+            "content": {
+              "application/pdf": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "application/vnd.openxmlformats-officedocument.wordprocessingml.document": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            },
+            "headers": {
+              "Content-Disposition": {
+                "description": "Attachment with filename",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Content-Type": {
+                "description": "MIME type of the document",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request parameters",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequestError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated user",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Unauthorized user",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizeError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Evaluation not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/procurement/evaluations/{evaluationId}/docs-option": {
+      "get": {
+        "summary": "Get solicitation document options",
+        "description": "Retrieves the available document options for a specific solicitation based on the provided evaluation ID. The options include sections such as solicitation, submissions, criteria, or score-summary.",
+        "tags": [
+          "Procurement-Evaluation"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "evaluationId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "The MongoDB ObjectId of the evaluation to retrieve document options for"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Document options retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "details": {
+                          "type": "boolean"
+                        },
+                        "score-summary": {
+                          "type": "boolean"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated user",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Invalid solicitation or vendor ID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizeError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Solicitation or vendor proposal not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
             "content": {
               "application/json": {
                 "schema": {
@@ -15356,6 +15810,208 @@
                 "schema": {
                   "type": "string",
                   "format": "binary"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated user",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Invalid solicitation or vendor ID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizeError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Solicitation or vendor proposal not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/procurement/solicitations/{solicitationId}/generate-document": {
+      "get": {
+        "summary": "Generate a solicitation document",
+        "description": "Generates a document for a specific solicitation based on the provided solicitation ID. The document can include sections such as solicitation, submissions, criteria,  or score-summary. The output format can be PDF or DOCX.",
+        "tags": [
+          "Procurement-Solicitations"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "solicitationId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "The MongoDB ObjectId of the solicitation to generate the document for"
+          },
+          {
+            "in": "query",
+            "name": "type",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "pdf",
+                "docx"
+              ],
+              "default": "pdf"
+            },
+            "description": "Export file type (pdf or docx)"
+          },
+          {
+            "in": "query",
+            "name": "sections",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Comma-separated list of sections to include (e.g., solicitation,submissions, score-summary). Defaults to 'all'."
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/pdf": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "application/vnd.openxmlformats-officedocument.wordprocessingml.document": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated user",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Invalid solicitation ID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizeError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Solicitation not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/procurement/solicitations/{solicitationId}/docs-option": {
+      "get": {
+        "summary": "Get solicitation document options",
+        "description": "Retrieves the available document options for a specific solicitation based on the provided solicitation ID. The options include sections such as solicitation, submissions, criteria, or score-summary.",
+        "tags": [
+          "Procurement-Solicitations"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "solicitationId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "The MongoDB ObjectId of the solicitation to retrieve document options for"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Document options retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "details": {
+                          "type": "boolean"
+                        },
+                        "submissions": {
+                          "type": "boolean"
+                        },
+                        "score-summary": {
+                          "type": "boolean"
+                        }
+                      }
+                    }
+                  }
                 }
               }
             }

@@ -7,12 +7,10 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuGroup,
   DropdownMenuLabel,
   DropdownMenuSeparator,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
-  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
   ChevronRight,
@@ -33,6 +31,7 @@ import { useMutation } from "@tanstack/react-query";
 import { getRequest } from "@/lib/axiosInstance";
 import EvaluationScorecardSheet from "./components/EvaluationScorecardSheet";
 import { BidComparisonSheet } from "./components/BidComparisonBreakdownSheet";
+import { ExportReportSheet } from "@/components/layouts/ExportReportSheet";
 import {
   useEvaluationDetail,
   useEvaluationEvaluators,
@@ -54,9 +53,7 @@ import {
   getEvaluationStatusLabel,
   getEvaluationStatusColorClass,
 } from "@/lib/evaluationStatusUtils";
-import {
-  DropdownMenuGroup,
-} from "@/components/ui/dropdown-menu";
+
 
 // Component Types
 
@@ -192,49 +189,7 @@ const EvaluationDetailPage: React.FC = () => {
   const deleteGroupMutation = useDeleteEvaluationGroup();
   const deleteCriteriaMutation = useDeleteEvaluationCriteria();
 
-  // Export evaluation scorecard mutation
-  const exportEvaluationMutation = useMutation<
-    Blob,
-    Error,
-    { evaluatorId: string; type: "pdf" | "docx" }
-  >({
-    mutationFn: async ({ evaluatorId, type }) => {
-      const response = await getRequest({
-        url: `/procurement/solicitations/${evaluation?.solicitation?._id}/evaluator-score-card/${evaluatorId}/export?type=${type}`,
-        config: { responseType: "blob" },
-      });
-      return response.data;
-    },
-    onSuccess: (data, variables) => {
-      // Create download link
-      const url = window.URL.createObjectURL(new Blob([data]));
-      const link = document.createElement("a");
-      link.href = url;
-      link.setAttribute(
-        "download",
-        `evaluation-scorecard-${variables.evaluatorId}.${variables.type}`
-      );
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
 
-      toastHandlers.success(
-        "Export Successful",
-        `Evaluation scorecard exported as ${variables.type.toUpperCase()} successfully`
-      );
-    },
-    onError: (error) => {
-      toastHandlers.error(
-        "Export Failed",
-        error.message || "An error occurred during export"
-      );
-    },
-  });
-
-  const handleExportScorecard = (evaluatorId: string, type: "pdf" | "docx") => {
-    exportEvaluationMutation.mutate({ evaluatorId, type });
-  };
 
   // Export bid comparison mutation
   const exportBidComparisonMutation = useMutation<
@@ -771,6 +726,12 @@ const EvaluationDetailPage: React.FC = () => {
             >
               <span>Preview</span>
             </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => previewRequirementMutation.mutate()}
+              disabled={previewRequirementMutation.isPending}
+            >
+              <span>Send Evaluation</span>
+            </DropdownMenuItem>
           </DropdownMenuGroup>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -825,52 +786,7 @@ const EvaluationDetailPage: React.FC = () => {
                   Evaluation Details
                 </h2>
                 <div className="flex items-center gap-3">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="outline"
-                        disabled={exportEvaluationMutation.isPending}
-                      >
-                        <Share2 className="h-4 w-4 mr-2" />
-                        {exportEvaluationMutation.isPending
-                          ? "Exporting..."
-                          : "Export Report"}
-                        <ChevronDown className="h-4 w-4 ml-2" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuLabel>Export Scorecard</DropdownMenuLabel>
-                      <DropdownMenuSeparator />
-                      {evaluators.map((evaluator) => (
-                        <DropdownMenuSub key={evaluator._id}>
-                          <DropdownMenuSubTrigger>
-                            {evaluator.name}
-                          </DropdownMenuSubTrigger>
-                          <DropdownMenuSubContent>
-                            <DropdownMenuItem
-                              onClick={() =>
-                                handleExportScorecard(evaluator._id, "pdf")
-                              }
-                            >
-                              Export as PDF
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() =>
-                                handleExportScorecard(evaluator._id, "docx")
-                              }
-                            >
-                              Export as DOCX
-                            </DropdownMenuItem>
-                          </DropdownMenuSubContent>
-                        </DropdownMenuSub>
-                      ))}
-                      {evaluators.length === 0 && (
-                        <DropdownMenuItem disabled>
-                          No evaluators available
-                        </DropdownMenuItem>
-                      )}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                  <ExportReportSheet evaluationId={id} />
                   {isOwner && (
                     <EditEvaluationDialog evaluationId={id} page="overview">
                       <Button>

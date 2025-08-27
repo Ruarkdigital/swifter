@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Share2 } from "lucide-react";
+import { Share2, Loader2 } from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -16,32 +16,256 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useQuery } from "@tanstack/react-query";
+import { getRequest } from "@/lib/axiosInstance";
+import { ApiResponse, ApiResponseError } from "@/types";
+import { useToastHandler } from "@/hooks/useToaster";
 
-export const ExportReportSheet: React.FC = () => {
-  const [exportFormat, setExportFormat] = useState("PDF");
-  const [selectedSections, setSelectedSections] = useState({
-    solicitationDetails: true,
-    submission: true,
-    criteria: true,
-    scoringSummary: true,
-    submissionScores: true,
-    submissionScoresComments: true,
+// API Types
+type DocsOptionResponse = {
+  details?: boolean;
+  submissions?: boolean;
+  "score-summary"?: boolean;
+  "evaluation-summary"?: boolean;
+  "vendor-scores"?: boolean;
+  "criteria-breakdown"?: boolean;
+};
+
+// Component Props Interface
+interface ExportReportSheetProps {
+  solicitationId?: string;
+  evaluationId?: string;
+  children?: React.ReactNode;
+}
+
+export const ExportReportSheet: React.FC<ExportReportSheetProps> = ({
+  solicitationId,
+  evaluationId,
+  children,
+}) => {
+  const [exportFormat, setExportFormat] = useState("pdf");
+  const [selectedSections, setSelectedSections] = useState<
+    Record<string, boolean>
+  >({});
+  const [isDownloading, setIsDownloading] = useState(false);
+  const toast = useToastHandler();
+
+  // Determine context type
+  const isEvaluationContext = !!evaluationId;
+  const isSolicitationContext = !!solicitationId;
+
+  // Fetch document options for both solicitation and evaluation contexts
+  const {
+    data: docsOptionsData,
+    isLoading: isLoadingOptions,
+    error: optionsError,
+  } = useQuery<ApiResponse<DocsOptionResponse>, ApiResponseError>({
+    queryKey: ["docs-options", solicitationId, evaluationId],
+    queryFn: async () => {
+      const contextId = solicitationId || evaluationId;
+      return await getRequest({
+        url: isEvaluationContext
+          ? `/procurement/evaluations/${contextId}/docs-option`
+          : `/procurement/solicitations/${contextId}/docs-option`,
+      });
+    },
+    enabled: !!(solicitationId || evaluationId),
   });
 
+  // Update selected sections based on API response
+  useEffect(() => {
+    if (docsOptionsData?.data?.data) {
+      const options = docsOptionsData.data.data;
+      const initialSections: Record<string, boolean> = {};
+
+      if (options.details) initialSections.details = true;
+      if (options.submissions) initialSections.submissions = true;
+      if (options["score-summary"]) initialSections["score-summary"] = true;
+      if (options["evaluation-summary"])
+        initialSections["evaluation-summary"] = true;
+      if (options["vendor-scores"]) initialSections["vendor-scores"] = true;
+      if (options["criteria-breakdown"])
+        initialSections["criteria-breakdown"] = true;
+
+      setSelectedSections(initialSections);
+    }
+  }, [docsOptionsData]);
+
   const handleSectionChange = (section: string, checked: boolean) => {
-    setSelectedSections(prev => ({
+    setSelectedSections((prev) => ({
       ...prev,
-      [section]: checked
+      [section]: checked,
     }));
   };
+
+  // Handle download functionality
+  const handleDownload = async () => {
+    if (!solicitationId && !evaluationId) {
+      toast.error("Download Error", "Missing required context ID");
+      return;
+    }
+
+    const selectedSectionKeys = Object.keys(selectedSections).filter(
+      (key) => selectedSections[key]
+    );
+
+    if (selectedSectionKeys.length === 0) {
+      toast.error(
+        "Download Error",
+        "Please select at least one section to export"
+      );
+      return;
+    }
+
+    setIsDownloading(true);
+
+    try {
+      if (isSolicitationContext && solicitationId) {
+        // Solicitation document download
+        const sectionsParam = selectedSectionKeys.join(",");
+        const response = await getRequest({
+          url: `/procurement/solicitations/${solicitationId}/generate-document?type=${exportFormat}&sections=${sectionsParam}`,
+          config: {
+            responseType: "blob",
+          },
+        });
+
+        // Create download link
+        const blob = new Blob([response.data], {
+          type:
+            exportFormat === "pdf"
+              ? "application/pdf"
+              : "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        });
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `solicitation-report.${exportFormat}`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+
+        toast.success(
+          "Download Complete",
+          "Solicitation report downloaded successfully"
+        );
+      } else if (isEvaluationContext && evaluationId) {
+        // Evaluation document download
+        const sectionsParam = selectedSectionKeys.join(",");
+        const response = await getRequest({
+          url: `/procurement/evaluations/${evaluationId}/generate-document?type=${exportFormat}&sections=${sectionsParam}`,
+          config: {
+            responseType: "blob",
+          },
+        });
+
+        // Create download link
+        const blob = new Blob([response.data], {
+          type:
+            exportFormat === "pdf"
+              ? "application/pdf"
+              : "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        });
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `evaluation-report.${exportFormat}`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+
+        toast.success(
+          "Download Complete",
+          "Evaluation report downloaded successfully"
+        );
+      }
+    } catch (error) {
+      console.error("Download error:", error);
+      toast.error(
+        "Download Error",
+        "Failed to download report. Please try again."
+      );
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
+  // Get available sections based on API response
+  const getAvailableSections = () => {
+    if (docsOptionsData?.data?.data) {
+      const options = docsOptionsData.data.data;
+      const sections = [];
+
+      if (options.details) {
+        sections.push({
+          key: "details",
+          label: "Solicitation Details",
+          description:
+            "Overview of the solicitation dates, highest ranking vendor, and NDA + COI forms",
+        });
+      }
+
+      if (options.submissions) {
+        sections.push({
+          key: "submissions",
+          label: "Submissions",
+          description:
+            "List of the Vendors (Email Address, Name) that submitted for this Project",
+        });
+      }
+
+      if (options["score-summary"]) {
+        sections.push({
+          key: "score-summary",
+          label: "Score Summary",
+          description: "Scoring Summary Table (Submission and Criteria Scores)",
+        });
+      }
+
+      if (options["evaluation-summary"]) {
+        sections.push({
+          key: "evaluation-summary",
+          label: "Evaluation Summary",
+          description: "Overview of the evaluation process and results",
+        });
+      }
+
+      if (options["vendor-scores"]) {
+        sections.push({
+          key: "vendor-scores",
+          label: "Vendor Scores",
+          description: "Detailed scoring breakdown for each vendor",
+        });
+      }
+
+      if (options["criteria-breakdown"]) {
+        sections.push({
+          key: "criteria-breakdown",
+          label: "Criteria Breakdown",
+          description:
+            "Analysis of evaluation criteria and scoring methodology",
+        });
+      }
+
+      return sections;
+    }
+
+    return [];
+  };
+
+  const availableSections = getAvailableSections();
 
   return (
     <Sheet>
       <SheetTrigger asChild>
-        <Button size="lg" variant="outline" className="space-x-4 rounded-xl">
-          <Share2 className="h-4 w-4 mr-3" />
-          Export
-        </Button>
+        {children || (
+          <Button size="lg" variant="outline" className="space-x-4 rounded-xl">
+            <Share2 className="h-4 w-4 mr-3" />
+            Export
+          </Button>
+        )}
       </SheetTrigger>
       <SheetContent side="right" className="w-full sm:max-w-lg p-0">
         {/* Header */}
@@ -55,141 +279,127 @@ export const ExportReportSheet: React.FC = () => {
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto px-6 py-6">
-          {/* Solicitation Overview */}
-          <div className="mb-8">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-6">
-              Solicitation Overview
-            </h2>
-            
-            <div className="space-y-4">
-              <div className="flex items-start space-x-3">
-                <Checkbox 
-                  id="solicitation-details"
-                  checked={selectedSections.solicitationDetails}
-                  onCheckedChange={(checked) => handleSectionChange('solicitationDetails', checked as boolean)}
-                  className="mt-0.5"
-                />
-                <div className="flex-1">
-                  <label htmlFor="solicitation-details" className="text-sm font-medium text-gray-900 dark:text-gray-100 cursor-pointer">
-                    Solicitation Details
-                  </label>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                    Overview of the solicitation dates, highest ranking vendor, and NDA + COI forms
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-start space-x-3">
-                <Checkbox 
-                  id="submission"
-                  checked={selectedSections.submission}
-                  onCheckedChange={(checked) => handleSectionChange('submission', checked as boolean)}
-                  className="mt-0.5"
-                />
-                <div className="flex-1">
-                  <label htmlFor="submission" className="text-sm font-medium text-gray-900 dark:text-gray-100 cursor-pointer">
-                    Submission
-                  </label>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                    List of the Vendors (Email Address, Name) that submitted for this Project
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-start space-x-3">
-                <Checkbox 
-                  id="criteria"
-                  checked={selectedSections.criteria}
-                  onCheckedChange={(checked) => handleSectionChange('criteria', checked as boolean)}
-                  className="mt-0.5"
-                />
-                <div className="flex-1">
-                  <label htmlFor="criteria" className="text-sm font-medium text-gray-900 dark:text-gray-100 cursor-pointer">
-                    Criteria
-                  </label>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                    List of the Criteria (Title, Scoring Type, Description) for this project.
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-start space-x-3">
-                <Checkbox 
-                  id="scoring-summary"
-                  checked={selectedSections.scoringSummary}
-                  onCheckedChange={(checked) => handleSectionChange('scoringSummary', checked as boolean)}
-                  className="mt-0.5"
-                />
-                <div className="flex-1">
-                  <label htmlFor="scoring-summary" className="text-sm font-medium text-gray-900 dark:text-gray-100 cursor-pointer">
-                    Scoring Summary
-                  </label>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                    Scoring Summary Table (Submission and Criteria Scores)
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-start space-x-3">
-                <Checkbox 
-                  id="submission-scores"
-                  checked={selectedSections.submissionScores}
-                  onCheckedChange={(checked) => handleSectionChange('submissionScores', checked as boolean)}
-                  className="mt-0.5"
-                />
-                <div className="flex-1">
-                  <label htmlFor="submission-scores" className="text-sm font-medium text-gray-900 dark:text-gray-100 cursor-pointer">
-                    Submission Scores
-                  </label>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                    Scoring summary tables per submission
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-start space-x-3">
-                <Checkbox 
-                  id="submission-scores-comments"
-                  checked={selectedSections.submissionScoresComments}
-                  onCheckedChange={(checked) => handleSectionChange('submissionScoresComments', checked as boolean)}
-                  className="mt-0.5"
-                />
-                <div className="flex-1">
-                  <label htmlFor="submission-scores-comments" className="text-sm font-medium text-gray-900 dark:text-gray-100 cursor-pointer">
-                    Submission Scores Comments
-                  </label>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                    Scoring summary comment tables per submission
-                  </p>
-                </div>
+          {/* Loading State */}
+          {isLoadingOptions && isSolicitationContext && (
+            <div className="flex items-center justify-center py-8">
+              <div className="flex items-center gap-2">
+                <Loader2 className="h-5 w-5 animate-spin" />
+                <span className="text-gray-600 dark:text-gray-400">
+                  Loading export options...
+                </span>
               </div>
             </div>
-          </div>
+          )}
+
+          {/* Error State */}
+          {optionsError && (
+            <div className="flex items-center justify-center py-8">
+              <div className="text-center">
+                <p className="text-red-600 dark:text-red-400 mb-2">
+                  Failed to load export options
+                </p>
+                <p className="text-gray-500 dark:text-gray-400 text-sm">
+                  Please try again later
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Export Sections */}
+          {!isLoadingOptions &&
+            !optionsError &&
+            availableSections.length > 0 && (
+              <div className="mb-8">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-6">
+                  Export Report
+                </h2>
+
+                <div className="space-y-4">
+                  {availableSections.map((section) => (
+                    <div
+                      key={section.key}
+                      className="flex items-start space-x-3"
+                    >
+                      <Checkbox
+                        id={section.key}
+                        checked={selectedSections[section.key] || false}
+                        onCheckedChange={(checked) =>
+                          handleSectionChange(section.key, checked as boolean)
+                        }
+                        className="mt-0.5"
+                      />
+                      <div className="flex-1">
+                        <label
+                          htmlFor={section.key}
+                          className="text-sm font-medium text-gray-900 dark:text-gray-100 cursor-pointer"
+                        >
+                          {section.label}
+                        </label>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                          {section.description}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+          {/* No Context Error */}
+          {!solicitationId && !evaluationId && (
+            <div className="flex items-center justify-center py-8">
+              <div className="text-center">
+                <p className="text-gray-600 dark:text-gray-400 mb-2">
+                  Export context not available
+                </p>
+                <p className="text-gray-500 dark:text-gray-400 text-sm">
+                  Please provide either solicitationId or evaluationId
+                </p>
+              </div>
+            </div>
+          )}
 
           {/* Export Format */}
-          <div className="mb-8">
-            <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-3">
-              Export Format
-            </h3>
-            <Select value={exportFormat} onValueChange={setExportFormat}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select format" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="PDF">PDF</SelectItem>
-                <SelectItem value="Excel">Excel</SelectItem>
-                <SelectItem value="CSV">CSV</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+          {availableSections.length > 0 && (
+            <div className="mb-8">
+              <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-3">
+                Export Format
+              </h3>
+              <Select value={exportFormat} onValueChange={setExportFormat}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select format" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="pdf">PDF</SelectItem>
+                  <SelectItem value="docx">DOCX</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4">
-          <Button className="w-full ">
-            Download Report
-          </Button>
-        </div>
+        {availableSections.length > 0 && (
+          <div className="px-6 py-4">
+            <Button
+              className="w-full"
+              onClick={handleDownload}
+              disabled={
+                isDownloading ||
+                Object.values(selectedSections).every((v) => !v)
+              }
+            >
+              {isDownloading ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Downloading...
+                </>
+              ) : (
+                "Download Report"
+              )}
+            </Button>
+          </div>
+        )}
       </SheetContent>
     </Sheet>
   );

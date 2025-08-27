@@ -5,12 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+
 import EvaluationScorecard from "./components/EvaluationScorecard";
 import DocumentsTab from "./components/DocumentsTab";
 import QuestionsTab from "./components/QuestionsTab";
@@ -18,6 +13,7 @@ import AddendumsTab from "./components/AddendumsTab";
 import EditSolicitationDialog from "./components/EditSolicitationDialog";
 import ExtendDeadlineDialog from "./components/ExtendDeadlineDialog";
 import ProposalDetailsSheet from "./components/ProposalDetailsSheet";
+import { ExportReportSheet } from "@/components/layouts/ExportReportSheet";
 import {
   ChevronRight,
   Users,
@@ -26,7 +22,7 @@ import {
   Search,
   FolderOpen,
   Share2,
-  ChevronDown,
+
 } from "lucide-react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -427,54 +423,6 @@ export const SolicitationDetailPage = () => {
       toastHandlers.error("Remove Evaluator", error);
     },
   });
-
-  // Export solicitation mutation
-  const exportSolicitationMutation = useMutation<
-    any,
-    ApiResponseError,
-    { type: "pdf" | "docx" }
-  >({
-    mutationFn: async ({ type }) => {
-      const response = await getRequest({
-        url: `/procurement/solicitations/${id}/export?type=${type}`,
-        config: {
-          responseType: "blob",
-        },
-      });
-      return response;
-    },
-    onSuccess: (response, variables) => {
-      // Create blob and download file
-      const blob = new Blob([response.data], {
-        type:
-          variables.type === "pdf"
-            ? "application/pdf"
-            : "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-      });
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `${solicitation?.name || "solicitation"}.${
-        variables.type
-      }`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-
-      toastHandlers.success(
-        "Export Successful",
-        `Solicitation exported as ${variables.type.toUpperCase()} successfully`
-      );
-    },
-    onError: (error) => {
-      toastHandlers.error("Export Failed", error);
-    },
-  });
-
-  const handleExport = (type: "pdf" | "docx") => {
-    exportSolicitationMutation.mutate({ type });
-  };
 
   // Extract solicitation data from API response
   const solicitation =
@@ -991,33 +939,19 @@ export const SolicitationDetailPage = () => {
               </CardTitle>
               {!isVendor && (
                 <div className="flex items-center gap-2">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        size="lg"
-                        variant="outline"
-                        className="space-x-4 rounded-xl"
-                        disabled={
-                          exportSolicitationMutation.isPending ||
-                          (solicitation.status === "closed" && !isCompanyAdmin)
-                        }
-                      >
-                        <Share2 className="h-4 w-4 mr-3" />
-                        {exportSolicitationMutation.isPending
-                          ? "Exporting..."
-                          : "Export"}
-                        <ChevronDown className="h-4 w-4 ml-2" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => handleExport("pdf")}>
-                        Export as PDF
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleExport("docx")}>
-                        Export as DOCX
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                  <ExportReportSheet solicitationId={solicitation._id}>
+                    <Button
+                      size="lg"
+                      variant="outline"
+                      className="space-x-4 rounded-xl"
+                      disabled={
+                        solicitation.status === "closed" && !isCompanyAdmin
+                      }
+                    >
+                      <Share2 className="h-4 w-4 mr-3" />
+                      Export
+                    </Button>
+                  </ExportReportSheet>
                   {isOwner && (solicitation.status !== "closed" || isCompanyAdmin) && (
                     <>
                       <EditSolicitationDialog
