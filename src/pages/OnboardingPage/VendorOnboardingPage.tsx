@@ -127,6 +127,7 @@ const VendorOnboardingPage = () => {
     if (encodedData) {
       try {
         const decoded = decryptData(encodedData);
+        // console.log("encodeData", encodedData, decoded);
         if (!decoded || typeof decoded !== "object") {
           console.warn("Decryption returned invalid data format");
           // Show user-friendly error message
@@ -179,49 +180,49 @@ const VendorOnboardingPage = () => {
     },
   });
 
-  const { mutateAsync: createVendor, isPending: isCreatingVendor } = useMutation<
-    ApiResponse<{ message: string }>,
-    ApiResponseError,
-    any
-  >({
-    mutationKey: ["vendorRegister"],
-    mutationFn: async (data) =>
-      await postRequest({ url: "/onboarding/vendor-accept", payload: data }),
-    onSuccess: () => {
-      // Invalidate vendor-related queries to trigger automatic refetch
-      queryClient.invalidateQueries({ queryKey: ["vendors"] });
-      queryClient.invalidateQueries({ queryKey: ["vendorDashboard"] });
-      queryClient.invalidateQueries({ queryKey: ["vendorCategories"] });
-      // Also invalidate solicitation-related queries that might include vendor data
-      queryClient.invalidateQueries({ queryKey: ["solicitations"] });
-      queryClient.invalidateQueries({ queryKey: ["my-solicitations"] });
-    },
-  });
+  const { mutateAsync: createVendor, isPending: isCreatingVendor } =
+    useMutation<ApiResponse<{ message: string }>, ApiResponseError, any>({
+      mutationKey: ["vendorRegister"],
+      mutationFn: async (data) =>
+        await postRequest({ url: "/onboarding/vendor-accept", payload: data }),
+      onSuccess: () => {
+        // Invalidate vendor-related queries to trigger automatic refetch
+        queryClient.invalidateQueries({ queryKey: ["vendors"] });
+        queryClient.invalidateQueries({ queryKey: ["vendorDashboard"] });
+        queryClient.invalidateQueries({ queryKey: ["vendorCategories"] });
+        // Also invalidate solicitation-related queries that might include vendor data
+        queryClient.invalidateQueries({ queryKey: ["solicitations"] });
+        queryClient.invalidateQueries({ queryKey: ["my-solicitations"] });
+      },
+    });
 
   const onSubmit = async (data: any) => {
     try {
       const formData = forge.getValues() ?? data;
       let uploadedFiles: UploadFileResponse[] = [];
-      
+
       // Upload files first if any exist
-      if (formData.files && formData.files.length > 0) {
+      if (formData.files && formData.files?.length > 0) {
         const fileFormData = new FormData();
-        
+
         // Add all files to FormData
         formData.files.forEach((file: File) => {
           fileFormData.append("file", file);
         });
-        
+
         try {
           const uploadResponse = await uploadFile(fileFormData);
           uploadedFiles = uploadResponse.data?.data || [];
         } catch (uploadError) {
           console.log("File upload failed:", uploadError);
           // Don't return here - continue with registration even if file upload fails
-          toast.error("File Upload Warning", "Files could not be uploaded, but registration will continue.");
+          toast.error(
+            "File Upload Warning",
+            "Files could not be uploaded, but registration will continue."
+          );
         }
       }
-      
+
       // Map form fields to API expected fields
       const apiPayload = {
         token,
@@ -321,14 +322,18 @@ const VendorOnboardingPage = () => {
                 type={currentStep === 3 ? "submit" : "button"}
                 onClick={async () => {
                   if (currentStep === 3) return; // Submit will be handled by form
-                  
+
                   // Validate current step before proceeding
                   let isValid = false;
                   try {
                     if (currentStep === 1) {
-                      await step1Schema.validate(forge.getValues(), { abortEarly: false });
+                      await step1Schema.validate(forge.getValues(), {
+                        abortEarly: false,
+                      });
                     } else if (currentStep === 2) {
-                      await step2Schema.validate(forge.getValues(), { abortEarly: false });
+                      await step2Schema.validate(forge.getValues(), {
+                        abortEarly: false,
+                      });
                     }
                     isValid = true;
                   } catch (error: any) {
@@ -338,15 +343,20 @@ const VendorOnboardingPage = () => {
                         forge.setError(err.path, { message: err.message });
                       });
                     }
-                    toast.error("Validation Error", "Please fill in all required fields correctly.");
+                    toast.error(
+                      "Validation Error",
+                      "Please fill in all required fields correctly."
+                    );
                   }
-                  
+
                   if (isValid) {
                     setCurrentStep(currentStep + 1);
                   }
                 }}
                 className="w-full h-12 bg-[#2A4467] hover:bg-[#1e3147] text-white"
-                disabled={currentStep === 3 && (isUploadingFiles || isCreatingVendor)}
+                disabled={
+                  currentStep === 3 && (isUploadingFiles || isCreatingVendor)
+                }
               >
                 {currentStep === 3
                   ? isUploadingFiles
@@ -364,9 +374,9 @@ const VendorOnboardingPage = () => {
       <div className="text-center mt-6 mx-auto w-fit ">
         <p className="text-xs text-gray-500 dark:text-gray-400">
           Powered by{" "}
-          <a 
-            href="https://aigproinc.ca/" 
-            target="_blank" 
+          <a
+            href="https://aigproinc.ca/"
+            target="_blank"
             rel="noopener noreferrer"
             className="font-medium text-[#2A4467] dark:text-[#4A90E2] hover:underline cursor-pointer"
           >
