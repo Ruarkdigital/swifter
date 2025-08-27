@@ -292,6 +292,28 @@ const EvaluationDetailPage: React.FC = () => {
     },
   });
 
+  // Send evaluation requirements to proponents
+  const sendRequirementMutation = useMutation<any, Error, void>({
+    mutationFn: async () => {
+      const response = await getRequest({
+        url: `/procurement/evaluations/${id}/send-requirement`,
+      });
+      return response.data;
+    },
+    onSuccess: (data) => {
+      toastHandlers.success(
+        "Requirements Sent",
+        data?.data?.message || "Submission requirements sent successfully to all proponents"
+      );
+    },
+    onError: (error) => {
+      toastHandlers.error(
+        "Send Failed",
+        error.message || "An error occurred while sending requirements"
+      );
+    },
+  });
+
   // Handle release group
   const handleReleaseGroup = async () => {
     try {
@@ -727,8 +749,8 @@ const EvaluationDetailPage: React.FC = () => {
               <span>Preview</span>
             </DropdownMenuItem>
             <DropdownMenuItem
-              onClick={() => previewRequirementMutation.mutate()}
-              disabled={previewRequirementMutation.isPending}
+              onClick={() => sendRequirementMutation.mutate()}
+              disabled={sendRequirementMutation.isPending}
             >
               <span>Send Evaluation</span>
             </DropdownMenuItem>
