@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { DataTable } from "@/components/layouts/DataTable";
 import { ColumnDef } from "@tanstack/react-table";
 import { Upload } from "lucide-react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { getRequest, postRequest } from "@/lib/axiosInstance";
 import { ApiResponse, ApiResponseError } from "@/types";
@@ -123,6 +123,7 @@ const getAcceptedTypesForDocType = (docType?: string): string[] => {
 
 const SubmitProposalPage: React.FC<SubmitProposalPageProps> = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const toast = useToastHandler();
   const [type, setType] = useState("");
   const formRef = useRef<FormPropsRef>(null);
@@ -132,6 +133,11 @@ const SubmitProposalPage: React.FC<SubmitProposalPageProps> = () => {
   const [selectedDocumentId, setSelectedDocumentId] = useState<string | null>(
     null
   );
+
+  // Check if this is a vendor submission flow
+  const isSubmitForVendor = location.state?.isSubmitForVendor || false;
+  // const vendorId = location.state?.vendorId;
+  const customEndpoint = location.state?.endpoint;
 
   // Initialize useForge for proposal form
   const forge = useForge<FormValues>({
@@ -190,11 +196,16 @@ const SubmitProposalPage: React.FC<SubmitProposalPageProps> = () => {
     FormValues
   >({
     mutationKey: ["submitProposal"],
-    mutationFn: async (proposalData) =>
-      await postRequest({
-        url: `/vendor/proposal/${solicitationId}/submit`,
+    mutationFn: async (proposalData) => {
+      const submitUrl = isSubmitForVendor && customEndpoint 
+        ? customEndpoint 
+        : `/vendor/proposal/${solicitationId}/submit`;
+      
+      return await postRequest({
+        url: submitUrl,
         payload: proposalData,
-      }),
+      });
+    },
   });
 
   // Extract solicitation data from API response

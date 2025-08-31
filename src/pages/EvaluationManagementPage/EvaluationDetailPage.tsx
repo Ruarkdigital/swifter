@@ -30,7 +30,7 @@ import { format } from "date-fns";
 import { useMutation } from "@tanstack/react-query";
 import { getRequest } from "@/lib/axiosInstance";
 import EvaluationScorecardSheet from "./components/EvaluationScorecardSheet";
-import { BidComparisonSheet } from "./components/BidComparisonBreakdownSheet";
+import { ProposalPriceBreakdownSheet } from "./components/ProposalPriceBreakdownSheet";
 import { ExportReportSheet } from "@/components/layouts/ExportReportSheet";
 import {
   useEvaluationDetail,
@@ -140,7 +140,7 @@ const RankBadge = ({
     if (rankType === "first") return "1st";
     if (rankType === "second") return "2nd";
     if (rankType === "third") return "3rd";
-    return `${rank}th`;
+    return `${rank}`;
   };
 
   return (
@@ -631,10 +631,12 @@ const EvaluationDetailPage: React.FC = () => {
         const vendorName = row.original.vendorName;
 
         return (
-          <BidComparisonSheet
-            evaluationId={id}
+          <ProposalPriceBreakdownSheet
             proposalId={proposalId}
             vendorName={vendorName}
+            submissionDate={row.original.submissionDate}
+            evaluationScore={row.original.score?.toString()}
+            rank={row.original.rank.toString()}
           />
         );
       },

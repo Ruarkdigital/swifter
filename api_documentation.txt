@@ -9396,8 +9396,8 @@
     },
     "/procurement/evaluations/proposal/{proposalId}": {
       "get": {
-        "summary": "Delete document on edit screen",
-        "description": "Procurement lead should be promted before deleting all contentn as direclty related to this evaluation document",
+        "summary": "Get proposal price breakdown",
+        "description": "View price proposal break down submitted by a vendor",
         "tags": [
           "Procurement-Evaluation",
           "Company-Evaluation",
@@ -11043,6 +11043,112 @@
           },
           "404": {
             "description": "Solicitation or vendor proposal not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/procurement/evaluations/{evaluationId}/generate-document": {
+      "get": {
+        "summary": "Generate an evaluation document",
+        "description": "Generates a document for a specific evaluation based on the provided evaluation ID. The document can include sections such as evaluation details or score summary. The output format can be PDF or DOCX.",
+        "tags": [
+          "Procurement-Evaluation"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "evaluationId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "The MongoDB ObjectId of the evaluation to generate the document for"
+          },
+          {
+            "in": "query",
+            "name": "type",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "pdf",
+                "docx"
+              ],
+              "default": "pdf"
+            },
+            "description": "Export file type (pdf or docx)"
+          },
+          {
+            "in": "query",
+            "name": "sections",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Comma-separated list of sections to include (e.g., evaluation,score). Defaults to 'all'."
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/pdf": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "application/vnd.openxmlformats-officedocument.wordprocessingml.document": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated user",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Invalid evaluation ID or unauthorized access",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizeError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Evaluation not found",
             "content": {
               "application/json": {
                 "schema": {
@@ -12854,6 +12960,316 @@
           },
           "500": {
             "description": "Something bad went wrong",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/procurement/solicitations/{solicitationId}/submit-vendor/{vendorId}": {
+      "post": {
+        "summary": "Submit vendor proposal for solicitation",
+        "description": "Submit a vendor proposal in response to a solicitation.\nIncludes required documents and price breakdown with validation rules:\n- Total amount must match sum of all price components\n- Status must be either 'draft' or 'submit'\n- Total and status are requuired\n- Documents must include all required files\n- Price components must have valid quantities and amounts\n",
+        "tags": [
+          "Vendor-Proposal"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "solicitationId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "The unique identifier of the solicitation"
+            }
+          },
+          {
+            "in": "path",
+            "name": "vendorId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "vendorId"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Vendor proposal submission data",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "total": {
+                    "type": "number",
+                    "description": "Total proposal amount (must match sum of all price components)",
+                    "example": 12500.5,
+                    "minimum": 0
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "draft",
+                      "submit"
+                    ],
+                    "description": "Submission status (draft saves for later, submit finalizes proposal)",
+                    "example": "submit"
+                  },
+                  "document": {
+                    "type": "array",
+                    "description": "Required documents with attached files",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "requiredDocumentid": {
+                          "type": "string",
+                          "format": null,
+                          "description": "ID of the required document",
+                          "example": "a1b2c3d4-e5f6-7890-g1h2-i3j4k5l6m7n8"
+                        },
+                        "files": {
+                          "type": "array",
+                          "description": "Attached files for this document",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "name": {
+                                "type": "string",
+                                "description": "Original file name",
+                                "example": "proposal.pdf"
+                              },
+                              "url": {
+                                "type": "string",
+                                "format": "uri",
+                                "description": "URL to access the file",
+                                "example": "https://storage.example.com/proposals/123.pdf"
+                              },
+                              "size": {
+                                "type": "string",
+                                "description": "File size in bytes",
+                                "example": "2048000"
+                              },
+                              "type": {
+                                "type": "string",
+                                "description": "MIME type of the file",
+                                "example": "application/pdf"
+                              }
+                            }
+                          },
+                          "minItems": 1
+                        }
+                      }
+                    },
+                    "minItems": 1
+                  },
+                  "priceAction": {
+                    "type": "array",
+                    "description": "Detailed price breakdown of the proposal",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "component": {
+                          "type": "string",
+                          "description": "Name of the price component",
+                          "example": "Labor",
+                          "minLength": 2,
+                          "maxLength": 100
+                        },
+                        "description": {
+                          "type": "string",
+                          "description": "Detailed description of the component",
+                          "example": "Senior developer hours",
+                          "minLength": 10,
+                          "maxLength": 500
+                        },
+                        "quantity": {
+                          "type": "number",
+                          "description": "Quantity of units",
+                          "example": 40,
+                          "minimum": 0
+                        },
+                        "unitOfmeasurement": {
+                          "type": "string",
+                          "description": "Unit of measurement (hours, items, etc.)",
+                          "example": "hours"
+                        },
+                        "unitPrice": {
+                          "type": "number",
+                          "description": "Price per unit",
+                          "example": 125.5,
+                          "minimum": 0
+                        },
+                        "subtotal": {
+                          "type": "number",
+                          "description": "Calculated subtotal (quantity × unitPrice)",
+                          "example": 5020,
+                          "minimum": 0
+                        },
+                        "subItems": {
+                          "type": "array",
+                          "description": "Optional breakdown of sub-components",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "component": {
+                                "type": "string",
+                                "example": "Overtime hours"
+                              },
+                              "description": {
+                                "type": "string",
+                                "example": "Additional hours beyond contract"
+                              },
+                              "quantity": {
+                                "type": "number",
+                                "example": 10
+                              },
+                              "unitOfmeasurement": {
+                                "type": "string",
+                                "example": "hours"
+                              },
+                              "unitPrice": {
+                                "type": "number",
+                                "example": 187.5
+                              },
+                              "subtotal": {
+                                "type": "number",
+                                "example": 1875
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "required": [
+                  "total",
+                  "status"
+                ],
+                "example": {
+                  "total": 12500.5,
+                  "status": "submit",
+                  "document": [
+                    {
+                      "requiredDocumentId": "a1b2c3d4-e5f6-7890-g1h2-i3j4k5l6m7n8",
+                      "files": [
+                        {
+                          "name": "proposal.pdf",
+                          "url": "https://storage.example.com/proposals/123.pdf",
+                          "size": "2048000",
+                          "type": "application/pdf"
+                        }
+                      ]
+                    }
+                  ],
+                  "priceAction": [
+                    {
+                      "component": "Labor",
+                      "description": "Senior developer hours",
+                      "quantity": 40,
+                      "unitOfmeasurement": "hours",
+                      "unitPrice": 125.5,
+                      "subtotal": 5020,
+                      "subItems": [
+                        {
+                          "component": "Overtime",
+                          "description": "Additional hours beyond contract",
+                          "quantity": 10,
+                          "unitOfmeasurement": "hours",
+                          "unitPrice": 187.5,
+                          "subtotal": 1875
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Proposal submitted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Proposal submitted successfully"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/RequiredDocument"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid proposal data or total mismatch",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequestError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated user",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Unauthorized user",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizeError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Solicitation not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation error in proposal data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
             "content": {
               "application/json": {
                 "schema": {
@@ -16038,6 +16454,522 @@
           },
           "404": {
             "description": "Solicitation or vendor proposal not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/procurement/solicitations/proposals/{proposalId}/submissions/{requirementDocId}/{action}": {
+      "put": {
+        "summary": "Update proponent submission",
+        "description": "Updates a proponent's submission for a specific proposal and requirement document. Supports both amend and update actions.",
+        "tags": [
+          "Procurement-Proposal"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "proposalId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "The MongoDB ObjectId of the proposal"
+          },
+          {
+            "in": "path",
+            "name": "requirementDocId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "The MongoDB ObjectId of the requirement document"
+          },
+          {
+            "in": "path",
+            "name": "action",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "amend",
+                "update"
+              ]
+            },
+            "description": "The action to perform - 'amend' to replace existing files, 'update' to add new files"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Submission update payload containing the reason for the update and file information. \u003Cbr\u003E\u003Cbr\u003E \u003Cb\u003ERequired fields:\u003C/b\u003E \u003Cul\u003E\n  \u003Cli\u003E\u003Cb\u003Ereason\u003C/b\u003E - Reason for the submission update (string)\u003C/li\u003E\n  \u003Cli\u003E\u003Cb\u003Efiles\u003C/b\u003E - Array of file objects to be added or amended\u003C/li\u003E\n\u003C/ul\u003E \u003Cbr\u003E \u003Cb\u003EOptional fields:\u003C/b\u003E \u003Cul\u003E\n  \u003Cli\u003E\u003Cb\u003EfileId\u003C/b\u003E - ID of the specific file to amend (required only for 'amend' action)\u003C/li\u003E\n\u003C/ul\u003E\n",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "reason": {
+                    "type": "string",
+                    "description": "Reason for the submission update"
+                  },
+                  "fileId": {
+                    "type": "string",
+                    "description": "ID of the file to amend (required for amend action)"
+                  },
+                  "files": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string",
+                          "description": "File name"
+                        },
+                        "url": {
+                          "type": "string",
+                          "description": "File URL"
+                        },
+                        "size": {
+                          "type": "string",
+                          "description": "File size"
+                        },
+                        "type": {
+                          "type": "string",
+                          "description": "File type/MIME type"
+                        }
+                      },
+                      "required": [
+                        "name",
+                        "url",
+                        "size",
+                        "type"
+                      ]
+                    }
+                  }
+                },
+                "required": [
+                  "reason",
+                  "files"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Proponent submission updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "Updated proposal object"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - invalid action parameter or file not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated user",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Proposal or requirement document not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/procurement/solicitations/proposals/{proposalId}/pricing-submissions": {
+      "put": {
+        "summary": "Update proponent submission pricing",
+        "description": "Updates a proponent's submission for a specific proposal and requirement document. Supports both amend and update actions.",
+        "tags": [
+          "Procurement-Proposal"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "proposalId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "The MongoDB ObjectId of the proposal"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Submission update payload containing the reason for the update and file information. \u003Cbr\u003E\u003Cbr\u003E \u003Cb\u003ERequired fields:\u003C/b\u003E \u003Cul\u003E\n  \u003Cli\u003E\u003Cb\u003Ereason\u003C/b\u003E - Reason for the submission update (string)\u003C/li\u003E\n  \u003Cli\u003E\u003Cb\u003Efiles\u003C/b\u003E - Array of file objects to be added or amended\u003C/li\u003E\n\u003C/ul\u003E \u003Cbr\u003E \u003Cb\u003EOptional fields:\u003C/b\u003E \u003Cul\u003E\n  \u003Cli\u003E\u003Cb\u003EfileId\u003C/b\u003E - ID of the specific file to amend (required only for 'amend' action)\u003C/li\u003E\n\u003C/ul\u003E\n",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "reason": {
+                    "type": "string",
+                    "description": "Reason for the submission update"
+                  },
+                  "fileId": {
+                    "type": "string",
+                    "description": "ID of the file to amend (required for amend action)"
+                  },
+                  "files": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string",
+                          "description": "File name"
+                        },
+                        "url": {
+                          "type": "string",
+                          "description": "File URL"
+                        },
+                        "size": {
+                          "type": "string",
+                          "description": "File size"
+                        },
+                        "type": {
+                          "type": "string",
+                          "description": "File type/MIME type"
+                        }
+                      },
+                      "required": [
+                        "name",
+                        "url",
+                        "size",
+                        "type"
+                      ]
+                    }
+                  }
+                },
+                "required": [
+                  "reason",
+                  "files"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Proponent submission updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "Updated proposal object"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - invalid action parameter or file not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated user",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Proposal or requirement document not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/procurement/solicitations/proposals/{proposalId}/submission-history": {
+      "get": {
+        "summary": "Get proponent submission history",
+        "description": "Retrieves the history of submission updates for a specific proposal, including all changes made by the proponent.",
+        "tags": [
+          "Procurement-Proposal"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "proposalId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "The MongoDB ObjectId of the proposal"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Proponent submission history retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "count": {
+                          "type": "number",
+                          "description": "Total number of history records"
+                        },
+                        "history": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "_id": {
+                                "type": "string",
+                                "description": "History record ID"
+                              },
+                              "proposal": {
+                                "type": "object",
+                                "properties": {
+                                  "_id": {
+                                    "type": "string"
+                                  },
+                                  "solicitation": {
+                                    "type": "object",
+                                    "properties": {
+                                      "_id": {
+                                        "type": "string"
+                                      },
+                                      "name": {
+                                        "type": "string"
+                                      },
+                                      "solId": {
+                                        "type": "string"
+                                      }
+                                    }
+                                  },
+                                  "vendor": {
+                                    "type": "object",
+                                    "properties": {
+                                      "_id": {
+                                        "type": "string"
+                                      },
+                                      "name": {
+                                        "type": "string"
+                                      }
+                                    }
+                                  }
+                                }
+                              },
+                              "createdBy": {
+                                "type": "object",
+                                "properties": {
+                                  "_id": {
+                                    "type": "string"
+                                  },
+                                  "name": {
+                                    "type": "string"
+                                  },
+                                  "email": {
+                                    "type": "string"
+                                  }
+                                }
+                              },
+                              "reason": {
+                                "type": "string",
+                                "description": "Reason for the submission update"
+                              },
+                              "newFiles": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "name": {
+                                      "type": "string"
+                                    },
+                                    "url": {
+                                      "type": "string"
+                                    },
+                                    "size": {
+                                      "type": "string"
+                                    },
+                                    "type": {
+                                      "type": "string"
+                                    }
+                                  }
+                                }
+                              },
+                              "oldFiles": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "name": {
+                                      "type": "string"
+                                    },
+                                    "url": {
+                                      "type": "string"
+                                    },
+                                    "size": {
+                                      "type": "string"
+                                    },
+                                    "type": {
+                                      "type": "string"
+                                    }
+                                  }
+                                }
+                              },
+                              "createdAt": {
+                                "type": "string",
+                                "format": "date-time"
+                              },
+                              "updatedAt": {
+                                "type": "string",
+                                "format": "date-time"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated user",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Proposal not found",
             "content": {
               "application/json": {
                 "schema": {

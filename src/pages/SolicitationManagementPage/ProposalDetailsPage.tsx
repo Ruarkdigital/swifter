@@ -3,14 +3,14 @@ import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent } from "@/components/ui/card";
-import { Share2, Eye, Download, ChevronDown } from "lucide-react";
+import { Share2, Eye, Download, ChevronDown, MoreHorizontal, Edit } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import AmendSubmissionDialog from "./components/AmendSubmissionDialog";
 import { DataTable } from "@/components/layouts/DataTable";
 import { ColumnDef } from "@tanstack/react-table";
 import { ConfirmAlert } from "@/components/layouts/ConfirmAlert";
@@ -96,6 +96,42 @@ export interface SubmittedDocument {
   _id: string;
 }
 
+export interface Amendment {
+  _id: string;
+  proposal: {
+    _id: string;
+    solicitation: {
+      _id: string;
+      name: string;
+      solId: string;
+    };
+    vendor: {
+      _id: string;
+      name: string;
+    };
+  };
+  createdBy: {
+    _id: string;
+    name: string;
+    email: string;
+  };
+  reason: string;
+  newFiles: Array<{
+    name: string;
+    url: string;
+    size: string;
+    type: string;
+  }>;
+  oldFiles: Array<{
+    name: string;
+    url: string;
+    size: string;
+    type: string;
+  }>;
+  createdAt: string;
+  updatedAt: string;
+}
+
 const ProposalDetailsPage: React.FC = () => {
   const { id, proposalId } = useParams<{ id: string; proposalId: string }>();
   const navigate = useNavigate();
@@ -103,6 +139,8 @@ const ProposalDetailsPage: React.FC = () => {
   const queryClient = useQueryClient();
   const toastHandlers = useToastHandler();
   const [showAwardModal, setShowAwardModal] = useState(false);
+  const [showAmendDialog, setShowAmendDialog] = useState(false);
+  const [selectedDocumentForAmend, setSelectedDocumentForAmend] = useState<SubmittedDocument | null>(null);
 
   // Get vendor ID from location state
   const vendorId = location.state?.vendorId || proposalId;
@@ -167,7 +205,9 @@ const ProposalDetailsPage: React.FC = () => {
         ? format(new Date(evaluator.dateSubmitted), "MMM d, yyyy pppp")
         : "N/A",
       status: evaluator.status === "Completed" ? "Completed" : "Pending",
-      totalScore: evaluator.averageScore ? `${evaluator.averageScore}/100` : "N/A",
+      totalScore: evaluator.averageScore
+        ? `${evaluator.averageScore}/100`
+        : "N/A",
       commentSummary: "View details for comments", // Placeholder as API doesn't provide comment summary
     })) || [];
 
@@ -325,6 +365,17 @@ const ProposalDetailsPage: React.FC = () => {
     awardVendorMutation.mutate(vendorId);
   };
 
+  const handleSubmitForVendor = () => {
+    // Navigate to submit proposal page with modified endpoint context
+    navigate(`/dashboard/solicitations/${id}/submit-proposal`, {
+      state: {
+        vendorId: vendorId,
+        isSubmitForVendor: true,
+        endpoint: `/procurement/solicitations/${id}/submit-vendor/${vendorId}`
+      }
+    });
+  };
+
   // Handle remind evaluator
   const handleRemindEvaluator = (evaluatorId: string) => {
     remindEvaluatorMutation.mutate(evaluatorId);
@@ -430,6 +481,277 @@ const ProposalDetailsPage: React.FC = () => {
       },
     },
   ];
+
+  // Define columns for the submitted documents table
+  const documentsColumns: ColumnDef<SubmittedDocument>[] = [
+    {
+      accessorKey: "name",
+      header: "Requested Doc",
+      cell: ({ row }) => {
+        const document = row.original;
+
+        return (
+          <div className="font-medium text-gray-900 dark:text-gray-100">
+            {document.name || "Untitled Document"}
+          </div>
+        );
+      },
+    },
+    {
+      accessorKey: "type",
+      header: "Document Type",
+      cell: ({ row }) => {
+        const document = row.original;
+        const fileStyle = getFileTypeStyle(document.name || "file");
+
+        return (
+          <Badge variant="secondary" className="text-xs">
+            {fileStyle.label}
+          </Badge>
+        );
+      },
+    },
+    {
+      accessorKey: "uploadedAt",
+      header: "Date Submitted",
+      cell: ({ row }) => {
+        const document = row.original;
+        return (
+          <div className="text-sm text-gray-600 dark:text-gray-300">
+            {document.uploadedAt
+              ? format(new Date(document.uploadedAt), "MMM d, yyyy h:mm a")
+              : "N/A"}
+          </div>
+        );
+      },
+    },
+    {
+      id: "actions",
+      header: "Actions",
+      cell: ({ row }) => {
+        const document = row.original;
+        const extension = (document.name || "file")
+          .split(".")
+          .pop()
+          ?.toLowerCase();
+        const isDocFile = extension === "doc" || extension === "docx";
+
+        return (
+          <div className="flex items-center gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0"
+                >
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                 {isDocFile ? (
+                   <DropdownMenuItem
+                     onClick={() => {
+                       if (document.url) {
+                         const link = window.document.createElement("a");
+                         link.href = document.url;
+                         link.download = document.name || "download";
+                         window.document.body.appendChild(link);
+                         link.click();
+                         window.document.body.removeChild(link);
+                       }
+                     }}
+                   >
+                     <Download className="mr-2 h-4 w-4" />
+                     Download
+                   </DropdownMenuItem>
+                 ) : (
+                   <DropdownMenuItem
+                     onClick={() => {
+                       if (document.url) {
+                         if (document.type?.toLowerCase() === 'pricing') {
+                           // For pricing documents, open in read-only mode
+                           window.open(document.url, "_blank");
+                         } else {
+                           // For other documents, open in new tab
+                           window.open(document.url, "_blank");
+                         }
+                       }
+                     }}
+                   >
+                     <Eye className="mr-2 h-4 w-4" />
+                     View
+                   </DropdownMenuItem>
+                 )}
+                 
+                 {!isDocFile && (
+                   <DropdownMenuItem
+                     onClick={() => {
+                       if (document.url) {
+                         const link = window.document.createElement("a");
+                         link.href = document.url;
+                         link.download = document.name || "download";
+                         window.document.body.appendChild(link);
+                         link.click();
+                         window.document.body.removeChild(link);
+                       }
+                     }}
+                   >
+                     <Download className="mr-2 h-4 w-4" />
+                     Download
+                   </DropdownMenuItem>
+                 )}
+                 
+                 {isDocFile && (
+                   <DropdownMenuItem
+                     onClick={() => {
+                       setSelectedDocumentForAmend(document);
+                       setShowAmendDialog(true);
+                     }}
+                   >
+                     <Edit className="mr-2 h-4 w-4" />
+                     Amend
+                   </DropdownMenuItem>
+                 )}
+               </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        );
+      },
+    },
+  ];
+
+  // Define columns for the amendments table
+  const amendmentsColumns: ColumnDef<Amendment>[] = [
+    {
+      accessorKey: "newFiles",
+      header: "Amended Doc.",
+      cell: ({ row }) => {
+        const amendment = row.original;
+        const fileName = amendment.newFiles?.[0]?.name || "N/A";
+        return (
+          <div className="font-medium text-gray-900 dark:text-gray-100">
+            {fileName}
+          </div>
+        );
+      },
+    },
+    {
+      accessorKey: "oldFiles",
+      header: "Original Submission",
+      cell: ({ row }) => {
+        const amendment = row.original;
+        const originalFileName = amendment.oldFiles?.[0]?.name || "N/A";
+        return (
+          <div className="text-sm text-gray-600 dark:text-gray-300">
+            {originalFileName}
+          </div>
+        );
+      },
+    },
+    {
+      accessorKey: "createdBy",
+      header: "Amended by",
+      cell: ({ row }) => {
+        const amendment = row.original;
+        return (
+          <div className="text-sm text-gray-900 dark:text-gray-100">
+            {amendment.createdBy?.name || "N/A"}
+          </div>
+        );
+      },
+    },
+    {
+      accessorKey: "createdAt",
+      header: "Date Amended",
+      cell: ({ row }) => {
+        const amendment = row.original;
+        return (
+          <div className="text-sm text-gray-600 dark:text-gray-300">
+            {amendment.createdAt
+              ? format(new Date(amendment.createdAt), "yyyy-MM-dd, h:mm a 'EST'")
+              : "N/A"}
+          </div>
+        );
+      },
+    },
+    {
+      accessorKey: "reason",
+      header: "Reason / Note",
+      cell: ({ row }) => {
+        const amendment = row.original;
+        return (
+          <div className="text-sm text-gray-600 dark:text-gray-300 max-w-xs truncate">
+            {amendment.reason || "N/A"}
+          </div>
+        );
+      },
+    },
+    {
+      id: "actions",
+      header: "Actions",
+      cell: ({ row }) => {
+        const amendment = row.original;
+        return (
+          <div className="flex items-center gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0"
+                >
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem
+                  onClick={() => {
+                    // Handle view document action
+                    console.log("View document:", amendment);
+                  }}
+                >
+                  <Eye className="mr-2 h-4 w-4" />
+                  View Document
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => {
+                    // Handle delete amendment action
+                    console.log("Delete amendment:", amendment);
+                  }}
+                >
+                  <Download className="mr-2 h-4 w-4" />
+                  Delete Amendment
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        );
+      },
+    },
+  ];
+
+  // Create useAmendments hook for fetching amendments data
+  const useAmendments = (proposalId: string) => {
+    return useQuery<ApiResponse<Amendment[]>, ApiResponseError>({
+      queryKey: ["amendments", proposalId],
+      queryFn: async () => {
+        const endpoint = `/procurement/solicitations/proposals/${proposalId}/submission-history`;
+        return await getRequest({ url: endpoint });
+      },
+      enabled: !!proposalId,
+    });
+  };
+
+  // Fetch amendments data
+  const {
+    data: amendmentsData,
+    isLoading: isLoadingAmendments,
+    error: amendmentsError,
+  } = useAmendments(proposalId || "");
+
+  // Use amendments data from API
+  const amendments = amendmentsData?.data?.data || [];
 
   return (
     <div className="p-6 space-y-6 pb-10">
@@ -587,9 +909,16 @@ const ProposalDetailsPage: React.FC = () => {
           </div>
         )}
 
-        {/* Award Vendor Button */}
+        {/* Award Vendor and Submit for Vendor Buttons */}
         {proposal && (
-          <div className="flex justify-start">
+          <div className="flex justify-start gap-3">
+            <Button
+              onClick={handleSubmitForVendor}
+              className="bg-green-600 hover:bg-green-700 text-white"
+              disabled={proposal?.proposalDetails?.status === "submit"}
+            >
+              Submit for Vendor
+            </Button>
             <Button
               onClick={handleAwardVendor}
               className="bg-blue-600 hover:bg-blue-700 text-white"
@@ -707,9 +1036,9 @@ const ProposalDetailsPage: React.FC = () => {
                   <p className="text-base font-medium text-gray-900 dark:text-white">
                     Avg:{" "}
                     {criteria.scoring?.pass_fail ||
-                      criteria.scoring?.weight ||
+                      `${criteria.scoring?.weight}%` ||
                       "N/A"}
-                    %
+                    
                   </p>
                 </div>
               ))}
@@ -721,120 +1050,105 @@ const ProposalDetailsPage: React.FC = () => {
               Submitted Documents
             </h4>
 
-            {/* Documents Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {submittedDocument.length > 0 ? (
-                submittedDocument.map((document: any, index: number) => {
-                  const fileStyle = getFileTypeStyle(
-                    document.fileName || document.name || "file"
-                  );
+            {/* Nested Tabs for Documents */}
+            <Tabs defaultValue="original-submission" className="w-full">
+              <TabsList className="h-auto rounded-none  !bg-gray-200 dark:border-gray-600 p- w-full justify-start">
+                <TabsTrigger
+                  value="original-submission"
+                  className="data-[state=active]:shadow data-[state=active]:dark:bg-gray-600 data-[state=active]:dark:text-slate-100 relative py-2 after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 border-0 border-b-2 data-[state=active]:!bg-white flex-none px-3"
+                >
+                  Original Submission
+                </TabsTrigger>
+                <TabsTrigger
+                  value="amendments"
+                  className="data-[state=active]:shadow data-[state=active]:dark:bg-gray-600 data-[state=active]:dark:text-slate-100 relative py-2 after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 border-0 border-b-2 data-[state=active]:!bg-white flex-none px-3"
+                >
+                  Amendments
+                  {amendments && amendments.length > 0 && (
+                    <Badge variant="secondary" className="ml-2 bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                      {amendments.length}
+                    </Badge>
+                  )}
+                </TabsTrigger>
+              </TabsList>
 
-                  return (
-                    <Card
-                      key={index}
-                      className="border hover:shadow-md transition-shadow"
-                    >
-                      <CardContent className="p-4">
-                        <div className="flex items-start justify-between">
-                          {/* Left side - Icon and Info */}
-                          <div className="flex items-start gap-3 flex-1">
-                            <div className="flex-shrink-0">
-                              <div
-                                className={`w-12 h-12 ${fileStyle.bgColor} rounded-lg flex items-center justify-center`}
-                              >
-                                <div
-                                  className={`w-6 h-6 ${fileStyle.iconBg} rounded-sm flex items-center justify-center`}
-                                >
-                                  <span className="text-white text-xs font-bold">
-                                    {fileStyle.shortLabel}
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <h4 className="text-sm font-medium text-gray-900 dark:text-gray-200 truncate">
-                                {document.fileName ||
-                                  document.name ||
-                                  "Untitled Document"}
-                              </h4>
-                              <div className="flex items-center gap-2 mt-1">
-                                <span className="text-xs text-gray-500">
-                                  {fileStyle.label}
-                                </span>
-                                <span className="text-xs text-gray-400">•</span>
-                                <span className="text-xs text-gray-500">
-                                  {document.size
-                                    ? document.size
-                                    : "Unknown size"}
-                                </span>
-                              </div>
-                            </div>
-                          </div>
+              <TabsContent value="original-submission" className="space-y-4 mt-6">
+                {/* Original Documents Table */}
+                {submittedDocument.length > 0 ? (
+                  <DataTable
+                    data={submittedDocument}
+                    columns={documentsColumns}
+                    options={{
+                      disablePagination: true,
+                      disableSelection: true,
+                      isLoading: false,
+                      totalCounts: submittedDocument.length,
+                      manualPagination: false,
+                      setPagination: () => {},
+                      pagination: { pageIndex: 0, pageSize: 10 },
+                    }}
+                    classNames={{
+                      table: "border-separate border-spacing-y-2",
+                      tHeader: "bg-gray-50 dark:bg-slate-800",
+                      tHead:
+                        "text-left font-medium text-gray-700 dark:text-gray-300 py-3 px-4",
+                      tRow: "bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg",
+                      tCell: "py-4 px-4 text-sm",
+                    }}
+                  />
+                ) : (
+                  <div className="text-center py-8">
+                    <p className="text-gray-500 dark:text-gray-400">
+                      No documents submitted yet.
+                    </p>
+                  </div>
+                )}
+              </TabsContent>
 
-                          {/* Right side - Action Buttons */}
-                          <div className="flex items-center gap-2 ml-2">
-                            {(() => {
-                              const extension = (document.fileName || document.name || "file")
-                                .split(".")
-                                .pop()
-                                ?.toLowerCase();
-                              const isDocFile = extension === "doc" || extension === "docx";
-                              
-                              return !isDocFile ? (
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8 p-0 bg-gray-100 dark:bg-slate-900 rounded-full hover:bg-gray-200"
-                                  title="View"
-                                  onClick={() => {
-                                    if (document.fileUrl || document.url) {
-                                      window.open(
-                                        document.fileUrl || document.url,
-                                        "_blank"
-                                      );
-                                    }
-                                  }}
-                                >
-                                  <Eye className="w-4 h-4 text-gray-500" />
-                                </Button>
-                              ) : null;
-                            })()}
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 p-0 bg-blue-100 dark:bg-slate-900 rounded-full hover:bg-blue-200"
-                              title="Download"
-                              onClick={() => {
-                                if (document.fileUrl || document.url) {
-                                  const link =
-                                    window.document.createElement("a");
-                                  link.href = document.fileUrl || document.url;
-                                  link.download =
-                                    document.fileName ||
-                                    document.name ||
-                                    "download";
-                                  window.document.body.appendChild(link);
-                                  link.click();
-                                  window.document.body.removeChild(link);
-                                }
-                              }}
-                            >
-                              <Download className="w-4 h-4 text-blue-500 dark:text-gray-500" />
-                            </Button>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  );
-                })
-              ) : (
-                <div className="col-span-full text-center py-8">
-                  <p className="text-gray-500 dark:text-gray-400">
-                    No documents submitted yet.
-                  </p>
-                </div>
-              )}
-            </div>
+              <TabsContent value="amendments" className="space-y-4 mt-6">
+                {isLoadingAmendments ? (
+                  <div className="text-center py-8">
+                    <p className="text-gray-500 dark:text-gray-400">
+                      Loading amendments...
+                    </p>
+                  </div>
+                ) : amendmentsError ? (
+                  <div className="text-center py-8">
+                    <p className="text-red-500 dark:text-red-400">
+                      Error loading amendments. Please try again.
+                    </p>
+                  </div>
+                ) : amendments && amendments.length > 0 ? (
+                  <DataTable
+                    data={amendments}
+                    columns={amendmentsColumns}
+                    options={{
+                      disablePagination: true,
+                      disableSelection: true,
+                      isLoading: isLoadingAmendments,
+                      totalCounts: amendments.length,
+                      manualPagination: false,
+                      setPagination: () => {},
+                      pagination: { pageIndex: 0, pageSize: 10 },
+                    }}
+                    classNames={{
+                      table: "border-separate border-spacing-y-2",
+                      tHeader: "bg-gray-50 dark:bg-slate-800",
+                      tHead:
+                        "text-left font-medium text-gray-700 dark:text-gray-300 py-3 px-4",
+                      tRow: "bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg",
+                      tCell: "py-4 px-4 text-sm",
+                    }}
+                  />
+                ) : (
+                  <div className="text-center py-8">
+                    <p className="text-gray-500 dark:text-gray-400">
+                      No amendments submitted yet.
+                    </p>
+                  </div>
+                )}
+              </TabsContent>
+            </Tabs>
           </TabsContent>
 
           <TabsContent value="scores" className="space-y-6">
@@ -917,8 +1231,7 @@ const ProposalDetailsPage: React.FC = () => {
         </Tabs>
       </div>
 
-
-        {/* Award Vendor Confirmation Modal */}
+      {/* Award Vendor Confirmation Modal */}
       <ConfirmAlert
         open={showAwardModal}
         onClose={setShowAwardModal}
@@ -931,6 +1244,22 @@ const ProposalDetailsPage: React.FC = () => {
         showSecondaryButton={true}
         isLoading={awardVendorMutation.isPending}
       />
+
+      {/* Amend Submission Dialog */}
+       {selectedDocumentForAmend && (
+         <AmendSubmissionDialog
+           open={showAmendDialog}
+           onOpenChange={setShowAmendDialog}
+           documentName={selectedDocumentForAmend.name}
+           proposalId={proposalId!}
+           requirementDocId={selectedDocumentForAmend._id}
+           onAmendSuccess={() => {
+             queryClient.invalidateQueries({ queryKey: ["vendor-proposal", id, vendorId] });
+             setShowAmendDialog(false);
+             setSelectedDocumentForAmend(null);
+           }}
+         />
+       )}
     </div>
   );
 };
