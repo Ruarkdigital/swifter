@@ -25,6 +25,7 @@ interface MessageComponentProps {
   showReplyButtons?: boolean;
   depth?: number;
   sendType: "reply" | "addendum" | null;
+  solicitationStatus?: string;
 }
 
 // Helper function to format date and time
@@ -60,6 +61,7 @@ const MessageComponent: React.FC<MessageComponentProps> = ({
   showReplyButtons = false,
   depth = 0,
   sendType,
+  solicitationStatus,
 }) => {
   const [isClicked, setIsClicked] = useState<string | null>(null);
   const { date, time } = formatDateTime(createdAt);
@@ -98,6 +100,8 @@ const MessageComponent: React.FC<MessageComponentProps> = ({
                 : "outline"
             }
             size="sm"
+            disabled={solicitationStatus === "closed"}
+            className={solicitationStatus === "closed" ? "opacity-50 cursor-not-allowed" : ""}
             onClick={() => {
               setIsClicked(id);
               onReply(id, "addendum");

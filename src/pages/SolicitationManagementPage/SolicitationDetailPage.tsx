@@ -1418,11 +1418,11 @@ export const SolicitationDetailPage = () => {
         )}
 
         <TabsContent value="questions">
-          <QuestionsTab />
+          <QuestionsTab solicitationStatus={solicitation?.status} />
         </TabsContent>
 
         <TabsContent value="addendums">
-          <AddendumsTab solicitationId={id} />
+          <AddendumsTab solicitationId={id} solicitationStatus={solicitation?.status} />
         </TabsContent>
       </Tabs>
 

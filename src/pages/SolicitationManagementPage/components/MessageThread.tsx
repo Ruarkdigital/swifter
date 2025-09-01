@@ -7,12 +7,14 @@ interface MessageThreadProps {
   question: Question;
   sendType: "reply" | "addendum" | null;
   onReply?: (questionId: string, type: "reply" | "addendum") => void;
+  solicitationStatus?: string;
 }
 
 const MessageThread: React.FC<MessageThreadProps> = ({
   question,
   sendType,
   onReply,
+  solicitationStatus,
 }) => {
   // Convert the question and answer structure to a threaded format
   const buildThreadStructure = (question: Question) => {
@@ -54,6 +56,7 @@ const MessageThread: React.FC<MessageThreadProps> = ({
       onReply={!hasAnswer ? onReply : undefined}
       showReplyButtons={!hasAnswer && !!onReply}
       depth={0}
+      solicitationStatus={solicitationStatus}
     />
   );
 };

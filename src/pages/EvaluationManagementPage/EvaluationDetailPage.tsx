@@ -1175,7 +1175,7 @@ const EvaluationDetailPage: React.FC = () => {
               {isOwner && (
                 <EditEvaluationDialog evaluationId={id} page="documents">
                   <Button variant="outline" size="sm">
-                    Edit Required Documents
+                    Edit Requested Document
                   </Button>
                 </EditEvaluationDialog>
               )}

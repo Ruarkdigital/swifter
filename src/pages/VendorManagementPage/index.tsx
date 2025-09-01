@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
-import { Users, MoreHorizontal } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Users, MoreHorizontal, Search, X, Loader2 } from "lucide-react";
 import {
   format,
   startOfDay,
@@ -12,7 +13,7 @@ import {
   startOfYear,
   endOfYear,
 } from "date-fns";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getRequest, deleteRequest, putRequest, postRequest } from "@/lib/axiosInstance";
@@ -120,12 +121,34 @@ const EmptyState = () => {
   );
 };
 
+// Error state component
+const ErrorState = ({ error, onRetry }: { error: ApiResponseError; onRetry: () => void }) => {
+  return (
+    <div className="flex flex-col items-center justify-center py-12">
+      <div className="h-12 w-12 text-red-400 mb-4">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+        </svg>
+      </div>
+      <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
+        Failed to load vendors
+      </h3>
+      <p className="text-gray-500 dark:text-gray-400 text-center max-w-md mb-4">
+        {error?.response?.data?.message || "An error occurred while fetching vendor data. Please try again."}
+      </p>
+      <Button onClick={onRetry} variant="outline">
+        Try Again
+      </Button>
+    </div>
+  );
+};
+
 export const VendorManagementPage = () => {
   const navigate = useNavigate();
   const toast = useToastHandler();
   const queryClient = useQueryClient();
   const [searchParams] = useSearchParams();
-  const [searchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
@@ -185,7 +208,7 @@ export const VendorManagementPage = () => {
   });
 
   // Fetch vendors list
-  const { data: vendorsData, isLoading } = useQuery<
+  const { data: vendorsData, isLoading, error: vendorsError, refetch: refetchVendors } = useQuery<
     ApiResponse<VendorsListResponse>,
     ApiResponseError
   >({
@@ -196,6 +219,8 @@ export const VendorManagementPage = () => {
       debouncedSearchQuery,
       filters,
     ],
+    retry: 2,
+    retryDelay: 1000,
     queryFn: async () => {
       // Prepare filter parameters
       const params: Record<string, any> = {
@@ -434,39 +459,8 @@ export const VendorManagementPage = () => {
     }
   };
 
-  // Filter data based on search query and filters
-  const filteredData = useMemo(() => {
-    let filtered = [...vendors];
-
-    // Apply any additional client-side filtering if needed
-    // This is a fallback in case the API doesn't support certain filters
-    // or if we want to add additional filtering logic
-
-    // Example: Filter by status if not handled by API
-    if (
-      filters.status &&
-      filters.status !== "all_status" &&
-      filters.status !== ""
-    ) {
-      // Convert status values from the filter dropdown to match the API's status values
-      const statusMap: Record<string, string> = {
-        published: "Active",
-        draft: "Inactive",
-        "under evaluation": "Pending",
-        closed: "Suspended",
-      };
-
-      const targetStatus =
-        statusMap[filters.status.toLowerCase()] || filters.status;
-
-      filtered = filtered.filter((vendor) => {
-        const vendorStatus = vendor.isSuspended ? "Suspended" : vendor.status;
-        return vendorStatus === targetStatus;
-      });
-    }
-
-    return filtered;
-  }, [vendors, filters]);
+  // Use vendors data directly since API handles all filtering
+  const filteredData = vendors;
 
   // Define table columns
   const columns: ColumnDef<Vendor>[] = [
@@ -636,20 +630,68 @@ export const VendorManagementPage = () => {
                     Vendors
                   </h2>
                 </div>
-                {/* <div className="relative">
-                  <Search
-                    className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-[#6B6B6B]"
-                    strokeWidth={1.67}
-                  />
+                <div className="relative">
+                  {isLoading && debouncedSearchQuery ? (
+                    <Loader2
+                      className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-[#6B6B6B] animate-spin"
+                      strokeWidth={1.67}
+                    />
+                  ) : (
+                    <Search
+                      className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-[#6B6B6B]"
+                      strokeWidth={1.67}
+                    />
+                  )}
                   <Input
-                    placeholder="Search Users"
+                    placeholder="Search Vendors"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-12 pr-4 py-3 w-[300px] h-12 border border-[#E5E7EB] rounded-lg text-sm text-[#6B6B6B] focus:border-[#2A4467] focus:ring-[#2A4467]"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Escape') {
+                        setSearchQuery('');
+                        e.currentTarget.blur();
+                      }
+                    }}
+                    className="pl-12 pr-12 py-3 w-[300px] h-12 border border-[#E5E7EB] rounded-lg text-sm text-[#6B6B6B] focus:border-[#2A4467] focus:ring-[#2A4467]"
                     style={{ fontFamily: "PushPenny" }}
+                    aria-label="Search vendors by name, email, or business type"
+                    type="search"
+                    autoComplete="off"
                   />
-                </div> */}
+                  {searchQuery && (
+                    <button
+                      onClick={() => setSearchQuery('')}
+                      className="absolute right-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-[#6B6B6B] hover:text-[#2A4467] transition-colors"
+                      aria-label="Clear search"
+                      type="button"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
               </div>
+
+              {/* Search Results Indicator */}
+              {debouncedSearchQuery && (
+                <div className="flex items-center gap-2 text-sm text-[#6B6B6B]">
+                  <span>
+                    {isLoading ? (
+                      "Searching..."
+                    ) : (
+                      `Found ${totalVendors || 0} vendor${(totalVendors || 0) !== 1 ? 's' : ''} for "${debouncedSearchQuery}"`
+                    )}
+                  </span>
+                  {!isLoading && (
+                    <button
+                      onClick={() => setSearchQuery('')}
+                      className="text-[#2A4467] hover:underline"
+                      type="button"
+                    >
+                      Clear search
+                    </button>
+                  )}
+                </div>
+              )}
 
               <DropdownFilters
                 filters={[
@@ -723,7 +765,13 @@ export const VendorManagementPage = () => {
             </div>
           </div>
         )}
-        emptyPlaceholder={<EmptyState />}
+        emptyPlaceholder={
+          vendorsError ? (
+            <ErrorState error={vendorsError} onRetry={() => refetchVendors()} />
+          ) : (
+            <EmptyState />
+          )
+        }
         classNames={{
           container:
             "bg-white dark:bg-slate-950 rounded-xl px-3 border border-gray-300 dark:border-slate-600",

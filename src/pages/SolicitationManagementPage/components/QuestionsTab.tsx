@@ -59,7 +59,11 @@ type QuestionsResponse = {
   };
 };
 
-const QuestionsTab: React.FC = () => {
+interface QuestionsTabProps {
+  solicitationStatus?: string;
+}
+
+const QuestionsTab: React.FC<QuestionsTabProps> = ({ solicitationStatus }) => {
   const queryClient = useQueryClient();
   const toastHandler = useToastHandler();
   const { id: solicitationId } = useParams<{ id: string }>();
@@ -186,7 +190,7 @@ const QuestionsTab: React.FC = () => {
       createQuestionMutation.mutate({
         note: content.trim(),
       });
-    } else if ((type === "addendum" || sendType === "addendum") && replyToQuestion) {
+    } else if ((type === "addendum" || sendType === "addendum") && replyToQuestion && solicitationStatus !== "closed") {
       // Handle replying with addendum - open CreateAddendumDialog
       setIsCreateAddendumDialogOpen(true);
     } else {
@@ -205,7 +209,7 @@ const QuestionsTab: React.FC = () => {
 
     setReplyToQuestion(question);
     setSendType(type);
-    if (type === "addendum") setIsCreateAddendumDialogOpen(true)
+    if (type === "addendum" && solicitationStatus !== "closed") setIsCreateAddendumDialogOpen(true)
     setShowCreateQuestion(false);
   };
 
@@ -299,6 +303,7 @@ const QuestionsTab: React.FC = () => {
                 ? handleReplyClick
                 : undefined
             }
+            solicitationStatus={solicitationStatus}
           />
         ))}
       </div>

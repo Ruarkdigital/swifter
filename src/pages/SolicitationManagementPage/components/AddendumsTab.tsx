@@ -71,6 +71,7 @@ type Addendum = {
 
 interface AddendumsTabProps {
   solicitationId?: string;
+  solicitationStatus?: string;
 }
 
 // Transform API addendum data to component format
@@ -184,7 +185,7 @@ const useAddendums = (solicitationId: string) => {
   });
 };
 
-const AddendumsTab: React.FC<AddendumsTabProps> = ({ solicitationId }) => {
+const AddendumsTab: React.FC<AddendumsTabProps> = ({ solicitationId, solicitationStatus }) => {
   const toast = useToastHandler();
   const queryClient = useQueryClient();
   const { isVendor } = useUserRole();
@@ -429,7 +430,10 @@ const AddendumsTab: React.FC<AddendumsTabProps> = ({ solicitationId }) => {
                   onOpenChange={setIsCreateDialogOpen}
                 >
                   <DialogTrigger asChild>
-                    <Button className="bg-[#2A4467] hover:bg-[#1e3252] text-white">
+                    <Button 
+                      className="bg-[#2A4467] hover:bg-[#1e3252] text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                      disabled={solicitationStatus === "closed"}
+                    >
                       <Plus className="h-4 w-4 mr-2" />
                       Create Addendum
                     </Button>

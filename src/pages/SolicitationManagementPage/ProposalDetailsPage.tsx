@@ -11,6 +11,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import AmendSubmissionDialog from "./components/AmendSubmissionDialog";
+import ReadOnlyProposalDialog from "./components/ReadOnlyProposalDialog";
+import AmendProposalDialog from "./components/AmendProposalDialog";
 import { DataTable } from "@/components/layouts/DataTable";
 import { ColumnDef } from "@tanstack/react-table";
 import { ConfirmAlert } from "@/components/layouts/ConfirmAlert";
@@ -19,7 +21,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useToastHandler } from "@/hooks/useToaster";
 import { ApiResponse, ApiResponseError } from "@/types";
 import { useState } from "react";
-import { format } from "date-fns";
+import { format, isAfter, parseISO, isValid } from "date-fns";
 import { formatCurrency } from "@/lib/utils";
 
 // Define the evaluator data type
@@ -76,6 +78,7 @@ export interface Overview {
 }
 
 export interface ProposalDetails {
+  id: string
   name: string;
   vendor: string;
   contact: string;
@@ -94,6 +97,7 @@ export interface SubmittedDocument {
   size: string;
   uploadedAt: Date;
   _id: string;
+  requiredDocId: string;
 }
 
 export interface Amendment {
@@ -141,13 +145,22 @@ const ProposalDetailsPage: React.FC = () => {
   const [showAwardModal, setShowAwardModal] = useState(false);
   const [showAmendDialog, setShowAmendDialog] = useState(false);
   const [selectedDocumentForAmend, setSelectedDocumentForAmend] = useState<SubmittedDocument | null>(null);
+  const [showReadOnlyProposalDialog, setShowReadOnlyProposalDialog] = useState(false);
+  const [showAmendProposalDialog, setShowAmendProposalDialog] = useState(false);
 
   // Get vendor ID from location state
   const vendorId = location.state?.vendorId || proposalId;
 
   // Fetch solicitation data
   const { data: solicitationData } = useQuery<
-    ApiResponse<{ solicitation: { name: string; _id: string } }>,
+    ApiResponse<{ 
+      solicitation: { 
+        name: string; 
+        _id: string;
+        submissionDeadline: string;
+        status: string;
+      } 
+    }>,
     ApiResponseError
   >({
     queryKey: ["solicitation", id],
@@ -162,7 +175,6 @@ const ProposalDetailsPage: React.FC = () => {
   const {
     data: proposalData,
     isLoading: isLoadingProposal,
-    error: proposalError,
   } = useQuery<ApiResponse<VendorProposalData>, ApiResponseError>({
     queryKey: ["vendor-proposal", id, vendorId],
     queryFn: () =>
@@ -210,52 +222,6 @@ const ProposalDetailsPage: React.FC = () => {
         : "N/A",
       commentSummary: "View details for comments", // Placeholder as API doesn't provide comment summary
     })) || [];
-
-  // Helper function to get file type styling
-  const getFileTypeStyle = (fileName: string) => {
-    const extension = fileName.split(".").pop()?.toLowerCase();
-
-    switch (extension) {
-      case "doc":
-      case "docx":
-        return {
-          bgColor: "bg-blue-100",
-          iconBg: "bg-blue-600",
-          label: "DOC",
-          shortLabel: "W",
-        };
-      case "pdf":
-        return {
-          bgColor: "bg-red-100",
-          iconBg: "bg-red-600",
-          label: "PDF",
-          shortLabel: "PDF",
-        };
-      case "xls":
-      case "xlsx":
-        return {
-          bgColor: "bg-green-100",
-          iconBg: "bg-green-600",
-          label: "XLS",
-          shortLabel: "XLS",
-        };
-      case "zip":
-      case "rar":
-        return {
-          bgColor: "bg-purple-100",
-          iconBg: "bg-purple-600",
-          label: "ZIP",
-          shortLabel: "ZIP",
-        };
-      default:
-        return {
-          bgColor: "bg-gray-100",
-          iconBg: "bg-gray-600",
-          label: extension?.toUpperCase() || "FILE",
-          shortLabel: extension?.charAt(0).toUpperCase() || "F",
-        };
-    }
-  };
 
   const handleBack = () => {
     navigate(-1);
@@ -502,11 +468,10 @@ const ProposalDetailsPage: React.FC = () => {
       header: "Document Type",
       cell: ({ row }) => {
         const document = row.original;
-        const fileStyle = getFileTypeStyle(document.name || "file");
 
         return (
           <Badge variant="secondary" className="text-xs">
-            {fileStyle.label}
+            {document.type}
           </Badge>
         );
       },
@@ -530,9 +495,7 @@ const ProposalDetailsPage: React.FC = () => {
       header: "Actions",
       cell: ({ row }) => {
         const document = row.original;
-        const extension = (document.name || "file")
-          .split(".")
-          .pop()
+        const extension = (document.type || "file")
           ?.toLowerCase();
         const isDocFile = extension === "doc" || extension === "docx";
 
@@ -566,25 +529,38 @@ const ProposalDetailsPage: React.FC = () => {
                      Download
                    </DropdownMenuItem>
                  ) : (
-                   <DropdownMenuItem
-                     onClick={() => {
-                       if (document.url) {
-                         if (document.type?.toLowerCase() === 'pricing') {
-                           // For pricing documents, open in read-only mode
-                           window.open(document.url, "_blank");
-                         } else {
-                           // For other documents, open in new tab
-                           window.open(document.url, "_blank");
+                   <>
+                     <DropdownMenuItem
+                       onClick={() => {
+                         if (document.url) {
+                           if (document.type?.toLowerCase() === 'pricing') {
+                             // For pricing documents, open read-only proposal dialog
+                             setShowReadOnlyProposalDialog(true);
+                           } else {
+                             // For other documents, open in new tab
+                             window.open(document.url, "_blank");
+                           }
                          }
-                       }
-                     }}
-                   >
-                     <Eye className="mr-2 h-4 w-4" />
-                     View
-                   </DropdownMenuItem>
+                       }}
+                     >
+                       <Eye className="mr-2 h-4 w-4" />
+                       View
+                     </DropdownMenuItem>
+                     
+                     {document.type?.toLowerCase() === 'pricing' && (
+                       <DropdownMenuItem
+                         onClick={() => {
+                           setShowAmendProposalDialog(true);
+                         }}
+                       >
+                         <Edit className="mr-2 h-4 w-4" />
+                         Amend
+                       </DropdownMenuItem>
+                     )}
+                   </>
                  )}
                  
-                 {!isDocFile && (
+                 {!isDocFile && document.type?.toLowerCase() !== 'pricing' && (
                    <DropdownMenuItem
                      onClick={() => {
                        if (document.url) {
@@ -687,53 +663,53 @@ const ProposalDetailsPage: React.FC = () => {
         );
       },
     },
-    {
-      id: "actions",
-      header: "Actions",
-      cell: ({ row }) => {
-        const amendment = row.original;
-        return (
-          <div className="flex items-center gap-2">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 w-8 p-0"
-                >
-                  <MoreHorizontal className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem
-                  onClick={() => {
-                    // Handle view document action
-                    console.log("View document:", amendment);
-                  }}
-                >
-                  <Eye className="mr-2 h-4 w-4" />
-                  View Document
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => {
-                    // Handle delete amendment action
-                    console.log("Delete amendment:", amendment);
-                  }}
-                >
-                  <Download className="mr-2 h-4 w-4" />
-                  Delete Amendment
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        );
-      },
-    },
+    // {
+    //   id: "actions",
+    //   header: "Actions",
+    //   cell: ({ row }) => {
+    //     const amendment = row.original;
+    //     return (
+    //       <div className="flex items-center gap-2">
+    //         <DropdownMenu>
+    //           <DropdownMenuTrigger asChild>
+    //             <Button
+    //               variant="ghost"
+    //               size="sm"
+    //               className="h-8 w-8 p-0"
+    //             >
+    //               <MoreHorizontal className="h-4 w-4" />
+    //             </Button>
+    //           </DropdownMenuTrigger>
+    //           <DropdownMenuContent align="end">
+    //             <DropdownMenuItem
+    //               onClick={() => {
+    //                 // Handle view document action
+    //                 console.log("View document:", amendment);
+    //               }}
+    //             >
+    //               <Eye className="mr-2 h-4 w-4" />
+    //               View Document
+    //             </DropdownMenuItem>
+    //             <DropdownMenuItem
+    //               onClick={() => {
+    //                 // Handle delete amendment action
+    //                 console.log("Delete amendment:", amendment);
+    //               }}
+    //             >
+    //               <Download className="mr-2 h-4 w-4" />
+    //               Delete Amendment
+    //             </DropdownMenuItem>
+    //           </DropdownMenuContent>
+    //         </DropdownMenu>
+    //       </div>
+    //     );
+    //   },
+    // },
   ];
 
   // Create useAmendments hook for fetching amendments data
   const useAmendments = (proposalId: string) => {
-    return useQuery<ApiResponse<Amendment[]>, ApiResponseError>({
+    return useQuery<ApiResponse<{ history: Amendment[], count:number}>, ApiResponseError>({
       queryKey: ["amendments", proposalId],
       queryFn: async () => {
         const endpoint = `/procurement/solicitations/proposals/${proposalId}/submission-history`;
@@ -748,10 +724,10 @@ const ProposalDetailsPage: React.FC = () => {
     data: amendmentsData,
     isLoading: isLoadingAmendments,
     error: amendmentsError,
-  } = useAmendments(proposalId || "");
+  } = useAmendments(proposal?.proposalDetails?.id || "");
 
   // Use amendments data from API
-  const amendments = amendmentsData?.data?.data || [];
+  const amendments = amendmentsData?.data?.data?.history || [];
 
   return (
     <div className="p-6 space-y-6 pb-10">
@@ -807,16 +783,15 @@ const ProposalDetailsPage: React.FC = () => {
         )}
 
         {/* Error State */}
-        {proposalError && (
+        {/* {proposalError && (
           <div className="flex items-center justify-center py-8">
             <div className="text-red-500">
               Error loading proposal details. Please try again.
             </div>
           </div>
-        )}
+        )} */}
 
         {/* Proposal Overview */}
-        {proposal && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="space-y-4">
               <div>
@@ -837,13 +812,13 @@ const ProposalDetailsPage: React.FC = () => {
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                  Submission Date
+                  Submission Deadline
                 </label>
                 <p className="text-base text-gray-900 dark:text-white">
-                  {proposal?.proposalDetails?.submissiion
+                  {solicitation?.submissionDeadline
                     ? format(
-                        new Date(proposal.proposalDetails.submissiion),
-                        "MMMM d, yyyy pppp"
+                        new Date(solicitation?.submissionDeadline),
+                        "MMMM d, yyyy"
                       )
                     : "N/A"}
                 </p>
@@ -907,18 +882,28 @@ const ProposalDetailsPage: React.FC = () => {
               </div>
             </div>
           </div>
-        )}
 
         {/* Award Vendor and Submit for Vendor Buttons */}
-        {proposal && (
-          <div className="flex justify-start gap-3">
-            <Button
-              onClick={handleSubmitForVendor}
-              className="bg-green-600 hover:bg-green-700 text-white"
-              disabled={proposal?.proposalDetails?.status === "submit"}
-            >
-              Submit for Vendor
-            </Button>
+        <div className="flex justify-start gap-3">
+          <Button
+            onClick={handleSubmitForVendor}
+            className="bg-green-600 hover:bg-green-700 text-white"
+            disabled={
+              !solicitation?.submissionDeadline 
+                ? true 
+                : (() => {
+                    try {
+                      const deadline = parseISO(solicitation.submissionDeadline);
+                      return !isValid(deadline) || !isAfter(new Date(), deadline);
+                    } catch {
+                      return true;
+                    }
+                  })()
+            }
+          >
+            Submit for Vendor
+          </Button>
+          {proposal && (
             <Button
               onClick={handleAwardVendor}
               className="bg-blue-600 hover:bg-blue-700 text-white"
@@ -926,8 +911,8 @@ const ProposalDetailsPage: React.FC = () => {
             >
               Award Vendor
             </Button>
-          </div>
-        )}
+          )}
+        </div>
 
         {/* Tabs */}
         <Tabs defaultValue="overview" className="w-full">
@@ -1046,7 +1031,7 @@ const ProposalDetailsPage: React.FC = () => {
           </TabsContent>
 
           <TabsContent value="documents" className="space-y-6">
-            <h4 className="text-xl font-medium text-gray-900 dark:text-white">
+            <h4 className="text-xl mt-5 font-medium text-gray-900 dark:text-white">
               Submitted Documents
             </h4>
 
@@ -1251,15 +1236,30 @@ const ProposalDetailsPage: React.FC = () => {
            open={showAmendDialog}
            onOpenChange={setShowAmendDialog}
            documentName={selectedDocumentForAmend.name}
-           proposalId={proposalId!}
-           requirementDocId={selectedDocumentForAmend._id}
+           proposalId={proposal?.proposalDetails?.id!}
+           requirementDocId={selectedDocumentForAmend.requiredDocId}
            onAmendSuccess={() => {
              queryClient.invalidateQueries({ queryKey: ["vendor-proposal", id, vendorId] });
+             queryClient.invalidateQueries({ queryKey: ["amendments"] });
              setShowAmendDialog(false);
              setSelectedDocumentForAmend(null);
            }}
          />
        )}
+
+      {/* Read-Only Proposal Dialog */}
+      <ReadOnlyProposalDialog
+        open={showReadOnlyProposalDialog}
+        onOpenChange={setShowReadOnlyProposalDialog}
+        proposalId={proposal?.proposalDetails?.id!}
+      />
+
+      {/* Amend Proposal Dialog */}
+      <AmendProposalDialog
+        open={showAmendProposalDialog}
+        onOpenChange={setShowAmendProposalDialog}
+        proposalId={proposal?.proposalDetails?.id!}
+      />
     </div>
   );
 };
