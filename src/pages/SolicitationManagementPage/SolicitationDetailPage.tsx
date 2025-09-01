@@ -861,6 +861,7 @@ export const SolicitationDetailPage = () => {
             )}
 
           {solicitation?.status?.toLowerCase() !== "awarded" &&
+            solicitation?.status?.toLowerCase() !== "closed" &&
             viewProposal?.status === "draft" &&
             isOwner && (
               <Link

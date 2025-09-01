@@ -183,6 +183,11 @@ const EditSolicitationDialog = ({
   const [open, setOpen] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
 
+  // Hide edit button if solicitation status is closed
+  if (solicitation.status === "closed") {
+    return null;
+  }
+
   // Types for category API
   type VendorCategory = {
     _id?: string;
