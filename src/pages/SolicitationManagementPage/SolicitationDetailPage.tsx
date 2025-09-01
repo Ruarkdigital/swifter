@@ -22,7 +22,6 @@ import {
   Search,
   FolderOpen,
   Share2,
-
 } from "lucide-react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -125,17 +124,25 @@ type SolicitationFile = {
   type: string;
 };
 
-type SolicitationVendor = {
-  email: string;
-  status: "invited" | "confirmed" | "declined";
-  id: {
-    _id: string;
-    name: string;
-  };
+export interface SolicitationVendor {
+  id: ID;
+  status: string;
   responseStatus: string;
-  owner: boolean;
-};
+  _id: string;
+  uploads: number;
+  email: string;
+}
 
+export interface ID {
+  _id: string;
+  invite: Invite;
+  name: string;
+}
+
+export interface Invite {
+  _id: string;
+  email: string;
+}
 export type Solicitation = {
   _id: string;
   name: string;
@@ -348,7 +355,7 @@ export const SolicitationDetailPage = () => {
       solicitation: Solicitation;
       details: Solicitation;
       requiredFiles: RequiredFile[];
-      viewProposal: { _id: string, status: string } | null;
+      viewProposal: { _id: string; status: string } | null;
       owner: boolean;
       vendorStatusCounts: {
         confirmed: number;
@@ -439,10 +446,12 @@ export const SolicitationDetailPage = () => {
   const evaluators = useMemo(() => {
     const evaluation = evaluatorsData?.data?.data;
     if (evaluation) {
-      return evaluation?.groups?.[0]?.evaluators.map((item) => ({
-        ...item,
-        groupName: evaluation?.groups?.[0]?.groupName,
-      })) || [];
+      return (
+        evaluation?.groups?.[0]?.evaluators.map((item) => ({
+          ...item,
+          groupName: evaluation?.groups?.[0]?.groupName,
+        })) || []
+      );
     }
     // Fallback to mock data if API is not available
     return [];
@@ -508,7 +517,7 @@ export const SolicitationDetailPage = () => {
       header: "Vendor",
       cell: ({ row }) => (
         <div className="flex flex-col">
-          <span className="font-medium">{row.original.id.name}</span>
+          <span className="font-medium">{row.original.id?.name || row.original?.id?.invite?.email}</span>
           <span className="text-sm text-blue-500">{row.original.email}</span>
         </div>
       ),
@@ -566,16 +575,17 @@ export const SolicitationDetailPage = () => {
               View
             </Button>
           )}
-          {isCompanyAdmin && (solicitation.status !== "closed" || isCompanyAdmin) && (
-            <Button
-              variant="link"
-              className=""
-              onClick={() => setExtendOpen(true)}
-              disabled={solicitation.status === "closed" && !isCompanyAdmin}
-            >
-              Extend Deadline
-            </Button>
-          )}
+          {isCompanyAdmin &&
+            (solicitation.status !== "closed" || isCompanyAdmin) && (
+              <Button
+                variant="link"
+                className=""
+                onClick={() => setExtendOpen(true)}
+                disabled={solicitation.status === "closed" && !isCompanyAdmin}
+              >
+                Extend Deadline
+              </Button>
+            )}
         </div>
       ),
     },
@@ -651,7 +661,10 @@ export const SolicitationDetailPage = () => {
           <span className="text-sm">
             Assigned:{" "}
             {row.original.assignedOnFormatted
-              ? format(new Date(row.original.assignedOnFormatted), "MMM d, yyyy pppp")
+              ? format(
+                  new Date(row.original.assignedOnFormatted),
+                  "MMM d, yyyy pppp"
+                )
               : "-"}
           </span>
           <span className="text-sm text-gray-400">
@@ -663,11 +676,7 @@ export const SolicitationDetailPage = () => {
     {
       accessorKey: "status",
       header: "Status",
-      cell: ({ row }) => (
-        <EvaluatorStatusBadge
-          status={row.original?.status}
-        />
-      ),
+      cell: ({ row }) => <EvaluatorStatusBadge status={row.original?.status} />,
     },
     {
       id: "actions",
@@ -952,13 +961,14 @@ export const SolicitationDetailPage = () => {
                       Export
                     </Button>
                   </ExportReportSheet>
-                  {isOwner && (solicitation.status !== "closed" || isCompanyAdmin) && (
-                    <>
-                      <EditSolicitationDialog
-                        solicitation={solicitation as any}
-                      />
-                    </>
-                  )}
+                  {isOwner &&
+                    (solicitation.status !== "closed" || isCompanyAdmin) && (
+                      <>
+                        <EditSolicitationDialog
+                          solicitation={solicitation as any}
+                        />
+                      </>
+                    )}
                 </div>
               )}
             </div>
@@ -1307,9 +1317,7 @@ export const SolicitationDetailPage = () => {
               />
               <InvitedVendorCard
                 title="Evaluators"
-                count={
-                  evaluatorsData?.data.data?.summary?.totalEvaluators || 0
-                }
+                count={evaluatorsData?.data.data?.summary?.totalEvaluators || 0}
                 icon={Users}
                 iconBgColor="bg-blue-50"
                 iconColor="text-blue-600"
@@ -1422,7 +1430,10 @@ export const SolicitationDetailPage = () => {
         </TabsContent>
 
         <TabsContent value="addendums">
-          <AddendumsTab solicitationId={id} solicitationStatus={solicitation?.status} />
+          <AddendumsTab
+            solicitationId={id}
+            solicitationStatus={solicitation?.status}
+          />
         </TabsContent>
       </Tabs>
 

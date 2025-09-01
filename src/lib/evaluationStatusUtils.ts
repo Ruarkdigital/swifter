@@ -3,7 +3,7 @@
  * Maps API status values to descriptive display text
  */
 
-export type EvaluationStatus = "draft" | "pending" | "active" | "completed";
+export type EvaluationStatus = "draft" | "pending" | "active" | "completed"| "release" |"withhold";
 
 export interface EvaluationStatusDisplayInfo {
   label: string;
@@ -42,6 +42,18 @@ export const getEvaluationStatusDisplayInfo = (status: string): EvaluationStatus
         label: "Active",
         description: "At least one group has started scoring.",
         colorClass: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300 border-blue-200 dark:border-blue-700"
+      };
+    case "release":
+      return {
+        label: "Released",
+        description: "At least one group has started scoring.",
+        colorClass: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300 border-green-200 dark:border-green-700"
+      };
+    case "withhold":
+      return {
+        label: "Withheld",
+        description: "At least one group has started scoring.",
+        colorClass: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300 border-red-200 dark:border-red-700"
       };
     case "completed":
       return {
