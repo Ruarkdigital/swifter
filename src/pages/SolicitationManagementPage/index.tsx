@@ -779,7 +779,8 @@ export const SolicitationManagementPage = () => {
                   </DropdownMenuItem>
                   {/* Show confirmation options for public solicitations */}
                   {row.original.visibility === "public" &&
-                    !row.original.owner && (
+                    !row.original.owner &&
+                    row.original.status !== "closed" && (
                       <>
                         <DropdownMenuItem
                           className="py-3 px-4 text-green-600 hover:text-green-700 hover:bg-green-50 dark:hover:bg-green-900/20"

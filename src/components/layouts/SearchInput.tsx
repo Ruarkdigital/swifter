@@ -20,6 +20,7 @@ export const SearchInput: React.FC<SearchInputProps> = ({
         strokeWidth={1.67}
       />
       <Input
+        data-testid="search-input"
         placeholder={`Search ${placeholder}`}
         value={searchQuery}
         onChange={(e) => setSearchQuery(e.target.value)}

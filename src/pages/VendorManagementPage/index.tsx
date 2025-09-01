@@ -226,7 +226,7 @@ export const VendorManagementPage = () => {
       const params: Record<string, any> = {
         page: pagination.pageIndex + 1,
         limit: pagination.pageSize,
-        search: debouncedSearchQuery || undefined,
+        name: debouncedSearchQuery || undefined,
       };
 
       // Add date filter if selected
@@ -643,7 +643,7 @@ export const VendorManagementPage = () => {
                     />
                   )}
                   <Input
-                    placeholder="Search Vendors"
+                    placeholder="Search Vendors by Name"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     onKeyDown={(e) => {
@@ -654,7 +654,7 @@ export const VendorManagementPage = () => {
                     }}
                     className="pl-12 pr-12 py-3 w-[300px] h-12 border border-[#E5E7EB] rounded-lg text-sm text-[#6B6B6B] focus:border-[#2A4467] focus:ring-[#2A4467]"
                     style={{ fontFamily: "PushPenny" }}
-                    aria-label="Search vendors by name, email, or business type"
+                    aria-label="Search vendors by name"
                     type="search"
                     autoComplete="off"
                   />
@@ -678,7 +678,7 @@ export const VendorManagementPage = () => {
                     {isLoading ? (
                       "Searching..."
                     ) : (
-                      `Found ${totalVendors || 0} vendor${(totalVendors || 0) !== 1 ? 's' : ''} for "${debouncedSearchQuery}"`
+                      `Found ${totalVendors || 0} vendor${(totalVendors || 0) !== 1 ? 's' : ''} with name "${debouncedSearchQuery}"`
                     )}
                   </span>
                   {!isLoading && (

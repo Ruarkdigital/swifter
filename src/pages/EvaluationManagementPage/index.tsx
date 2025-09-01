@@ -26,7 +26,7 @@ import {
 } from "./hooks/useEvaluationApi";
 import { StatusBadge } from "./components/StatusBadge";
 import { EmptyState } from "./components/EmptyState";
-// import { SearchInput } from "@/components/layouts/SearchInput";
+import { SearchInput } from "@/components/layouts/SearchInput";
 import { DropdownFilters } from "@/components/layouts/SolicitationFilters";
 import { normalizeEvaluationStatus } from "@/lib/evaluationStatusUtils";
 import {
@@ -173,6 +173,7 @@ export const EvaluationManagementPage = () => {
   const manageEvaluationMutation = useManageEvaluation();
   const { success: successToast, error: errorToast } = useToastHandler();
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("");
   const [activeStatCard, setActiveStatCard] = useState<string>("");
   const [pagination, setPagination] = useState<PaginationState>({
@@ -275,7 +276,7 @@ export const EvaluationManagementPage = () => {
     useEvaluationsList({
       page: pagination.pageIndex + 1,
       limit: pagination.pageSize,
-      name: searchQuery || undefined,
+      name: debouncedSearchQuery || undefined,
       status: statusFilter || undefined,
       date: getAllEvaluationsDateParam(),
     });
@@ -284,6 +285,7 @@ export const EvaluationManagementPage = () => {
     useMyEvaluationsList({
       page: pagination.pageIndex + 1,
       limit: pagination.pageSize,
+      name: debouncedSearchQuery || undefined,
       status: statusFilter || undefined,
       date: getMyEvaluationsDateParam(),
     });
@@ -374,14 +376,22 @@ export const EvaluationManagementPage = () => {
     }
   }, [searchQuery]);
 
-  // Debounced search effect
+  // Debounced search effect - only trigger API calls after 3+ characters
   useEffect(() => {
     const timeoutId = setTimeout(() => {
-      setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+      if (searchQuery.length >= 3 || searchQuery.length === 0) {
+        setDebouncedSearchQuery(searchQuery);
+        setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+      }
     }, 500);
 
     return () => clearTimeout(timeoutId);
-  }, [searchQuery, statusFilter]);
+  }, [searchQuery]);
+
+  // Reset pagination when filters change
+  useEffect(() => {
+    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+  }, [statusFilter]);
 
   // Get current tab's date filter state and setters
   const getCurrentTabDateState = () => {
@@ -754,11 +764,13 @@ export const EvaluationManagementPage = () => {
                     title="All Evaluations"
                     searchQuery={searchQuery}
                     setSearchQuery={setSearchQuery}
+                    debouncedSearchQuery={debouncedSearchQuery}
                     dateFilter={allEvaluationsDateFilter}
                     statusFilter={statusFilter}
                     onDateFilterChange={handleDateFilterChange}
                     onStatusFilterChange={setStatusFilter}
                     onClearFilters={handleClearFilters}
+                    totalCount={evaluationsResponse?.data?.total?.[0]?.total || 0}
                   />
                 )}
                 emptyPlaceholder={<EmptyState />}
@@ -792,11 +804,13 @@ export const EvaluationManagementPage = () => {
                   title="My Evaluations"
                   searchQuery={searchQuery}
                   setSearchQuery={setSearchQuery}
+                  debouncedSearchQuery={debouncedSearchQuery}
                   dateFilter={myEvaluationsDateFilter}
                   statusFilter={statusFilter}
                   onDateFilterChange={handleDateFilterChange}
                   onStatusFilterChange={setStatusFilter}
                   onClearFilters={handleClearFilters}
+                  totalCount={myEvaluationsResponse?.data?.total?.[0]?.total || 0}
                 />
               )}
               emptyPlaceholder={<EmptyState />}
@@ -830,11 +844,13 @@ export const EvaluationManagementPage = () => {
                   title="Assigned Evaluations"
                   searchQuery={searchQuery}
                   setSearchQuery={setSearchQuery}
+                  debouncedSearchQuery={debouncedSearchQuery}
                   dateFilter={assignedEvaluationsDateFilter}
                   statusFilter={statusFilter}
                   onDateFilterChange={handleDateFilterChange}
                   onStatusFilterChange={setStatusFilter}
                   onClearFilters={handleClearFilters}
+                  totalCount={assignedEvaluationData.length}
                 />
               )}
               classNames={{
@@ -925,19 +941,25 @@ type HeaderProps = {
   title: string;
   searchQuery: string;
   setSearchQuery: (value: string) => void;
+  debouncedSearchQuery: string;
   dateFilter: string;
   statusFilter: string;
   onDateFilterChange: (value: string) => void;
   onStatusFilterChange: (value: string) => void;
   onClearFilters: () => void;
+  totalCount?: number;
 };
 
 const Header = ({
   title,
+  searchQuery,
+  setSearchQuery,
+  debouncedSearchQuery,
   dateFilter,
   statusFilter,
   onDateFilterChange,
   onStatusFilterChange,
+  totalCount,
 }: HeaderProps) => {
   return (
     <div className="flex items-center w-full justify-between border-b border-[#E9E9EB] dark:border-slate-600 p-3 pt-0">
@@ -950,11 +972,17 @@ const Header = ({
             >
               {title}
             </h2>
+            {debouncedSearchQuery && totalCount !== undefined && (
+              <span className="text-sm text-gray-500 dark:text-gray-400">
+                Found {totalCount} evaluations with name '{debouncedSearchQuery}'
+              </span>
+            )}
           </div>
-          {/* <SearchInput
+          <SearchInput
+            placeholder="Evaluations by Name"
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}
-          /> */}
+          />
         </div>
 
         <DropdownFilters

@@ -123,6 +123,7 @@ export const useAssignedEvaluationsList = (params?: {
   date?: string;
   page?: number;
   limit?: number;
+  name?: string;
 }) => {
   const searchParams = new URLSearchParams();
   if (params?.status) searchParams.append("status", params.status);
@@ -130,6 +131,7 @@ export const useAssignedEvaluationsList = (params?: {
   if (params?.date) searchParams.append("date", params.date);
   if (params?.page) searchParams.append("page", params.page.toString());
   if (params?.limit) searchParams.append("limit", params.limit.toString());
+  if (params?.name) searchParams.append("name", params.name);
 
   return useQuery<{ data: { data: AssignedEvaluationApiResponse[] } }>({
     queryKey: ["assigned-evaluations-list", params],
@@ -150,6 +152,7 @@ export const useMyEvaluationsList = (params?: {
   status?: string;
   category?: string;
   date?: string;
+  name?: string;
 }) => {
   return useQuery<EvaluationsListResponse>({
     queryKey: ["my-evaluations-list", params],
@@ -160,6 +163,7 @@ export const useMyEvaluationsList = (params?: {
       if (params?.status) searchParams.append("status", params.status);
       if (params?.category) searchParams.append("category", params.category);
       if (params?.date) searchParams.append("date", params.date);
+      if (params?.name) searchParams.append("name", params.name);
 
       const response = await getRequest({
         url: `/procurement/evaluations/me?${searchParams.toString()}`,

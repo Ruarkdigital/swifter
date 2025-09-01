@@ -851,6 +851,7 @@ export const SolicitationDetailPage = () => {
           )}
 
           {solicitation?.status?.toLowerCase() !== "awarded" &&
+            solicitation?.status?.toLowerCase() !== "closed" &&
             !viewProposal &&
             isOwner && (
               <Link to={`/dashboard/solicitations/${id}/submit-proposal`}>
