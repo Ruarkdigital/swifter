@@ -21,6 +21,7 @@ import Step4Form from "./Step4Form";
 import Step5Form from "./Step5Form";
 import Step6Form from "./Step6Form";
 import { cn } from "@/lib/utils";
+import { useClearSession } from "@/store/solicitationFileSlice";
 
 // Form validation schemas for each step
 const step1Schema = yup.object({
@@ -144,6 +145,7 @@ const CreateSolicitationDialog = () => {
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
+  const clearSession = useClearSession();
 
   // Types for category API
   type VendorCategory = {
@@ -335,6 +337,8 @@ const CreateSolicitationDialog = () => {
           "Solicitation Created",
           "Your solicitation has been created successfully."
         );
+        // Clear file session after successful publish
+        clearSession();
         setOpen(false);
         setCurrentStep(1);
         forge.reset();
@@ -470,6 +474,8 @@ const CreateSolicitationDialog = () => {
           "Draft Saved",
           "Your solicitation has been saved as a draft. You can continue editing it later."
         );
+        // Clear file session after successful save to draft
+        clearSession();
         setOpen(false);
         setCurrentStep(1);
         forge.reset();
@@ -570,8 +576,16 @@ const CreateSolicitationDialog = () => {
     }
   };
 
+  const handleDialogOpenChange = (isOpen: boolean) => {
+    if (!isOpen) {
+      // Clear file session when dialog is closed (user exits)
+      clearSession();
+    }
+    setOpen(isOpen);
+  };
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleDialogOpenChange}>
       <DialogTrigger asChild>
         <Button className="bg-[#2A4467] hover:bg-[#1e3147] text-white px-6 py-2 rounded-lg flex items-center gap-2">
           <Plus className="h-4 w-4" />

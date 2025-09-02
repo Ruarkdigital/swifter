@@ -6,6 +6,17 @@ import { useToastHandler } from "@/hooks/useToaster";
 import { useState, useCallback, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import {
+  useFilesWithState,
+  useSetFiles,
+  useAddFiles,
+  useRemoveFile,
+  useUpdateFileState,
+  useClearFiles,
+  useSessionId,
+  useSetSessionId,
+  useClearSession,
+} from "@/store/solicitationFileSlice";
 
 // Type definitions for uploaded files
 interface UploadedFile {
@@ -278,10 +289,55 @@ const FileListItem = ({
 
 // Main file upload manager component
 export const FileUploadManager = ({ control }: { control: any }) => {
-  const [filesWithState, setFilesWithState] = useState<FileWithUploadState[]>([]);
+  // Use persistent file state from Zustand store
+  const filesWithState = useFilesWithState();
+  const setFiles = useSetFiles();
+  const addFiles = useAddFiles();
+  const removeFile = useRemoveFile();
+  const updateFileState = useUpdateFileState();
+  const clearFiles = useClearFiles();
+  const sessionId = useSessionId();
+  const setSessionId = useSetSessionId();
+  const clearSession = useClearSession();
+  
   const [isUploading, setIsUploading] = useState(false);
   const toast = useToastHandler();
   const { setValue } = useForgeValues({ control });
+  
+  // Initialize session on component mount
+  useEffect(() => {
+    if (!sessionId) {
+      const newSessionId = `solicitation-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      setSessionId(newSessionId);
+    }
+  }, [sessionId, setSessionId]);
+
+  // Cleanup on page unload or navigation away
+  useEffect(() => {
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      // Only show warning if there are files in the session
+      if (filesWithState.length > 0) {
+        event.preventDefault();
+        event.returnValue = 'You have uploaded files that will be lost if you leave this page. Are you sure you want to continue?';
+        return event.returnValue;
+      }
+    };
+
+    const handleUnload = () => {
+      // Clear session when page is actually unloaded
+      clearSession();
+    };
+
+    // Add event listeners
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener('unload', handleUnload);
+
+    // Cleanup event listeners
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('unload', handleUnload);
+    };
+  }, [filesWithState.length, clearSession]);
 
   const formatFileSize = (bytes: number) => {
     if (bytes === 0) return "0 Bytes";
@@ -298,20 +354,16 @@ export const FileUploadManager = ({ control }: { control: any }) => {
       progress: 0,
     }));
 
-    setFilesWithState(prev => [...prev, ...newFiles]);
-  }, []);
+    addFiles(newFiles);
+  }, [addFiles]);
 
   const handleRemoveFile = useCallback((index: number) => {
-    setFilesWithState(prev => prev.filter((_, i) => i !== index));
-  }, []);
+    removeFile(index);
+  }, [removeFile]);
 
   const handleRetryFile = useCallback((index: number) => {
-    setFilesWithState(prev => 
-      prev.map((file, i) => 
-        i === index ? { ...file, status: 'pending', progress: 0, error: undefined } : file
-      )
-    );
-  }, []);
+    updateFileState(index, { status: 'pending', progress: 0, error: undefined });
+  }, [updateFileState]);
 
   const uploadSingleFileWithProgress = async (fileState: FileWithUploadState, index: number) => {
     const formData = new FormData();
@@ -319,11 +371,7 @@ export const FileUploadManager = ({ control }: { control: any }) => {
 
     try {
       // Update status to uploading
-      setFilesWithState(prev => 
-        prev.map((file, i) => 
-          i === index ? { ...file, status: 'uploading', progress: 0 } : file
-        )
-      );
+      updateFileState(index, { status: 'uploading', progress: 0 });
 
       const response = await postRequest({
         url: "/upload",
@@ -335,13 +383,10 @@ export const FileUploadManager = ({ control }: { control: any }) => {
           onUploadProgress: (progressEvent) => {
             if (progressEvent.total) {
               const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-              setFilesWithState(prev => 
-                prev.map((file, i) => 
-                  i === index && file.status === 'uploading' 
-                    ? { ...file, progress } 
-                    : file
-                )
-              );
+              const currentFile = filesWithState[index];
+              if (currentFile && currentFile.status === 'uploading') {
+                updateFileState(index, { progress });
+              }
             }
           }
         },
@@ -349,33 +394,24 @@ export const FileUploadManager = ({ control }: { control: any }) => {
 
       if (response.data?.data && response.data.data.length > 0) {
         const uploadedFile = response.data.data[0];
-        setFilesWithState(prev => 
-          prev.map((file, i) => 
-            i === index ? { 
-              ...file, 
-              status: 'uploaded', 
-              progress: 100, 
-              uploadedData: {
-                ...uploadedFile,
-                size: formatFileSize(file.file.size)
-              }
-            } : file
-          )
-        );
+        const currentFile = filesWithState[index];
+        updateFileState(index, {
+          status: 'uploaded',
+          progress: 100,
+          uploadedData: {
+            ...uploadedFile,
+            size: formatFileSize(currentFile.file.size)
+          }
+        });
         return uploadedFile;
       }
     } catch (error) {
       const err = error as ApiResponseError;
-      setFilesWithState(prev => 
-        prev.map((file, i) => 
-          i === index ? { 
-            ...file, 
-            status: 'failed', 
-            progress: 0, 
-            error: err?.response?.data?.message || 'Upload failed'
-          } : file
-        )
-      );
+      updateFileState(index, {
+        status: 'failed',
+        progress: 0,
+        error: err?.response?.data?.message || 'Upload failed'
+      });
       throw error;
     }
   };

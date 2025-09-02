@@ -20,6 +20,7 @@ import Step4Form from "./Step4Form";
 import Step5Form from "./Step5Form";
 import Step6Form from "./Step6Form";
 import { cn } from "@/lib/utils";
+import { useClearSession } from "@/store/solicitationFileSlice";
 
 // Form validation schemas for each step
 const step1Schema = yup.object({
@@ -182,6 +183,7 @@ const EditSolicitationDialog = ({
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
+  const clearSession = useClearSession();
 
   // Hide edit button if solicitation status is closed
   if (solicitation.status === "closed") {
@@ -515,6 +517,8 @@ const EditSolicitationDialog = ({
           "Solicitation Updated",
           "Your solicitation has been updated successfully."
         );
+        // Clear file session after successful publish
+        clearSession();
         setOpen(false);
         setCurrentStep(1);
         forge.reset(getDefaultValues());
@@ -688,6 +692,8 @@ const EditSolicitationDialog = ({
           "Draft Saved",
           "Your solicitation has been saved as draft successfully."
         );
+        // Clear file session after successful save to draft
+        clearSession();
         setOpen(false);
         setCurrentStep(1);
         forge.reset(getDefaultValues());
@@ -788,8 +794,16 @@ const EditSolicitationDialog = ({
     }
   };
 
+  const handleDialogOpenChange = (isOpen: boolean) => {
+    if (!isOpen) {
+      // Clear file session when dialog is closed (user exits)
+      clearSession();
+    }
+    setOpen(isOpen);
+  };
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleDialogOpenChange}>
       <DialogTrigger asChild>
         <Button
           // variant={isLink ? "link" : "default"}
