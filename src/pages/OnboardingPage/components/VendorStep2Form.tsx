@@ -44,7 +44,7 @@ const VendorStep2Form: React.FC<VendorStep2FormProps> = () => {
         name="website"
         component={TextInput}
         label="Website (optional)"
-        placeholder="Ottawa, Canada"
+        placeholder="https://www.example.com"
         containerClass="w-full"
       />
     </div>
