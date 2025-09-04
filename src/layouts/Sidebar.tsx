@@ -4,6 +4,7 @@ import { Link, useLocation } from "react-router-dom";
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarHeader,
@@ -267,6 +268,21 @@ export const SideBar = () => {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
+      
+      <SidebarFooter className="p-3 mt-auto">
+        <div className="flex items-center justify-center">
+          <span 
+            className={cn(
+              "text-xs font-medium",
+              userRole === "super_admin"
+                ? "text-white/60"
+                : "text-gray-500 dark:text-gray-400"
+            )}
+          >
+            Version 1.0.1
+          </span>
+        </div>
+      </SidebarFooter>
     </Sidebar>
   );
 };
