@@ -59,8 +59,7 @@ export const RoleBasedDashboard: React.FC = () => {
       // Transform SuperAdmin data
       const transformedStats =
         DashboardDataTransformer.transformSuperAdminStats(dashboardCount);
-      const transformedWeeklyData =
-        DashboardDataTransformer.transformWeeklyActivities(weeklyActivities);
+      DashboardDataTransformer.transformWeeklyActivities(weeklyActivities);
       const transformedSubData =
         DashboardDataTransformer.transformSubDistribution(subDistribution);
       const transformedStatusData = getChartData("company-status");

@@ -8,11 +8,9 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
   useFilesWithState,
-  useSetFiles,
   useAddFiles,
   useRemoveFile,
   useUpdateFileState,
-  useClearFiles,
   useSessionId,
   useSetSessionId,
   useClearSession,
@@ -291,11 +289,9 @@ const FileListItem = ({
 export const FileUploadManager = ({ control }: { control: any }) => {
   // Use persistent file state from Zustand store
   const filesWithState = useFilesWithState();
-  const setFiles = useSetFiles();
   const addFiles = useAddFiles();
   const removeFile = useRemoveFile();
   const updateFileState = useUpdateFileState();
-  const clearFiles = useClearFiles();
   const sessionId = useSessionId();
   const setSessionId = useSetSessionId();
   const clearSession = useClearSession();
