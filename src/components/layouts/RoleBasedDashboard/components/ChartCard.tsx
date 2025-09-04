@@ -331,7 +331,7 @@ export const ChartComponent: React.FC<ChartComponentProps> = ({
                       dataKey={key}
                       stroke={getStatusColor(key, index, chart.colors?.[key])}
                       strokeWidth={2}
-                      // dot={chart.showDots !== false}
+                      dot={false}
                     />
                   ))}
               </LineChart>
