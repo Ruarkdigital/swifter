@@ -16,8 +16,8 @@ import { applyConsistentColors } from "./chartColorUtils";
 import { format } from "date-fns";
 
 // Dynamic link generation utility
-type UserRole = 'procurement' | 'evaluator' | 'vendor';
-type ActivityType = 'general' | 'myActions';
+type UserRole = "procurement" | "evaluator" | "vendor";
+type ActivityType = "general" | "myActions";
 
 interface LinkMapping {
   [role: string]: {
@@ -30,39 +30,39 @@ interface LinkMapping {
 const ACTIVITY_LINK_MAPPINGS: LinkMapping = {
   procurement: {
     general: {
-      published: '/dashboard/solicitation',
-      addendum: '/dashboard/solicitation',
-      question: '/dashboard/solicitation',
-      vendor_accept: '/dashboard/solicitation',
-      proposal_submitted: '/dashboard/solicitation',
-      scored: '/dashboard/evaluation',
+      published: "/dashboard/solicitation",
+      addendum: "/dashboard/solicitation",
+      question: "/dashboard/solicitation",
+      vendor_accept: "/dashboard/solicitation",
+      proposal_submitted: "/dashboard/solicitation",
+      scored: "/dashboard/evaluation",
     },
     myActions: {
-      create_evaluation: '/dashboard/evaluation',
-      create_evaluation_group: '/dashboard/evaluation',
-      release_group: '/dashboard/evaluation',
+      create_evaluation: "/dashboard/evaluation",
+      create_evaluation_group: "/dashboard/evaluation",
+      release_group: "/dashboard/evaluation",
     },
   },
   evaluator: {
     general: {
-      Scored: '/dashboard/evaluation',
-      Created: '/dashboard/evaluation',
+      Scored: "/dashboard/evaluation",
+      Created: "/dashboard/evaluation",
     },
     myActions: {
-      'score solicitation': '/dashboard/evaluation',
+      "score solicitation": "/dashboard/evaluation",
     },
   },
   vendor: {
     general: {
-      vendor_accept: '/dashboard/solicitation',
-      vendor_decline: '/dashboard/solicitation',
-      addendum_question: '/dashboard/solicitation',
+      vendor_accept: "/dashboard/solicitation",
+      vendor_decline: "/dashboard/solicitation",
+      addendum_question: "/dashboard/solicitation",
     },
     myActions: {
-      draft: '/dashboard/solicitation',
-      invited: '/dashboard/invitations',
-      no_response: '/dashboard/solicitation',
-      submit_proposal: '/dashboard/solicitation',
+      draft: "/dashboard/solicitation",
+      invited: "/dashboard/invitations",
+      no_response: "/dashboard/solicitation",
+      submit_proposal: "/dashboard/solicitation",
     },
   },
 };
@@ -105,7 +105,7 @@ function applyDynamicStatusTextReplacement(
   statusText: string,
   userRole: UserRole,
   activityType: ActivityType,
-  data: { id: string; name: string, solId?: string }
+  data: { id: string; name: string; solId?: string }
 ): string {
   // Extract potential actions from statusText to match against mappings
   const roleMapping = ACTIVITY_LINK_MAPPINGS[userRole]?.[activityType];
@@ -127,12 +127,12 @@ function applyDynamicStatusTextReplacement(
           `<a href="${href}" class="underline underline-offset-4 text-blue-600">${data.name}</a>`
         );
       } else {
-        return statusText
+        return statusText;
       }
     }
   }
 
-  if(userRole === "evaluator") {
+  if (userRole === "evaluator") {
     return statusText.replace(
       data.name,
       `<a href="/dashboard/evaluation/assigned/${data.solId}/${data.id}" class="underline underline-offset-4 text-blue-600">${data.name}</a>`
@@ -261,6 +261,35 @@ export class ChartDataTransformer {
    * Transform line/area chart data
    */
   static transformLineChart(rawData: any, chartId?: string): LineChartData[] {
+    // Handle new API format with labels and datasets (for solicitation-activities)
+    if (
+      rawData &&
+      rawData.labels &&
+      rawData.datasets &&
+      Array.isArray(rawData.labels) &&
+      Array.isArray(rawData.datasets)
+    ) {
+      const { labels, datasets } = rawData;
+
+      return labels.map((label: string, index: number) => {
+        const result: LineChartData = {
+          month: label,
+        };
+
+        // Map each dataset to its corresponding value for this month
+        datasets.forEach((dataset: any) => {
+          if (dataset.name && dataset.values && Array.isArray(dataset.values)) {
+            // Convert dataset names to lowercase for consistency
+            const key = dataset.name.toLowerCase().replace(/\s+/g, "");
+            result[key] = dataset.values[index] || 0;
+          }
+        });
+
+        return result;
+      });
+    }
+
+    // Handle legacy array format
     if (!rawData || !Array.isArray(rawData)) {
       return this.getDefaultLineData(chartId);
     }
@@ -372,6 +401,9 @@ export class ChartDataTransformer {
     }
     if (chartId.includes("activities") || chartId.includes("submission")) {
       return chartId.includes("line") ? "line" : "area";
+    }
+    if (chartId === "solicitation-activities") {
+      return "area";
     }
     if (chartId.includes("evaluation") || chartId.includes("usage")) {
       return "bar";
@@ -555,6 +587,34 @@ export class ChartDataTransformer {
   }
 
   private static transformStackedBarData(data: any): BarChartData[] {
+    // Handle new API format with labels and datasets (for total-evaluation)
+    if (
+      data &&
+      data.labels &&
+      data.datasets &&
+      Array.isArray(data.labels) &&
+      Array.isArray(data.datasets)
+    ) {
+      const { labels, datasets } = data;
+
+      return labels.map((label: string, index: number) => {
+        const result: BarChartData = {
+          month: label,
+        };
+
+        // Map each dataset to its corresponding value for this month
+        datasets.forEach((dataset: any) => {
+          if (dataset.name && dataset.values && Array.isArray(dataset.values)) {
+            // Convert dataset names to lowercase for consistency
+            const key = dataset.name.toLowerCase().replace(/\s+/g, "");
+            result[key] = dataset.values[index] || 0;
+          }
+        });
+
+        return result;
+      });
+    }
+
     // Handle company status with timeStats
     if (data && data[0] && data[0].timeStats) {
       const timeStats = data[0].timeStats;
@@ -899,8 +959,25 @@ export class DashboardDataTransformer {
    * Transform company status data for bar chart
    */
   static transformCompanyStatus(data: any) {
-    // Handle new API structure: data is an array with timeStats inside
-    const timeStats = data?.[0]?.timeStats;
+    // Handle both old and new API structures
+    let timeStats;
+    
+    // Check if data has the old nested structure with timeStats
+    if (data?.timeStats && Array.isArray(data.timeStats)) {
+      timeStats = data.timeStats;
+    }
+    // Check if data is the new direct array structure
+    else if (Array.isArray(data)) {
+      timeStats = data;
+    }
+    // Handle case where data is wrapped in a data property
+    else if (data?.data && Array.isArray(data.data)) {
+      timeStats = data.data;
+    }
+    // Fallback for undefined or invalid data
+    else {
+      timeStats = null;
+    }
 
     if (!timeStats || !Array.isArray(timeStats) || timeStats.length === 0) {
       return Array.from({ length: 12 }, (_, i) => ({
@@ -947,14 +1024,15 @@ export class DashboardDataTransformer {
       const total = item.total || 0;
       const active = item.active || 0;
       const expiring = item.expiring || 0;
+      const suspended = item.suspended || 0;
 
-      // Calculate suspended as total minus active minus expiring
-      const suspended = Math.max(0, total - active - expiring);
+      // Calculate suspended as total minus active minus expiring if not provided
+      const calculatedSuspended = suspended || Math.max(0, total - active - expiring);
 
       return {
         month,
         active,
-        suspended,
+        suspended: calculatedSuspended,
         pending: expiring, // Use expiring as pending since they represent similar concepts
       };
     });
@@ -1003,7 +1081,7 @@ export class DashboardDataTransformer {
    * Transform module usage data for pie chart
    */
   static transformModuleUsage(data: any) {
-    // console.log({ data });
+    console.log({ data });
     if (!data) {
       return [
         { name: "Solicitation", value: 0 },
@@ -1016,20 +1094,16 @@ export class DashboardDataTransformer {
     // Use raw values directly as indicators, not percentages
     return [
       {
-        name: "Solicitation",
-        value: data.solicitationUsage || 0,
+        solicitation: data.solicitationUsage || 0,
       },
       {
-        name: "Evaluation",
-        value: data.evaluationUsage || 0,
+        evaluation: data.evaluationUsage || 0,
       },
       {
-        name: "Vendor",
-        value: data.vendorUage || 0, // Keep original typo from API
+        Vendor: data.vendorUage || 0, // Keep original typo from API
       },
       {
-        name: "Addendum",
-        value: data.adendumUsage || 0,
+        Addendum: data.adendumUsage || 0,
       },
     ];
   }
@@ -1176,6 +1250,47 @@ export class DashboardDataTransformer {
    * Transform Company Admin proposal submission data
    */
   static transformProposalSubmission(data: any) {
+    // Handle new API format with labels and datasets
+    if (data && data.labels && data.datasets) {
+      const { labels, datasets } = data;
+
+      return labels.map((label: string, index: number) => {
+        const result: any = {
+          date: label,
+        };
+
+        // Map each dataset to the corresponding property
+        datasets.forEach((dataset: any) => {
+          const value = dataset.values[index] || 0;
+
+          switch (dataset.name.toLowerCase()) {
+            case "submitted":
+              result.submitted = value;
+              break;
+            case "missed deadline":
+              result.missedDeadline = value;
+              break;
+            case "declined":
+              result.declined = value;
+              break;
+            default:
+              // Handle any other dataset names by converting to camelCase
+              const key = dataset.name.toLowerCase().replace(/\s+/g, "");
+              result[key] = value;
+          }
+        });
+
+        // Calculate total count for backward compatibility
+        result.count =
+          (result.submitted || 0) +
+          (result.missedDeadline || 0) +
+          (result.declined || 0);
+
+        return result;
+      });
+    }
+
+    // Handle legacy array format
     if (!data || !Array.isArray(data)) {
       return [];
     }
@@ -1290,8 +1405,9 @@ export class DashboardDataTransformer {
     if (!data || !Array.isArray(data)) {
       return [
         { name: "Admin", value: 0, percentage: 0 },
-        { name: "User", value: 0, percentage: 0 },
-        { name: "Viewer", value: 0, percentage: 0 },
+        { name: "Procurement Lead", value: 0, percentage: 0 },
+        { name: "Evaluators", value: 0, percentage: 0 },
+        { name: "Vendors", value: 0, percentage: 0 },
       ];
     }
 
@@ -1300,8 +1416,16 @@ export class DashboardDataTransformer {
       0
     );
 
+    // Role name mapping for display
+    const roleNameMap: { [key: string]: string } = {
+      vendor: "Vendors",
+      procurement: "Procurement Lead",
+      evaluator: "Evaluators",
+      company_admin: "Admin",
+    };
+
     return data.map((item: any) => ({
-      name: item.roleName || "Unknown",
+      name: roleNameMap[item.roleName] || item.roleName || "Unknown",
       value: item.count || 0,
       percentage: total > 0 ? Math.round((item.count / total) * 100) : 0,
     }));
@@ -1480,9 +1604,35 @@ export class DashboardDataTransformer {
   }
 
   /**
+   * Transform Solicitation Activities data for area chart with monthly x-axis
+   */
+
+  /**
    * Transform Procurement Total Evaluations data for bar chart
    */
   static transformProcurementTotalEvaluations(data: any) {
+    // Handle new API format with labels and datasets
+    if (data && data.labels && data.datasets) {
+      const { labels, datasets } = data;
+
+      // Find datasets by name
+      const onTimeDataset = datasets.find((d: any) => d.name === "On Time");
+      const lateDataset = datasets.find((d: any) => d.name === "Late");
+      const pendingDataset = datasets.find((d: any) => d.name === "Pending");
+      const completedDataset = datasets.find(
+        (d: any) => d.name === "Completed"
+      );
+
+      return labels.map((label: string, index: number) => ({
+        month: label,
+        onTime: onTimeDataset?.values[index] || 0,
+        late: lateDataset?.values[index] || 0,
+        pending: pendingDataset?.values[index] || 0,
+        completed: completedDataset?.values[index] || 0,
+      }));
+    }
+
+    // Handle legacy array format
     if (!data || !Array.isArray(data)) {
       return Array.from({ length: 12 }, (_, i) => ({
         month: [
@@ -1601,10 +1751,10 @@ export class DashboardDataTransformer {
     ) => {
       const actions = applyDynamicStatusTextReplacement(
         statusText,
-        'evaluator',
-        'myActions',
+        "evaluator",
+        "myActions",
         data
-      )
+      );
 
       return actions;
     };
@@ -1642,12 +1792,12 @@ export class DashboardDataTransformer {
       title: update?.evaluation?.solicitation?.name ?? "Unknown",
       text: applyDynamicStatusTextReplacement(
         update.statusText,
-        'evaluator',
-        'general',
+        "evaluator",
+        "general",
         {
           id: update?.evaluation?._id,
           name: update?.evaluation?.solicitation?.name,
-          solId: update?.evaluation?.solicitation?._id
+          solId: update?.evaluation?.solicitation?._id,
         }
       ),
       type: update.type || "evaluation",
@@ -1752,8 +1902,8 @@ export class DashboardDataTransformer {
     ) => {
       return applyDynamicStatusTextReplacement(
         statusText,
-        'vendor',
-        'myActions',
+        "vendor",
+        "myActions",
         data
       );
     };
@@ -1763,7 +1913,8 @@ export class DashboardDataTransformer {
         id: action._id || `vendor-action-${index}`,
         text: getFormattedText(action.statusText, {
           id: action?.solicitation?._id ?? action?.evaluation?._id ?? "",
-          name: action?.solicitation?.name ?? action?.evaluation?.name ?? "Unknown",
+          name:
+            action?.solicitation?.name ?? action?.evaluation?.name ?? "Unknown",
         }),
         date: action.createdAt
           ? format(new Date(action.createdAt), "MMM d, yyyy h:mm a")
@@ -1794,11 +1945,15 @@ export class DashboardDataTransformer {
           subtitle: update?.subtitle ?? update?.campaign?.subtitle,
           message: update?.message ?? update?.campaign?.message ?? "",
           recipientType:
-            update?.recipientType ?? update?.campaign?.recipientType ?? "all_users",
-          users: update?.users ?? update?.userIds ?? update?.campaign?.users ?? [],
+            update?.recipientType ??
+            update?.campaign?.recipientType ??
+            "all_users",
+          users:
+            update?.users ?? update?.userIds ?? update?.campaign?.users ?? [],
           bannerUrl: update?.bannerUrl ?? update?.campaign?.bannerUrl,
           campaignType: update?.campaignType ?? update?.type ?? "campaign",
-          createdAt: update?.createdAt ?? update?.date ?? new Date().toISOString(),
+          createdAt:
+            update?.createdAt ?? update?.date ?? new Date().toISOString(),
         };
 
         return {
@@ -1814,10 +1969,10 @@ export class DashboardDataTransformer {
           time:
             update?.time ||
             (campaign.createdAt
-              ? `${format(new Date(campaign.createdAt), "MMM d, yyyy")} • ${format(
+              ? `${format(
                   new Date(campaign.createdAt),
-                  "h:mm a 'GMT'xxx"
-                )}`
+                  "MMM d, yyyy"
+                )} • ${format(new Date(campaign.createdAt), "h:mm a 'GMT'xxx")}`
               : `${format(new Date(), "MMM d, yyyy")} • ${format(
                   new Date(),
                   "h:mm a 'GMT'xxx"
@@ -1829,8 +1984,8 @@ export class DashboardDataTransformer {
         id: update.id || `vendor-update-${index}`,
         text: applyDynamicStatusTextReplacement(
           update.statusText,
-          'vendor',
-          'general',
+          "vendor",
+          "general",
           {
             id: update?.solicitation?._id,
             name: update?.solicitation?.name ?? "Unknown",
@@ -1864,8 +2019,8 @@ export class DashboardDataTransformer {
     ) => {
       return applyDynamicStatusTextReplacement(
         statusText,
-        'procurement',
-        'myActions',
+        "procurement",
+        "myActions",
         data
       );
     };
@@ -1874,7 +2029,8 @@ export class DashboardDataTransformer {
       id: action?.solicitation?._id || `action-${index}`,
       text: getFormattedText(action.statusText, {
         id: action?.solicitation?._id || action?.evaluation?._id,
-        name: action?.solicitation?.name || action?.evaluation?.name || "Unknown",
+        name:
+          action?.solicitation?.name || action?.evaluation?.name || "Unknown",
       }),
       type: action?.replace?.("_", " ") || "",
       title: action?.solicitation?.name ?? "Unknown",
@@ -1910,12 +2066,18 @@ export class DashboardDataTransformer {
           subtitle: update?.subtitle ?? update?.campaign?.subtitle,
           message: update?.message ?? update?.campaign?.message ?? "",
           recipientType:
-            update?.recipientType ?? update?.campaign?.recipientType ?? "all_users",
-          users: update?.users ?? update?.userIds ?? update?.campaign?.users ?? [],
+            update?.recipientType ??
+            update?.campaign?.recipientType ??
+            "all_users",
+          users:
+            update?.users ?? update?.userIds ?? update?.campaign?.users ?? [],
           bannerUrl: update?.bannerUrl ?? update?.campaign?.bannerUrl,
           campaignType: update?.campaignType ?? update?.type ?? "campaign",
           createdAt:
-            update?.updatedAt ?? update?.createdAt ?? update?.date ?? new Date().toISOString(),
+            update?.updatedAt ??
+            update?.createdAt ??
+            update?.date ??
+            new Date().toISOString(),
         };
 
         return {
@@ -1927,10 +2089,12 @@ export class DashboardDataTransformer {
             (campaign.subtitle
               ? `<strong>${campaign.subject}</strong> — ${campaign.subtitle}`
               : `<strong>${campaign.subject}</strong>`),
-          date:
-            campaign.createdAt
-              ? `${format(new Date(campaign.createdAt), "MMM d, yyyy h:mm a")} GMT`
-              : format(new Date(), "MMM d, yyyy h:mm a 'GMT'xxx"),
+          date: campaign.createdAt
+            ? `${format(
+                new Date(campaign.createdAt),
+                "MMM d, yyyy h:mm a"
+              )} GMT`
+            : format(new Date(), "MMM d, yyyy h:mm a 'GMT'xxx"),
           status: update?.status || "active",
           campaign,
         };
@@ -1940,7 +2104,8 @@ export class DashboardDataTransformer {
       const evaluation = update?.evaluation ?? null;
 
       const title = sol?.name ?? evaluation?.name ?? "Unknown";
-      const entityId = sol?._id ?? evaluation?._id ?? update?._id ?? `update-${index}`;
+      const entityId =
+        sol?._id ?? evaluation?._id ?? update?._id ?? `update-${index}`;
       const entityName = sol?.name ?? evaluation?.name ?? "Unknown";
 
       return {
@@ -1948,8 +2113,8 @@ export class DashboardDataTransformer {
         title,
         text: applyDynamicStatusTextReplacement(
           update?.statusText ?? "",
-          'procurement',
-          'general',
+          "procurement",
+          "general",
           {
             id: entityId,
             name: entityName,
@@ -1990,12 +2155,18 @@ export class DashboardDataTransformer {
           subtitle: update?.subtitle ?? update?.campaign?.subtitle,
           message: update?.message ?? update?.campaign?.message ?? "",
           recipientType:
-            update?.recipientType ?? update?.campaign?.recipientType ?? "all_users",
-          users: update?.users ?? update?.userIds ?? update?.campaign?.users ?? [],
+            update?.recipientType ??
+            update?.campaign?.recipientType ??
+            "all_users",
+          users:
+            update?.users ?? update?.userIds ?? update?.campaign?.users ?? [],
           bannerUrl: update?.bannerUrl ?? update?.campaign?.bannerUrl,
           campaignType: update?.campaignType ?? update?.type ?? "campaign",
           createdAt:
-            update?.updatedAt ?? update?.createdAt ?? update?.date ?? new Date().toISOString(),
+            update?.updatedAt ??
+            update?.createdAt ??
+            update?.date ??
+            new Date().toISOString(),
         };
 
         return {
@@ -2008,7 +2179,10 @@ export class DashboardDataTransformer {
               ? `<strong>${campaign.subject}</strong> — ${campaign.subtitle}`
               : `<strong>${campaign.subject}</strong>`),
           date: campaign.createdAt
-            ? `${format(new Date(campaign.createdAt), "MMM d, yyyy h:mm a")} GMT`
+            ? `${format(
+                new Date(campaign.createdAt),
+                "MMM d, yyyy h:mm a"
+              )} GMT`
             : format(new Date(), "MMM d, yyyy h:mm a 'GMT'xxx"),
           status: update?.status || "active",
           campaign,
@@ -2019,7 +2193,8 @@ export class DashboardDataTransformer {
       const evaluation = update?.evaluation ?? null;
 
       const title = sol?.name ?? evaluation?.name ?? "Unknown";
-      const entityId = sol?._id ?? evaluation?._id ?? update?._id ?? `admin-update-${index}`;
+      const entityId =
+        sol?._id ?? evaluation?._id ?? update?._id ?? `admin-update-${index}`;
       const entityName = sol?.name ?? evaluation?.name ?? "Unknown";
 
       return {
@@ -2027,8 +2202,8 @@ export class DashboardDataTransformer {
         title,
         text: applyDynamicStatusTextReplacement(
           update?.statusText ?? "",
-          'procurement',
-          'general',
+          "procurement",
+          "general",
           {
             id: entityId,
             name: entityName,

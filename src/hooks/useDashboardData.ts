@@ -362,6 +362,8 @@ export const useDashboardData = (
       refetchOnMount: false,
     });
 
+
+
   // Company Admin - Role Distribution
   const {
     data: companyRoleDistribution,
@@ -494,15 +496,15 @@ export const useDashboardData = (
     isLoading: isLoadingProcurementWeeklyActivities,
   } = useQuery<ApiResponse<any>, ApiResponseError>({
     queryKey: [
-      "procurement-weekly-activities",
+      "solicitation-activities",
       userRole,
-      getFilterForChart("procurement-weekly-activities"),
+      getFilterForChart("solicitation-activities"),
     ],
     queryFn: async () =>
       await getRequest({
         url: "/procurement/solicitations/analytics/activities",
         config: {
-          params: { range: getFilterForChart("procurement-weekly-activities") },
+          params: { range: getFilterForChart("solicitation-activities") },
         },
       }),
     enabled: userRole === "procurement",
@@ -582,19 +584,24 @@ export const useDashboardData = (
           subDistribution?.data?.data
         );
       case "company-status":
-        // API returns array with nested timeStats: [{ timeStats: [...] }]
+        // API now returns direct array structure: [{ label: "Jul", total: 8, active: 8, expiring: 0, suspended: 0 }]
         const companyStatusData = companyStatus?.data?.data;
         let transformedCompanyStatus;
-        if (
-          Array.isArray(companyStatusData) &&
-          companyStatusData.length > 0 &&
-          companyStatusData[0]?.timeStats
-        ) {
-          // Extract timeStats from the first element
-          transformedCompanyStatus =
-            DashboardDataTransformer.transformCompanyStatus(
-              companyStatusData[0]
-            );
+        if (Array.isArray(companyStatusData) && companyStatusData.length > 0) {
+          // Handle both old nested structure and new direct array structure
+          if (companyStatusData[0]?.timeStats) {
+            // Old structure: Extract timeStats from the first element
+            transformedCompanyStatus =
+              DashboardDataTransformer.transformCompanyStatus(
+                companyStatusData[0]
+              );
+          } else {
+            // New structure: Pass the array directly
+            transformedCompanyStatus =
+              DashboardDataTransformer.transformCompanyStatus(
+                companyStatusData
+              );
+          }
         } else {
           transformedCompanyStatus =
             DashboardDataTransformer.transformCompanyStatus(undefined);
@@ -630,6 +637,10 @@ export const useDashboardData = (
         return DashboardDataTransformer.transformRoleDistribution(
           companyRoleDistribution?.data?.data
         );
+      case "company-role-distribution":
+        return DashboardDataTransformer.transformRoleDistribution(
+          companyRoleDistribution?.data?.data
+        );
       case "procurement-solicitation-status":
         return DashboardDataTransformer.transformChartData(
           "solicitation-status",
@@ -645,6 +656,7 @@ export const useDashboardData = (
           "vendors-distribution",
           vendorsDistribution?.data?.data
         );
+
       case "procurement-proposal-submission":
         return DashboardDataTransformer.transformChartData(
           "proposal-submission",
@@ -654,6 +666,12 @@ export const useDashboardData = (
       case "weekly-activities":
         return DashboardDataTransformer.transformChartData(
           "weekly-activities",
+          procurementWeeklyActivities?.data?.data,
+          "area"
+        );
+      case "solicitation-activities":
+        return DashboardDataTransformer.transformChartData(
+          "solicitation-activities",
           procurementWeeklyActivities?.data?.data,
           "area"
         );
@@ -712,6 +730,7 @@ export const useDashboardData = (
     bidIntent: bidIntent?.data?.data,
     vendorsDistribution: vendorsDistribution?.data?.data,
     proposalSubmission: proposalSubmission?.data?.data,
+
     companyRoleDistribution: companyRoleDistribution?.data?.data,
     generalUpdates: generalUpdates?.data?.data,
 
@@ -754,6 +773,7 @@ export const useDashboardData = (
     isLoadingBidIntent,
     isLoadingVendorsDistribution,
     isLoadingProposalSubmission,
+
     isLoadingCompanyRoleDistribution,
     isLoadingGeneralUpdates,
     isLoadingEvaluatorDashboard,

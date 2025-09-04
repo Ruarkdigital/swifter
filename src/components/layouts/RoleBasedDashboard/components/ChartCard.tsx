@@ -26,6 +26,103 @@ import {
   YAxis,
 } from "recharts";
 
+type AxisOption = {
+  [key: string]: any;
+  dataKey?: string | ((data: any[]) => string);
+};
+
+type AxisConfig = {
+  vertical: { x: AxisOption; y: AxisOption };
+  horizontal: { x: AxisOption; y: AxisOption };
+};
+
+// axisConfig.ts (or inline if you prefer)
+// helpers/chartConfig.ts
+// Helper function to determine label key for axes
+const getLabelKey = (data: any[]): string => {
+  if (!data || data.length === 0) return "name";
+
+  // Check if this is single key-value data (like module usage)
+  const isSingleKeyData = data.every((item) => Object.keys(item).length === 1);
+
+  if (isSingleKeyData) {
+    // For single key data, we need to create a synthetic label
+    // We'll use the key names as labels
+    return "name";
+  } else {
+    // For multi-key data, assume first key is label
+    return Object.keys(data[0] || {})[0];
+  }
+};
+
+export const axisConfig: AxisConfig = {
+  vertical: {
+    x: {
+      type: "number" as const,
+      axisLine: false,
+      tickLine: false,
+      tick: { fill: "currentColor" },
+      stroke: "currentColor",
+      className: "text-gray-500 dark:text-gray-400",
+    },
+    y: {
+      type: "category" as const,
+      dataKey: (data: any[]) => getLabelKey(data),
+      axisLine: false,
+      tickLine: false,
+      tick: { fill: "currentColor", fontSize: 12 },
+      stroke: "currentColor",
+      className: "text-gray-500 dark:text-gray-400",
+      width: 110,
+    },
+  },
+  horizontal: {
+    x: {
+      dataKey: (data: any[]) => getLabelKey(data),
+      tick: { fill: "currentColor", fontSize: 12 },
+      stroke: "currentColor",
+      className: "text-gray-500 dark:text-gray-400",
+    },
+    y: {
+      tick: { fill: "currentColor", fontSize: 12 },
+      stroke: "currentColor",
+      className: "text-gray-500 dark:text-gray-400",
+    },
+  },
+};
+
+export const chartMargins = {
+  bar: (layout: string) => ({
+    top: 10,
+    right: 15,
+    left: layout === "horizontal" ? 120 : 20,
+    bottom: layout === "horizontal" ? 10 : 25,
+  }),
+  line: { top: 10, right: 20, left: 10, bottom: 20 },
+  area: { top: 10, right: 20, left: 10, bottom: 20 },
+};
+
+export const renderAxes = (layout: "horizontal" | "vertical", data: any[]) => {
+  const config = axisConfig[layout];
+
+  const xProps =
+    typeof config.x.dataKey === "function"
+      ? { ...config.x, dataKey: config.x.dataKey(data) }
+      : config.x;
+
+  const yProps =
+    typeof config.y.dataKey === "function"
+      ? { ...config.y, dataKey: config.y.dataKey(data) }
+      : config.y;
+
+  return (
+    <>
+      <XAxis {...xProps} />
+      <YAxis {...yProps} />
+    </>
+  );
+};
+
 interface ChartComponentProps {
   chart: DashboardConfig["rows"][0]["properties"][0];
   selected?: string;
@@ -40,9 +137,29 @@ export const ChartComponent: React.FC<ChartComponentProps> = ({
   chartData,
 }) => {
   // Use dynamic chartData if provided, otherwise fallback to chart.data
-  const data = chartData || chart.data;
-  
-  
+  let data = chartData || chart.data;
+
+  // Transform single key-value data for bar charts
+  if (chart.type === "bar" && data && data.length > 0) {
+    const isSingleKeyData = data.every(
+      (item: any) => Object.keys(item).length === 1
+    );
+
+    if (isSingleKeyData) {
+      // For single key-value data, consolidate all keys into a single object
+      const consolidatedData: any = { name: "Module Usage" };
+
+      data.forEach((item: any) => {
+        const key = Object.keys(item)[0];
+        const value = item[key];
+        consolidatedData[key] = value;
+      });
+
+      // Return as single-item array for bar chart
+      data = [consolidatedData];
+    }
+  }
+
   const chartConfig = {
     value: {
       label: "Value",
@@ -53,6 +170,8 @@ export const ChartComponent: React.FC<ChartComponentProps> = ({
   if (!chart.visible) return null;
 
   const renderChart = () => {
+    const layout = (chart.layout || "horizontal") as "horizontal" | "vertical";
+
     switch (chart.type) {
       case "pie":
         return (
@@ -73,8 +192,8 @@ export const ChartComponent: React.FC<ChartComponentProps> = ({
                   {data?.map((entry: any, index: number) => {
                     // Use consistent status-based colors
                     const color = getStatusColor(
-                      entry.name, 
-                      index, 
+                      entry.name,
+                      index,
                       entry.color || chart.colors?.[entry.name]
                     );
 
@@ -116,14 +235,14 @@ export const ChartComponent: React.FC<ChartComponentProps> = ({
                   cx="50%"
                   cy="50%"
                   innerRadius={chart?.innerRadius ?? 60}
-                  outerRadius="80%"
+                  outerRadius="95%"
                   dataKey="value"
                   label={false}
                 >
                   {data?.map((entry: any, index: number) => {
                     const color = getStatusColor(
-                      entry.name, 
-                      index, 
+                      entry.name,
+                      index,
                       entry.color
                     );
                     return <Cell key={`cell-${index}`} fill={color} />;
@@ -183,59 +302,38 @@ export const ChartComponent: React.FC<ChartComponentProps> = ({
         );
 
       case "line":
+        console.log({ chart });
         return (
           <ChartContainer className="h-full w-full" config={chartConfig}>
-            <ResponsiveContainer width="100%" height="100%" minHeight={400}>
-              <LineChart
-                data={data}
-                margin={{ top: 5, right: 30, left: 20, bottom: 7 }}
-              >
-                <XAxis
-                  dataKey={Object.keys(data?.[0] || {})[0]}
-                  tick={{ fill: "currentColor" }}
-                  stroke="currentColor"
-                  className="text-gray-500 dark:text-gray-400"
-                />
-                <YAxis
-                  tick={{ fill: "currentColor" }}
-                  stroke="currentColor"
-                  className="text-gray-500 dark:text-gray-400"
-                />
+            <ResponsiveContainer width="100%" height="100%" minHeight={280}>
+              <LineChart data={data} margin={chartMargins.line}>
+                {renderAxes("horizontal", data)}
                 <CartesianGrid
                   strokeDasharray="3 3"
                   className="stroke-gray-200 dark:stroke-gray-700"
-                  vertical={chart.gridVertical !== false}
                 />
+                {chart.showLegend !== false && (
+                  <Legend
+                    verticalAlign={chart.legendPosition?.vertical || "bottom"}
+                    align={chart.legendPosition?.horizontal || "center"}
+                    iconType={chart.legendIconType || "circle"}
+                    iconSize={10}
+                    wrapperStyle={{ paddingTop: "8px" }}
+                  />
+                )}
                 <ChartTooltip content={<ChartTooltipContent />} />
-                <Legend
-                  verticalAlign={chart.legendPosition?.vertical || "bottom"}
-                  align={chart.legendPosition?.horizontal || "center"}
-                  iconType={chart.legendIconType || "circle"}
-                  wrapperStyle={{ paddingTop: "10px" }}
-                />
                 {Object.keys(data?.[0] || {})
                   .slice(1)
-                  .map((key, index) => {
-                    // Use consistent status-based colors for lines
-                    const color = getStatusColor(
-                      key, 
-                      index, 
-                      chart.colors?.[key]
-                    );
-
-                    return (
-                      <Line
-                        key={key}
-                        type={chart.lineType || "monotone"}
-                        dataKey={key}
-                        stroke={color}
-                        strokeWidth={chart.strokeWidth || 2}
-                        dot={{ r: chart.dotRadius || 0 }}
-                        activeDot={{ r: chart.activeDotRadius || 6 }}
-                        strokeDasharray={chart.strokeDasharray?.[key]}
-                      />
-                    );
-                  })}
+                  .map((key, index) => (
+                    <Line
+                      key={key}
+                      type="monotone"
+                      dataKey={key}
+                      stroke={getStatusColor(key, index, chart.colors?.[key])}
+                      strokeWidth={2}
+                      // dot={chart.showDots !== false}
+                    />
+                  ))}
               </LineChart>
             </ResponsiveContainer>
           </ChartContainer>
@@ -244,39 +342,32 @@ export const ChartComponent: React.FC<ChartComponentProps> = ({
       case "area":
         return (
           <ChartContainer className="h-full w-full" config={chartConfig}>
-            <ResponsiveContainer width="100%" height="100%" minHeight={400}>
-              <AreaChart
-                data={data}
-                margin={{ top: 5, right: 30, left: 2, bottom: 7 }}
-              >
-                <XAxis
-                  dataKey={Object.keys(data?.[0] || {})[0]}
-                  tick={{ fill: "currentColor" }}
-                  stroke="currentColor"
-                  className="text-gray-500 dark:text-gray-400"
-                />
-                <YAxis
-                  tick={{ fill: "currentColor" }}
-                  stroke="currentColor"
-                  className="text-gray-500 dark:text-gray-400"
-                />
+            <ResponsiveContainer width="100%" height="100%" minHeight={300}>
+              <AreaChart data={data} margin={chartMargins.area}>
+                {renderAxes("horizontal", data)}
+
                 <CartesianGrid
                   strokeDasharray="3 3"
                   className="stroke-gray-200 dark:stroke-gray-700"
                   vertical={false}
                 />
+
                 <ChartTooltip content={<ChartTooltipContent />} />
-                <Legend
-                  verticalAlign="bottom"
-                  align="center"
-                  iconType="circle"
-                  iconSize={10}
-                  wrapperStyle={{ paddingTop: "10px" }}
-                />
+
+                {chart.showLegend !== false && (
+                  <Legend
+                    verticalAlign={chart.legendPosition?.vertical || "bottom"}
+                    align={chart.legendPosition?.horizontal || "center"}
+                    iconType={chart.legendIconType || "circle"}
+                    iconSize={10}
+                    wrapperStyle={{ paddingTop: "8px" }}
+                  />
+                )}
+
                 {Object.keys(data?.[0] || {})
                   .slice(1)
                   .map((key, index) => {
-                    // Dynamic color generation based on chart properties or default colors
+                    // Default stroke/fill sets
                     const defaultColors = [
                       { stroke: "#3b82f6", fill: "rgba(59, 130, 246, 0.1)" }, // Blue
                       { stroke: "#10b981", fill: "rgba(16, 185, 129, 0.1)" }, // Green
@@ -286,11 +377,12 @@ export const ChartComponent: React.FC<ChartComponentProps> = ({
                       { stroke: "#06b6d4", fill: "rgba(6, 182, 212, 0.1)" }, // Cyan
                     ];
 
-                    // Use chart-specific colors if available, otherwise use default colors
                     const colorIndex = index % defaultColors.length;
-                    const color =
+
+                    const stroke =
                       chart.colors?.[key] || defaultColors[colorIndex].stroke;
-                    const fillColor =
+
+                    const fill =
                       chart.fillColors?.[key] || defaultColors[colorIndex].fill;
 
                     return (
@@ -298,11 +390,11 @@ export const ChartComponent: React.FC<ChartComponentProps> = ({
                         key={key}
                         type="monotone"
                         dataKey={key}
-                        stroke={color}
+                        stroke={stroke}
                         strokeWidth={chart.strokeWidth || 2}
                         dot={{ r: chart.dotRadius || 0 }}
                         activeDot={{ r: chart.activeDotRadius || 6 }}
-                        fill={fillColor}
+                        fill={fill}
                         fillOpacity={chart.fillOpacity || 0.5}
                       />
                     );
@@ -315,62 +407,18 @@ export const ChartComponent: React.FC<ChartComponentProps> = ({
       case "bar":
         return (
           <ChartContainer className="h-full w-full" config={chartConfig}>
-            <ResponsiveContainer width="100%" height="100%" minHeight={200}>
+            <ResponsiveContainer width="100%" height="100%">
               <BarChart
                 data={data}
-                layout={chart.layout || "horizontal"}
-                margin={{
-                  top: 5,
-                  right: 10,
-                  left: chart.layout === "horizontal" ? 30 : 30,
-                  bottom: chart.layout === "horizontal" ? 5 : 10,
-                }}
+                layout={layout}
+                margin={chartMargins.bar(layout)}
               >
-                {chart.layout === "horizontal" ? (
-                  <>
-                    <XAxis
-                      type="number"
-                      tick={{ fill: "currentColor" }}
-                      stroke="currentColor"
-                      className="text-gray-500 dark:text-gray-400"
-                      axisLine={false}
-                      tickLine={false}
-                    />
-                    <YAxis
-                      type="category"
-                      dataKey={Object.keys(data?.[0] || {})[0]}
-                      tick={{ fill: "currentColor", fontSize: 12 }}
-                      stroke="currentColor"
-                      className="text-gray-500 dark:text-gray-400"
-                      axisLine={false}
-                      tickLine={false}
-                      width={70}
-                    />
-                  </>
-                ) : (
-                  <>
-                    <XAxis
-                      dataKey={Object.keys(data?.[0] || {})[0]}
-                      tick={{ fill: "currentColor", fontSize: 12  }}
-                      stroke="currentColor"
-                      className="text-gray-500 dark:text-gray-400"
-                    />
-                    <YAxis
-                      tick={{ fill: "currentColor", fontSize: 12  }}
-                      stroke="currentColor"
-                      className="text-gray-500 dark:text-gray-400"
-                    />
-                  </>
-                )}
+                {renderAxes(layout, data)}
                 <CartesianGrid
                   strokeDasharray="3 3"
                   className="stroke-gray-200 dark:stroke-gray-700"
-                  vertical={
-                    chart.layout === "horizontal"
-                      ? true
-                      : chart.gridVertical !== false
-                  }
-                  horizontal={chart.layout === "horizontal" ? false : true}
+                  vertical={layout === "horizontal"}
+                  horizontal={layout !== "horizontal"}
                 />
                 {chart.showLegend !== false && (
                   <Legend
@@ -380,25 +428,45 @@ export const ChartComponent: React.FC<ChartComponentProps> = ({
                     iconSize={10}
                   />
                 )}
+
                 <ChartTooltip content={<ChartTooltipContent />} />
-                {Object.keys(data?.[0] || {})
-                  .slice(1)
-                  .map((key, index) => {
-                    // Use consistent status-based colors for bars
+
+                {(() => {
+                  // Helper function to determine data keys for bars
+                  const getDataKeys = (data: any[]) => {
+                    if (!data || data.length === 0) return [];
+
+                    const firstItem = data[0];
+                    const allKeys = Object.keys(firstItem);
+
+                    // Check if this data was transformed from single key-value objects
+                    // (it will have a 'name' property and multiple other keys)
+                    const hasNameProperty = allKeys.includes("name");
+
+                    if (hasNameProperty && allKeys.length > 1) {
+                      // For consolidated single key-value data, exclude 'name' property
+                      return allKeys.filter((key) => key !== "name");
+                    } else {
+                      // For multi-key data, assume first key is label, rest are data
+                      return allKeys.slice(1);
+                    }
+                  };
+
+                  const dataKeys = getDataKeys(data);
+
+                  return dataKeys.map((key, index) => {
                     const color = getStatusColor(
-                      key, 
-                      index, 
+                      key,
+                      index,
                       chart.colors?.[key]
                     );
-
                     return (
                       <Bar
                         key={key}
                         dataKey={key}
                         className={chart.barClassName || "rounded-md"}
                         barSize={
-                          chart.barSize ||
-                          (chart.layout === "horizontal" ? 20 : 30)
+                          chart.barSize || (layout === "horizontal" ? 20 : 30)
                         }
                         fill={color}
                         stackId={chart.stacked ? "stack" : undefined}
@@ -409,13 +477,14 @@ export const ChartComponent: React.FC<ChartComponentProps> = ({
                             number,
                             number
                           ]) ||
-                          (chart.layout === "horizontal"
+                          (layout === "horizontal"
                             ? [0, 4, 4, 0]
                             : [4, 4, 0, 0])
                         }
                       />
                     );
-                  })}
+                  });
+                })()}
               </BarChart>
             </ResponsiveContainer>
           </ChartContainer>
@@ -433,14 +502,13 @@ export const ChartComponent: React.FC<ChartComponentProps> = ({
         {chart.filters && chart.filters.length > 0 && (
           <div className="flex space-x-2 text-sm overflow-auto py-2">
             {chart.filters?.map((item) => {
-              const isActive = selected?.replace(/\s+/g, "") === item.replace(/\s+/g, "");
+              const isActive =
+                selected?.replace(/\s+/g, "") === item.replace(/\s+/g, "");
               return (
                 <Button
                   variant={isActive ? "default" : "ghost"}
                   key={item}
-                  className={cn(
-                    "transition-all duration-200 font-medium",
-                  )}
+                  className={cn("transition-all duration-200 font-medium")}
                   onClick={() => onFilterChange?.(item)}
                 >
                   {item}
@@ -450,8 +518,8 @@ export const ChartComponent: React.FC<ChartComponentProps> = ({
           </div>
         )}
       </CardHeader>
-      <CardContent className="p-0">
-        <div className="h-[400px] w-full">{renderChart()}</div>
+      <CardContent className="p-4">
+        <div className="h-[26rem] w-full">{renderChart()}</div>
       </CardContent>
     </Card>
   );

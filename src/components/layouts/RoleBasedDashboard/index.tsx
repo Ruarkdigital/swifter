@@ -41,6 +41,7 @@ export const RoleBasedDashboard: React.FC = () => {
     procurementProposalSubmission,
     procurementWeeklyActivities,
     procurementTotalEvaluations,
+
     evaluatorDashboard,
     evaluatorMyActions,
     evaluatorEvaluationUpdates,
@@ -62,8 +63,7 @@ export const RoleBasedDashboard: React.FC = () => {
         DashboardDataTransformer.transformWeeklyActivities(weeklyActivities);
       const transformedSubData =
         DashboardDataTransformer.transformSubDistribution(subDistribution);
-      const transformedStatusData =
-        DashboardDataTransformer.transformCompanyStatus(companyStatus?.[0]);
+      const transformedStatusData = getChartData("company-status");
       const transformedModuleData =
         DashboardDataTransformer.transformModuleUsage(moduleUsage);
       const transformedRoleData =
@@ -78,11 +78,6 @@ export const RoleBasedDashboard: React.FC = () => {
               ...row,
               properties: row.properties.map((chart) => {
                 switch (chart.id) {
-                  case "weekly-activities":
-                    return {
-                      ...chart,
-                      data: transformedWeeklyData,
-                    };
                   case "sub-distribution":
                     return {
                       ...chart,
@@ -293,11 +288,10 @@ export const RoleBasedDashboard: React.FC = () => {
           "solicitation-status",
           procurementSolicitationStatus
         );
-      const transformedBidIntent =
-        DashboardDataTransformer.transformChartData(
-          "bid-intent",
-          procurementBidIntent
-        );
+      const transformedBidIntent = DashboardDataTransformer.transformChartData(
+        "bid-intent",
+        procurementBidIntent
+      );
       const transformedVendorsDistribution =
         DashboardDataTransformer.transformChartData(
           "vendors-distribution",
@@ -309,17 +303,18 @@ export const RoleBasedDashboard: React.FC = () => {
           procurementProposalSubmission,
           "line"
         );
-      const transformedWeeklyData =
-        DashboardDataTransformer.transformChartData(
-          "weekly-activities",
-          procurementWeeklyActivities,
-          "area"
-        );
+
       const transformedTotalEvaluations =
         DashboardDataTransformer.transformChartData(
           "total-evaluation",
           procurementTotalEvaluations,
           "bar"
+        );
+      const transformedSolicitationActivities =
+        DashboardDataTransformer.transformChartData(
+          "solicitation-activities",
+          procurementWeeklyActivities,
+          "area"
         );
       const transformedProcurementMyActions =
         DashboardDataTransformer.transformProcurementMyActions(
@@ -365,6 +360,11 @@ export const RoleBasedDashboard: React.FC = () => {
                       ...chart,
                       data: transformedSolicitationStatus,
                     };
+                  case "solicitation-activities":
+                    return {
+                      ...chart,
+                      data: transformedSolicitationActivities,
+                    };
                   case "vendors-bid-intent-status":
                     return {
                       ...chart,
@@ -389,7 +389,7 @@ export const RoleBasedDashboard: React.FC = () => {
                   case "weekly-activities":
                     return {
                       ...chart,
-                      data: transformedWeeklyData,
+                      data: transformedSolicitationActivities,
                     };
                   case "total-evaluation":
                     return {
@@ -405,7 +405,7 @@ export const RoleBasedDashboard: React.FC = () => {
 
           return row;
         }),
-      }
+      };
 
       return payload;
     }
@@ -644,11 +644,7 @@ export const RoleBasedDashboard: React.FC = () => {
                   onFilterChange={(filter) =>
                     handleFilterChange(chart.id, filter)
                   }
-                  chartData={
-                    getChartData
-                      ? getChartData(chart.id)
-                      : chart.data
-                  }
+                  chartData={getChartData ? getChartData(chart.id) : chart.data}
                 />
               ))}
             </div>

@@ -754,7 +754,7 @@ const EvaluationDetailPage: React.FC = () => {
               onClick={() => sendRequirementMutation.mutate()}
               disabled={sendRequirementMutation.isPending}
             >
-              <span>Send Evaluation</span>
+              <span>Send Submission</span>
             </DropdownMenuItem>
           </DropdownMenuGroup>
         </DropdownMenuContent>

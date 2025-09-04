@@ -18,6 +18,7 @@ export interface DashboardConfig {
       cx?: string;
       id?: string;
       title?: string;
+      selectors?: string[]
       type?: "pie" | "line" | "bar" | "donut" | "area";
       data?: any[];
       visible?: boolean;
@@ -50,8 +51,29 @@ export interface DashboardConfig {
         horizontal?: "left" | "center" | "right";
       };
       legendLayout?: "horizontal" | "vertical";
-      legendIconType?: "line" | "rect" | "circle" | "cross" | "diamond" | "square" | "star" | "triangle" | "wye";
-      lineType?: "basis" | "basisClosed" | "basisOpen" | "linear" | "linearClosed" | "natural" | "monotoneX" | "monotoneY" | "monotone" | "step" | "stepBefore" | "stepAfter";
+      legendIconType?:
+        | "line"
+        | "rect"
+        | "circle"
+        | "cross"
+        | "diamond"
+        | "square"
+        | "star"
+        | "triangle"
+        | "wye";
+      lineType?:
+        | "basis"
+        | "basisClosed"
+        | "basisOpen"
+        | "linear"
+        | "linearClosed"
+        | "natural"
+        | "monotoneX"
+        | "monotoneY"
+        | "monotone"
+        | "step"
+        | "stepBefore"
+        | "stepAfter";
       strokeDasharray?: { [key: string]: string }; // Custom dash patterns for lines
       defaultFill?: string; // Default fill color for pie charts
       labelLine?: boolean; // Show label lines for pie charts
@@ -109,7 +131,6 @@ const evaluatorConfig: DashboardConfig = {
         },
       ],
     },
-    
   ],
 };
 
@@ -264,16 +285,16 @@ const companyAdminConfig: DashboardConfig = {
           type: "donut",
           centerText: {
             value: 0,
-            label: "Vendors"
+            label: "Vendors",
           },
           innerRadius: 100,
           data: [],
           visible: true,
         },
-          {
-            title: "General Updates",
-            items: [],
-          },
+        {
+          title: "General Updates",
+          items: [],
+        },
       ],
     },
     {
@@ -287,6 +308,7 @@ const companyAdminConfig: DashboardConfig = {
           className: "col-span-2",
           data: [],
           visible: true,
+          showLegend: true,
           filters: ["12 months", "6 months", "3 months", "30 days", "7 days"],
         },
         {
@@ -295,7 +317,7 @@ const companyAdminConfig: DashboardConfig = {
           type: "donut",
           centerText: {
             value: 0,
-            label: "Active Bids"
+            label: "Active Bids",
           },
           innerRadius: 100,
           data: [],
@@ -314,22 +336,23 @@ const companyAdminConfig: DashboardConfig = {
           data: [],
           visible: true,
           filters: ["12 months", "6 months", "3 months", "30 days", "7 days"],
-          legendIconType: 'circle'
+          legendIconType: "circle",
         },
         {
-          id: "role-distribution",
+          id: "company-role-distribution",
           title: "Role Distribution",
           type: "bar",
           layout: "vertical",
           data: [],
           visible: true,
-          filters: ["12 months", "6 months", "3 months", "30 days", "7 days"],
+          filters: ["12 months", "3 months", "30 days", "7 days", "24 hours"],
           showLegend: false,
           colors: {
-            value: "#2A4467"
+            value: "#2A4467",
           },
-          barSize: 20
-        },
+          barSize: 30,
+          barRadius: [0, 4, 4, 0],
+        }
       ],
     },
   ],
@@ -402,14 +425,13 @@ const superAdminConfig: DashboardConfig = {
           outerRadius: 150,
           centerText: {
             value: 0,
-            label: "Active Subscriptions"
+            label: "Active Subscriptions",
           },
           innerRadius: 100,
           data: [],
           visible: true,
           filters: ["12 months", "6 months", "3 months", "30 days", "7 days"],
         },
-        
       ],
     },
     {
@@ -430,7 +452,7 @@ const superAdminConfig: DashboardConfig = {
       ],
     },
     {
-      type: 'chart',
+      type: "chart",
       properties: [
         {
           id: "portal-role-distribution",
@@ -440,7 +462,7 @@ const superAdminConfig: DashboardConfig = {
           data: [],
           visible: true,
           filters: ["12 months", "6 months", "3 months", "30 days", "7 days"],
-          legendIconType: 'circle'
+          legendIconType: "circle",
         },
         {
           id: "module-usage",
@@ -448,11 +470,13 @@ const superAdminConfig: DashboardConfig = {
           type: "bar",
           data: [],
           visible: true,
+          showLegend: true,
+          selectors: ["solicitation", "evaluation", "Vendor", "Addendum"],
           filters: ["12 months", "6 months", "3 months", "30 days", "7 days"],
-          legendIconType: 'circle'
-        }
-      ]
-    }
+          legendIconType: "circle",
+        },
+      ],
+    },
   ],
 };
 
@@ -500,7 +524,7 @@ const procurementConfig: DashboardConfig = {
         {
           id: "general-updates",
           title: "General Updates",
-          items:[],
+          items: [],
         },
       ],
     },
@@ -518,7 +542,7 @@ const procurementConfig: DashboardConfig = {
           filters: ["12 months", "6 months", "3 months", "30 days", "7 days"],
         },
         {
-          id: "weekly-activities",
+          id: "solicitation-activities",
           title: "Weekly Activities",
           type: "area",
           className: "col-span-2",
@@ -551,7 +575,7 @@ const procurementConfig: DashboardConfig = {
           data: [],
           centerText: {
             value: 0,
-            label: "Active Bids"
+            label: "Active Bids",
           },
           visible: true,
         },
@@ -567,10 +591,10 @@ const procurementConfig: DashboardConfig = {
           type: "donut",
           data: [],
           innerRadius: 100,
-          
+
           centerText: {
             value: 0,
-            label: "Vendors"
+            label: "Vendors",
           },
           visible: true,
         },
