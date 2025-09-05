@@ -531,7 +531,7 @@ const SolicitationDetailsSheet: React.FC<SolicitationDetailsSheetProps> = ({
                               </div>
                               <div>
                                 <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                                  {doc.name.length > 100 ? doc.name.substring(0, 100) + '...' : doc.name}
+                                  {doc.name.length > 100 ? doc.name.substring(0, 40) + '...' : doc.name}
                                 </h3>
                                 <p className="text-xs text-gray-500 dark:text-gray-400">
                                   {getFileExtension(doc.name, doc.type)} •{" "}

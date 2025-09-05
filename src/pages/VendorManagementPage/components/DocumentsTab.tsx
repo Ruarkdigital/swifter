@@ -68,7 +68,7 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({ documents = [] }) =>
                       </div>
                       <div className="flex-1 min-w-0">
                         <h4 className="text-sm font-medium text-gray-900 dark:text-gray-200 truncate">
-                          {document.name.length > 100 ? document.name.substring(0, 100) + '...' : document.name}
+                          {document.name.length > 40 ? document.name.substring(0, 40) + '...' : document.name}
                         </h4>
                         <div className="flex items-center gap-2 mt-1">
                           <span className="text-xs text-gray-500">{fileExtension}</span>

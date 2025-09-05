@@ -257,7 +257,7 @@ const AddendumDetailsSheet: React.FC<AddendumDetailsSheetProps> = ({
                       {getFileIcon(fileExtension)}
                       <div>
                         <p className="text-sm font-medium text-gray-900 dark:text-gray-200">
-                          {file.name.length > 100 ? file.name.substring(0, 100) + '...' : file.name}
+                          {file.name.length > 40 ? file.name.substring(0, 40) + '...' : file.name}
                         </p>
                         <p className="text-xs text-gray-500">
                           {fileExtension} • {formatFileSize(file.size)}
