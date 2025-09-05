@@ -302,7 +302,6 @@ export const ChartComponent: React.FC<ChartComponentProps> = ({
         );
 
       case "line":
-        console.log({ chart });
         return (
           <ChartContainer className="h-full w-full" config={chartConfig}>
             <ResponsiveContainer width="100%" height="100%" minHeight={280}>
