@@ -10,9 +10,6 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 // import { Input } from "@/components/ui/input";
 import { Edit, Eye, Download, MoreHorizontal } from "lucide-react";
-import { DocSVG } from "@/assets/icons/Doc";
-import { PdfSVG } from "@/assets/icons/Pdf";
-import { ExcelSVG } from "@/assets/icons/Excel";
 import { cn } from "@/lib/utils";
 import { DataTable } from "@/components/layouts/DataTable";
 import { ColumnDef, PaginationState } from "@tanstack/react-table";
@@ -24,7 +21,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import EditVendorDialog from "./components/EditVendorDialog";
 import { PageLoader } from "@/components/ui/PageLoader";
-import PowerPointSVG from "@/assets/icons/PowerPoint";
+import { getFileExtension, getFileIcon } from "@/lib/fileUtils.tsx";
+import { DocumentViewer } from "@/components/ui/DocumentViewer";
 import { Solicitation } from "../SolicitationManagementPage/SolicitationDetailPage";
 
 type VendorSubmission = {
@@ -176,38 +174,7 @@ const OverviewTab = ({ vendor }: { vendor: VendorDetail }) => {
 const DocumentsTab = ({ vendor }: { vendor: VendorDetail }) => {
   const documents = vendor?.documents ?? [];
 
-  // Helper function to get file extension from name or type
-  const getFileExtension = (fileName: string, fileType: string): string => {
-    const extension = fileName.split(".").pop()?.toUpperCase();
-    if (extension) return extension;
 
-    // Fallback to type if no extension in name
-    if (fileType.includes("pdf")) return "PDF";
-    if (fileType.includes("doc")) return "DOC";
-    if (fileType.includes("excel") || fileType.includes("sheet")) return "XLS";
-    if (fileType.includes("powerpoint") || fileType.includes("presentation"))
-      return "PPT";
-
-    return "FILE";
-  };
-
-  const getFileIcon = (fileExtension: string) => {
-    switch (fileExtension) {
-      case "DOC":
-      case "DOCX":
-        return <DocSVG />;
-      case "PDF":
-        return <PdfSVG />;
-      case "XLS":
-      case "XLSX":
-        return <ExcelSVG />;
-      case "PPT":
-      case "PPTX":
-        return <PowerPointSVG />;
-      default:
-        return <DocSVG />;
-    }
-  };
 
   return (
     <div className="pt-6">
@@ -252,19 +219,17 @@ const DocumentsTab = ({ vendor }: { vendor: VendorDetail }) => {
 
                 {/* Right side - Action Buttons */}
                 <div className="flex items-center gap-2 ml-2">
-                  {getFileExtension(document.name, document.fileType) ===
-                    "PDF" && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className={cn(
-                        "h-8 w-8 p-0 bg-gray-100 rounded-full hover:bg-gray-200"
-                      )}
-                      title="View"
-                    >
-                      <Eye className="w-4 h-4 text-gray-500" />
-                    </Button>
-                  )}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className={cn(
+                      "h-8 w-8 p-0 bg-gray-100 rounded-full hover:bg-gray-200"
+                    )}
+                    title="View"
+                    onClick={() => handleViewDocument(document)}
+                  >
+                    <Eye className="w-4 h-4 text-gray-500" />
+                  </Button>
                   <Button
                     variant="ghost"
                     size="icon"
@@ -472,6 +437,10 @@ export const VendorDetailPage = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("overview");
 
+  // Document viewer state
+  const [viewerOpen, setViewerOpen] = useState(false);
+  const [selectedDocument, setSelectedDocument] = useState<VendorDetail['documents'][0] | null>(null);
+
   // Fetch vendor details from API
   const {
     data: vendorData,
@@ -492,6 +461,12 @@ export const VendorDetailPage = () => {
 
   const handleBack = () => {
     navigate(-1);
+  };
+
+  // Handle document viewing
+  const handleViewDocument = (document: VendorDetail['documents'][0]) => {
+    setSelectedDocument(document);
+    setViewerOpen(true);
   };
 
   if (isLoading) {
@@ -664,6 +639,20 @@ export const VendorDetailPage = () => {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Document Viewer Modal */}
+      {selectedDocument && (
+        <DocumentViewer
+          isOpen={viewerOpen}
+          onClose={() => {
+            setViewerOpen(false);
+            setSelectedDocument(null);
+          }}
+          fileUrl={selectedDocument.link}
+          fileName={selectedDocument.name}
+          fileType={selectedDocument.fileType}
+        />
+      )}
     </div>
   );
 };

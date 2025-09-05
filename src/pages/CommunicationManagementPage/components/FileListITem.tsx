@@ -1,15 +1,8 @@
 import { FileText } from "lucide-react";
+import { getSimpleFileExtension, formatFileSize } from "@/lib/fileUtils.tsx";
 
 // Simple File list item component for Communication Management uploads
 export const FileListItem = ({ file }: { file: File }) => {
-  const getFileExtension = (filename: string) => {
-    return filename.split(".").pop()?.toUpperCase() || "FILE";
-  };
-
-  const getFileSize = (bytes: number) => {
-    const mb = bytes / (1024 * 1024);
-    return mb >= 1 ? `${Math.round(mb)}MB` : `${Math.round(bytes / 1024)}KB`;
-  };
 
   const getFileIcon = () => {
     return (
@@ -29,7 +22,7 @@ export const FileListItem = ({ file }: { file: File }) => {
           </p>
           <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
             <span>
-              {getFileExtension(file.name)} • {getFileSize(file.size)}
+              {getSimpleFileExtension(file.name).toUpperCase()} • {formatFileSize(file.size)}
             </span>
           </div>
         </div>

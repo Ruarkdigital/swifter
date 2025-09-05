@@ -217,8 +217,7 @@ const CreateEvaluationDialog = () => {
 
   // Transform solicitations data for dropdown options
   const solicitationOptions =
-    solicitationsData?.data?.data
-      .filter((item) => item.status === "published")?.map((solicitation) => ({
+    solicitationsData?.data?.data?.map((solicitation) => ({
       label: solicitation.name,
       value: solicitation._id,
     })) || [];
@@ -341,36 +340,75 @@ const CreateEvaluationDialog = () => {
   const handleSaveAsDraft = async () => {
     try {
       const formData = forge.getValues();
-      const draftData: CreateEvaluationDraftPayload = {
-        solicitation: formData.solicitation || "",
-        timezone: formData.timezone || "",
-        start_date: formData.start_date || "",
-        end_date: formData.end_date || "",
-        group:
-          formData.group?.map((group) => ({
+      const draftData: Partial<CreateEvaluationDraftPayload> = {};
+      console.log({ formData })
+
+      // Only include fields with actual values
+      if (formData.solicitation && typeof formData.solicitation === 'string' && formData.solicitation.trim()) {
+        draftData.solicitation = formData.solicitation;
+      }
+      
+      if (formData.timezone && typeof formData.timezone === 'string' && formData.timezone.trim()) {
+        draftData.timezone = formData.timezone;
+      }
+      
+      if (formData.start_date) {
+        draftData.start_date = formData.start_date;
+      }
+      
+      if (formData.end_date) {
+        draftData.end_date = formData.end_date;
+      }
+      
+      if (formData.group && formData.group.length > 0) {
+        const validGroups = formData.group
+          .filter((group) => group.name && group.name.trim())
+          .map((group) => ({
             name: group.name,
             evaluators:
               group.evaluators
                 ?.filter((evaluator) => evaluator !== undefined)
-                .map((item) => item.value) || [],
-          })) || [],
-        documents:
-          formData.documents?.map((document) => ({
+                .map((item) => item.value)
+                .filter((value) => value && value.trim()) || [],
+          }))
+          .filter((group) => group.evaluators.length > 0);
+        
+        if (validGroups.length > 0) {
+          draftData.group = validGroups;
+        }
+      }
+      
+      if (formData.documents && formData.documents.length > 0) {
+        const validDocuments = formData.documents
+          .filter((document) => document.title && document.title.trim())
+          .map((document) => ({
             ...document,
             required: document.required ?? false,
             multiple: document.multiple ?? false,
-          })) || [],
-        criteria:
-          formData.criteria?.map((criteria) => ({
+          }));
+        
+        if (validDocuments.length > 0) {
+          draftData.documents = validDocuments;
+        }
+      }
+      
+      if (formData.criteria && formData.criteria.length > 0) {
+        const validCriteria = formData.criteria
+          .filter((criteria) => criteria.title && criteria.title.trim())
+          .map((criteria) => ({
             ...criteria,
             score:
               criteria.type === "weight"
                 ? parseInt(criteria.score as string)
                 : String(criteria.score),
-          })) || [],
-      };
+          }));
+        
+        if (validCriteria.length > 0) {
+          draftData.criteria = validCriteria;
+        }
+      }
 
-      await saveDraft(draftData);
+      await saveDraft(draftData as CreateEvaluationDraftPayload);
       toast.success(
         "Draft Saved",
         "Evaluation draft has been saved successfully"

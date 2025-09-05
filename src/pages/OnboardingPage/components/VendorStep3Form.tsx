@@ -4,6 +4,7 @@ import { Forger, ForgeControl } from "@/lib/forge";
 import { Upload, FileText, X } from "lucide-react";
 import { useWatch } from "react-hook-form";
 import { UseFormSetValue } from "react-hook-form";
+import { getSimpleFileExtension, formatFileSize } from "@/lib/fileUtils.tsx";
 
 interface VendorStep3FormProps {
   control: ForgeControl<any, unknown>;
@@ -17,14 +18,6 @@ const VendorStep3Form: React.FC<VendorStep3FormProps> = ({
   const value = useWatch({ control, name: "files" });
 
   const FileListItem = ({ file }: { file: File }) => {
-    const getFileExtension = (filename: string) => {
-      return filename.split(".").pop()?.toUpperCase() || "FILE";
-    };
-
-    const getFileSize = (bytes: number) => {
-      const mb = bytes / 1024 / 1024;
-      return mb < 1 ? `${Math.round(bytes / 1024)}KB` : `${Math.round(mb)}MB`;
-    };
 
     return (
       <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border">
@@ -37,7 +30,7 @@ const VendorStep3Form: React.FC<VendorStep3FormProps> = ({
               RFP_HRSoftware
             </p>
             <p className="text-xs text-gray-500 dark:text-gray-400">
-              {getFileExtension(file.name)} • {getFileSize(file.size)}
+              {getSimpleFileExtension(file.name).toUpperCase()} • {formatFileSize(file.size)}
             </p>
           </div>
         </div>

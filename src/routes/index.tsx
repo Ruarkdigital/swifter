@@ -37,6 +37,7 @@ import PrivacyPolicyPage from "@/pages/PrivacyPolicyPage";
 import TermsConditionsPage from "@/pages/TermsConditionsPage";
 import DisclaimerPage from "@/pages/DisclaimerPage";
 import ContactUsPage from "@/pages/ContactUsPage";
+import SubmitProponentPage from "@/pages/SolicitationManagementPage/components/ProponentSubmission";
 // import Example from "@/pages/Example";
 
 export const routes = [
@@ -145,6 +146,14 @@ export const routes = [
         element: (
           <ProtectedRoute>
             <SubmitProposalPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "/dashboard/solicitations/:id/submit-proponent",
+        element: (
+          <ProtectedRoute>
+            <SubmitProponentPage />
           </ProtectedRoute>
         ),
       },

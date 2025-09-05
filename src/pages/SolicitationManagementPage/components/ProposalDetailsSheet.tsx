@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { SheetHeader, SheetTitle, SheetContent } from "@/components/ui/sheet";
 import { Eye, Download, } from "lucide-react";
@@ -6,6 +6,8 @@ import { useQuery } from "@tanstack/react-query";
 import { getRequest } from "@/lib/axiosInstance";
 import { ApiResponse, ApiResponseError } from "@/types";
 import { PageLoader } from "@/components/ui/PageLoader";
+import { DocumentViewer } from "@/components/ui/DocumentViewer";
+import { getFileExtension } from "@/lib/fileUtils.tsx";
 
 // Proposal Detail type based on API response
 type ProposalDetail = {
@@ -64,6 +66,10 @@ const ProposalDetailsSheet: React.FC<ProposalDetailsSheetProps> = ({
   solicitationName,
   onClose,
 }) => {
+  // Document viewer state
+  const [viewerOpen, setViewerOpen] = useState(false);
+  const [selectedDocument, setSelectedDocument] = useState<{ url: string; name: string; type: string } | null>(null);
+
   // Fetch proposal details
   const {
     data: proposalData,
@@ -76,6 +82,12 @@ const ProposalDetailsSheet: React.FC<ProposalDetailsSheetProps> = ({
   });
 
   const proposal = proposalData?.data;
+
+  // Handle document viewing
+  const handleViewDocument = (file: { url: string; name: string; type: string }) => {
+    setSelectedDocument(file);
+    setViewerOpen(true);
+  };
 
   if (isLoading) {
     return (
@@ -154,21 +166,14 @@ const ProposalDetailsSheet: React.FC<ProposalDetailsSheetProps> = ({
                     </div>
                   </div>
                   <div className="flex items-center space-x-2">
-                    {(() => {
-                      const extension = file.name.split('.').pop()?.toLowerCase();
-                      const isDocFile = extension === 'doc' || extension === 'docx';
-                      
-                      return !isDocFile ? (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-8 w-8 p-0 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
-                          onClick={() => window.open(file.url, '_blank')}
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                      ) : null;
-                    })()}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 w-8 p-0 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+                      onClick={() => handleViewDocument(file)}
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
                     <Button
                       variant="ghost"
                       size="sm"
@@ -185,6 +190,20 @@ const ProposalDetailsSheet: React.FC<ProposalDetailsSheetProps> = ({
         </div>
 
       </div>
+      
+      {/* Document Viewer Modal */}
+      {selectedDocument && (
+        <DocumentViewer
+          isOpen={viewerOpen}
+          onClose={() => {
+            setViewerOpen(false);
+            setSelectedDocument(null);
+          }}
+          fileUrl={selectedDocument.url}
+          fileName={selectedDocument.name}
+          fileType={getFileExtension(selectedDocument.name, selectedDocument.type)}
+        />
+      )}
     </SheetContent>
   );
 };

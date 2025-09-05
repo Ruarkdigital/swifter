@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -8,10 +8,8 @@ import { getRequest } from "@/lib/axiosInstance";
 import { ApiResponse, ApiResponseError } from "@/types";
 import { format } from "date-fns";
 import { PageLoader } from "@/components/ui/PageLoader";
-import { DocSVG } from "@/assets/icons/Doc";
-import { PdfSVG } from "@/assets/icons/Pdf";
-import { ExcelSVG } from "@/assets/icons/Excel";
-import PowerPointSVG from "@/assets/icons/PowerPoint";
+import { getFileExtension, getFileIcon } from "@/lib/fileUtils.tsx";
+import { DocumentViewer } from "@/components/ui/DocumentViewer";
 
 // Safe date formatting utility
 const safeFormatDate = (
@@ -74,6 +72,8 @@ const AddendumDetailsSheet: React.FC<AddendumDetailsSheetProps> = ({
   solicitationId,
   // onClose,
 }) => {
+  const [viewerOpen, setViewerOpen] = useState(false);
+  const [selectedDocument, setSelectedDocument] = useState<any>(null);
   // Fetch detailed addendum data from API
   const {
     data: addendumDetailData,
@@ -91,38 +91,7 @@ const AddendumDetailsSheet: React.FC<AddendumDetailsSheetProps> = ({
   });
 
   const addendumDetail = addendumDetailData?.data?.data;
-  // Helper function to get file extension from name or type
-  const getFileExtension = (fileName: string, fileType: string): string => {
-    const extension = fileName.split(".").pop()?.toUpperCase();
-    if (extension) return extension;
 
-    // Fallback to type if no extension in name
-    if (fileType.includes("pdf")) return "PDF";
-    if (fileType.includes("doc")) return "DOC";
-    if (fileType.includes("excel") || fileType.includes("sheet")) return "XLS";
-    if (fileType.includes("powerpoint") || fileType.includes("presentation"))
-      return "PPT";
-
-    return "FILE";
-  };
-
-  const getFileIcon = (fileExtension: string) => {
-    switch (fileExtension) {
-      case "DOC":
-      case "DOCX":
-        return <DocSVG />;
-      case "PDF":
-        return <PdfSVG />;
-      case "XLS":
-      case "XLSX":
-        return <ExcelSVG />;
-      case "PPT":
-      case "PPTX":
-        return <PowerPointSVG />;
-      default:
-        return <DocSVG />;
-    }
-  };
 
   return (
     <div className="h-full flex flex-col">
@@ -296,16 +265,17 @@ const AddendumDetailsSheet: React.FC<AddendumDetailsSheetProps> = ({
                       </div>
                     </div>
                     <div className="flex items-center space-x-2">
-                      {fileExtension === "PDF" && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-8 w-8 p-0"
-                          onClick={() => window.open(file.url, "_blank")}
-                        >
-                          <Eye className="h-4 w-4 text-gray-500" />
-                        </Button>
-                      )}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 p-0"
+                        onClick={() => {
+                          setSelectedDocument(file);
+                          setViewerOpen(true);
+                        }}
+                      >
+                        <Eye className="h-4 w-4 text-gray-500" />
+                      </Button>
                       <Button
                         variant="ghost"
                         size="sm"
@@ -329,6 +299,20 @@ const AddendumDetailsSheet: React.FC<AddendumDetailsSheetProps> = ({
           </div>
         )}
       </div>
+      
+      {/* Document Viewer Modal */}
+      {selectedDocument && (
+        <DocumentViewer
+          isOpen={viewerOpen}
+          onClose={() => {
+            setViewerOpen(false);
+            setSelectedDocument(null);
+          }}
+          fileUrl={selectedDocument.url}
+          fileName={selectedDocument.name}
+          fileType={selectedDocument.type}
+        />
+      )}
     </div>
   );
 };

@@ -156,8 +156,11 @@ const EditEvaluationDialog = ({
   });
 
   // Fetch current evaluation data
-  const { data: evaluationData, isLoading: isLoadingEvaluation, isSuccess,  } =
-    useEvaluationDetail(evaluationId);
+  const {
+    data: evaluationData,
+    isLoading: isLoadingEvaluation,
+    isSuccess,
+  } = useEvaluationDetail(evaluationId);
 
   // Fetch available solicitations
   const { data: solicitationsData } = useQuery<
@@ -224,26 +227,25 @@ const EditEvaluationDialog = ({
         solicitation: evaluationData?.data?.data?.solicitation?._id || "",
         timezone: evaluationData?.data?.data?.timezone || "",
         start_date: evaluationData?.data?.data?.startDate || "",
-        end_date:  evaluationData?.data?.data?.endDate || "",
+        end_date: evaluationData?.data?.data?.endDate || "",
         group: [],
-        documents: []
-      }
+        documents: [],
+      };
       // Set basic evaluation info
 
       // Set groups data
       if (evaluationData?.data?.data?.evaluators?.length > 0) {
-        const groups =
-          evaluationData?.data?.data?.evaluators.map(
-            (group: any) => ({
-              id: group._id,
-              name: group.groupName,
-              evaluators:
-                group.evaluators?.map((evaluator: any) => ({
-                  label: evaluator.name, 
-                  value: evaluator._id,
-                })) || [],
-            })
-          );
+        const groups = evaluationData?.data?.data?.evaluators.map(
+          (group: any) => ({
+            id: group._id,
+            name: group.groupName,
+            evaluators:
+              group.evaluators?.map((evaluator: any) => ({
+                label: evaluator.name,
+                value: evaluator._id,
+              })) || [],
+          })
+        );
 
         payload.group = groups;
       }
@@ -261,7 +263,6 @@ const EditEvaluationDialog = ({
           })
         );
 
-        
         payload.documents = documents;
       }
 
@@ -274,14 +275,16 @@ const EditEvaluationDialog = ({
             description: criterion.description || "",
             type: criterion.criteria?.pass_fail ? "pass_fail" : "weight",
             score:
-              criterion.criteria?.weight || criterion.criteria?.pass_fail || "pass",
+              criterion.criteria?.weight ||
+              criterion.criteria?.pass_fail ||
+              "pass",
             group: criterion.evaluationGroup || "",
           })
         );
 
-        payload.criteria = criteria.map(criterion => ({
+        payload.criteria = criteria.map((criterion) => ({
           ...criterion,
-          type: criterion.type as 'pass_fail' | 'weight'
+          type: criterion.type as "pass_fail" | "weight",
         }));
       }
 
@@ -294,36 +297,48 @@ const EditEvaluationDialog = ({
       const payload: UpdateEvaluationPayload = {
         id: evaluationId,
         timezone: data.timezone || undefined,
-        start_date: data.start_date ? new Date(data.start_date as any).toISOString() : undefined,
-        end_date: data.end_date ? new Date(data.end_date as any).toISOString() : undefined,
+        start_date: data.start_date
+          ? new Date(data.start_date as any).toISOString()
+          : undefined,
+        end_date: data.end_date
+          ? new Date(data.end_date as any).toISOString()
+          : undefined,
         group:
-          data.group?.map((item) => item?.id ? ({
-            id: item.id,
-            name: item.name,
-            evaluators:
-              item.evaluators
-                ?.filter((evaluator) => evaluator !== undefined)
-                .map((it) => it.value) ?? [],
-          }) : ({
-            name: item.name,
-            evaluators:
-              item.evaluators
-                ?.filter((evaluator) => evaluator !== undefined)
-                .map((it) => it.value) ?? [],
-          })) ?? undefined,
+          data.group?.map((item) =>
+            item?.id
+              ? {
+                  id: item.id,
+                  name: item.name,
+                  evaluators:
+                    item.evaluators
+                      ?.filter((evaluator) => evaluator !== undefined)
+                      .map((it) => it.value) ?? [],
+                }
+              : {
+                  name: item.name,
+                  evaluators:
+                    item.evaluators
+                      ?.filter((evaluator) => evaluator !== undefined)
+                      .map((it) => it.value) ?? [],
+                }
+          ) ?? undefined,
         documents:
-          data.documents?.map((doc) => doc.id ? ({
-            id: doc.id,
-            title: doc.title,
-            type: doc.type,
-            group: doc.group,
-            required: !!doc.required,
-          }) : ({
-            title: doc.title,
-            type: doc.type,
-            group: doc.group,
-            required: !!doc.required,
-          })) || undefined,
+          data.documents?.map((doc) =>
+            doc.id
+              ? {
+                  id: doc.id,
+                  title: doc.title,
+                  type: doc.type,
+                  group: doc.group,
+                  required: !!doc.required,
+                }
+              : {
+                  title: doc.title,
+                  type: doc.type,
+                  group: doc.group,
+                  required: !!doc.required,
+                }
+          ) || undefined,
         criteria:
           data.criteria?.map((c) => {
             const base = {
@@ -334,12 +349,19 @@ const EditEvaluationDialog = ({
               group: c.group,
             } as const;
             if (c.type === "pass_fail") {
-              return { ...base, score: (c.score === "pass" || c.score === "fail") ? c.score : "pass" };
+              return {
+                ...base,
+                score:
+                  c.score === "pass" || c.score === "fail" ? c.score : "pass",
+              };
             }
-            const num = typeof c.score === "number" ? c.score : parseFloat(String(c.score));
+            const num =
+              typeof c.score === "number"
+                ? c.score
+                : parseFloat(String(c.score));
             return { ...base, score: isNaN(num) ? 0 : num };
           }) || undefined,
-          status: "published"
+        status: "published",
       };
 
       await updateEvaluation({
@@ -421,7 +443,7 @@ const EditEvaluationDialog = ({
 
         {/* Loading State */}
         {isLoadingEvaluation ? (
-          <PageLoader 
+          <PageLoader
             showHeader={false}
             message="Loading evaluation data..."
             className="p-8"
@@ -481,6 +503,8 @@ const EditEvaluationDialog = ({
                   {currentStep === 4
                     ? isUpdatingEvaluation
                       ? "Updating..."
+                      : evaluationData?.data?.data?.status === "draft"
+                      ? "Publish"
                       : "Update Evaluation"
                     : "Continue"}
                 </Button>

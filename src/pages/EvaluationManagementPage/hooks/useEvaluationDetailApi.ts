@@ -13,6 +13,7 @@ type EvaluationDetail = {
     name: string;
     type: string;
   };
+  status: "draft" | "active" | "completed" | "pending";
   solicitationDetails: Solicitation;
   startDate: string;
   endDate: string;

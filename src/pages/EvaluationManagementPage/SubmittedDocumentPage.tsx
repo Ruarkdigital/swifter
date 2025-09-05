@@ -26,6 +26,7 @@ import { useForge } from "@/lib/forge";
 import { useToastHandler } from "@/hooks/useToaster";
 import { PageLoader } from "@/components/ui/PageLoader";
 import { ConfirmAlert } from "@/components/layouts/ConfirmAlert";
+import { DocumentViewer } from "@/components/ui/DocumentViewer";
 import * as yup from "yup";
 
 // API Types based on documentation
@@ -114,7 +115,12 @@ const useSubmittedDocuments = (
   vendorId: string
 ) => {
   return useQuery<ApiResponse<SubmittedDocumentResponse>, ApiResponseError>({
-    queryKey: ["submitted-documents", evaluationId, evaluationGroupId, vendorId],
+    queryKey: [
+      "submitted-documents",
+      evaluationId,
+      evaluationGroupId,
+      vendorId,
+    ],
     queryFn: async () => {
       const response = await getRequest({
         url: `/evaluator/${evaluationId}/evaluation-group/${evaluationGroupId}/submitted-document/${vendorId}`,
@@ -137,12 +143,7 @@ const useEvaluationCriteria = (
   vendorId: string
 ) => {
   return useQuery<ApiResponse<EvaluationCriteriaResponse>, ApiResponseError>({
-    queryKey: [
-      "evaluation-criteria",
-      evaluatorId,
-      evaluationGroupId,
-      vendorId,
-    ],
+    queryKey: ["evaluation-criteria", evaluatorId, evaluationGroupId, vendorId],
     queryFn: async () => {
       const response = await getRequest({
         url: `/evaluator/${evaluatorId}/evaluation-group/${evaluationGroupId}/vendor/${vendorId}/criteria`,
@@ -229,13 +230,18 @@ const SubmittedDocumentPage: React.FC = () => {
   const [activeCriteriaId, setActiveCriteriaId] = useState<string | null>(null);
   const [showSubmitDialog, setShowSubmitDialog] = useState(false);
 
+  // Document viewer state
+  const [viewerOpen, setViewerOpen] = useState(false);
+  const [selectedDocument, setSelectedDocument] =
+    useState<VendorDocument | null>(null);
+
   // State to store form values for each criteria
   const [criteriaFormStates, setCriteriaFormStates] = useState<
     Record<string, CriteriaScorePayload>
   >({});
 
   // Forge form setup for criteria scoring
-  const { handleSubmit, reset, watch, setValue,  } =
+  const { handleSubmit, reset, watch, setValue } =
     useForge<CriteriaScorePayload>({
       defaultValues: {
         comment: "",
@@ -314,7 +320,10 @@ const SubmittedDocumentPage: React.FC = () => {
     if (activeCriteriaId && activeCriteriaId !== criteriaId) {
       const currentFormData = {
         comment: watch("comment") as string,
-        score: watch("type") === "weight" ? Number(watch("score")) : watch("score") as string,
+        score:
+          watch("type") === "weight"
+            ? Number(watch("score"))
+            : (watch("score") as string),
         type: watch("type") as "pass_fail" | "weight",
       };
       setCriteriaFormStates((prev) => ({
@@ -359,7 +368,10 @@ const SubmittedDocumentPage: React.FC = () => {
     if (activeCriteriaId) {
       const currentFormData = {
         comment: watch("comment") as string,
-        score: watch("type") === "weight" ? Number(watch("score")) : watch("score") as string,
+        score:
+          watch("type") === "weight"
+            ? Number(watch("score"))
+            : (watch("score") as string),
         type: watch("type") as "pass_fail" | "weight",
       };
       setCriteriaFormStates((prev) => ({
@@ -397,6 +409,12 @@ const SubmittedDocumentPage: React.FC = () => {
   // Function to handle going back to the evaluation detail page
   const handleBack = () => {
     navigate(`/dashboard/evaluation/assigned/${id}/${groupId}`);
+  };
+
+  // Handle document viewing
+  const handleViewDocument = (document: VendorDocument) => {
+    setSelectedDocument(document);
+    setViewerOpen(true);
   };
 
   return (
@@ -483,7 +501,11 @@ const SubmittedDocumentPage: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
             {documents.length > 0 ? (
               documents.map((document, index) => (
-                <Document document={document?.[0]} key={index} />
+                <Document
+                  document={document?.[0]}
+                  key={index}
+                  onViewDocument={handleViewDocument}
+                />
               ))
             ) : (
               <div className="text-center py-8">
@@ -788,13 +810,33 @@ const SubmittedDocumentPage: React.FC = () => {
           </div>
         </TabsContent>
       </Tabs>
+
+      {/* Document Viewer Modal */}
+      {selectedDocument && (
+        <DocumentViewer
+          isOpen={viewerOpen}
+          onClose={() => {
+            setViewerOpen(false);
+            setSelectedDocument(null);
+          }}
+          fileUrl={selectedDocument.url}
+          fileName={selectedDocument.name}
+          fileType={selectedDocument.type}
+        />
+      )}
     </div>
   );
 };
 
 export default SubmittedDocumentPage;
 
-const Document = ({ document }: { document: VendorDocument }) => {
+const Document = ({
+  document,
+  onViewDocument,
+}: {
+  document: VendorDocument;
+  onViewDocument: (document: VendorDocument) => void;
+}) => {
   // Get file icon based on type
   const getFileIcon = (type: string) => {
     const fileType = type;
@@ -833,17 +875,15 @@ const Document = ({ document }: { document: VendorDocument }) => {
             </div>
           </div>
           <div className="flex items-center gap-2 ml-2">
-            {document.type !== "DOCX" && document.type !== "DOC" && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 p-0 bg-gray-100 rounded-full hover:bg-gray-200"
-                title="View"
-                onClick={() => window.open(document.url, "_blank")}
-              >
-                <Eye className="w-4 h-4 text-gray-500" />
-              </Button>
-            )}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 p-0 bg-gray-100 rounded-full hover:bg-gray-200"
+              title="View"
+              onClick={() => onViewDocument(document)}
+            >
+              <Eye className="w-4 h-4 text-gray-500" />
+            </Button>
             <Button
               variant="ghost"
               size="icon"

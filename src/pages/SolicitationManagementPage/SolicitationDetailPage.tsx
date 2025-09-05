@@ -517,7 +517,9 @@ export const SolicitationDetailPage = () => {
       header: "Vendor",
       cell: ({ row }) => (
         <div className="flex flex-col">
-          <span className="font-medium">{row.original.id?.name || row.original?.id?.invite?.email}</span>
+          <span className="font-medium">
+            {row.original.id?.name || row.original?.id?.invite?.email}
+          </span>
           <span className="text-sm text-blue-500">{row.original.email}</span>
         </div>
       ),

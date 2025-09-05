@@ -708,11 +708,8 @@ const EvaluationDetailPage: React.FC = () => {
             {evaluation?.solicitation?.name}
           </h1>
         </div>
-        <Badge
-          variant="default"
-          className="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 border-green-200 dark:border-green-700"
-        >
-          Active
+        <Badge className={getEvaluationStatusColorClass(evaluation?.status || "")}>
+          {getEvaluationStatusLabel(evaluation?.status || "")}
         </Badge>
       </div>
 
@@ -754,7 +751,7 @@ const EvaluationDetailPage: React.FC = () => {
               onClick={() => sendRequirementMutation.mutate()}
               disabled={sendRequirementMutation.isPending}
             >
-              <span>Send Submission</span>
+              <span>Publish Submission</span>
             </DropdownMenuItem>
           </DropdownMenuGroup>
         </DropdownMenuContent>

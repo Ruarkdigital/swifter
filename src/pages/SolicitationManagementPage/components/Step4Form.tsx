@@ -1,5 +1,6 @@
 import { useForgeValues } from "@/lib/forge";
 import { X, Upload, Check, Loader2, FileText, AlertCircle, RotateCcw } from "lucide-react";
+import { getSimpleFileExtension, formatFileSize } from "@/lib/fileUtils.tsx";
 import { postRequest } from "@/lib/axiosInstance";
 import { ApiResponseError } from "@/types";
 import { useToastHandler } from "@/hooks/useToaster";
@@ -151,14 +152,7 @@ const FileListItem = ({
   onRemove: () => void;
   onRetry: () => void;
 }) => {
-  const getFileExtension = (filename: string) => {
-    return filename.split(".").pop()?.toUpperCase() || "FILE";
-  };
 
-  const getFileSize = (bytes: number) => {
-    const mb = bytes / (1024 * 1024);
-    return mb >= 1 ? `${Math.round(mb)}MB` : `${Math.round(bytes / 1024)}KB`;
-  };
 
   const getFileIcon = (filename: string) => {
     const extension = filename.split(".").pop()?.toLowerCase();
@@ -246,7 +240,7 @@ const FileListItem = ({
             {fileState.file.name}
           </p>
           <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
-            <span>{getFileExtension(fileState.file.name)} • {getFileSize(fileState.file.size)}</span>
+            <span>{getSimpleFileExtension(fileState.file.name).toUpperCase()} • {formatFileSize(fileState.file.size)}</span>
             {getStatusIcon()}
             <span className={cn(
               fileState.status === 'failed' ? 'text-red-600' : 

@@ -23,6 +23,8 @@ import { ApiResponse, ApiResponseError } from "@/types";
 import { useState } from "react";
 import { format, isAfter, parseISO, isValid } from "date-fns";
 import { formatCurrency } from "@/lib/utils";
+import { DocumentViewer } from "@/components/ui/DocumentViewer";
+import { getFileExtension } from "@/lib/fileUtils.tsx";
 
 // Define the evaluator data type
 type EvaluatorData = {
@@ -147,9 +149,19 @@ const ProposalDetailsPage: React.FC = () => {
   const [selectedDocumentForAmend, setSelectedDocumentForAmend] = useState<SubmittedDocument | null>(null);
   const [showReadOnlyProposalDialog, setShowReadOnlyProposalDialog] = useState(false);
   const [showAmendProposalDialog, setShowAmendProposalDialog] = useState(false);
+  
+  // Document viewer state
+  const [viewerOpen, setViewerOpen] = useState(false);
+  const [selectedDocument, setSelectedDocument] = useState<{ url: string; name: string; type: string } | null>(null);
 
   // Get vendor ID from location state
   const vendorId = location.state?.vendorId || proposalId;
+
+  // Handle document viewing
+  const handleViewDocument = (file: { url: string; name: string; type: string }) => {
+    setSelectedDocument(file);
+    setViewerOpen(true);
+  };
 
   // Fetch solicitation data
   const { data: solicitationData } = useQuery<
@@ -333,7 +345,7 @@ const ProposalDetailsPage: React.FC = () => {
 
   const handleSubmitForVendor = () => {
     // Navigate to submit proposal page with modified endpoint context
-    navigate(`/dashboard/solicitations/${id}/submit-proposal`, {
+    navigate(`/dashboard/solicitations/${id}/submit-proponent`, {
       state: {
         vendorId: vendorId,
         isSubmitForVendor: true,
@@ -537,8 +549,8 @@ const ProposalDetailsPage: React.FC = () => {
                              // For pricing documents, open read-only proposal dialog
                              setShowReadOnlyProposalDialog(true);
                            } else {
-                             // For other documents, open in new tab
-                             window.open(document.url, "_blank");
+                             // For other documents, use document viewer
+                             handleViewDocument(document);
                            }
                          }
                        }}
@@ -1260,6 +1272,20 @@ const ProposalDetailsPage: React.FC = () => {
         onOpenChange={setShowAmendProposalDialog}
         proposalId={proposal?.proposalDetails?.id!}
       />
+      
+      {/* Document Viewer Modal */}
+      {selectedDocument && (
+        <DocumentViewer
+          isOpen={viewerOpen}
+          onClose={() => {
+            setViewerOpen(false);
+            setSelectedDocument(null);
+          }}
+          fileUrl={selectedDocument.url}
+          fileName={selectedDocument.name}
+          fileType={getFileExtension(selectedDocument.name, selectedDocument.type)}
+        />
+      )}
     </div>
   );
 };

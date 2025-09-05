@@ -1,13 +1,12 @@
-import React from "react";
+import React, { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { File, Eye, Download } from "lucide-react";
 import { InvitedVendorCard } from "../SolicitationDetailPage";
 import { cn } from "@/lib/utils";
-import { DocSVG } from "@/assets/icons/Doc";
-import { PdfSVG } from "@/assets/icons/Pdf";
-import PowerPointSVG from "@/assets/icons/PowerPoint";
-import { ExcelSVG } from "@/assets/icons/Excel";
+import { getFileExtension, getFileIcon } from "@/lib/fileUtils.tsx";
+import { truncate } from "lodash";
+import { DocumentViewer } from "@/components/ui/DocumentViewer";
 
 // Document type definition
 type SolicitationFile = {
@@ -23,37 +22,17 @@ type DocumentsTabProps = {
 };
 
 const DocumentsTab: React.FC<DocumentsTabProps> = ({ files = [] }) => {
-  // Helper function to get file extension from name or type
-  const getFileExtension = (fileName: string, fileType: string): string => {
-    const extension = fileName.split(".").pop()?.toUpperCase();
-    if (extension) return extension;
+  const [viewerOpen, setViewerOpen] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<SolicitationFile | null>(null);
 
-    // Fallback to type if no extension in name
-    if (fileType.includes("pdf")) return "PDF";
-    if (fileType.includes("doc")) return "DOC";
-    if (fileType.includes("excel") || fileType.includes("sheet")) return "XLS";
-    if (fileType.includes("powerpoint") || fileType.includes("presentation"))
-      return "PPT";
-
-    return "FILE";
+  const handleViewFile = (file: SolicitationFile) => {
+    setSelectedFile(file);
+    setViewerOpen(true);
   };
 
-  const getFileIcon = (fileExtension: string) => {
-    switch (fileExtension) {
-      case "DOC":
-      case "DOCX":
-        return <DocSVG />;
-      case "PDF":
-        return <PdfSVG />;
-      case "XLS":
-      case "XLSX":
-        return <ExcelSVG />;
-      case "PPT":
-      case "PPTX":
-        return <PowerPointSVG />;
-      default:
-        return <DocSVG />;
-    }
+  // Removed view restrictions - all files can now be viewed
+  const canPreviewFile = (file: SolicitationFile) => {
+    return true;
   };
 
   return (
@@ -101,7 +80,7 @@ const DocumentsTab: React.FC<DocumentsTabProps> = ({ files = [] }) => {
                         </div>
                         <div className="flex-1 min-w-0">
                           <h4 className="text-sm font-medium max-w-md text-gray-900 dark:text-gray-200 !truncate">
-                            {file.name}
+                            {truncate(file.name, { length: 40 })}
                           </h4>
                           <div className="flex items-center gap-2 mt-1">
                             <span className="text-xs text-gray-500">
@@ -117,7 +96,7 @@ const DocumentsTab: React.FC<DocumentsTabProps> = ({ files = [] }) => {
 
                       {/* Right side - Action Buttons */}
                       <div className="flex items-center gap-2 ml-2">
-                        {getFileExtension(file.name, file.type) === "PDF" && (
+                        {canPreviewFile(file) && (
                           <Button
                             variant="ghost"
                             size="icon"
@@ -125,7 +104,7 @@ const DocumentsTab: React.FC<DocumentsTabProps> = ({ files = [] }) => {
                               "h-8 w-8 p-0 bg-gray-100 dark:bg-slate-900 rounded-full"
                             )}
                             title="View"
-                            onClick={() => window.open(file.url, "_blank")}
+                            onClick={() => handleViewFile(file)}
                           >
                             <Eye className="w-4 h-4 text-gray-500" />
                           </Button>
@@ -171,6 +150,20 @@ const DocumentsTab: React.FC<DocumentsTabProps> = ({ files = [] }) => {
           </div>
         )}
       </div>
+
+      {/* Document Viewer Modal */}
+      {selectedFile && (
+        <DocumentViewer
+          isOpen={viewerOpen}
+          onClose={() => {
+            setViewerOpen(false);
+            setSelectedFile(null);
+          }}
+          fileUrl={selectedFile.url}
+          fileName={selectedFile.name}
+          fileType={selectedFile.type}
+        />
+      )}
     </div>
   );
 };

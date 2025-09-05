@@ -110,6 +110,7 @@ export type CreateSolicitationFormData = Step1FormData &
 
 // Types for API request
 type SolicitationCreateRequest = {
+  solId?: string;
   name: string;
   typeId: string;
   categoryIds: string[];
@@ -241,6 +242,7 @@ const CreateSolicitationDialog = () => {
       // Transform form data to match API schema
       const apiPayload: SolicitationCreateRequest = {
         name: completeData.solicitationName,
+        solId: completeData.solId,
         typeId: completeData.solicitationType,
         categoryIds: Array.isArray(completeData.category)
           ? completeData.category
@@ -382,6 +384,7 @@ const CreateSolicitationDialog = () => {
         events?: SolicitationCreateRequest["events"];
       } = {
         name: formData.solicitationName,
+        solId: formData?.solId,
         typeId: formData.solicitationType,
         categoryIds: Array.isArray(formData.category)
           ? formData.category
