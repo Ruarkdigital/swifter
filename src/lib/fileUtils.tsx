@@ -1,4 +1,3 @@
-import React from "react";
 import { DocSVG } from "@/assets/icons/Doc";
 import { PdfSVG } from "@/assets/icons/Pdf";
 import PowerPointSVG from "@/assets/icons/PowerPoint";

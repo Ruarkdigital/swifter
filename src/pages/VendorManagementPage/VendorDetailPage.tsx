@@ -171,10 +171,14 @@ const OverviewTab = ({ vendor }: { vendor: VendorDetail }) => {
 };
 
 // Documents Tab Component
-const DocumentsTab = ({ vendor }: { vendor: VendorDetail }) => {
+const DocumentsTab = ({
+  vendor,
+  onViewDocument,
+}: {
+  vendor: VendorDetail;
+  onViewDocument: (document: NonNullable<VendorDetail["documents"]>[0]) => void;
+}) => {
   const documents = vendor?.documents ?? [];
-
-
 
   return (
     <div className="pt-6">
@@ -226,7 +230,7 @@ const DocumentsTab = ({ vendor }: { vendor: VendorDetail }) => {
                       "h-8 w-8 p-0 bg-gray-100 rounded-full hover:bg-gray-200"
                     )}
                     title="View"
-                    onClick={() => handleViewDocument(document)}
+                    onClick={() => onViewDocument(document)}
                   >
                     <Eye className="w-4 h-4 text-gray-500" />
                   </Button>
@@ -439,7 +443,9 @@ export const VendorDetailPage = () => {
 
   // Document viewer state
   const [viewerOpen, setViewerOpen] = useState(false);
-  const [selectedDocument, setSelectedDocument] = useState<VendorDetail['documents'][0] | null>(null);
+  const [selectedDocument, setSelectedDocument] = useState<
+    NonNullable<VendorDetail["documents"]>[0] | null
+  >(null);
 
   // Fetch vendor details from API
   const {
@@ -464,7 +470,7 @@ export const VendorDetailPage = () => {
   };
 
   // Handle document viewing
-  const handleViewDocument = (document: VendorDetail['documents'][0]) => {
+  const handleViewDocument = (document: NonNullable<VendorDetail["documents"]>[0]) => {
     setSelectedDocument(document);
     setViewerOpen(true);
   };
@@ -629,7 +635,7 @@ export const VendorDetailPage = () => {
           </TabsContent>
 
           <TabsContent value="documents" className="mt-0 border-0 p-0">
-            <DocumentsTab vendor={vendor} />
+            <DocumentsTab vendor={vendor} onViewDocument={handleViewDocument} />
           </TabsContent>
 
           <TabsContent value="submissions" className="mt-0 border-0 p-0">

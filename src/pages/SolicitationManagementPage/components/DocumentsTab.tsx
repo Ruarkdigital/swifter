@@ -31,7 +31,7 @@ const DocumentsTab: React.FC<DocumentsTabProps> = ({ files = [] }) => {
   };
 
   // Removed view restrictions - all files can now be viewed
-  const canPreviewFile = (file: SolicitationFile) => {
+  const canPreviewFile = () => {
     return true;
   };
 
@@ -96,7 +96,7 @@ const DocumentsTab: React.FC<DocumentsTabProps> = ({ files = [] }) => {
 
                       {/* Right side - Action Buttons */}
                       <div className="flex items-center gap-2 ml-2">
-                        {canPreviewFile(file) && (
+                        {canPreviewFile() && (
                           <Button
                             variant="ghost"
                             size="icon"

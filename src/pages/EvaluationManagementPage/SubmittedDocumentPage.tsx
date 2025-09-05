@@ -864,7 +864,7 @@ const Document = ({
             <div className="w-10 h-10">{getFileIcon(document.type)}</div>
             <div className="flex-1 min-w-0">
               <h4 className="text-sm font-medium text-gray-900 truncate">
-                {document.name}
+                {document.name.length > 100 ? document.name.substring(0, 100) + '...' : document.name}
               </h4>
 
               <div className="flex items-center gap-2 mt-1">
