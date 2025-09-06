@@ -265,11 +265,6 @@ const SubmitProponentPage: React.FC<SubmitProposalPageProps> = () => {
     }
   };
 
-  // Handle back navigation
-  const handleBack = () => {
-    setIsBackConfirmOpen(true);
-  };
-
   // Handle back without saving
   const handleBackWithoutSaving = () => {
     navigate(-1);
