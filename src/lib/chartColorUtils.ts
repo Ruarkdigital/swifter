@@ -41,13 +41,14 @@ export const STATUS_COLORS: StatusColorMap = {
   'suspended': '#ef4444',
   'expired': '#ef4444',
   'late': '#ef4444',
-  'misseddeadline': '#ef4444',
-  'missed deadline': '#ef4444',
+  'misseddeadline': '#f97316', // Orange for missed deadline to differentiate from declined
+  'missed deadline': '#f97316', // Orange for missed deadline to differentiate from declined
   
   // Neutral/Info states - Blue
   'total': '#3b82f6',
   'all': '#3b82f6',
   'info': '#3b82f6',
+  'count': '#06b6d4', // Cyan for count to differentiate from declined
   
   // Special states - Purple
   'awarded': '#8b5cf6',

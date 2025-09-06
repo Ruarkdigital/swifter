@@ -43,10 +43,10 @@ const ReadOnlyProposalDialog: React.FC<ReadOnlyProposalDialogProps> = ({
 }) => {
   const toastHandlers = useToastHandler();
 
-  const { data: priceBreakdownData, isLoading, error } = useQuery({
+  const { data: priceBreakdownData, isLoading, error, isError } = useQuery({
     queryKey: ["proposalPriceBreakdown", proposalId],
     queryFn: async () => {
-      const response = await getRequest({ url: `/api/proposals/${proposalId}/price-breakdown` });
+      const response = await getRequest({ url: `/procurement/evaluations/proposal/${proposalId}` });
       return response.data as ProposalPriceBreakdownResponse;
     },
     enabled: open && !!proposalId,
@@ -54,10 +54,10 @@ const ReadOnlyProposalDialog: React.FC<ReadOnlyProposalDialogProps> = ({
 
   // Handle errors with useEffect
   React.useEffect(() => {
-    if (error) {
+    if (isError) {
       toastHandlers.error("Error", (error as any).message || "Failed to load proposal price breakdown");
     }
-  }, [error, toastHandlers]);
+  }, [error, isError]);
 
   // Calculate total amount from price breakdown data
   const priceBreakdownItems = Array.isArray(priceBreakdownData?.data) ? priceBreakdownData.data : [];
@@ -186,7 +186,7 @@ const ReadOnlyProposalDialog: React.FC<ReadOnlyProposalDialogProps> = ({
           )}
         </div>
 
-        <DialogFooter className="p-6 pt-0 border-t border-gray-200 dark:border-gray-700">
+        <DialogFooter className="p-6 pt-4 border-t border-gray-200 dark:border-gray-700">
           <Button
             type="button"
             variant="outline"

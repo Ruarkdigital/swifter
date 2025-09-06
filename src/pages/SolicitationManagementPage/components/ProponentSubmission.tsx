@@ -15,6 +15,7 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import { useToastHandler } from "@/hooks/useToaster";
 import { getStatusLabel, getStatusColorClass } from "@/lib/solicitationStatusUtils";
+import { ConfirmAlert } from "@/components/layouts/ConfirmAlert";
 
 // Types for the proposal form
 interface UploadFileResponse {
@@ -133,6 +134,7 @@ const SubmitProponentPage: React.FC<SubmitProposalPageProps> = () => {
   const [selectedDocumentId, setSelectedDocumentId] = useState<string | null>(
     null
   );
+  const [isBackConfirmOpen, setIsBackConfirmOpen] = useState(false);
 
   // Check if this is a vendor submission flow
   const isSubmitForVendor = location.state?.isSubmitForVendor || false;
@@ -265,7 +267,34 @@ const SubmitProponentPage: React.FC<SubmitProposalPageProps> = () => {
 
   // Handle back navigation
   const handleBack = () => {
+    setIsBackConfirmOpen(true);
+  };
+
+  // Handle back without saving
+  const handleBackWithoutSaving = () => {
     navigate(-1);
+  };
+
+  // Handle save draft and back
+  const handleSaveDraftAndBack = async () => {
+    try {
+      const formData = forge.getValues();
+      const draftData = {
+        ...formData,
+        status: "draft" as const,
+      };
+
+      await submitProposal(draftData);
+      toast.success("Success", "Proposal saved as draft successfully");
+      navigate(-1);
+    } catch (error) {
+      console.error("Save draft error:", error);
+      const err = error as ApiResponseError;
+      toast.error(
+        "Save Failed",
+        err?.response?.data?.message ?? "Failed to save proposal as draft"
+      );
+    }
   };
 
   const handleSubmit = async (data: FormValues) => {
@@ -508,14 +537,27 @@ const SubmitProponentPage: React.FC<SubmitProposalPageProps> = () => {
           </Button>
 
           <div className="flex items-center gap-3">
-            <Button
-              variant="outline"
-              onClick={handleBack}
-              className="px-6"
-              disabled={isSubmitting}
-            >
-              Back
-            </Button>
+            <ConfirmAlert
+              open={isBackConfirmOpen}
+              onClose={setIsBackConfirmOpen}
+              type="warning"
+              title="Leave without saving?"
+              text="You have unsaved changes. Would you like to save as draft before leaving or discard your changes?"
+              primaryButtonText="Save as Draft"
+              secondaryButtonText="Discard Changes"
+              onPrimaryAction={handleSaveDraftAndBack}
+              onSecondaryAction={handleBackWithoutSaving}
+              showSecondaryButton={true}
+              trigger={
+                <Button
+                  variant="outline"
+                  className="px-6"
+                  disabled={isSubmitting}
+                >
+                  Back
+                </Button>
+              }
+            />
             <Button
               className="px-6 bg-[#2A4467] hover:bg-[#1e3147]"
               // onClick={() => setIsCompleteDialogOpen(true)}

@@ -20,6 +20,7 @@ export interface VendorSolicitation {
   visibility: string;
   status: string;
   submissionDeadline: Date;
+  bidIntentDeadline?: Date;
   timezone: string;
   vendor: Vendor;
   solId: string;
@@ -322,9 +323,16 @@ const InvitationsPage = () => {
     {
       id: "actions",
       header: "Actions",
-      cell: ({ row }) => (
-        <SolicitationDetailsSheet solicitation={row.original} />
-      ),
+      cell: ({ row }) => {
+        // Find the original VendorSolicitation data for this row
+        const originalSolicitation = invitationsData?.data?.data?.find(
+          (sol: VendorSolicitation) => sol._id === row.original.id
+        );
+        
+        if (!originalSolicitation) return null;
+        
+        return <SolicitationDetailsSheet solicitation={row.original} originalData={originalSolicitation} />;
+      },
     },
   ];
 

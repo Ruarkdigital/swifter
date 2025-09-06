@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
+import { VendorSolicitation } from "../index";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Sheet,
@@ -99,13 +100,15 @@ interface SolicitationDetailsSheetProps {
     solicitationName: string;
     status: string;
   };
+  originalData?: VendorSolicitation;
 }
 
 const SolicitationDetailsSheet: React.FC<SolicitationDetailsSheetProps> = ({
   open,
   onOpenChange,
   solicitation,
-  disableButton
+  disableButton,
+  originalData
 }) => {
   const queryClient = useQueryClient();
   const toastHandlers = useToastHandler();
@@ -226,8 +229,39 @@ const SolicitationDetailsSheet: React.FC<SolicitationDetailsSheetProps> = ({
   // );
   // const currentVendorStatus = currentVendor?.status;
 
-  // Determine if buttons should be hidden
-  const shouldHideButtons = solicitationData?.data?.data?.status === "invited";
+  // Helper function to check if current date is past a given deadline
+  const isDatePast = (dateString: string): boolean => {
+    if (!dateString) return false;
+    const deadline = new Date(dateString);
+    const now = new Date();
+    return now > deadline;
+  };
+
+  // Determine if buttons should be hidden based on bid intent and solicitation deadlines
+  const shouldHideButtons = useMemo(() => {
+    // Use originalData if available (from table), otherwise use API data
+    const status = originalData?.vendor?.status || solicitationData?.data?.data?.status;
+    const bidIntentDeadline = originalData?.bidIntentDeadline || solicitationData?.data?.data?.details?.bidIntentDeadline;
+    const submissionDeadline = originalData?.submissionDeadline || solicitationData?.data?.data?.details?.submissionDeadline;
+    
+    // Only show buttons if status is "invited"
+    if (status !== "invited") {
+      return false;
+    }
+    
+    // If bid intent deadline is provided, check if it has passed
+    if (bidIntentDeadline) {
+      return !isDatePast(bidIntentDeadline.toString());
+    }
+    
+    // If no bid intent deadline, check solicitation submission deadline
+    if (submissionDeadline) {
+      return !isDatePast(submissionDeadline.toString());
+    }
+    
+    // Default to showing buttons if no deadlines are available
+    return true;
+  }, [originalData, solicitationData]);
 
   // Helper function to format date
   const formatDate = (dateString: string): string => {
