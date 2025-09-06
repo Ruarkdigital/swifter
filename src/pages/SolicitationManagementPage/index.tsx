@@ -34,7 +34,7 @@ import { useToastHandler } from "@/hooks/useToaster";
 import { ConfirmAlert } from "@/components/layouts/ConfirmAlert";
 import EditSolicitationDialog from "./components/EditSolicitationDialog";
 import { truncate } from "lodash";
-import { putRequest } from "@/lib/axiosInstance";
+import { putRequest, postRequest } from "@/lib/axiosInstance";
 import { getStatusLabel, getStatusColorClass } from "@/lib/solicitationStatusUtils";
 // import ExportReportSheet from "@/components/layouts/ExportReportSheet";
 
@@ -320,6 +320,34 @@ const useDeclinePublicSolicitation = () => {
   });
 };
 
+// New mutation for adding current procurement user as a manager to a solicitation
+const useManageSolicitation = () => {
+  const queryClient = useQueryClient();
+  const toast = useToastHandler();
+
+  return useMutation<ApiResponse<any>, ApiResponseError, string>({
+    mutationFn: async (solicitationId: string) =>
+      postRequest({ url: `/procurement/solicitations/${solicitationId}/manage`, payload: {} }),
+    onSuccess: (result) => {
+      toast.success(
+        "Added as Manager",
+        result?.data?.message || "You are now managing this solicitation"
+      );
+      // refresh related lists
+      queryClient.invalidateQueries({ queryKey: ["solicitations"] });
+      queryClient.invalidateQueries({ queryKey: ["my-solicitations"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard-stats"] });
+    },
+    onError: (error) => {
+      // Handle conflict (already a manager) and other errors via message
+      toast.error(
+        "Action Failed",
+        error?.message || "Unable to add you as a manager for this solicitation"
+      );
+    },
+  });
+};
+
 // Status badge component
 const StatusBadge = ({
   status,
@@ -577,11 +605,13 @@ export const SolicitationManagementPage = () => {
   const deleteSolicitationMutation = useDeleteSolicitation();
   const confirmPublicSolicitationMutation = useConfirmPublicSolicitation();
   const declinePublicSolicitationMutation = useDeclinePublicSolicitation();
+  const manageSolicitationMutation = useManageSolicitation();
 
   // Extract loading states
   const isDeletingSolicitation = deleteSolicitationMutation.isPending;
   const isConfirmingSolicitation = confirmPublicSolicitationMutation.isPending;
   const isDeclining = declinePublicSolicitationMutation.isPending;
+  const isManagingSolicitation = manageSolicitationMutation.isPending;
 
   // Get current data based on active tab
   const currentData = useMemo(() => {
@@ -777,25 +807,18 @@ export const SolicitationManagementPage = () => {
                   >
                     View Details
                   </DropdownMenuItem>
-                  {/* Show confirmation options for public solicitations */}
-                  {row.original.visibility === "public" &&
-                    !row.original.owner &&
-                    row.original.status !== "closed" && (
-                      <>
-                        <DropdownMenuItem
-                          className="py-3 px-4 text-green-600 hover:text-green-700 hover:bg-green-50 dark:hover:bg-green-900/20"
-                          onClick={() => handleConfirmClick(row.original._id)}
-                        >
-                          Confirm Interest
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          className="py-3 px-4 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
-                          onClick={() => handleDeclineClick(row.original._id)}
-                        >
-                          Decline
-                        </DropdownMenuItem>
-                      </>
-                    )}
+                  {/* Removed Manage Solicitation for vendor actions */}
+                  {/* Removed Manage Solicitation for vendor actions */}
+                   <EditSolicitationDialog
+                     solicitation={row.original as any}
+                     isLink
+                   />
+                  <DropdownMenuItem
+                    className="py-3 px-4 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+                    onClick={() => handleDeleteClick(row.original._id)}
+                  >
+                    Delete
+                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             );
@@ -907,6 +930,26 @@ export const SolicitationManagementPage = () => {
                 >
                   View Details
                 </DropdownMenuItem>
+                {activeTab === "all" && isProcurement && !row.original.owner && (
+                  <ConfirmAlert
+                    type="alert"
+                    title="Manage Solicitation"
+                    text="Are you sure you want to add this solicitation to your managed list?"
+                    primaryButtonText="Confirm"
+                    secondaryButtonText="Cancel"
+                    showSecondaryButton
+                    primaryButtonLoading={isManagingSolicitation}
+                    trigger={
+                      <DropdownMenuItem
+                        className="py-3 px-4 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                        disabled={isManagingSolicitation}
+                      >
+                        {isManagingSolicitation ? "Adding..." : "Manage Solicitation"}
+                      </DropdownMenuItem>
+                    }
+                    onPrimaryAction={() => manageSolicitationMutation.mutate(row.original._id)}
+                  />
+                )}
                 <EditSolicitationDialog
                   solicitation={row.original as any}
                   isLink
