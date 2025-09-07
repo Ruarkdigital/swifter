@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { TextFileUploader } from "@/components/layouts/FormInputs/TextFileInput";
 import { TextArea } from "@/components/layouts/FormInputs/TextInput";
+import { TextSelect } from "@/components/layouts/FormInputs/TextSelect";
 import { Upload, X } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { putRequest, postRequest } from "@/lib/axiosInstance";
@@ -39,6 +40,7 @@ interface AmendSubmissionDialogProps {
 
 // Form validation schema
 const amendSubmissionSchema = yup.object({
+  action: yup.string().required("Please select an action"),
   reason: yup.string().required("Please provide a reason for the amendment"),
   files: yup.array().of(yup.mixed<File>()).min(1, "Please select a file to upload"),
 });
@@ -59,6 +61,7 @@ const AmendSubmissionDialog: React.FC<AmendSubmissionDialogProps> = ({
   const { control, reset, formState: { errors, isSubmitting } } = useForge<AmendSubmissionFormData>({
     resolver: yupResolver(amendSubmissionSchema),
     defaultValues: {
+      action: "amend",
       reason: "",
       files: [],
     },
@@ -69,6 +72,13 @@ const AmendSubmissionDialog: React.FC<AmendSubmissionDialogProps> = ({
   
   // Watch form values
   const selectedFiles = useWatch({ control, name: "files" });
+  const selectedAction = useWatch({ control, name: "action" });
+
+  // Action options based on API documentation
+  const actionOptions = [
+    { label: "Amend - Replace existing files", value: "amend" },
+    { label: "Update - Add new files", value: "update" },
+  ];
 
   // Upload files mutation
   const uploadFilesMutation = useMutation<
@@ -107,7 +117,7 @@ const AmendSubmissionDialog: React.FC<AmendSubmissionDialogProps> = ({
       }
       
       return await putRequest({
-        url: `/procurement/solicitations/proposals/${proposalId}/submissions/${requirementDocId}/amend`,
+        url: `/procurement/solicitations/proposals/${proposalId}/submissions/${requirementDocId}/${selectedAction || 'amend'}`,
         payload,
       });
     },
@@ -208,6 +218,19 @@ const AmendSubmissionDialog: React.FC<AmendSubmissionDialogProps> = ({
                 </p>
               </div>
             </div>
+
+            {/* Action Selection */}
+            <Forger
+              name="action"
+              control={control}
+              component={TextSelect}
+              label={<>
+                Action <span className="text-red-500 dark:text-red-400">*</span>
+              </>}
+              options={actionOptions}
+              placeholder="Select action"
+              error={errors.action?.message}
+            />
 
             {/* New File Upload */}
             <Forger

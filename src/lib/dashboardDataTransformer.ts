@@ -961,7 +961,7 @@ export class DashboardDataTransformer {
   static transformCompanyStatus(data: any) {
     // Handle both old and new API structures
     let timeStats;
-    
+
     // Check if data has the old nested structure with timeStats
     if (data?.timeStats && Array.isArray(data.timeStats)) {
       timeStats = data.timeStats;
@@ -1027,7 +1027,8 @@ export class DashboardDataTransformer {
       const suspended = item.suspended || 0;
 
       // Calculate suspended as total minus active minus expiring if not provided
-      const calculatedSuspended = suspended || Math.max(0, total - active - expiring);
+      const calculatedSuspended =
+        suspended || Math.max(0, total - active - expiring);
 
       return {
         month,
@@ -2121,13 +2122,11 @@ export class DashboardDataTransformer {
             solId: sol?._id,
           }
         ),
-        date:
-          update?.updatedAt || update?.date || update?.createdAt
-            ? `${format(
-                new Date(update.updatedAt || update.date || update.createdAt),
-                "MMM d, yyyy h:mm a"
-              )} ${update.timezone || "GMT"}`
-            : format(new Date(), "MMM d, yyyy h:mm a 'GMT'xxx"),
+        date: update?.createdAt
+          ? `${format(new Date(update.createdAt), "MMM d, yyyy h:mm a")} ${
+              update.timezone || "GMT"
+            }`
+          : format(new Date(), "MMM d, yyyy h:mm a 'GMT'xxx"),
         status: update?.status || "active",
       };
     });
