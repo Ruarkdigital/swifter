@@ -294,9 +294,7 @@ const EditSolicitationDialog = ({
         s.questionDeadline || ""
       ),
       timezone: s.timezone || "Africa/Lagos",
-      bidIntent: s.bidIntent
-        ? (s.bidIntent === "not-required" ? "not required" : s.bidIntent)
-        : "",
+      bidIntent: s.bidIntent || "",
       bidIntentDeadlineDate: formatDateForInput(
         s.bidIntentDeadline || ""
       ),
@@ -455,9 +453,7 @@ const EditSolicitationDialog = ({
         questionDeadline: completeData.questionAcceptanceDeadlineDate
           ? new Date(completeData.questionAcceptanceDeadlineDate).toISOString()
           : undefined,
-        bidIntent: completeData.bidIntent === "not required" 
-          ? "not-required" 
-          : completeData.bidIntent as "required" | "not-required",
+        bidIntent: completeData.bidIntent as "required" | "not required",
         bidIntentDeadline: completeData.bidIntentDeadlineDate
           ? new Date(completeData.bidIntentDeadlineDate).toISOString()
           : undefined,
@@ -622,9 +618,7 @@ const EditSolicitationDialog = ({
           ? new Date(formData.questionAcceptanceDeadlineDate).toISOString()
           : effectiveSolicitation.questionDeadline,
         bidIntent:
-          (formData.bidIntent === "not required"
-            ? "not-required"
-            : (formData.bidIntent as "required" | "not-required")) ||
+          (formData.bidIntent as "required" | "not required") ||
           effectiveSolicitation.bidIntent,
         bidIntentDeadline: formData.bidIntentDeadlineDate
           ? new Date(formData.bidIntentDeadlineDate).toISOString()
@@ -911,7 +905,9 @@ const EditSolicitationDialog = ({
                 {currentStep === 6
                   ? isPending
                     ? "Updating..."
-                    : "Update Solicitation"
+                    : effectiveSolicitation.status === "draft" 
+                      ? "Publish Solicitation"
+                      : "Update Solicitation"
                   : "Continue"}
               </Button>
             </div>
