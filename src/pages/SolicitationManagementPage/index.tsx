@@ -648,16 +648,6 @@ export const SolicitationManagementPage = () => {
     setSelectedSolicitationId(null);
   };
 
-  // Handler functions for confirmation and decline
-  const handleConfirmClick = (id: string) => {
-    setSelectedSolicitationForAction(id);
-    setConfirmDialogOpen(true);
-  };
-
-  const handleDeclineClick = (id: string) => {
-    setSelectedSolicitationForAction(id);
-    setDeclineDialogOpen(true);
-  };
 
   const handleConfirmSolicitation = () => {
     if (selectedSolicitationForAction) {
