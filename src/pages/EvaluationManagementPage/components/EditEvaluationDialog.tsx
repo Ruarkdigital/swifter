@@ -126,6 +126,32 @@ type UpdateEvaluationPayload = {
   }>;
 };
 
+type UpdateEvaluationDraftPayload = {
+  id: string;
+  solicitation?: string;
+  timezone?: string;
+  start_date?: string;
+  end_date?: string;
+  group?: Array<{
+    name: string;
+    evaluators: string[];
+  }>;
+  documents?: Array<{
+    title: string;
+    type: string;
+    group: string;
+    required: boolean;
+    multiple?: boolean;
+  }>;
+  criteria?: Array<{
+    title: string;
+    description: string;
+    type: "pass_fail" | "weight";
+    score: string | number;
+    group: string;
+  }>;
+};
+
 interface EditEvaluationDialogProps {
   evaluationId: string;
   children?: React.ReactNode;
@@ -180,6 +206,23 @@ const EditEvaluationDialog = ({
         await putRequest({
           url: `/procurement/evaluations`,
           payload: { ...evaluationData, id: evaluationId },
+        }),
+      onSuccess: () => {
+        // Invalidate and refetch evaluation data
+        queryClient.invalidateQueries({
+          queryKey: ["evaluation-detail", evaluationId],
+        });
+        queryClient.invalidateQueries({ queryKey: ["evaluations"] });
+      },
+    });
+
+  const { mutateAsync: saveToDraft, isPending: isSavingToDraft } =
+    useMutation<ApiResponse<any>, ApiResponseError, UpdateEvaluationDraftPayload>({
+      mutationKey: ["saveEvaluationToDraft", evaluationId],
+      mutationFn: async (draftData) =>
+        await putRequest({
+          url: `/procurement/evaluations`,
+          payload: { ...draftData, id: evaluationId, status: "draft" },
         }),
       onSuccess: () => {
         // Invalidate and refetch evaluation data
@@ -391,15 +434,99 @@ const EditEvaluationDialog = ({
     }
   };
 
-  const handleCancel = () => {
-    setOpen(false);
-    setCurrentStep(1);
-    // Reset form to original values
-    if (evaluationData) {
-      // Re-populate form with original data
-      // This will be handled by the useEffect when the dialog reopens
-    }
-  };
+  const handleSaveToDraft = async () => {
+    try {
+      const formData = forge.getValues();
+      const draftData: Partial<UpdateEvaluationDraftPayload> = {
+        id: evaluationId,
+      };
+
+      // Only include fields with actual values
+      if (formData.solicitation && typeof formData.solicitation === 'string' && formData.solicitation.trim()) {
+        draftData.solicitation = formData.solicitation;
+      }
+      
+      if (formData.timezone && typeof formData.timezone === 'string' && formData.timezone.trim()) {
+        draftData.timezone = formData.timezone;
+      }
+      
+      if (formData.start_date) {
+        draftData.start_date = formData.start_date;
+      }
+      
+      if (formData.end_date) {
+        draftData.end_date = formData.end_date;
+      }
+      
+      if (formData.group && formData.group.length > 0) {
+        const validGroups = formData.group
+          .filter((group) => group.name && group.name.trim())
+          .map((group) => ({
+            name: group.name,
+            evaluators:
+              group.evaluators
+                ?.filter((evaluator) => evaluator !== undefined)
+                .map((item) => item.value)
+                .filter((value) => value && value.trim()) || [],
+          }))
+          .filter((group) => group.evaluators.length > 0);
+        
+        if (validGroups.length > 0) {
+          draftData.group = validGroups;
+        }
+      }
+      
+      if (formData.documents && formData.documents.length > 0) {
+        const validDocuments = formData.documents
+          .filter((document) => document.title && document.title.trim())
+          .map((document) => ({
+            title: document.title,
+            type: document.type,
+            group: document.group,
+            required: document.required ?? false,
+            multiple: document.multiple ?? false,
+          }));
+        
+        if (validDocuments.length > 0) {
+          draftData.documents = validDocuments;
+        }
+      }
+      
+      if (formData.criteria && formData.criteria.length > 0) {
+        const validCriteria = formData.criteria
+          .filter((criteria) => criteria.title && criteria.title.trim())
+          .map((criteria) => ({
+            title: criteria.title,
+            description: criteria.description,
+            type: criteria.type as "pass_fail" | "weight",
+            score:
+              criteria.type === "weight"
+                ? parseInt(criteria.score as string)
+                : String(criteria.score),
+            group: criteria.group,
+          }));
+        
+        if (validCriteria.length > 0) {
+          draftData.criteria = validCriteria;
+        }
+      }
+
+      await saveToDraft(draftData as UpdateEvaluationDraftPayload);
+      toast.success(
+        "Draft Saved",
+        "Evaluation has been saved as draft successfully"
+      );
+      setOpen(false);
+      setCurrentStep(1);
+    } catch (error) {
+      console.error("Error saving draft:", error);
+      const err = error as ApiResponseError;
+      toast.error(
+         "Save Failed",
+         err?.response?.data?.message ?? "Failed to save evaluation as draft"
+       );
+     }
+   };
 
   const getStepTitle = () => {
     switch (currentStep) {
@@ -474,11 +601,12 @@ const EditEvaluationDialog = ({
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={handleCancel}
+                  onClick={handleSaveToDraft}
+                  disabled={isSavingToDraft}
                   size={"lg"}
                   className="px-8 py-2 border border-gray-300 text-gray-700 hover:bg-gray-100 rounded-lg"
                 >
-                  Cancel
+                  {isSavingToDraft ? "Saving..." : "Save to Draft"}
                 </Button>
               )}
               <div className="flex gap-3">
