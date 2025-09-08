@@ -3,7 +3,15 @@ import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Share2, Eye, Download, ChevronDown, MoreHorizontal, Edit } from "lucide-react";
+import {
+  Share2,
+  Eye,
+  Download,
+  ChevronDown,
+  ChevronRight,
+  MoreHorizontal,
+  Edit,
+} from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -80,7 +88,7 @@ export interface Overview {
 }
 
 export interface ProposalDetails {
-  id: string
+  id: string;
   name: string;
   vendor: string;
   contact: string;
@@ -146,32 +154,42 @@ const ProposalDetailsPage: React.FC = () => {
   const toastHandlers = useToastHandler();
   const [showAwardModal, setShowAwardModal] = useState(false);
   const [showAmendDialog, setShowAmendDialog] = useState(false);
-  const [selectedDocumentForAmend, setSelectedDocumentForAmend] = useState<SubmittedDocument | null>(null);
-  const [showReadOnlyProposalDialog, setShowReadOnlyProposalDialog] = useState(false);
+  const [selectedDocumentForAmend, setSelectedDocumentForAmend] =
+    useState<SubmittedDocument | null>(null);
+  const [showReadOnlyProposalDialog, setShowReadOnlyProposalDialog] =
+    useState(false);
   const [showAmendProposalDialog, setShowAmendProposalDialog] = useState(false);
-  
+
   // Document viewer state
   const [viewerOpen, setViewerOpen] = useState(false);
-  const [selectedDocument, setSelectedDocument] = useState<{ url: string; name: string; type: string } | null>(null);
+  const [selectedDocument, setSelectedDocument] = useState<{
+    url: string;
+    name: string;
+    type: string;
+  } | null>(null);
 
   // Get vendor ID from location state
   const vendorId = location.state?.vendorId || proposalId;
 
   // Handle document viewing
-  const handleViewDocument = (file: { url: string; name: string; type: string }) => {
+  const handleViewDocument = (file: {
+    url: string;
+    name: string;
+    type: string;
+  }) => {
     setSelectedDocument(file);
     setViewerOpen(true);
   };
 
   // Fetch solicitation data
   const { data: solicitationData } = useQuery<
-    ApiResponse<{ 
-      solicitation: { 
-        name: string; 
+    ApiResponse<{
+      solicitation: {
+        name: string;
         _id: string;
         submissionDeadline: string;
         status: string;
-      } 
+      };
     }>,
     ApiResponseError
   >({
@@ -184,10 +202,10 @@ const ProposalDetailsPage: React.FC = () => {
   });
 
   // Fetch vendor proposal data
-  const {
-    data: proposalData,
-    isLoading: isLoadingProposal,
-  } = useQuery<ApiResponse<VendorProposalData>, ApiResponseError>({
+  const { data: proposalData, isLoading: isLoadingProposal } = useQuery<
+    ApiResponse<VendorProposalData>,
+    ApiResponseError
+  >({
     queryKey: ["vendor-proposal", id, vendorId],
     queryFn: () =>
       getRequest({
@@ -333,6 +351,48 @@ const ProposalDetailsPage: React.FC = () => {
     },
   });
 
+  // Download archive submission mutation
+  const downloadArchiveMutation = useMutation<Blob, ApiResponseError, void>({
+    mutationFn: async () => {
+      const response = await getRequest({
+        url: `/procurement/solicitations/${proposalId}/archive-submission`,
+        config: { responseType: "blob" },
+      });
+      return response.data;
+    },
+    onSuccess: (data) => {
+      // Create download link
+      const blob = new Blob([data], { type: "application/zip" });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+
+      // Generate filename with vendor name and current date
+      const vendorName = proposal?.proposalDetails.vendor || "vendor";
+      const currentDate = new Date().toISOString().split("T")[0];
+      link.download = `${vendorName}_submission_archive_${currentDate}.zip`;
+
+      document.body.appendChild(link);
+      link.click();
+
+      // Cleanup
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      toastHandlers.success(
+        "Download Complete",
+        "Submission archive downloaded successfully"
+      );
+    },
+    onError: (error) => {
+      toastHandlers.error(
+        "Download Failed",
+        error.response?.data.message ||
+          "Failed to download submission archive. Please try again."
+      );
+    },
+  });
+
   const handleAwardVendor = () => {
     setShowAwardModal(true);
   };
@@ -349,8 +409,8 @@ const ProposalDetailsPage: React.FC = () => {
       state: {
         vendorId: vendorId,
         isSubmitForVendor: true,
-        endpoint: `/procurement/solicitations/${id}/submit-vendor/${vendorId}`
-      }
+        endpoint: `/procurement/solicitations/${id}/submit-vendor/${vendorId}`,
+      },
     });
   };
 
@@ -507,101 +567,96 @@ const ProposalDetailsPage: React.FC = () => {
       header: "Actions",
       cell: ({ row }) => {
         const document = row.original;
-        const extension = (document.type || "file")
-          ?.toLowerCase();
+        const extension = (document.type || "file")?.toLowerCase();
         const isDocFile = extension === "doc" || extension === "docx";
 
         return (
           <div className="flex items-center gap-2">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 w-8 p-0"
-                >
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
                   <MoreHorizontal className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                 {isDocFile ? (
-                   <DropdownMenuItem
-                     onClick={() => {
-                       if (document.url) {
-                         const link = window.document.createElement("a");
-                         link.href = document.url;
-                         link.download = document.name || "download";
-                         window.document.body.appendChild(link);
-                         link.click();
-                         window.document.body.removeChild(link);
-                       }
-                     }}
-                   >
-                     <Download className="mr-2 h-4 w-4" />
-                     Download
-                   </DropdownMenuItem>
-                 ) : (
-                   <>
-                     <DropdownMenuItem
-                       onClick={() => {
-                         if (document.url) {
-                           if (document.type?.toLowerCase() === 'pricing') {
-                             // For pricing documents, open read-only proposal dialog
-                             setShowReadOnlyProposalDialog(true);
-                           } else {
-                             // For other documents, use document viewer
-                             handleViewDocument(document);
-                           }
-                         }
-                       }}
-                     >
-                       <Eye className="mr-2 h-4 w-4" />
-                       View
-                     </DropdownMenuItem>
-                     
-                     {document.type?.toLowerCase() === 'pricing' && (
-                       <DropdownMenuItem
-                         onClick={() => {
-                           setShowAmendProposalDialog(true);
-                         }}
-                       >
-                         <Edit className="mr-2 h-4 w-4" />
-                         Amend
-                       </DropdownMenuItem>
-                     )}
-                   </>
-                 )}
-                 
-                 {!isDocFile && document.type?.toLowerCase() !== 'pricing' && (
-                   <DropdownMenuItem
-                     onClick={() => {
-                       if (document.url) {
-                         const link = window.document.createElement("a");
-                         link.href = document.url;
-                         link.download = document.name || "download";
-                         window.document.body.appendChild(link);
-                         link.click();
-                         window.document.body.removeChild(link);
-                       }
-                     }}
-                   >
-                     <Download className="mr-2 h-4 w-4" />
-                     Download
-                   </DropdownMenuItem>
-                 )}
-                 
-                 {isDocFile && (
-                   <DropdownMenuItem
-                     onClick={() => {
-                       setSelectedDocumentForAmend(document);
-                       setShowAmendDialog(true);
-                     }}
-                   >
-                     <Edit className="mr-2 h-4 w-4" />
-                     Amend
-                   </DropdownMenuItem>
-                 )}
-               </DropdownMenuContent>
+                {isDocFile ? (
+                  <DropdownMenuItem
+                    onClick={() => {
+                      if (document.url) {
+                        const link = window.document.createElement("a");
+                        link.href = document.url;
+                        link.download = document.name || "download";
+                        window.document.body.appendChild(link);
+                        link.click();
+                        window.document.body.removeChild(link);
+                      }
+                    }}
+                  >
+                    <Download className="mr-2 h-4 w-4" />
+                    Download
+                  </DropdownMenuItem>
+                ) : (
+                  <>
+                    <DropdownMenuItem
+                      onClick={() => {
+                        if (document.url) {
+                          if (document.type?.toLowerCase() === "pricing") {
+                            // For pricing documents, open read-only proposal dialog
+                            setShowReadOnlyProposalDialog(true);
+                          } else {
+                            // For other documents, use document viewer
+                            handleViewDocument(document);
+                          }
+                        }
+                      }}
+                    >
+                      <Eye className="mr-2 h-4 w-4" />
+                      View
+                    </DropdownMenuItem>
+
+                    {document.type?.toLowerCase() === "pricing" && (
+                      <DropdownMenuItem
+                        onClick={() => {
+                          setShowAmendProposalDialog(true);
+                        }}
+                      >
+                        <Edit className="mr-2 h-4 w-4" />
+                        Amend
+                      </DropdownMenuItem>
+                    )}
+                  </>
+                )}
+
+                {!isDocFile && document.type?.toLowerCase() !== "pricing" && (
+                  <DropdownMenuItem
+                    onClick={() => {
+                      if (document.url) {
+                        const link = window.document.createElement("a");
+                        link.href = document.url;
+                        link.download = document.name || "download";
+                        window.document.body.appendChild(link);
+                        link.click();
+                        window.document.body.removeChild(link);
+                      }
+                    }}
+                  >
+                    <Download className="mr-2 h-4 w-4" />
+                    Download
+                  </DropdownMenuItem>
+                )}
+
+                {isDocFile && (
+                  <DropdownMenuItem
+                    onClick={() => {
+                      setSelectedDocumentForAmend(document);
+                      setShowAmendDialog(true);
+                    }}
+                  >
+                    <Edit className="mr-2 h-4 w-4" />
+                    Amend
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
             </DropdownMenu>
           </div>
         );
@@ -611,6 +666,26 @@ const ProposalDetailsPage: React.FC = () => {
 
   // Define columns for the amendments table
   const amendmentsColumns: ColumnDef<Amendment>[] = [
+    {
+      id: "expander",
+      header: "",
+      cell: ({ row }) => {
+        return (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 w-8 p-0"
+            onClick={() => row.toggleExpanded()}
+          >
+            {row.getIsExpanded() ? (
+              <ChevronDown className="h-4 w-4" />
+            ) : (
+              <ChevronRight className="h-4 w-4" />
+            )}
+          </Button>
+        );
+      },
+    },
     {
       accessorKey: "newFiles",
       header: "Amended Doc.",
@@ -657,71 +732,98 @@ const ProposalDetailsPage: React.FC = () => {
         return (
           <div className="text-sm text-gray-600 dark:text-gray-300">
             {amendment.createdAt
-              ? format(new Date(amendment.createdAt), "yyyy-MM-dd, h:mm a 'EST'")
+              ? format(
+                  new Date(amendment.createdAt),
+                  "yyyy-MM-dd, h:mm a 'EST'"
+                )
               : "N/A"}
           </div>
         );
       },
     },
     {
-      accessorKey: "reason",
-      header: "Reason / Note",
+      id: "actions",
+      header: "Actions",
       cell: ({ row }) => {
         const amendment = row.original;
+        
+        const handleViewDocument = (file: { name: string; url: string; type: string }) => {
+          setSelectedDocument({
+            url: file.url,
+            name: file.name,
+            type: file.type,
+          });
+          setViewerOpen(true);
+        };
+
+        const handleDownloadDocument = (file: { name: string; url: string }) => {
+          const link = document.createElement('a');
+          link.href = file.url;
+          link.download = file.name;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        };
+
         return (
-          <div className="text-sm text-gray-600 dark:text-gray-300 max-w-xs truncate">
-            {amendment.reason || "N/A"}
+          <div className="flex items-center gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0"
+                >
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {amendment.newFiles?.[0] && (
+                  <>
+                    <DropdownMenuItem
+                      onClick={() => handleViewDocument(amendment.newFiles[0])}
+                    >
+                      <Eye className="mr-2 h-4 w-4" />
+                      View New Document
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => handleDownloadDocument(amendment.newFiles[0])}
+                    >
+                      <Download className="mr-2 h-4 w-4" />
+                      Download New Document
+                    </DropdownMenuItem>
+                  </>
+                )}
+                {amendment.oldFiles?.[0] && (
+                  <>
+                    <DropdownMenuItem
+                      onClick={() => handleViewDocument(amendment.oldFiles[0])}
+                    >
+                      <Eye className="mr-2 h-4 w-4" />
+                      View Original Document
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => handleDownloadDocument(amendment.oldFiles[0])}
+                    >
+                      <Download className="mr-2 h-4 w-4" />
+                      Download Original Document
+                    </DropdownMenuItem>
+                  </>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         );
       },
     },
-    // {
-    //   id: "actions",
-    //   header: "Actions",
-    //   cell: ({ row }) => {
-    //     const amendment = row.original;
-    //     return (
-    //       <div className="flex items-center gap-2">
-    //         <DropdownMenu>
-    //           <DropdownMenuTrigger asChild>
-    //             <Button
-    //               variant="ghost"
-    //               size="sm"
-    //               className="h-8 w-8 p-0"
-    //             >
-    //               <MoreHorizontal className="h-4 w-4" />
-    //             </Button>
-    //           </DropdownMenuTrigger>
-    //           <DropdownMenuContent align="end">
-    //             <DropdownMenuItem
-    //               onClick={() => {
-    //                 // Handle view document action
-    //                 console.log("View document:", amendment);
-    //               }}
-    //             >
-    //               <Eye className="mr-2 h-4 w-4" />
-    //               View Document
-    //             </DropdownMenuItem>
-    //             <DropdownMenuItem
-    //               onClick={() => {
-    //                 // Handle delete amendment action
-    //                 console.log("Delete amendment:", amendment);
-    //               }}
-    //             >
-    //               <Download className="mr-2 h-4 w-4" />
-    //               Delete Amendment
-    //             </DropdownMenuItem>
-    //           </DropdownMenuContent>
-    //         </DropdownMenu>
-    //       </div>
-    //     );
-    //   },
-    // },
   ];
 
   // Create useAmendments hook for fetching amendments data
   const useAmendments = (proposalId: string) => {
-    return useQuery<ApiResponse<{ history: Amendment[], count:number}>, ApiResponseError>({
+    return useQuery<
+      ApiResponse<{ history: Amendment[]; count: number }>,
+      ApiResponseError
+    >({
       queryKey: ["amendments", proposalId],
       queryFn: async () => {
         const endpoint = `/procurement/solicitations/proposals/${proposalId}/submission-history`;
@@ -804,96 +906,96 @@ const ProposalDetailsPage: React.FC = () => {
         )} */}
 
         {/* Proposal Overview */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="space-y-4">
-              <div>
-                <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                  Solicitation Name
-                </label>
-                <p className="text-base font-medium text-gray-900 dark:text-white">
-                  {solicitation?.name || "N/A"}
-                </p>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                  Contact
-                </label>
-                <p className="text-base text-blue-600 dark:text-blue-400 underline cursor-pointer">
-                  {proposal?.proposalDetails?.contact || "N/A"}
-                </p>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                  Submission Deadline
-                </label>
-                <p className="text-base text-gray-900 dark:text-white">
-                  {solicitation?.submissionDeadline
-                    ? format(
-                        new Date(solicitation?.submissionDeadline),
-                        "MMMM d, yyyy"
-                      )
-                    : "N/A"}
-                </p>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                  Evaluation Score (Avg score)
-                </label>
-                <p className="text-base font-medium text-gray-900 dark:text-white">
-                  {proposal?.proposalDetails?.score
-                    ? `${proposal.proposalDetails.score}%`
-                    : "N/A"}
-                </p>
-              </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                Solicitation Name
+              </label>
+              <p className="text-base font-medium text-gray-900 dark:text-white">
+                {solicitation?.name || "N/A"}
+              </p>
             </div>
-            <div className="space-y-4">
-              <div className="space-y-3">
-                <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                  Vendor Name
-                </label>
-                <p className="text-base font-medium text-gray-900 dark:text-white">
-                  {proposal?.proposalDetails?.vendor || "N/A"}
-                </p>
-              </div>
-              <div className="space-y-3">
-                <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                  Reference Number
-                </label>
-                <p className="text-base text-gray-900 dark:text-white">
-                  {proposal?.proposalDetails?.ref || "N/A"}
-                </p>
-              </div>
-              <div className="space-y-3">
-                <label className="text-sm font-medium text-gray-500 dark:text-gray-400 block">
-                  Status
-                </label>
-                <Badge
-                  variant="secondary"
-                  className={`${
-                    proposal?.proposalDetails?.status === "submit"
-                      ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
-                      : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200"
-                  }`}
-                >
-                  {proposal?.proposalDetails?.status === "submit"
-                    ? "Submitted"
-                    : proposal?.proposalDetails?.status || "N/A"}
-                </Badge>
-              </div>
-              <div className="space-y-3">
-                <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                  Total Amount
-                </label>
-                <p className="text-base font-medium text-gray-900 dark:text-white">
-                  {formatCurrency(
-                    proposal?.proposalDetails?.total || 0,
-                    "en-US",
-                    "USD"
-                  ) || "N/A"}
-                </p>
-              </div>
+            <div>
+              <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                Contact
+              </label>
+              <p className="text-base text-blue-600 dark:text-blue-400 underline cursor-pointer">
+                {proposal?.proposalDetails?.contact || "N/A"}
+              </p>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                Submission Deadline
+              </label>
+              <p className="text-base text-gray-900 dark:text-white">
+                {solicitation?.submissionDeadline
+                  ? format(
+                      new Date(solicitation?.submissionDeadline),
+                      "MMMM d, yyyy"
+                    )
+                  : "N/A"}
+              </p>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                Evaluation Score (Avg score)
+              </label>
+              <p className="text-base font-medium text-gray-900 dark:text-white">
+                {proposal?.proposalDetails?.score
+                  ? `${proposal.proposalDetails.score}%`
+                  : "N/A"}
+              </p>
             </div>
           </div>
+          <div className="space-y-4">
+            <div className="space-y-3">
+              <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                Vendor Name
+              </label>
+              <p className="text-base font-medium text-gray-900 dark:text-white">
+                {proposal?.proposalDetails?.vendor || "N/A"}
+              </p>
+            </div>
+            <div className="space-y-3">
+              <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                Reference Number
+              </label>
+              <p className="text-base text-gray-900 dark:text-white">
+                {proposal?.proposalDetails?.ref || "N/A"}
+              </p>
+            </div>
+            <div className="space-y-3">
+              <label className="text-sm font-medium text-gray-500 dark:text-gray-400 block">
+                Status
+              </label>
+              <Badge
+                variant="secondary"
+                className={`${
+                  proposal?.proposalDetails?.status === "submit"
+                    ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+                    : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200"
+                }`}
+              >
+                {proposal?.proposalDetails?.status === "submit"
+                  ? "Submitted"
+                  : proposal?.proposalDetails?.status || "N/A"}
+              </Badge>
+            </div>
+            <div className="space-y-3">
+              <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                Total Amount
+              </label>
+              <p className="text-base font-medium text-gray-900 dark:text-white">
+                {formatCurrency(
+                  proposal?.proposalDetails?.total || 0,
+                  "en-US",
+                  "USD"
+                ) || "N/A"}
+              </p>
+            </div>
+          </div>
+        </div>
 
         {/* Award Vendor and Submit for Vendor Buttons */}
         <div className="flex justify-start gap-3">
@@ -901,12 +1003,16 @@ const ProposalDetailsPage: React.FC = () => {
             onClick={handleSubmitForVendor}
             className="bg-green-600 hover:bg-green-700 text-white"
             disabled={
-              !solicitation?.submissionDeadline 
-                ? true 
+              !solicitation?.submissionDeadline
+                ? true
                 : (() => {
                     try {
-                      const deadline = parseISO(solicitation.submissionDeadline);
-                      return !isValid(deadline) || !isAfter(new Date(), deadline);
+                      const deadline = parseISO(
+                        solicitation.submissionDeadline
+                      );
+                      return (
+                        !isValid(deadline) || !isAfter(new Date(), deadline)
+                      );
                     } catch {
                       return true;
                     }
@@ -1035,7 +1141,6 @@ const ProposalDetailsPage: React.FC = () => {
                     {criteria.scoring?.pass_fail ||
                       `${criteria.scoring?.weight}%` ||
                       "N/A"}
-                    
                   </p>
                 </div>
               ))}
@@ -1046,6 +1151,20 @@ const ProposalDetailsPage: React.FC = () => {
             <h4 className="text-xl mt-5 font-medium text-gray-900 dark:text-white">
               Submitted Documents
             </h4>
+            {/* Download Archive Button */}
+            <div className="flex justify-end mt-6">
+              <Button
+                onClick={() => downloadArchiveMutation.mutate()}
+                disabled={downloadArchiveMutation.isPending}
+                variant={"ghost"}
+                // className="bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                <Download className="mr-2 h-4 w-4" />
+                {downloadArchiveMutation.isPending
+                  ? "Downloading..."
+                  : "Download Submission Archive"}
+              </Button>
+            </div>
 
             {/* Nested Tabs for Documents */}
             <Tabs defaultValue="original-submission" className="w-full">
@@ -1062,14 +1181,20 @@ const ProposalDetailsPage: React.FC = () => {
                 >
                   Amendments
                   {amendments && amendments.length > 0 && (
-                    <Badge variant="secondary" className="ml-2 bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                    <Badge
+                      variant="secondary"
+                      className="ml-2 bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
+                    >
                       {amendments.length}
                     </Badge>
                   )}
                 </TabsTrigger>
               </TabsList>
 
-              <TabsContent value="original-submission" className="space-y-4 mt-6">
+              <TabsContent
+                value="original-submission"
+                className="space-y-4 mt-6"
+              >
                 {/* Original Documents Table */}
                 {submittedDocument.length > 0 ? (
                   <DataTable
@@ -1127,6 +1252,23 @@ const ProposalDetailsPage: React.FC = () => {
                       manualPagination: false,
                       setPagination: () => {},
                       pagination: { pageIndex: 0, pageSize: 10 },
+                      enableExpanding: true,
+                      getRowCanExpand: () => true,
+                      renderSubComponent: ({ row }) => {
+                        const amendment = row.original;
+                        return (
+                          <div className="p-4 bg-gray-50 dark:bg-slate-800 border-t border-gray-200 dark:border-slate-700">
+                            <div className="space-y-2">
+                              <h5 className="font-medium text-gray-900 dark:text-gray-100">
+                                Reason / Note:
+                              </h5>
+                              <p className="text-sm text-gray-600 dark:text-gray-300">
+                                {amendment.reason || "No reason provided"}
+                              </p>
+                            </div>
+                          </div>
+                        );
+                      },
                     }}
                     classNames={{
                       table: "border-separate border-spacing-y-2",
@@ -1135,6 +1277,8 @@ const ProposalDetailsPage: React.FC = () => {
                         "text-left font-medium text-gray-700 dark:text-gray-300 py-3 px-4",
                       tRow: "bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg",
                       tCell: "py-4 px-4 text-sm",
+                      expandedRow: "bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg",
+                      expandedCell: "p-0",
                     }}
                   />
                 ) : (
@@ -1243,21 +1387,24 @@ const ProposalDetailsPage: React.FC = () => {
       />
 
       {/* Amend Submission Dialog */}
-       {selectedDocumentForAmend && (
-         <AmendSubmissionDialog
-           open={showAmendDialog}
-           onOpenChange={setShowAmendDialog}
-           documentName={selectedDocumentForAmend.name}
-           proposalId={proposal?.proposalDetails?.id!}
-           requirementDocId={selectedDocumentForAmend.requiredDocId}
-           onAmendSuccess={() => {
-             queryClient.invalidateQueries({ queryKey: ["vendor-proposal", id, vendorId] });
-             queryClient.invalidateQueries({ queryKey: ["amendments"] });
-             setShowAmendDialog(false);
-             setSelectedDocumentForAmend(null);
-           }}
-         />
-       )}
+      {selectedDocumentForAmend && (
+        <AmendSubmissionDialog
+          open={showAmendDialog}
+          onOpenChange={setShowAmendDialog}
+          documentName={selectedDocumentForAmend.name}
+          proposalId={proposal?.proposalDetails?.id!}
+          requirementDocId={selectedDocumentForAmend.requiredDocId}
+          fileId={selectedDocumentForAmend._id}
+          onAmendSuccess={() => {
+            queryClient.invalidateQueries({
+              queryKey: ["vendor-proposal", id, vendorId],
+            });
+            queryClient.invalidateQueries({ queryKey: ["amendments"] });
+            setShowAmendDialog(false);
+            setSelectedDocumentForAmend(null);
+          }}
+        />
+      )}
 
       {/* Read-Only Proposal Dialog */}
       <ReadOnlyProposalDialog
@@ -1272,7 +1419,7 @@ const ProposalDetailsPage: React.FC = () => {
         onOpenChange={setShowAmendProposalDialog}
         proposalId={proposal?.proposalDetails?.id!}
       />
-      
+
       {/* Document Viewer Modal */}
       {selectedDocument && (
         <DocumentViewer
@@ -1283,7 +1430,10 @@ const ProposalDetailsPage: React.FC = () => {
           }}
           fileUrl={selectedDocument.url}
           fileName={selectedDocument.name}
-          fileType={getFileExtension(selectedDocument.name, selectedDocument.type)}
+          fileType={getFileExtension(
+            selectedDocument.name,
+            selectedDocument.type
+          )}
         />
       )}
     </div>

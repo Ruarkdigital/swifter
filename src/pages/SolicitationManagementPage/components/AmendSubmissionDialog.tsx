@@ -35,6 +35,7 @@ interface AmendSubmissionDialogProps {
   documentName: string;
   proposalId: string;
   requirementDocId: string;
+  fileId: string;
   onAmendSuccess?: () => void;
 }
 
@@ -49,6 +50,7 @@ type AmendSubmissionFormData = yup.InferType<typeof amendSubmissionSchema>;
 
 const AmendSubmissionDialog: React.FC<AmendSubmissionDialogProps> = ({
   open,
+  fileId,
   onOpenChange,
   documentName,
   proposalId,
@@ -155,14 +157,18 @@ const AmendSubmissionDialog: React.FC<AmendSubmissionDialogProps> = ({
       });
       
       const uploadResponse = await uploadFilesMutation.mutateAsync(formData);
+
+      let payload: any = {
+        reason: data.reason,
+        files: uploadResponse.data.data || [],
+      }
+
+      if (selectedAction === "amend") {
+        payload.fileId = fileId;
+      }
       
       // Then, amend the submission with the uploaded file information
-       await amendSubmissionMutation.mutateAsync({
-         reason: data.reason,
-         files: uploadResponse.data.data || [],
-         // Note: fileId is optional for amend action according to API docs
-         // If needed, it should be passed as a prop or derived from document data
-       });
+       await amendSubmissionMutation.mutateAsync(payload);
     } catch (error) {
       console.error("Amendment failed:", error);
     }
