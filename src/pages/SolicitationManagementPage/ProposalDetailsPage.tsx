@@ -355,7 +355,7 @@ const ProposalDetailsPage: React.FC = () => {
   const downloadArchiveMutation = useMutation<Blob, ApiResponseError, void>({
     mutationFn: async () => {
       const response = await getRequest({
-        url: `/procurement/solicitations/${proposalId}/archive-submission`,
+        url: `/procurement/solicitations/${proposal?.proposalDetails?.id}/archive-submission`,
         config: { responseType: "blob" },
       });
       return response.data;

@@ -42,6 +42,7 @@ const Step1Form = ({ solicitationOptions, timezoneOptions, solicitationsData }: 
           name="solicitation"
           component={TextCombo}
           label="Solicitation"
+          containerClass="hidden"
           placeholder="Select Solicitation"
           options={solicitationOptions}
         />

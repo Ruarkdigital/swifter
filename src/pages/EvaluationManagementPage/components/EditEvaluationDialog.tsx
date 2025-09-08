@@ -443,7 +443,7 @@ const EditEvaluationDialog = ({
 
       // Only include fields with actual values
       if (formData.solicitation && typeof formData.solicitation === 'string' && formData.solicitation.trim()) {
-        draftData.solicitation = formData.solicitation;
+        // draftData.solicitation = formData.solicitation;
       }
       
       if (formData.timezone && typeof formData.timezone === 'string' && formData.timezone.trim()) {
