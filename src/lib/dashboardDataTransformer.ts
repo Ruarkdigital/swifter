@@ -1803,12 +1803,12 @@ export class DashboardDataTransformer {
       ),
       type: update.type || "evaluation",
       date:
-        update.date || update.updatedAt || update.createdAt
+        update.createdAt
           ? format(
               new Date(update.date || update.updatedAt || update.createdAt),
               "MMM d, yyyy h:mm a 'GMT'xxx"
             )
-          : format(new Date(), "MMM d, yyyy h:mm a 'GMT'xxx"),
+          : undefined,
     }));
   }
 
@@ -1994,14 +1994,11 @@ export class DashboardDataTransformer {
         ),
         title: update?.solicitation?.name ?? "Unknown",
         time:
-          update.time ||
-          (update.date
-            ? format(new Date(update.date), "MMM d, yyyy") +
-              " • " +
-              format(new Date(update.date), "HH:mm 'GMT'xxx")
-            : format(new Date(), "MMM d, yyyy") +
-              " • " +
-              format(new Date(), "h:mm a 'GMT'xxx")),
+           update?.createdAt
+          ? `${format(new Date(update.createdAt), "MMM d, yyyy h:mm a")} ${
+              update.timezone || "GMT"
+            }`
+          : undefined,
       };
     });
   }
@@ -2126,7 +2123,7 @@ export class DashboardDataTransformer {
           ? `${format(new Date(update.createdAt), "MMM d, yyyy h:mm a")} ${
               update.timezone || "GMT"
             }`
-          : format(new Date(), "MMM d, yyyy h:mm a 'GMT'xxx"),
+          : undefined,
         status: update?.status || "active",
       };
     });
