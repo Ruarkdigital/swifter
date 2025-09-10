@@ -35,7 +35,11 @@ import { ConfirmAlert } from "@/components/layouts/ConfirmAlert";
 import EditSolicitationDialog from "./components/EditSolicitationDialog";
 import { truncate } from "lodash";
 import { putRequest, postRequest } from "@/lib/axiosInstance";
-import { getStatusLabel, getStatusColorClass } from "@/lib/solicitationStatusUtils";
+import {
+  getStatusLabel,
+  getStatusColorClass,
+} from "@/lib/solicitationStatusUtils";
+import { cn } from "@/lib/utils";
 // import ExportReportSheet from "@/components/layouts/ExportReportSheet";
 
 // Safe date formatting utility
@@ -327,7 +331,10 @@ const useManageSolicitation = () => {
 
   return useMutation<ApiResponse<any>, ApiResponseError, string>({
     mutationFn: async (solicitationId: string) =>
-      postRequest({ url: `/procurement/solicitations/${solicitationId}/manage`, payload: {} }),
+      postRequest({
+        url: `/procurement/solicitations/${solicitationId}/manage`,
+        payload: {},
+      }),
     onSuccess: (result) => {
       toast.success(
         "Added as Manager",
@@ -648,7 +655,6 @@ export const SolicitationManagementPage = () => {
     setSelectedSolicitationId(null);
   };
 
-
   const handleConfirmSolicitation = () => {
     if (selectedSolicitationForAction) {
       confirmPublicSolicitationMutation.mutate(selectedSolicitationForAction);
@@ -683,11 +689,19 @@ export const SolicitationManagementPage = () => {
     if (!searchQuery) return currentData;
     return currentData.filter(
       (item) =>
-        (item.name ?? '').toLowerCase().includes((searchQuery ?? '').toLowerCase()) ||
-        (item.contact ?? '').toLowerCase().includes((searchQuery ?? '').toLowerCase()) ||
-        (item.solId ?? '').toLowerCase().includes((searchQuery ?? '').toLowerCase()) ||
+        (item.name ?? "")
+          .toLowerCase()
+          .includes((searchQuery ?? "").toLowerCase()) ||
+        (item.contact ?? "")
+          .toLowerCase()
+          .includes((searchQuery ?? "").toLowerCase()) ||
+        (item.solId ?? "")
+          .toLowerCase()
+          .includes((searchQuery ?? "").toLowerCase()) ||
         (item.categories ?? []).some((cat) =>
-          (cat.name ?? '').toLowerCase().includes((searchQuery ?? '').toLowerCase())
+          (cat.name ?? "")
+            .toLowerCase()
+            .includes((searchQuery ?? "").toLowerCase())
         )
     );
   }, [currentData, searchQuery]);
@@ -859,10 +873,7 @@ export const SolicitationManagementPage = () => {
           header: "Question Deadline",
           cell: ({ row }) => (
             <span>
-              {safeFormatDate(
-                row.original.questionDeadline,
-                "MMM d, yyyy"
-              )}
+              {safeFormatDate(row.original.questionDeadline, "MMM d, yyyy")}
             </span>
           ),
         },
@@ -908,26 +919,37 @@ export const SolicitationManagementPage = () => {
                 >
                   View Details
                 </DropdownMenuItem>
-                {activeTab === "all" && isProcurement && !row.original.owner && (
-                  <ConfirmAlert
-                    type="alert"
-                    title="Manage Solicitation"
-                    text="Are you sure you want to add this solicitation to your managed list?"
-                    primaryButtonText="Confirm"
-                    secondaryButtonText="Cancel"
-                    showSecondaryButton
-                    primaryButtonLoading={isManagingSolicitation}
-                    trigger={
-                      <DropdownMenuItem
-                        className="py-3 px-4 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20"
-                        disabled={isManagingSolicitation}
-                      >
-                        {isManagingSolicitation ? "Adding..." : "Manage Solicitation"}
-                      </DropdownMenuItem>
-                    }
-                    onPrimaryAction={() => manageSolicitationMutation.mutate(row.original._id)}
-                  />
-                )}
+                {activeTab === "all" &&
+                  isProcurement &&
+                  !row.original.owner && (
+                    <ConfirmAlert
+                      type="alert"
+                      title="Manage Solicitation"
+                      text="Are you sure you want to add this solicitation to your managed list?"
+                      primaryButtonText="Confirm"
+                      secondaryButtonText="Cancel"
+                      showSecondaryButton
+                      primaryButtonLoading={isManagingSolicitation}
+                      trigger={
+                        <Button
+                          className={cn(
+                            "flex items-center gap-2 bg-gray-300 text-gray-800 hover:bg-gray-400",
+                            {
+                              "!bg-transparent !text-gray-600": true,
+                            }
+                          )}
+                          disabled={isManagingSolicitation}
+                        >
+                          {isManagingSolicitation
+                            ? "Adding..."
+                            : "Manage Solicitation"}
+                        </Button>
+                      }
+                      onPrimaryAction={() =>
+                        manageSolicitationMutation.mutate(row.original._id)
+                      }
+                    />
+                  )}
                 <EditSolicitationDialog
                   solicitation={row.original as any}
                   isLink
