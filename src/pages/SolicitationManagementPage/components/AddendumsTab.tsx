@@ -37,6 +37,7 @@ import * as yup from "yup";
 import { useWatch } from "react-hook-form";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
+import { DeadlineUpdates } from "../SolicitationDetailPage";
 
 // Addendum type definition based on API schema
 type SolicitationAddendum = {
@@ -71,6 +72,7 @@ type Addendum = {
 
 interface AddendumsTabProps {
   solicitationId?: string;
+  deadlines?: DeadlineUpdates[];
   solicitationStatus?: string;
 }
 
@@ -185,7 +187,7 @@ const useAddendums = (solicitationId: string) => {
   });
 };
 
-const AddendumsTab: React.FC<AddendumsTabProps> = ({ solicitationId, solicitationStatus }) => {
+const AddendumsTab: React.FC<AddendumsTabProps> = ({ solicitationId, solicitationStatus, deadlines }) => {
   const toast = useToastHandler();
   const queryClient = useQueryClient();
   const { isVendor } = useUserRole();
@@ -498,6 +500,7 @@ const AddendumsTab: React.FC<AddendumsTabProps> = ({ solicitationId, solicitatio
           {selectedAddendum && (
             <AddendumDetailsSheet
               addendum={selectedAddendum}
+              deadlines={deadlines ?? []}
               solicitationId={solicitationId!}
               onClose={() => setIsDetailsSheetOpen(false)}
             />

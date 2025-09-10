@@ -139,6 +139,14 @@ export interface ID {
   name: string;
 }
 
+export interface DeadlineUpdates {
+  submissionDeadline: string;
+  questionDeadline: null;
+  bidIntentDeadline: null;
+  updatedAt: string;
+  _id: string;
+}
+
 export interface Invite {
   _id: string;
   email: string;
@@ -159,6 +167,7 @@ export type Solicitation = {
   bidIntentDeadline?: string;
   timezone: string;
   solId: string;
+  deadlineUpdate: DeadlineUpdates[]
   events: SolicitationEvent[];
   files: SolicitationFile[];
   vendors: SolicitationVendor[];
@@ -1436,6 +1445,7 @@ export const SolicitationDetailPage = () => {
         <TabsContent value="addendums">
           <AddendumsTab
             solicitationId={id}
+            deadlines={solicitation.deadlineUpdate || []}
             solicitationStatus={solicitation?.status}
           />
         </TabsContent>

@@ -10,6 +10,7 @@ import { format } from "date-fns";
 import { PageLoader } from "@/components/ui/PageLoader";
 import { getFileExtension, getFileIcon } from "@/lib/fileUtils.tsx";
 import { DocumentViewer } from "@/components/ui/DocumentViewer";
+import { DeadlineUpdates } from "../SolicitationDetailPage";
 
 // Safe date formatting utility
 const safeFormatDate = (
@@ -54,6 +55,7 @@ interface AddendumDetailsSheetProps {
     datePublished: string;
     status: "draft" | "publish";
   };
+  deadlines: DeadlineUpdates[];
   solicitationId: string;
   onClose: () => void;
 }
@@ -70,6 +72,7 @@ const formatFileSize = (bytes: number): string => {
 const AddendumDetailsSheet: React.FC<AddendumDetailsSheetProps> = ({
   addendum,
   solicitationId,
+  deadlines
   // onClose,
 }) => {
   const [viewerOpen, setViewerOpen] = useState(false);
@@ -184,6 +187,24 @@ const AddendumDetailsSheet: React.FC<AddendumDetailsSheetProps> = ({
                     |{" "}
                     {safeFormatDate(
                       addendumDetail.submissionDeadline,
+                      "h:mm a"
+                    )}
+                  </p>
+                </div>
+              )}
+              {deadlines?.length > 0 && (
+                <div>
+                  <h4 className="text-sm font-medium text-gray-500 mb-2">
+                    Old Submissions Deadline
+                  </h4>
+                  <p className="text-sm font-medium text-gray-900">
+                    {safeFormatDate(
+                      deadlines?.[0].submissionDeadline,
+                      "MMMM d, yyyy"
+                    )}{" "}
+                    |{" "}
+                    {safeFormatDate(
+                      deadlines?.[0].submissionDeadline,
                       "h:mm a"
                     )}
                   </p>
