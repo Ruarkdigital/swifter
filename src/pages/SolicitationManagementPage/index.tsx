@@ -797,18 +797,6 @@ export const SolicitationManagementPage = () => {
                   >
                     View Details
                   </DropdownMenuItem>
-                  {/* Removed Manage Solicitation for vendor actions */}
-                  {/* Removed Manage Solicitation for vendor actions */}
-                   <EditSolicitationDialog
-                     solicitation={row.original as any}
-                     isLink
-                   />
-                  <DropdownMenuItem
-                    className="py-3 px-4 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
-                    onClick={() => handleDeleteClick(row.original._id)}
-                  >
-                    Delete
-                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             );

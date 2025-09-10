@@ -1769,12 +1769,12 @@ export class DashboardDataTransformer {
       }),
       type: action.type || "unknown",
       date:
-        action.date || action.createdAt
+       action.createdAt
           ? format(
-              new Date(action.date || action.createdAt),
+              new Date(action.createdAt),
               "MMM d, yyyy h:mm a 'GMT'xxx"
             )
-          : format(new Date(), "MMM d, yyyy h:mm a 'GMT'xxx"),
+          : undefined,
     }));
   }
 
