@@ -53,6 +53,7 @@ const Step3Form = ({ control, isEdit = false }: Step3FormProps) => {
   const documentTypeOptions = [
     { label: "PRICING", value: "PRICING" },
     { label: "DOC", value: "DOC" },
+    { label: "PDF", value: "PDF" },
     { label: "XLSX", value: "XLSX" },
     { label: "PNG", value: "PNG" },
     { label: "ZIP", value: "ZIP" }
