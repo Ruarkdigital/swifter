@@ -37,6 +37,7 @@ export interface Vendor {
   id: string;
   status: string;
   responseStatus: string;
+  invitedAt: string
 }
 
 // API response type for invitation dashboard stats
@@ -86,7 +87,7 @@ const transformSolicitationToInvitation = (
     solicitationName: solicitation.name,
     solicitationId: solicitation.solId,
     rfp: solicitation.typeId?.name || "RFP",
-    invitedDate: format(new Date(solicitation.createdAt), "MMM d, yyyy, pppp"),
+    invitedDate: format(new Date( solicitation?.vendor?.invitedAt ?? solicitation.createdAt), "MMM d, yyyy, pppp"),
     deadline: format(
       new Date(solicitation.submissionDeadline),
       "MMM d, yyyy, pppp"
