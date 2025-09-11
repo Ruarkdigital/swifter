@@ -117,7 +117,7 @@ const transformEvaluationData = (
     name: item.solicitationName,
     solicitationId: item._id,
     type: item.solicitationType,
-    deadline: safeFormatDate(item.endDate, "MMM dd, yyyy", "N/A"),
+    deadline: safeFormatDate(item.endDate, "MMM dd, yyyy, hh:mm aaa", "N/A"),
     daysLeft: calculateDaysLeft(item.endDate),
     status: item.status as "Active" | "Pending" | "Completed",
     owner: item.owner,
