@@ -1,5 +1,13 @@
 import { useForgeValues } from "@/lib/forge";
-import { X, Upload, Check, Loader2, FileText, AlertCircle, RotateCcw } from "lucide-react";
+import {
+  X,
+  Upload,
+  Check,
+  Loader2,
+  FileText,
+  AlertCircle,
+  RotateCcw,
+} from "lucide-react";
 import { getSimpleFileExtension, formatFileSize } from "@/lib/fileUtils.tsx";
 import { postRequest } from "@/lib/axiosInstance";
 import { ApiResponseError } from "@/types";
@@ -29,14 +37,20 @@ interface UploadedFile {
 // Type for selected files with upload state
 export interface FileWithUploadState {
   file: File;
-  status: 'pending' | 'uploading' | 'uploaded' | 'failed';
+  status: "pending" | "uploading" | "uploaded" | "failed";
   progress: number;
   uploadedData?: UploadedFile;
   error?: string;
 }
 
 // Simple Progress component
-const Progress = ({ value, className }: { value: number; className?: string }) => (
+const Progress = ({
+  value,
+  className,
+}: {
+  value: number;
+  className?: string;
+}) => (
   <div className={cn("w-full bg-gray-200 rounded-full h-2", className)}>
     <div
       className="bg-blue-600 h-2 rounded-full transition-all duration-200 ease-out"
@@ -46,20 +60,26 @@ const Progress = ({ value, className }: { value: number; className?: string }) =
 );
 
 // Custom dropzone component
-const DropzoneArea = ({ onFileSelect, disabled }: {
+const DropzoneArea = ({
+  onFileSelect,
+  disabled,
+}: {
   onFileSelect: (files: FileList) => void;
   disabled: boolean;
 }) => {
   const [isDragOver, setIsDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (!disabled) {
-      setIsDragOver(true);
-    }
-  }, [disabled]);
+  const handleDragOver = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (!disabled) {
+        setIsDragOver(true);
+      }
+    },
+    [disabled]
+  );
 
   const handleDragLeave = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -67,15 +87,18 @@ const DropzoneArea = ({ onFileSelect, disabled }: {
     setIsDragOver(false);
   }, []);
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragOver(false);
-    
-    if (disabled || !e.dataTransfer.files) return;
-    
-    onFileSelect(e.dataTransfer.files);
-  }, [disabled, onFileSelect]);
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDragOver(false);
+
+      if (disabled || !e.dataTransfer.files) return;
+
+      onFileSelect(e.dataTransfer.files);
+    },
+    [disabled, onFileSelect]
+  );
 
   const handleClick = useCallback(() => {
     if (!disabled && fileInputRef.current) {
@@ -83,21 +106,24 @@ const DropzoneArea = ({ onFileSelect, disabled }: {
     }
   }, [disabled]);
 
-  const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      onFileSelect(e.target.files);
-    }
-  }, [onFileSelect]);
+  const handleFileChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (e.target.files) {
+        onFileSelect(e.target.files);
+      }
+    },
+    [onFileSelect]
+  );
 
   return (
     <div
       className={cn(
         "relative rounded-lg border-2 border-dashed transition-all duration-200 min-h-40 flex items-center justify-center cursor-pointer",
-        disabled 
-          ? "border-gray-300 bg-gray-50 cursor-not-allowed opacity-50" 
-          : isDragOver 
-            ? "border-blue-500 bg-blue-50" 
-            : "border-gray-300 hover:border-gray-400"
+        disabled
+          ? "border-gray-300 bg-gray-50 cursor-not-allowed opacity-50"
+          : isDragOver
+          ? "border-blue-500 bg-blue-50"
+          : "border-gray-300 hover:border-gray-400"
       )}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
@@ -131,7 +157,9 @@ const DropzoneArea = ({ onFileSelect, disabled }: {
         </svg>
         <p className="mb-1 text-sm text-gray-500 dark:text-gray-400">
           <span className="font-semibold text-primary">
-            {disabled ? "Uploading files..." : "Drag & Drop or Click to choose file"}
+            {disabled
+              ? "Uploading files..."
+              : "Drag & Drop or Click to choose file"}
           </span>
         </p>
         <p className="text-xs text-gray-500 dark:text-gray-400">
@@ -143,18 +171,17 @@ const DropzoneArea = ({ onFileSelect, disabled }: {
 };
 
 // File list item component with upload status
-const FileListItem = ({ 
-  fileState, 
-  onRemove, 
-  onRetry 
+const FileListItem = ({
+  fileState,
+  onRemove,
+  onRetry,
 }: {
   fileState: FileWithUploadState;
   onRemove: () => void;
   onRetry: () => void;
 }) => {
-
-
   const getFileIcon = (filename: string) => {
+    if (!filename) return null;
     const extension = filename.split(".").pop()?.toLowerCase();
     const iconClass = "w-6 h-6";
 
@@ -207,11 +234,11 @@ const FileListItem = ({
 
   const getStatusIcon = () => {
     switch (fileState.status) {
-      case 'uploading':
+      case "uploading":
         return <Loader2 className="h-4 w-4 animate-spin text-blue-600" />;
-      case 'uploaded':
+      case "uploaded":
         return <Check className="h-4 w-4 text-green-600" />;
-      case 'failed':
+      case "failed":
         return <AlertCircle className="h-4 w-4 text-red-600" />;
       default:
         return null;
@@ -220,43 +247,50 @@ const FileListItem = ({
 
   const getStatusText = () => {
     switch (fileState.status) {
-      case 'uploading':
+      case "uploading":
         return `Uploading... ${fileState.progress}%`;
-      case 'uploaded':
-        return 'Uploaded successfully';
-      case 'failed':
-        return fileState.error || 'Upload failed';
+      case "uploaded":
+        return "Uploaded successfully";
+      case "failed":
+        return fileState.error || "Upload failed";
       default:
-        return 'Ready to upload';
+        return "Ready to upload";
     }
   };
 
   return (
     <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg mb-2 border">
       <div className="flex items-center space-x-3 flex-1">
-        {getFileIcon(fileState.file.name)}
+        {getFileIcon(fileState.file?.name)}
         <div className="flex-1">
           <p className="text-sm font-medium text-gray-900 dark:text-white">
-            {fileState.file.name}
+            {fileState.file?.name || "Unknown file"}
           </p>
           <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
-            <span>{getSimpleFileExtension(fileState.file.name).toUpperCase()} • {formatFileSize(fileState.file.size)}</span>
+            <span>
+              {getSimpleFileExtension(fileState.file?.name || "").toUpperCase()}{" "}
+              • {formatFileSize(fileState.file?.size || 0)}
+            </span>
             {getStatusIcon()}
-            <span className={cn(
-              fileState.status === 'failed' ? 'text-red-600' : 
-              fileState.status === 'uploaded' ? 'text-green-600' : 
-              'text-gray-500'
-            )}>
+            <span
+              className={cn(
+                fileState.status === "failed"
+                  ? "text-red-600"
+                  : fileState.status === "uploaded"
+                  ? "text-green-600"
+                  : "text-gray-500"
+              )}
+            >
               {getStatusText()}
             </span>
           </div>
-          {fileState.status === 'uploading' && (
+          {fileState.status === "uploading" && (
             <Progress value={fileState.progress} className="mt-2" />
           )}
         </div>
       </div>
       <div className="flex items-center gap-2">
-        {fileState.status === 'failed' && (
+        {fileState.status === "failed" && (
           <button
             type="button"
             onClick={onRetry}
@@ -270,7 +304,7 @@ const FileListItem = ({
           type="button"
           onClick={onRemove}
           className="text-gray-400 hover:text-red-500 transition-colors p-1"
-          disabled={fileState.status === 'uploading'}
+          disabled={fileState.status === "uploading"}
         >
           <X className="h-4 w-4" />
         </button>
@@ -289,16 +323,18 @@ export const FileUploadManager = ({ control }: { control: any }) => {
   const sessionId = useSessionId();
   const setSessionId = useSetSessionId();
   const clearSession = useClearSession();
-  
+
   const [isUploading, setIsUploading] = useState(false);
   const [initialized, setInitialized] = useState(false);
   const toast = useToastHandler();
   const { setValue, getValues } = useForgeValues({ control });
-  
+
   // Initialize session on component mount
   useEffect(() => {
     if (!sessionId) {
-      const newSessionId = `solicitation-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      const newSessionId = `solicitation-${Date.now()}-${Math.random()
+        .toString(36)
+        .substr(2, 9)}`;
       setSessionId(newSessionId);
     }
   }, [sessionId, setSessionId]);
@@ -309,37 +345,44 @@ export const FileUploadManager = ({ control }: { control: any }) => {
       const formValues = getValues();
       // console.log({ formValues })
       const existingDocuments = formValues?.documents;
-      
-      if (existingDocuments && Array.isArray(existingDocuments) && existingDocuments.length > 0) {
+
+      if (
+        existingDocuments &&
+        Array.isArray(existingDocuments) &&
+        existingDocuments.length > 0
+      ) {
         // Convert existing documents to FileWithUploadState format
         const existingFileStates = existingDocuments.map((doc: any) => ({
-          file: new File([], doc.name || 'document', { type: doc.type || 'application/octet-stream' }),
-          status: 'uploaded' as const,
+          file: new File([], doc.name || "document", {
+            type: doc.type || "application/octet-stream",
+          }),
+          status: "uploaded" as const,
           progress: 100,
           uploadedData: {
             name: doc.name,
             url: doc.url,
             type: doc.type,
-            size: doc.size || '0 Bytes',
-            uploadedAt: new Date().toISOString()
-          }
+            size: doc.size || "0 Bytes",
+            uploadedAt: new Date().toISOString(),
+          },
         }));
-        
+
         // Add existing files to state
         addFiles(existingFileStates);
       }
-      
+
       setInitialized(true);
-     }
-   }, [initialized, sessionId, addFiles, getValues, filesWithState.length]);
- 
-   // Cleanup on page unload or navigation away
+    }
+  }, [initialized, sessionId, addFiles, getValues, filesWithState.length]);
+
+  // Cleanup on page unload or navigation away
   useEffect(() => {
     const handleBeforeUnload = (event: BeforeUnloadEvent) => {
       // Only show warning if there are files in the session
       if (filesWithState.length > 0) {
         event.preventDefault();
-        event.returnValue = 'You have uploaded files that will be lost if you leave this page. Are you sure you want to continue?';
+        event.returnValue =
+          "You have uploaded files that will be lost if you leave this page. Are you sure you want to continue?";
         return event.returnValue;
       }
     };
@@ -350,13 +393,13 @@ export const FileUploadManager = ({ control }: { control: any }) => {
     };
 
     // Add event listeners
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    window.addEventListener('unload', handleUnload);
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    window.addEventListener("unload", handleUnload);
 
     // Cleanup event listeners
     return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-      window.removeEventListener('unload', handleUnload);
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+      window.removeEventListener("unload", handleUnload);
     };
   }, [filesWithState.length, clearSession]);
 
@@ -368,31 +411,47 @@ export const FileUploadManager = ({ control }: { control: any }) => {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
   };
 
-  const handleFileSelect = useCallback((fileList: FileList) => {
-    const newFiles = Array.from(fileList).map(file => ({
-      file,
-      status: 'pending' as const,
-      progress: 0,
-    }));
+  const handleFileSelect = useCallback(
+    (fileList: FileList) => {
+      const newFiles = Array.from(fileList).map((file) => ({
+        file,
+        status: "pending" as const,
+        progress: 0,
+      }));
 
-    addFiles(newFiles);
-  }, [addFiles]);
+      addFiles(newFiles);
+    },
+    [addFiles]
+  );
 
-  const handleRemoveFile = useCallback((index: number) => {
-    removeFile(index);
-  }, [removeFile]);
+  const handleRemoveFile = useCallback(
+    (index: number) => {
+      removeFile(index);
+    },
+    [removeFile]
+  );
 
-  const handleRetryFile = useCallback((index: number) => {
-    updateFileState(index, { status: 'pending', progress: 0, error: undefined });
-  }, [updateFileState]);
+  const handleRetryFile = useCallback(
+    (index: number) => {
+      updateFileState(index, {
+        status: "pending",
+        progress: 0,
+        error: undefined,
+      });
+    },
+    [updateFileState]
+  );
 
-  const uploadSingleFileWithProgress = async (fileState: FileWithUploadState, index: number) => {
+  const uploadSingleFileWithProgress = async (
+    fileState: FileWithUploadState,
+    index: number
+  ) => {
     const formData = new FormData();
     formData.append("file", fileState.file);
 
     try {
       // Update status to uploading
-      updateFileState(index, { status: 'uploading', progress: 0 });
+      updateFileState(index, { status: "uploading", progress: 0 });
 
       const response = await postRequest({
         url: "/upload",
@@ -403,13 +462,15 @@ export const FileUploadManager = ({ control }: { control: any }) => {
           },
           onUploadProgress: (progressEvent) => {
             if (progressEvent.total) {
-              const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+              const progress = Math.round(
+                (progressEvent.loaded * 100) / progressEvent.total
+              );
               const currentFile = filesWithState[index];
-              if (currentFile && currentFile.status === 'uploading') {
+              if (currentFile && currentFile.status === "uploading") {
                 updateFileState(index, { progress });
               }
             }
-          }
+          },
         },
       });
 
@@ -417,37 +478,37 @@ export const FileUploadManager = ({ control }: { control: any }) => {
         const uploadedFile = response.data.data[0];
         const currentFile = filesWithState[index];
         updateFileState(index, {
-          status: 'uploaded',
+          status: "uploaded",
           progress: 100,
           uploadedData: {
             ...uploadedFile,
-            size: formatFileSize(currentFile.file.size)
-          }
+            size: formatFileSize(currentFile.file.size),
+          },
         });
         return uploadedFile;
       }
     } catch (error) {
       const err = error as ApiResponseError;
       updateFileState(index, {
-        status: 'failed',
+        status: "failed",
         progress: 0,
-        error: err?.response?.data?.message || 'Upload failed'
+        error: err?.response?.data?.message || "Upload failed",
       });
       throw error;
     }
   };
 
   const handleUploadAll = async () => {
-    if (filesWithState.every(f => f.status === 'uploaded')) return;
+    if (filesWithState.every((f) => f.status === "uploaded")) return;
 
     setIsUploading(true);
     try {
       for (let i = 0; i < filesWithState.length; i++) {
         const fileState = filesWithState[i];
-        if (fileState.status === 'pending' || fileState.status === 'failed') {
+        if (fileState.status === "pending" || fileState.status === "failed") {
           await uploadSingleFileWithProgress(fileState, i);
           // Small delay between uploads
-          await new Promise(resolve => setTimeout(resolve, 500));
+          await new Promise((resolve) => setTimeout(resolve, 500));
         }
       }
 
@@ -462,13 +523,15 @@ export const FileUploadManager = ({ control }: { control: any }) => {
   // Update form state with uploaded file URLs
   useEffect(() => {
     const uploadedFiles = filesWithState
-      .filter(f => f.status === 'uploaded' && f.uploadedData)
-      .map(f => f.uploadedData!);
-    
+      .filter((f) => f.status === "uploaded" && f.uploadedData)
+      .map((f) => f.uploadedData!);
+
     setValue("documents", uploadedFiles.length > 0 ? uploadedFiles : null);
   }, [filesWithState, setValue]);
 
-  const allFilesUploaded = filesWithState.length > 0 && filesWithState.every(f => f.status === 'uploaded');
+  const allFilesUploaded =
+    filesWithState.length > 0 &&
+    filesWithState.every((f) => f.status === "uploaded");
   const hasFiles = filesWithState.length > 0;
 
   return (
@@ -476,18 +539,15 @@ export const FileUploadManager = ({ control }: { control: any }) => {
       <label className="text-sm font-medium text-gray-700 mb-2 block">
         Upload Files
       </label>
-      
-      <DropzoneArea 
-        onFileSelect={handleFileSelect} 
-        disabled={isUploading}
-      />
+
+      <DropzoneArea onFileSelect={handleFileSelect} disabled={isUploading} />
 
       {hasFiles && (
         <div className="mt-4">
           <div className="space-y-2">
             {filesWithState.map((fileState, index) => (
               <FileListItem
-                key={`${fileState.file.name}-${index}`}
+                key={`${fileState.file?.name || "unknown"}-${index}`}
                 fileState={fileState}
                 onRemove={() => handleRemoveFile(index)}
                 onRetry={() => handleRetryFile(index)}
@@ -516,7 +576,7 @@ export const FileUploadManager = ({ control }: { control: any }) => {
                 )}
               </Button>
             )}
-            
+
             {allFilesUploaded && (
               <div className="flex items-center text-green-600">
                 <Check className="h-4 w-4 mr-2" />

@@ -13,6 +13,7 @@ export const getFileExtension = (
   fileName: string,
   fileType: string
 ): string => {
+  if (!fileName) return "";
   const extension = fileName.split(".").pop()?.toUpperCase();
   if (extension) return extension;
 
@@ -74,6 +75,7 @@ export const getFileExtension = (
  * @returns The file extension in lowercase
  */
 export const getSimpleFileExtension = (filename: string): string => {
+  if (!filename) return "";
   return filename.split(".").pop()?.toLowerCase() || "";
 };
 
@@ -83,6 +85,7 @@ export const getSimpleFileExtension = (filename: string): string => {
  * @returns JSX element for the file icon
  */
 export const getFileIcon = (fileExtension: string) => {
+  if (!fileExtension) return <PdfSVG />;
   const ext = fileExtension.toUpperCase();
 
   const excelExtension = [
