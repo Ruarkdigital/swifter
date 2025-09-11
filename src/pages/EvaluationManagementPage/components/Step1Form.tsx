@@ -4,8 +4,10 @@ import { TextSelect } from "@/components/layouts/FormInputs/TextSelect";
 import { TextDatePicker } from "@/components/layouts/FormInputs/TextInput";
 import { useWatch } from "react-hook-form";
 import { useMemo } from "react";
+import { cn } from "@/lib/utils";
 
 interface Step1FormProps {
+  isEdit?: boolean;
   solicitationOptions: { label: string; value: string }[];
   timezoneOptions: { label: string; value: string }[];
   solicitationsData?: {
@@ -17,7 +19,7 @@ interface Step1FormProps {
   }[];
 }
 
-const Step1Form = ({ solicitationOptions, timezoneOptions, solicitationsData }: Step1FormProps) => {
+const Step1Form = ({ solicitationOptions, timezoneOptions, solicitationsData, isEdit }: Step1FormProps) => {
   // Watch for solicitation selection changes
   const selectedSolicitationId = useWatch({ name: "solicitation" });
   
@@ -42,7 +44,7 @@ const Step1Form = ({ solicitationOptions, timezoneOptions, solicitationsData }: 
           name="solicitation"
           component={TextCombo}
           label="Solicitation"
-          containerClass="hidden"
+          containerClass={cn("", { "hidden": isEdit })}
           placeholder="Select Solicitation"
           options={solicitationOptions}
         />

@@ -130,6 +130,9 @@ export const TextMultiSelect = (props: TextMultiSelectProps & Partial<ForgerSlot
     ...selectProps
   } = props;
 
+  // console.log({ value });
+  
+
   const handleValueChange = (selectedOptions: Option[]) => {
     if (onChange) {
       // For Forge compatibility

@@ -293,9 +293,11 @@ const EditSolicitationDialog = ({
     const vendors =
       s.vendors?.map((vendor: any) => ({
         value: vendor._id,
-        label: vendor?.id?.name|| vendor.email,
-        name: vendor?.id?.name|| vendor.email,
+        label: vendor?.id?.name|| vendor.email || vendor?.id?.invited?.email,
+        name: vendor?.id?.name|| vendor.email || vendor?.id?.invited?.email,
       })) || [];
+    
+      // console.log({ vendors, s })
 
     return {
       solicitationName: s.name || "",

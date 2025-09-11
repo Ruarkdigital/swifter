@@ -216,22 +216,25 @@ const EditEvaluationDialog = ({
       },
     });
 
-  const { mutateAsync: saveToDraft, isPending: isSavingToDraft } =
-    useMutation<ApiResponse<any>, ApiResponseError, UpdateEvaluationDraftPayload>({
-      mutationKey: ["saveEvaluationToDraft", evaluationId],
-      mutationFn: async (draftData) =>
-        await putRequest({
-          url: `/procurement/evaluations`,
-          payload: { ...draftData, id: evaluationId, status: "draft" },
-        }),
-      onSuccess: () => {
-        // Invalidate and refetch evaluation data
-        queryClient.invalidateQueries({
-          queryKey: ["evaluation-detail", evaluationId],
-        });
-        queryClient.invalidateQueries({ queryKey: ["evaluations"] });
-      },
-    });
+  const { mutateAsync: saveToDraft, isPending: isSavingToDraft } = useMutation<
+    ApiResponse<any>,
+    ApiResponseError,
+    UpdateEvaluationDraftPayload
+  >({
+    mutationKey: ["saveEvaluationToDraft", evaluationId],
+    mutationFn: async (draftData) =>
+      await putRequest({
+        url: `/procurement/evaluations`,
+        payload: { ...draftData, id: evaluationId, status: "draft" },
+      }),
+    onSuccess: () => {
+      // Invalidate and refetch evaluation data
+      queryClient.invalidateQueries({
+        queryKey: ["evaluation-detail", evaluationId],
+      });
+      queryClient.invalidateQueries({ queryKey: ["evaluations"] });
+    },
+  });
 
   // Transform solicitations data for dropdown options
   const solicitationOptions =
@@ -442,22 +445,30 @@ const EditEvaluationDialog = ({
       };
 
       // Only include fields with actual values
-      if (formData.solicitation && typeof formData.solicitation === 'string' && formData.solicitation.trim()) {
+      if (
+        formData.solicitation &&
+        typeof formData.solicitation === "string" &&
+        formData.solicitation.trim()
+      ) {
         // draftData.solicitation = formData.solicitation;
       }
-      
-      if (formData.timezone && typeof formData.timezone === 'string' && formData.timezone.trim()) {
+
+      if (
+        formData.timezone &&
+        typeof formData.timezone === "string" &&
+        formData.timezone.trim()
+      ) {
         draftData.timezone = formData.timezone;
       }
-      
+
       if (formData.start_date) {
         draftData.start_date = formData.start_date;
       }
-      
+
       if (formData.end_date) {
         draftData.end_date = formData.end_date;
       }
-      
+
       if (formData.group && formData.group.length > 0) {
         const validGroups = formData.group
           .filter((group) => group.name && group.name.trim())
@@ -470,12 +481,12 @@ const EditEvaluationDialog = ({
                 .filter((value) => value && value.trim()) || [],
           }))
           .filter((group) => group.evaluators.length > 0);
-        
+
         if (validGroups.length > 0) {
           draftData.group = validGroups;
         }
       }
-      
+
       if (formData.documents && formData.documents.length > 0) {
         const validDocuments = formData.documents
           .filter((document) => document.title && document.title.trim())
@@ -486,12 +497,12 @@ const EditEvaluationDialog = ({
             required: document.required ?? false,
             multiple: document.multiple ?? false,
           }));
-        
+
         if (validDocuments.length > 0) {
           draftData.documents = validDocuments;
         }
       }
-      
+
       if (formData.criteria && formData.criteria.length > 0) {
         const validCriteria = formData.criteria
           .filter((criteria) => criteria.title && criteria.title.trim())
@@ -505,7 +516,7 @@ const EditEvaluationDialog = ({
                 : String(criteria.score),
             group: criteria.group,
           }));
-        
+
         if (validCriteria.length > 0) {
           draftData.criteria = validCriteria;
         }
@@ -522,11 +533,11 @@ const EditEvaluationDialog = ({
       console.error("Error saving draft:", error);
       const err = error as ApiResponseError;
       toast.error(
-         "Save Failed",
-         err?.response?.data?.message ?? "Failed to save evaluation as draft"
-       );
-     }
-   };
+        "Save Failed",
+        err?.response?.data?.message ?? "Failed to save evaluation as draft"
+      );
+    }
+  };
 
   const getStepTitle = () => {
     switch (currentStep) {
@@ -580,6 +591,7 @@ const EditEvaluationDialog = ({
           <Forge control={forge.control} onSubmit={onSubmit}>
             {currentStep === 1 && (
               <Step1Form
+                isEdit
                 solicitationOptions={solicitationOptions}
                 timezoneOptions={timezoneOptions}
               />
