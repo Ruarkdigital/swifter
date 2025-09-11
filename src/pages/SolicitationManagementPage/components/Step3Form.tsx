@@ -27,9 +27,6 @@ const Step3Form = ({
     control,
   } as any);
 
-  console.log({ fields });
-  
-
   const submissionDeadlineDate = useWatch({ name: "submissionDeadlineDate", control });
   const maxDate = submissionDeadlineDate ? new Date(submissionDeadlineDate) : undefined;
 

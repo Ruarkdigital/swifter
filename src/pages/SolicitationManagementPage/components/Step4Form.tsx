@@ -291,8 +291,9 @@ export const FileUploadManager = ({ control }: { control: any }) => {
   const clearSession = useClearSession();
   
   const [isUploading, setIsUploading] = useState(false);
+  const [initialized, setInitialized] = useState(false);
   const toast = useToastHandler();
-  const { setValue } = useForgeValues({ control });
+  const { setValue, getValues } = useForgeValues({ control });
   
   // Initialize session on component mount
   useEffect(() => {
@@ -302,7 +303,37 @@ export const FileUploadManager = ({ control }: { control: any }) => {
     }
   }, [sessionId, setSessionId]);
 
-  // Cleanup on page unload or navigation away
+  // Initialize existing documents from form values
+  useEffect(() => {
+    if (!initialized && sessionId && filesWithState.length === 0) {
+      const formValues = getValues();
+      // console.log({ formValues })
+      const existingDocuments = formValues?.documents;
+      
+      if (existingDocuments && Array.isArray(existingDocuments) && existingDocuments.length > 0) {
+        // Convert existing documents to FileWithUploadState format
+        const existingFileStates = existingDocuments.map((doc: any) => ({
+          file: new File([], doc.name || 'document', { type: doc.type || 'application/octet-stream' }),
+          status: 'uploaded' as const,
+          progress: 100,
+          uploadedData: {
+            name: doc.name,
+            url: doc.url,
+            type: doc.type,
+            size: doc.size || '0 Bytes',
+            uploadedAt: new Date().toISOString()
+          }
+        }));
+        
+        // Add existing files to state
+        addFiles(existingFileStates);
+      }
+      
+      setInitialized(true);
+     }
+   }, [initialized, sessionId, addFiles, getValues, filesWithState.length]);
+ 
+   // Cleanup on page unload or navigation away
   useEffect(() => {
     const handleBeforeUnload = (event: BeforeUnloadEvent) => {
       // Only show warning if there are files in the session

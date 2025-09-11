@@ -64,15 +64,19 @@ const step3Schema = yup.object({
 });
 
 const documentSchema = yup.mixed().test({
-  name: 'isFileOrUploaded',
-  message: 'Document must be a valid file or uploaded document',
+  name: "isFileOrUploaded",
+  message: "Document must be a valid file or uploaded document",
   test: (value) => {
-    return value instanceof File || (value && typeof value === 'object' && 'url' in value);
+    return (
+      value instanceof File ||
+      (value && typeof value === "object" && "url" in value)
+    );
   },
 });
 
 const vendorSchema = yup.object({
   value: yup.string().required("Vendor ID is required"),
+  label: yup.string().required("Vendor Name is required"),
 });
 
 const step4Schema = yup.object({
@@ -250,10 +254,15 @@ const EditSolicitationDialog = ({
   ];
 
   // Fetch full solicitation details when dialog opens to ensure all fields are available
-  const { data: solicitationData } = useQuery<ApiResponse<any>, ApiResponseError>({
+  const { data: solicitationData } = useQuery<
+    ApiResponse<any>,
+    ApiResponseError
+  >({
     queryKey: ["solicitation", solicitation._id],
     queryFn: async () =>
-      await getRequest({ url: `/procurement/solicitations/${solicitation._id}` }),
+      await getRequest({
+        url: `/procurement/solicitations/${solicitation._id}`,
+      }),
     enabled: !!open && !!solicitation?._id,
   });
 
@@ -278,10 +287,15 @@ const EditSolicitationDialog = ({
   // Prepare default values from solicitation data
   const getDefaultValues = (): EditSolicitationFormData => {
     const s: any = effectiveSolicitation || {};
-    const typeId =
-      typeof s.typeId === "object" ? s.typeId._id : s.typeId;
+    const typeId = typeof s.typeId === "object" ? s.typeId._id : s.typeId;
     const categories = s.categories || s.categoryIds || [];
     const categoryId = categories.length > 0 ? categories[0]._id : "";
+    const vendors =
+      s.vendors?.map((vendor: any) => ({
+        value: vendor._id,
+        label: vendor?.id?.name|| vendor.email,
+        name: vendor?.id?.name|| vendor.email,
+      })) || [];
 
     return {
       solicitationName: s.name || "",
@@ -295,30 +309,27 @@ const EditSolicitationDialog = ({
       ),
       timezone: s.timezone || "Africa/Lagos",
       bidIntent: s.bidIntent || "",
-      bidIntentDeadlineDate: formatDateForInput(
-        s.bidIntentDeadline || ""
-      ),
+      bidIntentDeadlineDate: formatDateForInput(s.bidIntentDeadline || ""),
       visibility:
         s.visibility === "private" ? "invite-only" : s.visibility || "public",
-      event:
-        s.events?.map((evt: any) => ({
-          event: evt.eventType || "",
-          location: evt.eventLocation || "",
-          date: formatDateForInput(evt.eventDate),
-          time: formatTimeForInput(evt.eventDate),
-          note: evt.eventDescription || "",
-        })) || [{ event: "", location: "", date: "", time: "", note: "" }],
+      event: s.events?.map((evt: any) => ({
+        event: evt.eventType || "",
+        location: evt.eventLocation || "",
+        date: formatDateForInput(evt.eventDate),
+        time: formatTimeForInput(evt.eventDate),
+        note: evt.eventDescription || "",
+      })) || [{ event: "", location: "", date: "", time: "", note: "" }],
       documents:
         s.files?.map((file: any) => ({
+          _id: file._id,
           name: file.name,
           url: file.url,
           size: file.size,
           type: file.type,
+          originalName: file.originalName || file.name,
+          fileName: file.fileName || file.name,
         })) || [],
-      vendor:
-        s.vendors?.map((vendor: any) => ({
-          value: vendor._id,
-        })) || [],
+      vendor: vendors,
       message: "",
     };
   };
@@ -396,16 +407,33 @@ const EditSolicitationDialog = ({
 
       if (completeData.documents && completeData.documents.length > 0) {
         // Separate files that need upload from already uploaded files
-        const filesToUpload = completeData.documents.filter((doc: any) => doc instanceof File);
+        const filesToUpload = completeData.documents.filter(
+          (doc: any) => doc instanceof File
+        );
         const alreadyUploaded = (completeData.documents as any[])
           .filter(
-            (doc: any): doc is { name: string; url: string; size: string | number; type: string } =>
-              doc && typeof doc === "object" && "url" in doc && "name" in doc && "size" in doc && "type" in doc
+            (
+              doc: any
+            ): doc is {
+              name: string;
+              url: string;
+              size: string | number;
+              type: string;
+            } =>
+              doc &&
+              typeof doc === "object" &&
+              "url" in doc &&
+              "name" in doc &&
+              "size" in doc &&
+              "type" in doc
           )
           .map((doc) => ({
             name: String(doc.name),
             url: String(doc.url),
-            size: typeof doc.size === "number" ? String(doc.size) : String(doc.size),
+            size:
+              typeof doc.size === "number"
+                ? String(doc.size)
+                : String(doc.size),
             type: String(doc.type),
           }));
 
@@ -535,11 +563,10 @@ const EditSolicitationDialog = ({
     }
   };
 
-
   const handleSaveAsDraft = async () => {
     try {
       const formData = forge.getValues();
-      
+
       // Handle file uploads first if there are files
       let uploadedFiles: Array<{
         name: string;
@@ -550,16 +577,33 @@ const EditSolicitationDialog = ({
 
       if (formData.documents && formData.documents.length > 0) {
         // Separate files that need upload from already uploaded files
-        const filesToUpload = formData.documents.filter((doc: any) => doc instanceof File);
+        const filesToUpload = formData.documents.filter(
+          (doc: any) => doc instanceof File
+        );
         const alreadyUploaded = (formData.documents as any[])
           .filter(
-            (doc: any): doc is { name: string; url: string; size: string | number; type: string } =>
-              doc && typeof doc === "object" && "url" in doc && "name" in doc && "size" in doc && "type" in doc
+            (
+              doc: any
+            ): doc is {
+              name: string;
+              url: string;
+              size: string | number;
+              type: string;
+            } =>
+              doc &&
+              typeof doc === "object" &&
+              "url" in doc &&
+              "name" in doc &&
+              "size" in doc &&
+              "type" in doc
           )
           .map((doc) => ({
             name: String(doc.name),
             url: String(doc.url),
-            size: typeof doc.size === "number" ? String(doc.size) : String(doc.size),
+            size:
+              typeof doc.size === "number"
+                ? String(doc.size)
+                : String(doc.size),
             type: String(doc.type),
           }));
 
@@ -598,9 +642,11 @@ const EditSolicitationDialog = ({
           ? Array.isArray(formData.category)
             ? formData.category
             : [formData.category]
-          : (effectiveSolicitation.categories || effectiveSolicitation.categoryIds || []).map(
-              (cat: any) => cat._id
-            ),
+          : (
+              effectiveSolicitation.categories ||
+              effectiveSolicitation.categoryIds ||
+              []
+            ).map((cat: any) => cat._id),
         estimatedCost: formData.estimatedCost
           ? parseFloat(formData.estimatedCost)
           : effectiveSolicitation.estimatedCost,
@@ -697,7 +743,8 @@ const EditSolicitationDialog = ({
       const err = error as ApiResponseError;
       toast.error(
         "Save Failed",
-        err?.message ?? "Failed to save solicitation as draft. Please try again."
+        err?.message ??
+          "Failed to save solicitation as draft. Please try again."
       );
     }
   };
@@ -801,11 +848,14 @@ const EditSolicitationDialog = ({
       <DialogTrigger asChild>
         <Button
           // variant={isLink ? "link" : "default"}
-          className={cn("flex items-center gap-2 bg-gray-300 text-gray-800 hover:bg-gray-400", {
-            "!bg-transparent !text-gray-600": isLink,
-          })}
+          className={cn(
+            "flex items-center gap-2 bg-gray-300 text-gray-800 hover:bg-gray-400",
+            {
+              "!bg-transparent !text-gray-600": isLink,
+            }
+          )}
         >
-         {!isLink && <Edit className="h-4 w-4" />}
+          {!isLink && <Edit className="h-4 w-4" />}
           Edit Solicitation
         </Button>
       </DialogTrigger>
@@ -839,7 +889,10 @@ const EditSolicitationDialog = ({
 
           {currentStep === 3 && (
             <>
-              <Step3Form eventOptions={eventOptions} control={forge.control as any} />
+              <Step3Form
+                eventOptions={eventOptions}
+                control={forge.control as any}
+              />
             </>
           )}
 
@@ -869,7 +922,8 @@ const EditSolicitationDialog = ({
           {/* Footer Buttons */}
           <div
             className={cn("flex items-center justify-end pt-6  px-6 py-6", {
-              "justify-between": currentStep > 1 && effectiveSolicitation.status === "draft",
+              "justify-between":
+                currentStep > 1 && effectiveSolicitation.status === "draft",
             })}
           >
             {currentStep > 1 && effectiveSolicitation.status === "draft" && (
@@ -894,20 +948,16 @@ const EditSolicitationDialog = ({
               </Button>
               <Button
                 type={currentStep === 6 ? "submit" : "button"}
-                onClick={
-                  currentStep === 6
-                    ? undefined
-                    : validateAndProceed
-                }
+                onClick={currentStep === 6 ? undefined : validateAndProceed}
                 disabled={isPending}
                 className="px-8 py-2 bg-[#2A4467] hover:bg-[#1e3147] text-white rounded-lg"
               >
                 {currentStep === 6
                   ? isPending
                     ? "Updating..."
-                    : effectiveSolicitation.status === "draft" 
-                      ? "Publish Solicitation"
-                      : "Update Solicitation"
+                    : effectiveSolicitation.status === "draft"
+                    ? "Publish Solicitation"
+                    : "Update Solicitation"
                   : "Continue"}
               </Button>
             </div>
