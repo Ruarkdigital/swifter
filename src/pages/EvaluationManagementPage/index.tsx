@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { FileText } from "lucide-react";
-import { format, startOfDay, endOfDay, subDays } from "date-fns";
+import { format, startOfDay, endOfDay, subDays, differenceInDays } from "date-fns";
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import CreateEvaluationDialog from "./components/CreateEvaluationDialog";
@@ -91,7 +91,7 @@ const safeFormatDate = (
   return format(date, pattern);
 };
 
-// Helper function to calculate days left
+// Helper function to calculate days left (negative values indicate overdue)
 const calculateDaysLeft = (deadline: string): number => {
   if (!deadline) return 0;
 
@@ -99,9 +99,7 @@ const calculateDaysLeft = (deadline: string): number => {
   if (isNaN(deadlineDate.getTime())) return 0;
 
   const today = new Date();
-  const diffTime = deadlineDate.getTime() - today.getTime();
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-  return Math.max(0, diffDays);
+  return differenceInDays(deadlineDate, today);
 };
 
 // Transform API data to component format

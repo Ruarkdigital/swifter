@@ -562,7 +562,7 @@ export const SolicitationDetailPage = () => {
       accessorKey: "responseStatus",
       header: "Response Status",
       cell: ({ row }) => (
-        <span className="">{row.original.responseStatus || "-"}</span>
+        <span className="capitalize">{row.original.responseStatus || "-"}</span>
       ),
     },
     {
