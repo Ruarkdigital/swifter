@@ -769,7 +769,7 @@ export const SolicitationManagementPage = () => {
                   Assigned:{" "}
                   {safeFormatDate(
                     row.original.assignedAt,
-                    "MMM d, yyyy"
+                    "MMM d, yyyy, h:mm a"
                   )}
                 </div>
               ) : (
@@ -777,13 +777,13 @@ export const SolicitationManagementPage = () => {
                   Invited:{" "}
                   {safeFormatDate(
                     row.original.invitedAt,
-                    "MMM d, yyyy"
+                    "MMM d, yyyy, h:mm a"
                   )}
                 </div>
               )}
               <div className="text-gray-500 dark:text-gray-400">
                 Deadline:
-                {safeFormatDate(row.original.submissionDeadline, "pppp")}
+                {safeFormatDate(row.original.submissionDeadline,"MMM d, yyyy, h:mm a")}
               </div>
             </div>
           ),
