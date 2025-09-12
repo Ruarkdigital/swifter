@@ -112,6 +112,8 @@ type Solicitation = {
   files: SolicitationFile[];
   vendors: SolicitationVendor[];
   confirmed: number;
+  invitedAt: string;
+  assignedAt: string;
   declined: number;
   contact: string;
   vendorConfirmed: number;
@@ -762,10 +764,25 @@ export const SolicitationManagementPage = () => {
           header: "Date",
           cell: ({ row }) => (
             <div className="text-sm">
-              <div className="font-medium">
-                {safeFormatDate(row.original.submissionDeadline, "MMM d, yyyy")}
-              </div>
+              {row.original.assignedAt ? (
+                <div className="font-medium">
+                  Assigned:{" "}
+                  {safeFormatDate(
+                    row.original.assignedAt,
+                    "MMM d, yyyy"
+                  )}
+                </div>
+              ) : (
+                <div className="font-medium">
+                  Invited:{" "}
+                  {safeFormatDate(
+                    row.original.invitedAt,
+                    "MMM d, yyyy"
+                  )}
+                </div>
+              )}
               <div className="text-gray-500 dark:text-gray-400">
+                Deadline:
                 {safeFormatDate(row.original.submissionDeadline, "pppp")}
               </div>
             </div>
