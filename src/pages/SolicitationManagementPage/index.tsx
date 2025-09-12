@@ -89,6 +89,7 @@ type SolicitationVendor = {
   email: string;
   name?: string;
   status: "invited" | "confirmed" | "declined";
+  assignedAt: string;
 };
 
 type Solicitation = {
@@ -111,9 +112,9 @@ type Solicitation = {
   events: SolicitationEvent[];
   files: SolicitationFile[];
   vendors: SolicitationVendor[];
+  vendor: SolicitationVendor;
   confirmed: number;
   invitedAt: string;
-  assignedAt: string;
   declined: number;
   contact: string;
   vendorConfirmed: number;
@@ -764,11 +765,11 @@ export const SolicitationManagementPage = () => {
           header: "Date",
           cell: ({ row }) => (
             <div className="text-sm">
-              {row.original?.assignedAt? (
+              {row.original?.vendor?.assignedAt ? (
                 <div className="font-medium">
                   Assigned:{" "}
                   {safeFormatDate(
-                    row.original.assignedAt,
+                    row.original.vendor.assignedAt,
                     "MMM d, yyyy, h:mm a"
                   )}
                 </div>
