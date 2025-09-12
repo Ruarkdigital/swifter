@@ -781,7 +781,7 @@ export const SolicitationManagementPage = () => {
                   )}
                 </div>
               )}
-              <div className="text-gray-500 dark:text-gray-400">
+              <div className="text-gray-500 dark:text-gray-400 font-medium">
                 Deadline:
                 {safeFormatDate(row.original.submissionDeadline,"MMM d, yyyy, h:mm a")}
               </div>
