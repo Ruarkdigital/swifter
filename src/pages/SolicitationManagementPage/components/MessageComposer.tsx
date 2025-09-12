@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import RichTextEditor from "@/components/layouts/FormInputs/RichTextEditor";
 import { useUser } from "@/store/authSlice";
+import { useUserRole } from "@/hooks/useUserRole";
 
 interface MessageComposerProps {
   onSend: (content: string, type: "reply" | "addendum" | null) => void;
@@ -38,6 +39,7 @@ const MessageComposer: React.FC<MessageComposerProps> = ({
   sendType,
   isNewChat,
 }) => {
+  const { isProcurement } = useUserRole();
   const [content, setContent] = useState("");
   const user = useUser();
 
@@ -115,6 +117,8 @@ const MessageComposer: React.FC<MessageComposerProps> = ({
                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                 Sending...
               </div>
+            ) : isProcurement ? (
+              "Send Response"
             ) : (
               "Send Question"
             )}
