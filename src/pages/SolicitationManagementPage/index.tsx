@@ -764,7 +764,7 @@ export const SolicitationManagementPage = () => {
           header: "Date",
           cell: ({ row }) => (
             <div className="text-sm">
-              {row.original.assignedAt ? (
+              {row.original?.assignedAt? (
                 <div className="font-medium">
                   Assigned:{" "}
                   {safeFormatDate(
