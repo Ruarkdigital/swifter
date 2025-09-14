@@ -879,7 +879,7 @@ export const EvaluationManagementPage = () => {
                         headers: ["name", "status", "assigned On", "action"],
                         body: evaluationGroups.map((group) => ({
                           ...group,
-                          status: group.status === "release" ? "Released" : "Withheld",
+                          status: group?.status?.toLowerCase?.() === "release" ? "Released" : "Withheld",
                           "assigned On": format(group.assignedOn, "dd MMMM yyyy"),
                           action: (
                             <Button
