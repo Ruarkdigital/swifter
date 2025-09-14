@@ -283,7 +283,7 @@ const EditEvaluationDialog = ({
       if (evaluationData?.data?.data?.evaluators?.length > 0) {
         const groups = evaluationData?.data?.data?.evaluators.map(
           (group: any) => ({
-            id: group._id,
+            id: group.groupId,
             name: group.groupName,
             evaluators:
               group.evaluators?.map((evaluator: any) => ({
@@ -317,8 +317,8 @@ const EditEvaluationDialog = ({
         const criteria = evaluationData.data.data.criterias.map(
           (criterion: any) => ({
             id: criterion._id,
-            title: criterion.title || "",
-            description: criterion.description || "",
+            title: criterion?.title || "",
+            description: criterion?.description || "",
             type: criterion.criteria?.pass_fail ? "pass_fail" : "weight",
             score:
               criterion.criteria?.weight ||
