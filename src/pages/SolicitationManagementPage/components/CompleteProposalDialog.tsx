@@ -25,7 +25,8 @@ interface CompleteProposalDialogProps {
   reset?: () => void;
   setValue: UseFormSetValue<FormValues>;
   getValue: UseFormGetValues<FormValues>;
-  shouldUnregister?: boolean
+  shouldUnregister?: boolean;
+  onComplete?: (documentId: string | null) => void;
 }
 
 const CompleteProposalDialog: React.FC<CompleteProposalDialogProps> = ({
@@ -35,7 +36,8 @@ const CompleteProposalDialog: React.FC<CompleteProposalDialogProps> = ({
   control,
   setValue,
   getValue,
-  shouldUnregister = true
+  shouldUnregister = true,
+  onComplete,
 }) => {
   const { fields, append, remove, update } = useFieldArray({
     control,
@@ -118,6 +120,7 @@ const CompleteProposalDialog: React.FC<CompleteProposalDialogProps> = ({
       ...(getValue().document ?? []),
       { requiredDocumentId: id ?? "", files: [] },
     ]);
+    onComplete?.(id);
     onOpenChange(false);
   };
 
@@ -139,14 +142,28 @@ const CompleteProposalDialog: React.FC<CompleteProposalDialogProps> = ({
     remove(index);
     // check if there's subItems then delete also
     if (currentItems[index]?.subItems) {
-      currentItems[index].subItems.forEach((_subItem: any, subItemIndex: number) => {
-        control.unregister(`priceAction.${index}.subItems.${subItemIndex}.component`);
-        control.unregister(`priceAction.${index}.subItems.${subItemIndex}.description`);
-        control.unregister(`priceAction.${index}.subItems.${subItemIndex}.quantity`);
-        control.unregister(`priceAction.${index}.subItems.${subItemIndex}.unitOfmeasurement`);
-        control.unregister(`priceAction.${index}.subItems.${subItemIndex}.unitPrice`);
-        control.unregister(`priceAction.${index}.subItems.${subItemIndex}.subtotal`);
-      });
+      currentItems[index].subItems.forEach(
+        (_subItem: any, subItemIndex: number) => {
+          control.unregister(
+            `priceAction.${index}.subItems.${subItemIndex}.component`
+          );
+          control.unregister(
+            `priceAction.${index}.subItems.${subItemIndex}.description`
+          );
+          control.unregister(
+            `priceAction.${index}.subItems.${subItemIndex}.quantity`
+          );
+          control.unregister(
+            `priceAction.${index}.subItems.${subItemIndex}.unitOfmeasurement`
+          );
+          control.unregister(
+            `priceAction.${index}.subItems.${subItemIndex}.unitPrice`
+          );
+          control.unregister(
+            `priceAction.${index}.subItems.${subItemIndex}.subtotal`
+          );
+        }
+      );
     }
     control.unregister(`priceAction.${index}.component`);
     control.unregister(`priceAction.${index}.description`);
@@ -204,19 +221,31 @@ const CompleteProposalDialog: React.FC<CompleteProposalDialogProps> = ({
         (updatedItems[itemIndex].unitPrice || 0);
       const subItemsTotal = updatedItems[itemIndex].subItems.reduce(
         (sum: number, subItem: any) => {
-          return sum + ((subItem?.quantity || 0) * (subItem?.unitPrice || 0));
+          return sum + (subItem?.quantity || 0) * (subItem?.unitPrice || 0);
         },
         0
       );
       updatedItems[itemIndex].subtotal = mainSubtotal + subItemsTotal;
 
       setValue("priceAction", updatedItems);
-      control.unregister(`priceAction.${itemIndex}.subItems.${subItemIndex}.component`);
-      control.unregister(`priceAction.${itemIndex}.subItems.${subItemIndex}.description`);
-      control.unregister(`priceAction.${itemIndex}.subItems.${subItemIndex}.quantity`);
-      control.unregister(`priceAction.${itemIndex}.subItems.${subItemIndex}.unitOfmeasurement`);
-      control.unregister(`priceAction.${itemIndex}.subItems.${subItemIndex}.unitPrice`);
-      control.unregister(`priceAction.${itemIndex}.subItems.${subItemIndex}.subtotal`);
+      control.unregister(
+        `priceAction.${itemIndex}.subItems.${subItemIndex}.component`
+      );
+      control.unregister(
+        `priceAction.${itemIndex}.subItems.${subItemIndex}.description`
+      );
+      control.unregister(
+        `priceAction.${itemIndex}.subItems.${subItemIndex}.quantity`
+      );
+      control.unregister(
+        `priceAction.${itemIndex}.subItems.${subItemIndex}.unitOfmeasurement`
+      );
+      control.unregister(
+        `priceAction.${itemIndex}.subItems.${subItemIndex}.unitPrice`
+      );
+      control.unregister(
+        `priceAction.${itemIndex}.subItems.${subItemIndex}.subtotal`
+      );
 
       // Recalculate total
       const total = calculateTotal({ priceAction: updatedItems });
@@ -301,8 +330,24 @@ const CompleteProposalDialog: React.FC<CompleteProposalDialogProps> = ({
                                   name={`priceAction.${index}.subItems.${subIndex}.quantity`}
                                   placeholder="Quantity"
                                   component={TextInput}
+                                  type="number"
                                   className="h-8"
                                   control={control as any}
+                                  transform={{
+                                    input: (value: any) => {
+                                      if (typeof value === "number") {
+                                        return value.toString();
+                                      }
+                                      return value?.toString() || "";
+                                    },
+                                    output: (value: string) => {
+                                      if (typeof value !== "string") {
+                                        return 0;
+                                      }
+                                      const parsed = parseFloat(value);
+                                      return isNaN(parsed) ? 0 : parsed;
+                                    },
+                                  }}
                                 />
                               </div>
                               <div className="col-span-2">
@@ -320,7 +365,23 @@ const CompleteProposalDialog: React.FC<CompleteProposalDialogProps> = ({
                                   placeholder="Unit Price"
                                   component={TextInput}
                                   className="h-8"
+                                  type="number"
                                   control={control as any}
+                                  transform={{
+                                    input: (value: any) => {
+                                      if (typeof value === "number") {
+                                        return value.toString();
+                                      }
+                                      return value?.toString() || "";
+                                    },
+                                    output: (value: string) => {
+                                      if (typeof value !== "string") {
+                                        return 0;
+                                      }
+                                      const parsed = parseFloat(value);
+                                      return isNaN(parsed) ? 0 : parsed;
+                                    },
+                                  }}
                                 />
                               </div>
                               <div className="col-span-1">

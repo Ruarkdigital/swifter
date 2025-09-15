@@ -16,7 +16,7 @@ const ProposalItemRow: React.FC<ProposalItemRowProps> = ({
   index,
   onAddSubItem,
   onRemoveItem,
-  control
+  control,
 }) => {
   return (
     <div className="grid grid-cols-12 gap-4 py-3">
@@ -46,8 +46,24 @@ const ProposalItemRow: React.FC<ProposalItemRowProps> = ({
           name={`priceAction.${index}.quantity`}
           component={TextInput}
           placeholder="0"
+          type="number"
           className="h-8"
           control={control as any}
+          transform={{
+            input: (value: any) => {
+              if (typeof value === 'number') {
+                return value.toString();
+              }
+              return value?.toString() || "";
+            },
+            output: (value: string) => {
+              if (typeof value !== 'string') {
+                return 0;
+              }
+              const parsed = parseFloat(value);
+              return isNaN(parsed) ? 0 : parsed;
+            },
+          }}
         />
       </div>
       <div className="col-span-2">
@@ -64,8 +80,24 @@ const ProposalItemRow: React.FC<ProposalItemRowProps> = ({
           name={`priceAction.${index}.unitPrice`}
           component={TextInput}
           placeholder="0"
+          type="number"
           className="h-8"
           control={control as any}
+          transform={{
+            input: (value: any) => {
+              if (typeof value === 'number') {
+                return value.toString();
+              }
+              return value?.toString() || "";
+            },
+            output: (value: string) => {
+              if (typeof value !== 'string') {
+                return 0;
+              }
+              const parsed = parseFloat(value);
+              return isNaN(parsed) ? 0 : parsed;
+            },
+          }}
         />
       </div>
       <div className="col-span-1">
@@ -88,15 +120,17 @@ const ProposalItemRow: React.FC<ProposalItemRowProps> = ({
         >
           <Plus className="h-3 w-3" />
         </Button>
-       {index !== 0 && <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={() => onRemoveItem(index)}
-          className="h-8 px-2 text-red-600 hover:text-red-700"
-        >
-          <Trash2 className="h-3 w-3" />
-        </Button>}
+        {index !== 0 && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => onRemoveItem(index)}
+            className="h-8 px-2 text-red-600 hover:text-red-700"
+          >
+            <Trash2 className="h-3 w-3" />
+          </Button>
+        )}
       </div>
     </div>
   );

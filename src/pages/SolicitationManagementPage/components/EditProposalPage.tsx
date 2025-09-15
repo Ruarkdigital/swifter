@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { DataTable } from "@/components/layouts/DataTable";
 import { ColumnDef } from "@tanstack/react-table";
-import { Upload } from "lucide-react";
+import { Upload, CheckCircle } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { getRequest, putRequest } from "@/lib/axiosInstance";
@@ -363,6 +363,8 @@ const ProposalForm = ({
   solicitationId,
   requiredFiles,
 }: ProposalFormProps) => {
+  // State to track completed proposals
+  const [completedProposals, setCompletedProposals] = useState<Set<string>>(new Set());
   const navigate = useNavigate();
   const toast = useToastHandler();
   const [type, setType] = useState("");
@@ -393,6 +395,16 @@ const ProposalForm = ({
       setShouldUnregister(true);
     }, 3000);
   }, []);
+
+  // Check if proposal has priceAction data and mark pricing document as completed
+  useEffect(() => {
+    if (values.priceAction && values.priceAction.length > 0) {
+      const pricingDocument = requiredFiles.find(file => file.type?.toLowerCase() === "pricing");
+      if (pricingDocument) {
+        setCompletedProposals(prev => new Set([...prev, pricingDocument._id]));
+      }
+    }
+  }, [values.priceAction, requiredFiles]);
 
   // Initialize useForge for proposal form
   const forge = useForge<FormValues>({
@@ -561,11 +573,19 @@ const ProposalForm = ({
       id: "uploads",
       header: "Uploads",
       cell: ({ row }) => {
-        const uploadedFiles = getUploadedFilesForDocument(row.original._id);
+        const doc = row.original;
+        const uploadedFiles = getUploadedFilesForDocument(doc._id);
         const uploadCount = uploadedFiles.length;
+        const isCompleted = completedProposals.has(doc._id);
+        
         return (
           <div className="text-sm text-gray-600 dark:text-gray-400">
-            {uploadCount > 0 ? (
+            {isCompleted ? (
+              <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
+                <CheckCircle className="h-4 w-4" />
+                <span className="font-medium text-sm">Proposal Completed</span>
+              </div>
+            ) : uploadCount > 0 ? (
               <div className="flex flex-col gap-1">
                 <span>{uploadCount} file(s)</span>
                 {uploadedFiles.map((file, index) => (
@@ -655,6 +675,11 @@ const ProposalForm = ({
         getValue={forge.getValues as any}
         id={selectedDocumentId}
         {...{ shouldUnregister }}
+        onComplete={(documentId) => {
+          if (documentId) {
+            setCompletedProposals(prev => new Set([...prev, documentId]));
+          }
+        }}
       />
 
       <FileUploadDialog

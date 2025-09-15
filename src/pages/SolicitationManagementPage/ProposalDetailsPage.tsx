@@ -32,7 +32,7 @@ import { useState } from "react";
 import { format, isAfter, parseISO, isValid } from "date-fns";
 import { formatCurrency } from "@/lib/utils";
 import { DocumentViewer } from "@/components/ui/DocumentViewer";
-import { getFileExtension } from "@/lib/fileUtils.tsx";
+import { getFileExtension, isViewableFile } from "@/lib/fileUtils.tsx";
 
 // Define the evaluator data type
 type EvaluatorData = {
@@ -567,8 +567,7 @@ const ProposalDetailsPage: React.FC = () => {
       header: "Actions",
       cell: ({ row }) => {
         const document = row.original;
-        const extension = (document.type || "file")?.toLowerCase();
-        const isDocFile = extension === "doc" || extension === "docx";
+        const isDocFile = isViewableFile(document.name, document.type);
 
         return (
           <div className="flex items-center gap-2">
@@ -582,18 +581,15 @@ const ProposalDetailsPage: React.FC = () => {
                 {isDocFile ? (
                   <DropdownMenuItem
                     onClick={() => {
-                      if (document.url) {
-                        const link = window.document.createElement("a");
-                        link.href = document.url;
-                        link.download = document.name || "download";
-                        window.document.body.appendChild(link);
-                        link.click();
-                        window.document.body.removeChild(link);
-                      }
+                      handleViewDocument({
+                        url: document.url,
+                        name: document.name,
+                        type: document.type
+                      });
                     }}
                   >
-                    <Download className="mr-2 h-4 w-4" />
-                    Download
+                    <Eye className="mr-2 h-4 w-4" />
+                    View
                   </DropdownMenuItem>
                 ) : (
                   <>

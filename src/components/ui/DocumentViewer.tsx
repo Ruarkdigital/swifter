@@ -9,7 +9,7 @@ import { getFileExtension } from '../../lib/fileUtils';
 import { useTheme } from '../../contexts/ThemeContext';
 
 // Set up PDF.js worker
-pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
+pdfjs.GlobalWorkerOptions.workerSrc =`//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
 interface DocumentViewerProps {
   isOpen: boolean;
@@ -98,7 +98,17 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
   };
 
   const onDocumentLoadError = (error: Error) => {
-    setError(`Failed to load PDF: ${error.message}`);
+    console.error('PDF loading error:', error);
+    
+    // Check if it's a worker-related error and try fallback
+    if (error.message.includes('worker') || error.message.includes('fetch')) {
+      // Try unpkg as fallback
+      pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
+      setError('PDF worker failed to load from primary CDN. Trying fallback... Please refresh if the issue persists.');
+    } else {
+      setError(`Failed to load PDF: ${error.message}`);
+    }
+    
     setLoading(false);
   };
 

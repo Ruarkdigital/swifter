@@ -204,3 +204,21 @@ export const isPresentationFile = (extension: string): boolean => {
   ];
   return presentationExtensions.includes(extension.toUpperCase());
 };
+
+/**
+ * Check if a file is viewable/amendable (supports documents, PDFs, and spreadsheets)
+ * @param fileName - The file name
+ * @param fileType - The file MIME type or type string
+ * @returns True if the file can be viewed/amended
+ */
+export const isViewableFile = (fileName: string, fileType?: string): boolean => {
+  if (!fileName && !fileType) return false;
+  
+  const extension = getFileExtension(fileName, fileType || "");
+  
+  return (
+    isDocumentFile(extension) ||
+    isPdfFile(extension) ||
+    isSpreadsheetFile(extension)
+  );
+};

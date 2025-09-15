@@ -56,8 +56,11 @@ const ForgerController = <TFieldValues extends FieldValues = FieldValues>(
         handlers.onChange = (value: string) => onChange(getTextTransform(value));
       }
     } else {
-      // Web components use standard onChange
-      handlers.onChange = (value: string) => onChange(getTextTransform(value));
+      // Web components use standard onChange with event object
+      handlers.onChange = (e: any) => {
+        const value = e?.target?.value ?? e;
+        onChange(getTextTransform(value));
+      };
     }
     
     return handlers;
