@@ -9,7 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { getRequest } from "@/lib/axiosInstance";
 import { ApiResponse, ApiResponseError } from "@/types";
 import { CreateEvaluationFormData } from "./CreateEvaluationDialog";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 
 interface Step3FormProps {
   control: Control<CreateEvaluationFormData>;
@@ -24,6 +24,11 @@ const Step3Form = ({ control, isEdit = false }: Step3FormProps) => {
 
   const value = useWatch({ control, name: "group" });
   const documentsWatch = useWatch({ control, name: "documents" });
+
+  // Check if a PRICING document already exists
+  const hasPricingDocument = useMemo(() => {
+    return documentsWatch?.some(doc => doc?.type === "PRICING") || false;
+  }, [documentsWatch]);
 
   // Watch for type changes and automatically set required to true for PRICING
   useEffect(() => {
@@ -58,6 +63,20 @@ const Step3Form = ({ control, isEdit = false }: Step3FormProps) => {
     { label: "PNG", value: "PNG" },
     { label: "ZIP", value: "ZIP" }
   ];
+
+  // Create dynamic document type options based on existing documents
+  const getDocumentTypeOptions = (currentIndex: number) => {
+    const currentDocType = documentsWatch?.[currentIndex]?.type;
+    
+    return documentTypeOptions.map(option => {
+      // If this is a PRICING option and a PRICING document already exists
+      // and the current document is not already PRICING, disable it
+      if (option.value === "PRICING" && hasPricingDocument && currentDocType !== "PRICING") {
+        return { ...option, disabled: true };
+      }
+      return option;
+    });
+  };
 
   // Fetch evaluation groups from API
   const { data: evaluationGroupsData } = useQuery<
@@ -120,7 +139,7 @@ const Step3Form = ({ control, isEdit = false }: Step3FormProps) => {
                 name={`documents.${index}.type`}
                 placeholder="Select Type"
                 component={TextSelect}
-                options={documentTypeOptions}
+                options={getDocumentTypeOptions(index)}
                 containerClass="w-full"
               />
             </div>

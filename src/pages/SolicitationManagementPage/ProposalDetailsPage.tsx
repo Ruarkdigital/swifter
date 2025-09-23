@@ -695,19 +695,19 @@ const ProposalDetailsPage: React.FC = () => {
         );
       },
     },
-    {
-      accessorKey: "oldFiles",
-      header: "Original Submission",
-      cell: ({ row }) => {
-        const amendment = row.original;
-        const originalFileName = amendment.oldFiles?.[0]?.name || "N/A";
-        return (
-          <div className="text-sm text-gray-600 dark:text-gray-300">
-            {originalFileName}
-          </div>
-        );
-      },
-    },
+    // {
+    //   accessorKey: "oldFiles",
+    //   header: "Original Submission",
+    //   cell: ({ row }) => {
+    //     const amendment = row.original;
+    //     const originalFileName = amendment.oldFiles?.[0]?.name || "N/A";
+    //     return (
+    //       <div className="text-sm text-gray-600 dark:text-gray-300">
+    //         {originalFileName}
+    //       </div>
+    //     );
+    //   },
+    // },
     {
       accessorKey: "createdBy",
       header: "Amended by",
@@ -1099,7 +1099,7 @@ const ProposalDetailsPage: React.FC = () => {
                 </label>
                 <p className="text-base font-medium text-gray-900 dark:text-white">
                   {proposal?.proposalDetails?.score
-                    ? `${proposal.proposalDetails.score}%`
+                    ? `${proposal.proposalDetails.score.toFixed(1)}%`
                     : "N/A"}
                 </p>
               </div>

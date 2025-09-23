@@ -39,6 +39,23 @@ type VendorDocument = {
   uploadedAt: string;
 };
 
+// ProposalPriceAction interface based on API schema
+interface ProposalPriceAction {
+  component: string;
+  description?: string;
+  quantity: number;
+  unitOfMeasurement: string;
+  unitPrice: number;
+  subtotal: number;
+  subItems?: ProposalPriceAction[];
+}
+
+// Response interface for the API
+interface ProposalPriceBreakdownResponse {
+  message: string;
+  data: ProposalPriceAction[];
+}
+
 type EvaluatorCriteria = {
   _id: string;
   description: string;
@@ -89,6 +106,7 @@ type SubmittedDocumentResponse = {
       name: string;
     };
   };
+  pricingTable: string[]
 };
 
 type SubmitEvaluationResponse = {
@@ -154,6 +172,19 @@ const useEvaluationCriteria = (
   });
 };
 
+const usePricingBreakdown = (proposalId: string) => {
+  return useQuery<ApiResponse<ProposalPriceBreakdownResponse>, ApiResponseError>({
+    queryKey: ["pricing-breakdown", proposalId],
+    queryFn: async () => {
+      const response = await getRequest({
+        url: `/procurement/evaluations/proposal/${proposalId}`,
+      });
+      return response;
+    },
+    enabled: !!proposalId,
+  });
+};
+
 const useSubmitCriteriaScore = () => {
   const queryClient = useQueryClient();
   const toast = useToastHandler();
@@ -207,6 +238,18 @@ const SubmittedDocumentPage: React.FC = () => {
     error: criteriaError,
   } = useEvaluationCriteria(id || "", groupId || "", vendorId || "");
 
+  // Get proposalId from bid comparison data
+  const proposalId = useMemo(() => {
+    return documentsData?.data?.data?.pricingTable?.[0] || null;
+  }, [documentsData]);
+
+  // Add pricing breakdown API call
+  const {
+    data: pricingData,
+    isLoading: pricingLoading,
+    error: pricingError,
+  } = usePricingBreakdown(proposalId || "");
+
   const submitScoreMutation = useSubmitCriteriaScore();
 
   // Transform API data
@@ -226,7 +269,24 @@ const SubmittedDocumentPage: React.FC = () => {
     return criteriaData?.data?.data?.info;
   }, [criteriaData]);
 
-  // State for managing active criteria form
+  // Transform pricing data
+  const pricingBreakdown = useMemo(() => {
+    return pricingData?.data?.data?.data || [];
+  }, [pricingData]);
+
+  // Calculate total pricing
+  const totalAmount = useMemo(() => {
+    return pricingBreakdown.reduce((sum: number, item: ProposalPriceAction) => {
+      const itemTotal = item.subtotal || 0;
+      const subItemsTotal = (item.subItems || []).reduce(
+        (subSum: number, subItem: ProposalPriceAction) => 
+          subSum + (subItem.subtotal || 0), 
+        0
+      );
+      return sum + itemTotal + subItemsTotal;
+    }, 0);
+  }, [pricingBreakdown]);
+
   const [activeCriteriaId, setActiveCriteriaId] = useState<string | null>(null);
   const [showSubmitDialog, setShowSubmitDialog] = useState(false);
 
@@ -417,6 +477,24 @@ const SubmittedDocumentPage: React.FC = () => {
     setViewerOpen(true);
   };
 
+  // Flatten pricing items for display
+  const flattenPricingItems = (items: ProposalPriceAction[], level = 0): (ProposalPriceAction & { level: number; itemNumber: string })[] => {
+    const result: (ProposalPriceAction & { level: number; itemNumber: string })[] = [];
+    
+    items.forEach((item, index) => {
+      const itemNumber = level === 0 ? (index + 1).toString() : `${Math.floor(index / 10) + 1}.${(index % 10) + 1}`;
+      result.push({ ...item, level, itemNumber });
+      
+      if (item.subItems && item.subItems.length > 0) {
+        result.push(...flattenPricingItems(item.subItems, level + 1));
+      }
+    });
+    
+    return result;
+  };
+
+  const flattenedPricingItems = flattenPricingItems(pricingBreakdown);
+
   return (
     <div className="p-6 min-h-full">
       {/* Breadcrumb */}
@@ -486,6 +564,12 @@ const SubmittedDocumentPage: React.FC = () => {
             className="data-[state=active]:border-[#2A4467] data-[state=active]:dark:bg-transparent data-[state=active]:dark:text-slate-100 relative rounded-none py-2 after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 border-0 border-b data-[state=active]:bg-transparent data-[state=active]:shadow-none flex-none px-3"
           >
             Evaluation Criteria
+          </TabsTrigger>
+          <TabsTrigger
+            value="pricing-breakdown"
+            className="data-[state=active]:border-[#2A4467] data-[state=active]:dark:bg-transparent data-[state=active]:dark:text-slate-100 relative rounded-none py-2 after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 border-0 border-b data-[state=active]:bg-transparent data-[state=active]:shadow-none flex-none px-3"
+          >
+            Pricing Breakdown
           </TabsTrigger>
         </TabsList>
 
@@ -805,6 +889,114 @@ const SubmittedDocumentPage: React.FC = () => {
                   }}
                   onSecondaryAction={() => setShowSubmitDialog(false)}
                 />
+              </div>
+            )}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="pricing-breakdown" className="mt-0">
+          <div className="mb-6">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
+              Pricing Breakdown
+            </h2>
+
+            {pricingLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="text-gray-500 dark:text-gray-400">
+                  Loading pricing breakdown...
+                </div>
+              </div>
+            ) : pricingError ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="text-red-500">
+                  Error loading pricing breakdown: {pricingError.message}
+                </div>
+              </div>
+            ) : flattenedPricingItems.length > 0 ? (
+              <div className="space-y-4">
+                {/* Pricing Table */}
+                <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead className="bg-gray-50 dark:bg-gray-800">
+                        <tr>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                            Item
+                          </th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                            Component
+                          </th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                            Description
+                          </th>
+                          <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                            Quantity
+                          </th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                            Unit
+                          </th>
+                          <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                            Unit Price
+                          </th>
+                          <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                            Subtotal
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
+                        {flattenedPricingItems.map((item, index) => (
+                          <tr key={index} className={item.level > 0 ? "bg-gray-50 dark:bg-gray-800" : ""}>
+                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                              <span style={{ paddingLeft: `${item.level * 20}px` }}>
+                                {item.itemNumber}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                              <span style={{ paddingLeft: `${item.level * 20}px` }}>
+                                {item.component}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">
+                              {item.description || "-"}
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100 text-right">
+                              {item.quantity.toLocaleString()}
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                              {item.unitOfMeasurement}
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100 text-right">
+                              ${item.unitPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100 text-right font-medium">
+                              ${item.subtotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* Total Amount */}
+                <div className="flex justify-end">
+                  <div className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                    <div className="flex items-center justify-between gap-8">
+                      <span className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                        Total Amount:
+                      </span>
+                      <span className="text-xl font-bold text-gray-900 dark:text-gray-100">
+                        ${totalAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <p className="text-gray-500 dark:text-gray-400">
+                  No pricing breakdown available
+                </p>
               </div>
             )}
           </div>

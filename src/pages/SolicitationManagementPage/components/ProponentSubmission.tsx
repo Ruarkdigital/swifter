@@ -568,10 +568,10 @@ const SubmitProponentPage: React.FC<SubmitProposalPageProps> = () => {
         <CompleteProposalDialog
           open={isCompleteDialogOpen}
           onOpenChange={setIsCompleteDialogOpen}
-          control={forge.control}
+          control={forge.control as any}
           reset={forge.reset}
-          setValue={forge.setValue}
-          getValue={forge.getValues}
+          setValue={forge.setValue as any}
+          getValue={forge.getValues as any}
           id={selectedDocumentId}
         />
 

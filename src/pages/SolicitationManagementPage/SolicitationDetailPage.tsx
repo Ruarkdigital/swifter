@@ -167,7 +167,7 @@ export type Solicitation = {
   bidIntentDeadline?: string;
   timezone: string;
   solId: string;
-  deadlineUpdate: DeadlineUpdates[]
+  deadlineUpdate: DeadlineUpdates[];
   events: SolicitationEvent[];
   files: SolicitationFile[];
   vendors: SolicitationVendor[];
@@ -329,7 +329,7 @@ export const InvitedVendorCard = ({
         <div>
           <h3 className="text-lg font-semibold text-gray-500  mb-1">{title}</h3>
           <p className="text-3xl font-bold text-gray-900 dark:text-gray-200">
-            {count}
+            {count?.toFixed(0)}
           </p>
         </div>
         <div className={`p-3 rounded-full ${iconBgColor}`}>

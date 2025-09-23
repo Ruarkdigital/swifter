@@ -14,7 +14,7 @@ export type TextSelectProps = {
   label?: string | JSX.Element;
   containerClass?: string;
   error?: string;
-  options: { label: string; value: string }[];
+  options: { label: string; value: string; disabled?: boolean }[];
   placeholder?: string;
   onChange?: ((value: string) => void) | ((event: { target: { name: string; value: string } }) => void);
   value?: string;
@@ -97,7 +97,14 @@ export const TextSelect = (props: TextSelectProps & Partial<ForgerSlotProps>) =>
         </SelectTrigger>
         <SelectContent className="max-h-60 dark:bg-gray-800 dark:border-gray-600">
           {options?.filter(item => item.value !== "").map((item) => (
-            <SelectItem key={item.value} value={item.value} className="py-3 dark:text-gray-200 dark:hover:bg-gray-700 dark:focus:bg-gray-700">
+            <SelectItem 
+              key={item.value} 
+              value={item.value} 
+              disabled={item.disabled}
+              className={`py-3 dark:text-gray-200 dark:hover:bg-gray-700 dark:focus:bg-gray-700 ${
+                item.disabled ? 'opacity-50 cursor-not-allowed' : ''
+              }`}
+            >
               {item.label}
             </SelectItem>
           ))}

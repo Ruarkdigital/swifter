@@ -14,7 +14,10 @@ import FileUploadDialog from "./FileUploadDialog";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import { useToastHandler } from "@/hooks/useToaster";
-import { getStatusLabel, getStatusColorClass } from "@/lib/solicitationStatusUtils";
+import {
+  getStatusLabel,
+  getStatusColorClass,
+} from "@/lib/solicitationStatusUtils";
 import { ConfirmAlert } from "@/components/layouts/ConfirmAlert";
 
 // Types for the proposal form
@@ -51,16 +54,14 @@ const schema = yup.object().shape({
       requiredDocumentId: yup
         .string()
         .required("Required document ID is required"),
-      files: yup
-        .array()
-        .of(
-          yup.object().shape({
-            name: yup.string().required("File name is required"),
-            type: yup.string().required("File type is required"),
-            size: yup.string().required("File size is required"),
-            url: yup.string().required("File URL is required"),
-          })
-        ),
+      files: yup.array().of(
+        yup.object().shape({
+          name: yup.string().required("File name is required"),
+          type: yup.string().required("File type is required"),
+          size: yup.string().required("File size is required"),
+          url: yup.string().required("File URL is required"),
+        })
+      ),
     })
   ),
   priceAction: yup
@@ -71,15 +72,16 @@ const schema = yup.object().shape({
         description: yup.string().required("Description is required"),
         quantity: yup
           .number()
-          .required("Quantity is required")
-          .min(0, "Quantity must be positive"),
+          // .required("Quantity is required")
+          .min(0, "Quantity must be positive").optional(),
         unitOfmeasurement: yup
           .string()
           .required("Unit of measurement is required"),
         unitPrice: yup
           .number()
-          .required("Unit price is required")
-          .min(0, "Unit price must be positive"),
+          // .required("Unit price is required")
+          .min(0, "Unit price must be positive").optional(),
+        requiredDocumentId: yup.string(),
         subtotal: yup.number().optional().min(0, "Subtotal must be positive"),
         subItems: yup
           .array()
@@ -119,7 +121,7 @@ const getAcceptedTypesForDocType = (docType?: string): string[] => {
   if (t.includes("DOC")) return [".doc", ".docx"];
   if (t.includes("XLS")) return [".xls", ".xlsx"];
   // Fallback to default allowed list
-  return [".pdf", ".doc", ".docx", ".xls", ".xlsx"]; 
+  return [".pdf", ".doc", ".docx", ".xls", ".xlsx"];
 };
 
 const SubmitProposalPage: React.FC<SubmitProposalPageProps> = () => {
@@ -135,7 +137,9 @@ const SubmitProposalPage: React.FC<SubmitProposalPageProps> = () => {
     null
   );
   const [isBackConfirmOpen, setIsBackConfirmOpen] = useState(false);
-  const [completedProposals, setCompletedProposals] = useState<Set<string>>(new Set());
+  const [completedProposals, setCompletedProposals] = useState<Set<string>>(
+    new Set()
+  );
 
   // Check if this is a vendor submission flow
   const isSubmitForVendor = location.state?.isSubmitForVendor || false;
@@ -149,17 +153,7 @@ const SubmitProposalPage: React.FC<SubmitProposalPageProps> = () => {
       total: 0,
       status: "draft",
       document: [],
-      priceAction: [
-        {
-          component: "",
-          description: "",
-          quantity: 0,
-          unitOfmeasurement: "",
-          unitPrice: 0,
-          subtotal: 0,
-          subItems: [],
-        },
-      ],
+      priceAction: [],
     },
   });
 
@@ -200,10 +194,11 @@ const SubmitProposalPage: React.FC<SubmitProposalPageProps> = () => {
   >({
     mutationKey: ["submitProposal"],
     mutationFn: async (proposalData) => {
-      const submitUrl = isSubmitForVendor && customEndpoint 
-        ? customEndpoint 
-        : `/vendor/proposal/${solicitationId}/submit`;
-      
+      const submitUrl =
+        isSubmitForVendor && customEndpoint
+          ? customEndpoint
+          : `/vendor/proposal/${solicitationId}/submit`;
+
       return await postRequest({
         url: submitUrl,
         payload: proposalData,
@@ -300,7 +295,7 @@ const SubmitProposalPage: React.FC<SubmitProposalPageProps> = () => {
 
         status: "submit" as const,
       };
-      
+
       await submitProposal(submissionData);
       toast.success("Success", "Proposal submitted successfully");
       navigate(-1); // Navigate back after successful submission
@@ -378,6 +373,20 @@ const SubmitProposalPage: React.FC<SubmitProposalPageProps> = () => {
                   size="sm"
                   className="!w-fit"
                   onClick={() => {
+                    console.log({ doc })
+                    forge.setValue("priceAction", [
+                      ...(forge.getValues().priceAction || []),
+                      {
+                        component: "",
+                        description: "",
+                        quantity: 0,
+                        unitOfmeasurement: "",
+                        requiredDocumentId: doc._id,
+                        unitPrice: 0,
+                        subtotal: 0,
+                        subItems: [],
+                      },
+                    ]);
                     setSelectedDocumentId(doc._id);
                     setIsCompleteDialogOpen(true);
                   }}
@@ -411,13 +420,14 @@ const SubmitProposalPage: React.FC<SubmitProposalPageProps> = () => {
       cell: ({ row }) => {
         const doc = row.original;
         const currentDocuments = forge.watch("document") || [];
-        const documentFiles = currentDocuments.find(
-          (document) => document.requiredDocumentId === doc._id
-        )?.files || [];
-        
+        const documentFiles =
+          currentDocuments.find(
+            (document) => document.requiredDocumentId === doc._id
+          )?.files || [];
+
         const uploadCount = documentFiles.length;
         const isCompleted = completedProposals.has(doc._id);
-        
+
         return (
           <div className="text-sm text-gray-600 dark:text-gray-400">
             {isCompleted ? (
@@ -430,7 +440,11 @@ const SubmitProposalPage: React.FC<SubmitProposalPageProps> = () => {
                 <div className="font-medium">{uploadCount} file(s)</div>
                 <div className="space-y-0.5">
                   {documentFiles.map((file, index) => (
-                    <div key={index} className="text-xs text-gray-500 dark:text-gray-500 truncate max-w-[200px]" title={file.name}>
+                    <div
+                      key={index}
+                      className="text-xs text-gray-500 dark:text-gray-500 truncate max-w-[200px]"
+                      title={file.name}
+                    >
                       {file.name}
                     </div>
                   ))}
@@ -495,7 +509,7 @@ const SubmitProposalPage: React.FC<SubmitProposalPageProps> = () => {
 
           <Forge
             control={forge.control}
-            // debug
+            debug
             ref={formRef}
             onSubmit={handleSubmit}
           >
@@ -582,7 +596,7 @@ const SubmitProposalPage: React.FC<SubmitProposalPageProps> = () => {
           id={selectedDocumentId}
           onComplete={(documentId) => {
             if (documentId) {
-              setCompletedProposals(prev => new Set([...prev, documentId]));
+              setCompletedProposals((prev) => new Set([...prev, documentId]));
             }
           }}
         />
