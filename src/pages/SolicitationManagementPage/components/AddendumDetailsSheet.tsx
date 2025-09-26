@@ -180,12 +180,6 @@ const AddendumDetailsSheet: React.FC<AddendumDetailsSheetProps> = ({
                       addendumDetail.submissionDeadline,
                       "MMMM d, yyyy",
                       timezone
-                    )}{" "}
-                    |{" "}
-                    {safeFormatDate(
-                      addendumDetail.submissionDeadline,
-                      "h:mm a",
-                      timezone
                     )}
                   </p>
                 </div>
@@ -199,12 +193,6 @@ const AddendumDetailsSheet: React.FC<AddendumDetailsSheetProps> = ({
                     {safeFormatDate(
                       deadlines?.[0].submissionDeadline,
                       "MMMM d, yyyy",
-                      timezone
-                    )}{" "}
-                    |{" "}
-                    {safeFormatDate(
-                      deadlines?.[0].submissionDeadline,
-                      "h:mm a",
                       timezone
                     )}
                   </p>
@@ -220,9 +208,7 @@ const AddendumDetailsSheet: React.FC<AddendumDetailsSheetProps> = ({
                       addendumDetail.questionDeadline,
                       "MMMM d, yyyy",
                       timezone
-                    )}{" "}
-                    |{" "}
-                    {safeFormatDate(addendumDetail.questionDeadline, "h:mm a", timezone)}
+                    )}
                   </p>
                 </div>
               )}
