@@ -8,7 +8,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { useEvaluationScorecard, EvaluationCriteria } from "../hooks/useEvaluationScorecard";
-import { format } from "date-fns";
+import { formatDateTZ } from "@/lib/utils";
 
 interface EvaluationScorecardProps {
   solicitationId: string;
@@ -20,11 +20,13 @@ interface EvaluationScorecardProps {
     status: string;
     evaluationScore: number;
   };
+  timezone?: string;
 }
 
 const EvaluationScorecard: React.FC<EvaluationScorecardProps> = ({
   solicitationId,
   evaluatorId,
+  timezone,
 }) => {
   const { data: scorecardData, isLoading, error } = useEvaluationScorecard(
     solicitationId,
@@ -122,7 +124,7 @@ const EvaluationScorecard: React.FC<EvaluationScorecardProps> = ({
               <div className="flex-1">
                 <p className="text-sm text-gray-600 dark:text-slate-200 mb-1">Submission Date</p>
                 <p className="text-sm font-medium dark:text-slate-200 text-gray-900">
-                  { displayData?.submission ? format(displayData?.submission, "MMM d, yyyy pppp") : 'N/A'}
+                  { displayData?.submission ? formatDateTZ(new Date(displayData?.submission), "MMM d, yyyy pppp", timezone) : 'N/A'}
                 </p>
               </div>
               <div className="flex-1">

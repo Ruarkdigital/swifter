@@ -1,11 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Search,
-  Users,
-  MoreHorizontal,
-} from "lucide-react";
-import { format } from "date-fns";
+import { Search, Users, MoreHorizontal } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -27,17 +22,15 @@ import EditUserDialog from "./components/EditUserDialog";
 import UserDetailsSheet from "./components/UserDetailsSheet";
 import UserStats from "./components/UserStats";
 import { DropdownFilters } from "@/components/layouts/SolicitationFilters";
-
-
-
+import { formatDateTZ } from "@/lib/utils";
 
 // User type definition
 type User = {
   _id: string;
   name: string;
   email: string;
-  role:"Admin" | "Procurement Lead" | "Evaluator" | "Vendor";
-  status: "active"| "accepted" | "suspended" | "inactive" | "pending";
+  role: "Admin" | "Procurement Lead" | "Evaluator" | "Vendor";
+  status: "active" | "accepted" | "suspended" | "inactive" | "pending";
   lastActivity: string;
   createdAt: string;
   phone?: string;
@@ -47,7 +40,7 @@ type User = {
 
 // API response types
 export type UsersListResponse = {
-  data:Omit<User, "name"> & { firstName: string }[];
+  data: Omit<User, "name"> & { firstName: string }[];
   total: number;
   page: number;
   limit: number;
@@ -131,14 +124,20 @@ const UserManagementPage = () => {
 
   // Initialize filters from URL parameters
   useEffect(() => {
-    const statusParam = searchParams.get('status');
-    const roleParam = searchParams.get('role');
-    
-    if (statusParam && ['active', 'inactive', 'pending', 'suspended'].includes(statusParam)) {
+    const statusParam = searchParams.get("status");
+    const roleParam = searchParams.get("role");
+
+    if (
+      statusParam &&
+      ["active", "inactive", "pending", "suspended"].includes(statusParam)
+    ) {
       setStatusFilter(statusParam);
     }
-    
-    if (roleParam && ['admin', 'procurement_lead', 'evaluator', 'vendor'].includes(roleParam)) {
+
+    if (
+      roleParam &&
+      ["admin", "procurement_lead", "evaluator", "vendor"].includes(roleParam)
+    ) {
       setRoleFilter(roleParam);
     }
   }, [searchParams]);
@@ -198,12 +197,12 @@ const UserManagementPage = () => {
       await putRequest({ url: `/users/${userId}/status`, payload: { status } }),
     onSuccess: () => {
       toast.success("Success", "User status updated successfully");
-      setSelectedUserId(null)
+      setSelectedUserId(null);
       queryClient.invalidateQueries({ queryKey: ["users"] });
     },
     onError: (error) => {
       console.log(error);
-      setSelectedUserId(null)
+      setSelectedUserId(null);
       const err = error as ApiResponseError;
       toast.error(
         "Error",
@@ -266,9 +265,9 @@ const UserManagementPage = () => {
       // Update URL
       const params = new URLSearchParams(searchParams);
       if (value === "all" || !value) {
-        params.delete('role');
+        params.delete("role");
       } else {
-        params.set('role', value);
+        params.set("role", value);
       }
       navigate(`/dashboard/users?${params.toString()}`, { replace: true });
     } else if (filterTitle === "Status") {
@@ -276,35 +275,38 @@ const UserManagementPage = () => {
       // Update URL
       const params = new URLSearchParams(searchParams);
       if (value === "all" || !value) {
-        params.delete('status');
+        params.delete("status");
       } else {
-        params.set('status', value);
+        params.set("status", value);
       }
       navigate(`/dashboard/users?${params.toString()}`, { replace: true });
     }
   };
 
   // Handle local filter changes from UserStats (without page navigation)
-  const handleLocalFilterChange = (filterType: 'status' | 'role' | 'all', filterValue: string) => {
-    if (filterType === 'all') {
-      setStatusFilter('');
-      setRoleFilter('');
-    } else if (filterType === 'status') {
+  const handleLocalFilterChange = (
+    filterType: "status" | "role" | "all",
+    filterValue: string
+  ) => {
+    if (filterType === "all") {
+      setStatusFilter("");
+      setRoleFilter("");
+    } else if (filterType === "status") {
       setStatusFilter(filterValue);
-      setRoleFilter(''); // Clear role filter when status is selected
-    } else if (filterType === 'role') {
+      setRoleFilter(""); // Clear role filter when status is selected
+    } else if (filterType === "role") {
       setRoleFilter(filterValue);
-      setStatusFilter(''); // Clear status filter when role is selected
+      setStatusFilter(""); // Clear status filter when role is selected
     }
   };
 
   // Get current active filter for UserStats
   const getActiveFilter = () => {
     if (statusFilter) {
-      return { type: 'status' as const, value: statusFilter };
+      return { type: "status" as const, value: statusFilter };
     }
     if (roleFilter) {
-      return { type: 'role' as const, value: roleFilter };
+      return { type: "role" as const, value: roleFilter };
     }
     return null;
   };
@@ -313,7 +315,7 @@ const UserManagementPage = () => {
   const filteredData = users;
 
   // Define table columns
-  const columns: ColumnDef<Omit<User, 'name'> & { firstName: string }>[] = [
+  const columns: ColumnDef<Omit<User, "name"> & { firstName: string }>[] = [
     {
       accessorKey: "name",
       header: "User",
@@ -354,10 +356,7 @@ const UserManagementPage = () => {
         <div className="flex flex-col text-sm">
           <span className="text-gray-700 dark:text-gray-300">
             {row.original.lastActivity
-              ? format(
-                  new Date(row.original.lastActivity),
-                  "MMM dd, yyyy pppp"
-                )
+              ? formatDateTZ(row.original.lastActivity, "MMM dd, yyyy pppp")
               : "Never"}
           </span>
         </div>
@@ -409,8 +408,8 @@ const UserManagementPage = () => {
 
                   <DropdownMenuItem
                     onClick={() => {
-                      setSelectedUserId(row.original?._id)
-                      setIsDeactivateUserOpen(true)
+                      setSelectedUserId(row.original?._id);
+                      setIsDeactivateUserOpen(true);
                     }}
                     className="p-3 text-red-600 dark:text-red-40"
                   >
@@ -447,7 +446,7 @@ const UserManagementPage = () => {
       </div>
 
       {/* User Statistics */}
-      <UserStats 
+      <UserStats
         onFilterChange={handleLocalFilterChange}
         activeFilter={getActiveFilter()}
       />

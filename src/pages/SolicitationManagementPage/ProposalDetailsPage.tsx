@@ -29,8 +29,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useToastHandler } from "@/hooks/useToaster";
 import { ApiResponse, ApiResponseError } from "@/types";
 import { useState } from "react";
-import { format, isAfter, parseISO, isValid } from "date-fns";
-import { formatCurrency } from "@/lib/utils";
+import { isAfter, parseISO, isValid } from "date-fns";
+import { formatCurrency, formatDateTZ } from "@/lib/utils";
 import { DocumentViewer } from "@/components/ui/DocumentViewer";
 import { getFileExtension, isViewableFile } from "@/lib/fileUtils.tsx";
 
@@ -189,6 +189,7 @@ const ProposalDetailsPage: React.FC = () => {
         _id: string;
         submissionDeadline: string;
         status: string;
+        timezone?: string;
       };
     }>,
     ApiResponseError
@@ -241,10 +242,18 @@ const ProposalDetailsPage: React.FC = () => {
       evaluatorName: evaluator.name,
       email: evaluator.email,
       assignedDate: evaluator.dateAssigned
-        ? format(new Date(evaluator.dateAssigned), "MMM d, yyyy pppp")
+        ? formatDateTZ(
+            evaluator.dateAssigned,
+            "MMM d, yyyy pppp",
+            solicitation?.timezone
+          )
         : "N/A",
       submittedDate: evaluator.dateSubmitted
-        ? format(new Date(evaluator.dateSubmitted), "MMM d, yyyy pppp")
+        ? formatDateTZ(
+            evaluator.dateSubmitted,
+            "MMM d, yyyy pppp",
+            solicitation?.timezone
+          )
         : "N/A",
       status: evaluator.status === "Completed" ? "Completed" : "Pending",
       totalScore: evaluator.averageScore
@@ -556,7 +565,11 @@ const ProposalDetailsPage: React.FC = () => {
         return (
           <div className="text-sm text-gray-600 dark:text-gray-300">
             {document.uploadedAt
-              ? format(new Date(document.uploadedAt), "MMM d, yyyy h:mm a")
+              ? formatDateTZ(
+                  document.uploadedAt,
+                  "MMM d, yyyy h:mm a",
+                  solicitation?.timezone
+                )
               : "N/A"}
           </div>
         );
@@ -728,9 +741,10 @@ const ProposalDetailsPage: React.FC = () => {
         return (
           <div className="text-sm text-gray-600 dark:text-gray-300">
             {amendment.createdAt
-              ? format(
-                  new Date(amendment.createdAt),
-                  "yyyy-MM-dd, h:mm a 'EST'"
+              ? formatDateTZ(
+                  amendment.createdAt,
+                  "yyyy-MM-dd, h:mm a",
+                  solicitation?.timezone
                 )
               : "N/A"}
           </div>
@@ -926,7 +940,7 @@ const ProposalDetailsPage: React.FC = () => {
               </label>
               <p className="text-base text-gray-900 dark:text-white">
                 {solicitation?.submissionDeadline
-                  ? format(
+                  ? formatDateTZ(
                       new Date(solicitation?.submissionDeadline),
                       "MMMM d, yyyy"
                     )
@@ -1063,9 +1077,10 @@ const ProposalDetailsPage: React.FC = () => {
                 </label>
                 <p className="text-base text-gray-900 dark:text-white">
                   {proposal?.proposalDetails?.submissiion
-                    ? format(
-                        new Date(proposal.proposalDetails.submissiion),
-                        "MMMM d, yyyy pppp"
+                    ? formatDateTZ(
+                        proposal.proposalDetails.submissiion,
+                        "MMMM d, yyyy pppp",
+                        solicitation?.timezone
                       )
                     : "N/A"}
                 </p>

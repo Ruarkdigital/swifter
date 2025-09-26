@@ -21,7 +21,6 @@ import { useToastHandler } from "@/hooks/useToaster";
 import { ConfirmAlert } from "@/components/layouts/ConfirmAlert";
 import CreateAddendumDialog from "./CreateAddendumDialog";
 import AddendumDetailsSheet from "./AddendumDetailsSheet";
-import { format } from "date-fns";
 import { useUserRole } from "@/hooks/useUserRole";
 import { truncate } from "lodash";
 import {
@@ -37,6 +36,7 @@ import * as yup from "yup";
 import { useWatch } from "react-hook-form";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
+import { formatDateTZ } from "@/lib/utils";
 import { DeadlineUpdates } from "../SolicitationDetailPage";
 
 // Addendum type definition based on API schema
@@ -74,23 +74,15 @@ interface AddendumsTabProps {
   solicitationId?: string;
   deadlines?: DeadlineUpdates[];
   solicitationStatus?: string;
+  timezone?: string;
 }
 
 // Transform API addendum data to component format
-const transformAddendumData = (apiAddendum: SolicitationAddendum): Addendum => {
-  // Format the date with time and timezone
+const transformAddendumData = (apiAddendum: SolicitationAddendum, timezone?: string): Addendum => {
   const formatDate = (dateString: string | undefined) => {
     if (!dateString) return "N/A";
-    try {
-      const date = new Date(dateString);
-      if (isNaN(date.getTime())) return "N/A";
-      // Format: "12 Jul 2025, 09:24 AM GMT+1"
-      return format(date, "d MMM yyyy, hh:mm a 'GMT'xxx");
-    } catch {
-      return "N/A";
-    }
+    return formatDateTZ(dateString, "d MMM yyyy, hh:mm a 'GMT'xxx", timezone);
   };
-
   return {
     id: apiAddendum._id,
     title: apiAddendum.title,
@@ -187,7 +179,7 @@ const useAddendums = (solicitationId: string) => {
   });
 };
 
-const AddendumsTab: React.FC<AddendumsTabProps> = ({ solicitationId, solicitationStatus, deadlines }) => {
+const AddendumsTab: React.FC<AddendumsTabProps> = ({ solicitationId, solicitationStatus, deadlines, timezone }) => {
   const toast = useToastHandler();
   const queryClient = useQueryClient();
   const { isVendor } = useUserRole();
@@ -266,9 +258,9 @@ const AddendumsTab: React.FC<AddendumsTabProps> = ({ solicitationId, solicitatio
 
   // Transform API data to component format
   const addendums = useMemo(() => {
-    if (!addendumsData?.data?.data) return [];
-    return addendumsData.data.data.map(transformAddendumData);
-  }, [addendumsData]);
+    if (!addendumsData?.data?.data) return [] as Addendum[];
+    return addendumsData.data.data.map((a: SolicitationAddendum) => transformAddendumData(a, timezone));
+  }, [addendumsData, timezone]);
 
   // Filter addendums based on search query
   const filteredAddendums = useMemo(() => {
@@ -500,8 +492,9 @@ const AddendumsTab: React.FC<AddendumsTabProps> = ({ solicitationId, solicitatio
           {selectedAddendum && (
             <AddendumDetailsSheet
               addendum={selectedAddendum}
-              deadlines={deadlines ?? []}
+              deadlines={deadlines || []}
               solicitationId={solicitationId!}
+              timezone={timezone}
               onClose={() => setIsDetailsSheetOpen(false)}
             />
           )}

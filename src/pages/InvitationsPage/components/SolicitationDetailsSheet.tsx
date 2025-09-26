@@ -16,7 +16,8 @@ import { ApiResponse, ApiResponseError } from "@/types";
 import { ConfirmAlert } from "@/components/layouts/ConfirmAlert";
 import { useToastHandler } from "@/hooks/useToaster";
 // import { useUser } from "@/store/authSlice";
-import { format } from "date-fns";
+
+import { formatDateTZ } from "@/lib/utils";
 import { PageLoader } from "@/components/ui/PageLoader";
 import { getFileExtension, getFileIcon } from "@/lib/fileUtils.tsx";
 import { DocumentViewer } from "@/components/ui/DocumentViewer";
@@ -265,11 +266,11 @@ const SolicitationDetailsSheet: React.FC<SolicitationDetailsSheetProps> = ({
 
   // Helper function to format date
   const formatDate = (dateString: string): string => {
-    return format(new Date(dateString), "MMMM dd, yyyy, pppp");
+    return formatDateTZ(dateString, "MMMM dd, yyyy", details?.timezone);
   };
 
   const formatTime = (dateString: string): string => {
-    return format(new Date(dateString), "hh:mm a");
+    return formatDateTZ(dateString, "hh", details?.timezone);
   };
 
   // // Map status to badge variant

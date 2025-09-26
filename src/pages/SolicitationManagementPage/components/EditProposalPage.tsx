@@ -55,7 +55,7 @@ const schema = yup.object().shape({
     .min(0, "Total must be positive"),
   status: yup
     .string()
-    .oneOf(["submit"], "Status must be submit")
+    .oneOf(["submit", "draft"], "Status must be submit or draft")
     .required("Status is required"),
   document: yup.array().of(
     yup.object().shape({
@@ -390,6 +390,19 @@ const ProposalForm = ({
       }),
   });
 
+  const { mutateAsync: saveDraftProposal, isPending: isSavingDraft } = useMutation<
+    ApiResponse<any>,
+    ApiResponseError,
+    FormValues
+  >({
+    mutationKey: ["saveDraftProposal"],
+    mutationFn: async (proposalData) =>
+      await putRequest({
+        url: `/vendor/proposal/${solicitationId}/proposal/${proposalId}`,
+        payload: proposalData,
+      }),
+  });
+
   useEffect(() => {
     setTimeout(() => {
       setShouldUnregister(true);
@@ -477,6 +490,25 @@ const ProposalForm = ({
       toast.error(
         "Submission Failed",
         err?.response?.data?.message ?? "Failed to update proposal"
+      );
+    }
+  };
+
+  const handleSaveDraft = async () => {
+    try {
+      const currentValues = forge.getValues();
+      const draftData: FormValues = {
+        ...currentValues,
+        status: "draft",
+      };
+      await saveDraftProposal(draftData);
+      toast.success("Success", "Proposal saved as draft");
+    } catch (error) {
+      console.error("Save draft error:", error);
+      const err = error as ApiResponseError;
+      toast.error(
+        "Save Failed",
+        err?.response?.data?.message ?? "Failed to save proposal as draft"
       );
     }
   };
@@ -645,7 +677,18 @@ const ProposalForm = ({
         </Forge>
       </div>
 
-      <div className="flex items-center justify-end mt-8">
+      <div className="flex items-center justify-between mt-8">
+        <div className="flex items-center gap-3">
+          <Button
+            variant="outline"
+            onClick={handleSaveDraft}
+            className="px-6"
+            disabled={isSavingDraft || isSubmitting}
+            isLoading={isSavingDraft}
+          >
+            Save as Draft
+          </Button>
+        </div>
         <div className="flex items-center gap-3">
           <Button
             variant="outline"

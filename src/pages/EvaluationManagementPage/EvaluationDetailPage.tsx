@@ -26,7 +26,6 @@ import { useParams } from "react-router-dom";
 import { DataTable } from "@/components/layouts/DataTable";
 import { ColumnDef } from "@tanstack/react-table";
 import { useMemo, useState } from "react";
-import { format } from "date-fns";
 import { useMutation } from "@tanstack/react-query";
 import { getRequest } from "@/lib/axiosInstance";
 import EvaluationScorecardSheet from "./components/EvaluationScorecardSheet";
@@ -53,6 +52,7 @@ import {
   getEvaluationStatusLabel,
   getEvaluationStatusColorClass,
 } from "@/lib/evaluationStatusUtils";
+import { formatDateTZ } from "@/lib/utils";
 
 
 // Component Types
@@ -679,6 +679,7 @@ const EvaluationDetailPage: React.FC = () => {
             <EvaluationScorecardSheet
               evaluatorId={row.original._id}
               solicitationId={evaluation?.solicitation?._id || ""}
+             timezone={evaluation?.timezone}
             />
           </div>
         );
@@ -751,7 +752,7 @@ const EvaluationDetailPage: React.FC = () => {
               onClick={() => sendRequirementMutation.mutate()}
               disabled={sendRequirementMutation.isPending}
             >
-              <span>Publish Submission</span>
+              <span>Publish Submission Instruction</span>
             </DropdownMenuItem>
           </DropdownMenuGroup>
         </DropdownMenuContent>
@@ -830,9 +831,10 @@ const EvaluationDetailPage: React.FC = () => {
                     </h3>
                     <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                       {evaluation?.startDate
-                        ? format(
-                            new Date(evaluation.startDate),
-                            "MMMM dd, yyyy"
+                        ? formatDateTZ(
+                            evaluation.startDate,
+                            "MMMM dd, yyyy",
+                            evaluation?.timezone
                           )
                         : "N/A"}{" "}
                       {evaluation?.timezone}
@@ -905,7 +907,11 @@ const EvaluationDetailPage: React.FC = () => {
                     </h3>
                     <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                       {evaluation?.endDate
-                        ? format(new Date(evaluation.endDate), "MMMM dd, yyyy")
+                        ? formatDateTZ(
+                            evaluation.endDate,
+                            "MMMM dd, yyyy",
+                            evaluation?.timezone
+                          )
                         : "N/A"}{" "}
                       {evaluation?.timezone}
                     </p>

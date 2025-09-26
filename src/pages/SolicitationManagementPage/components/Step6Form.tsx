@@ -6,7 +6,7 @@ import {
 } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { format } from "date-fns";
+import { formatDateTZ } from "@/lib/utils";
 import { CreateSolicitationFormData } from "./CreateSolicitationDialog";
 
 interface Step6FormProps {
@@ -21,13 +21,13 @@ const Step6Form = ({ formData, setStep, solicitationTypes, categoryOptions }: St
   const formatDateValue = (value: any): string => {
     if (!value) return "Not specified";
     if (value instanceof Date) {
-      return format(value, "MMM dd, yyyy 'at' hh:mm a");
+      return formatDateTZ(value, "MMM dd, yyyy 'at' hh:mm a");
     }
     if (typeof value === "string") {
       try {
         const date = new Date(value);
         if (!isNaN(date.getTime())) {
-          return format(date, "MMM dd, yyyy 'at' hh:mm a");
+          return formatDateTZ(date, "MMM dd, yyyy 'at' hh:mm a");
         }
         return value;
       } catch {

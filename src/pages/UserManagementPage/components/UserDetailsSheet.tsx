@@ -6,7 +6,6 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -16,6 +15,7 @@ import { deleteRequest, getRequest, putRequest } from "@/lib/axiosInstance";
 import { ApiResponse, ApiResponseError } from "@/types";
 import { useToastHandler } from "@/hooks/useToaster";
 import { PageLoader } from "@/components/ui/PageLoader";
+import { formatDateTZ } from "@/lib/utils";
 
 
 interface UserDetails {
@@ -246,14 +246,11 @@ const UserDetailsSheet: React.FC<UserDetailsSheetProps> = ({
   };
 
   const formatDate = (dateString: string) => {
-    return dateString ? format(new Date(dateString), "MMM d, yyyy, pppp") : "N/A";
+    return dateString ? formatDateTZ(dateString, "MMM d, yyyy, pppp") : "N/A";
   };
 
-  const formatDateTime = (dateString: string) => {
-    return dateString
-      ? format(new Date(dateString), "MMM d, yyyy, pppp")
-      : "N/A";
-  };
+  const formatDateTime = (dateString: string) => dateString ? formatDateTZ(dateString, "MMM d, yyyy, pppp") : "N/A";
+  
 
   return (
     <>
@@ -542,7 +539,8 @@ const UserDetailsSheet: React.FC<UserDetailsSheetProps> = ({
         onPrimaryAction={handleDeleteUser}
       />
     </>
-  );
-};
+  )
+}
+
 
 export default UserDetailsSheet;

@@ -73,14 +73,16 @@ const schema = yup.object().shape({
         quantity: yup
           .number()
           // .required("Quantity is required")
-          .min(0, "Quantity must be positive").optional(),
+          .min(0, "Quantity must be positive")
+          .optional(),
         unitOfmeasurement: yup
           .string()
           .required("Unit of measurement is required"),
         unitPrice: yup
           .number()
           // .required("Unit price is required")
-          .min(0, "Unit price must be positive").optional(),
+          .min(0, "Unit price must be positive")
+          .optional(),
         requiredDocumentId: yup.string(),
         subtotal: yup.number().optional().min(0, "Subtotal must be positive"),
         subItems: yup
@@ -251,6 +253,7 @@ const SubmitProposalPage: React.FC<SubmitProposalPageProps> = () => {
 
       await submitProposal(draftData);
       toast.success("Success", "Proposal saved as draft successfully");
+      navigate(-1)
     } catch (error) {
       console.error("Save draft error:", error);
       const err = error as ApiResponseError;
@@ -373,7 +376,7 @@ const SubmitProposalPage: React.FC<SubmitProposalPageProps> = () => {
                   size="sm"
                   className="!w-fit"
                   onClick={() => {
-                    console.log({ doc })
+                    console.log({ doc });
                     forge.setValue("priceAction", [
                       ...(forge.getValues().priceAction || []),
                       {
@@ -509,7 +512,7 @@ const SubmitProposalPage: React.FC<SubmitProposalPageProps> = () => {
 
           <Forge
             control={forge.control}
-            debug
+            // debug
             ref={formRef}
             onSubmit={handleSubmit}
           >

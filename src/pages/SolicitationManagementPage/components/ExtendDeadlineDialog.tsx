@@ -18,6 +18,7 @@ import { ApiResponse, ApiResponseError } from "@/types";
 import { useToastHandler } from "@/hooks/useToaster";
 import { useWatch } from "react-hook-form";
 import timezoneData from "@/assets/timezones.json";
+import { formatDateTZ, zonedTimeToUtc } from "@/lib/utils";
 
 const extendDeadlineSchema = yup.object({
   submissionDeadline: yup
@@ -78,17 +79,13 @@ const ExtendDeadlineDialog: React.FC<ExtendDeadlineDialogProps> = ({
   const toast = useToastHandler();
   const queryClient = useQueryClient();
 
+  // Helper to get solicitation timezone
+  const getSolicitationTimezone = () => solicitation?.timezone || "Africa/Lagos";
+
   // Helper function to format date for input
   const formatDateForInput = (dateString: string) => {
     if (!dateString) return "";
-    const date = new Date(dateString);
-    // Return in local datetime format for datetime-local input
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const day = String(date.getDate()).padStart(2, "0");
-    const hours = String(date.getHours()).padStart(2, "0");
-    const minutes = String(date.getMinutes()).padStart(2, "0");
-    return `${year}-${month}-${day}T${hours}:${minutes}`;
+    return formatDateTZ(dateString, "yyyy-MM-dd'T'HH:mm", getSolicitationTimezone());
   };
 
   const { control, reset } = useForge<FormValues>({
@@ -171,9 +168,9 @@ const ExtendDeadlineDialog: React.FC<ExtendDeadlineDialogProps> = ({
           ? "invite-only" 
           : solicitation.visibility,
         status: solicitation.status,
-        submissionDeadline: new Date(data.submissionDeadline).toISOString(),
+        submissionDeadline: zonedTimeToUtc(data.submissionDeadline, data.timezone).toISOString(),
         questionDeadline: data.questionDeadline
-          ? new Date(data.questionDeadline).toISOString()
+          ? zonedTimeToUtc(data.questionDeadline, data.timezone).toISOString()
           : solicitation.questionDeadline,
         bidIntent: solicitation.bidIntent,
         bidIntentDeadline: solicitation.bidIntentDeadline,

@@ -1,6 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { ChevronRight } from "lucide-react";
-import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -18,6 +17,7 @@ import { ConfirmAlert } from "@/components/layouts/ConfirmAlert";
 import EditCompanyDialog from "./components/EditCompanyDialog";
 import React, { useState } from "react";
 import { PageLoader } from "@/components/ui/PageLoader";
+import { formatDateTZ } from "@/lib/utils";
 
 // Schema for module form validation
 const moduleSchema = yup.object().shape({
@@ -332,7 +332,7 @@ const CompanyDetailPage = () => {
 
   // Format date helper
   const formatDate = (dateString: string) => {
-    return !dateString ? "N/A" : format(new Date(dateString), "MMMM d, yyyy, pppp");
+    return !dateString ? "N/A" : formatDateTZ(dateString, "MMMM d, yyyy, pppp");
   };
 
   // Get status badge color
@@ -589,7 +589,7 @@ const CompanyDetailPage = () => {
                 </label>
                 <p className="text-gray-900 dark:text-gray-100 mt-1">
                   {companyData.createdAt
-                    ? format(companyData.createdAt, "MMMM d, yyyy")
+                    ? formatDateTZ(companyData.createdAt, "MMMM d, yyyy")
                     : "N/A"}
                 </p>
               </div>
@@ -781,7 +781,7 @@ const CompanyDetailPage = () => {
                     Expiry Date
                   </label>
                   <p className="text-lg font-medium text-gray-900 dark:text-gray-100">
-                    {format(
+                    {formatDateTZ(
                       new Date(
                         companyData.subscription?.expiryDate ||
                           companyData.subscriptionExpiry ||

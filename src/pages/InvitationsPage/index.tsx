@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import SolicitationDetailsSheet from "./components/SolicitationDetailsSheet";
 import { DropdownFilters } from "@/components/layouts/SolicitationFilters";
 import { IconMap } from "@/components/layouts/RoleBasedDashboard/components/StatsCard";
-import { format } from "date-fns";
+import { formatDateTZ } from "@/lib/utils";
 
 // API Types based on Swagger documentation
 export interface VendorSolicitation {
@@ -87,10 +87,15 @@ const transformSolicitationToInvitation = (
     solicitationName: solicitation.name,
     solicitationId: solicitation.solId,
     rfp: solicitation.typeId?.name || "RFP",
-    invitedDate: format(new Date( solicitation?.vendor?.invitedAt ?? solicitation.createdAt), "MMM d, yyyy, pppp"),
-    deadline: format(
-      new Date(solicitation.submissionDeadline),
-      "MMM d, yyyy, pppp"
+    invitedDate: formatDateTZ(
+      solicitation?.vendor?.invitedAt ?? solicitation.createdAt,
+      "MMM d, yyyy, pppp",
+      solicitation?.timezone
+    ),
+    deadline: formatDateTZ(
+      solicitation.submissionDeadline as any,
+      "MMM d, yyyy, pppp",
+      solicitation?.timezone
     ),
     status: mapApiStatusToUIStatus(solicitation.vendor.status),
   };

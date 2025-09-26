@@ -6,25 +6,19 @@ import { Eye, Download } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { getRequest } from "@/lib/axiosInstance";
 import { ApiResponse, ApiResponseError } from "@/types";
-import { format } from "date-fns";
 import { PageLoader } from "@/components/ui/PageLoader";
 import { getFileExtension, getFileIcon } from "@/lib/fileUtils.tsx";
 import { DocumentViewer } from "@/components/ui/DocumentViewer";
 import { DeadlineUpdates } from "../SolicitationDetailPage";
+import { formatDateTZ } from "@/lib/utils";
 
-// Safe date formatting utility
+// Safe date formatting utility with timezone
 const safeFormatDate = (
   dateString: string | undefined,
-  formatStr: string
+  formatStr: string,
+  timezone?: string
 ): string => {
-  if (!dateString) return "N/A";
-  try {
-    const date = new Date(dateString);
-    if (isNaN(date.getTime())) return "N/A";
-    return format(date, formatStr);
-  } catch {
-    return "N/A";
-  }
+  return formatDateTZ(dateString, formatStr, timezone);
 };
 
 // API Addendum Detail type
@@ -57,6 +51,7 @@ interface AddendumDetailsSheetProps {
   };
   deadlines: DeadlineUpdates[];
   solicitationId: string;
+  timezone?: string;
   onClose: () => void;
 }
 
@@ -72,7 +67,8 @@ const formatFileSize = (bytes: number): string => {
 const AddendumDetailsSheet: React.FC<AddendumDetailsSheetProps> = ({
   addendum,
   solicitationId,
-  deadlines
+  deadlines,
+  timezone,
   // onClose,
 }) => {
   const [viewerOpen, setViewerOpen] = useState(false);
@@ -82,7 +78,7 @@ const AddendumDetailsSheet: React.FC<AddendumDetailsSheetProps> = ({
     data: addendumDetailData,
     isLoading,
     error,
-  } = useQuery<ApiResponse<AddendumDetail>, ApiResponseError>({
+  } = useQuery<ApiResponse<{ addendum: AddendumDetail}>, ApiResponseError>({
     queryKey: ["addendum-detail", solicitationId, addendum.id],
     queryFn: async () => {
       // Use different API endpoint based on user role
@@ -93,7 +89,7 @@ const AddendumDetailsSheet: React.FC<AddendumDetailsSheetProps> = ({
     enabled: !!solicitationId && !!addendum.id,
   });
 
-  const addendumDetail = addendumDetailData?.data?.data;
+  const addendumDetail = addendumDetailData?.data?.data?.addendum;
 
 
   return (
@@ -128,7 +124,7 @@ const AddendumDetailsSheet: React.FC<AddendumDetailsSheetProps> = ({
         {/* Date and Time */}
         <div className="text-sm text-gray-500">
           {addendumDetail
-            ? safeFormatDate(addendumDetail.createdAt, "MMMM d, yyyy")
+            ? safeFormatDate(addendumDetail.createdAt, "MMMM d, yyyy", timezone)
             : addendum.datePublished}
         </div>
 
@@ -171,7 +167,7 @@ const AddendumDetailsSheet: React.FC<AddendumDetailsSheetProps> = ({
                   Publish Date
                 </h4>
                 <p className="text-sm font-medium text-gray-900">
-                  {safeFormatDate(addendumDetail.createdAt, "MMMM d, yyyy")}
+                  {safeFormatDate(addendumDetail.createdAt, "MMMM d, yyyy", timezone)}
                 </p>
               </div>
               {addendumDetail.submissionDeadline && (
@@ -182,12 +178,14 @@ const AddendumDetailsSheet: React.FC<AddendumDetailsSheetProps> = ({
                   <p className="text-sm font-medium text-gray-900">
                     {safeFormatDate(
                       addendumDetail.submissionDeadline,
-                      "MMMM d, yyyy"
+                      "MMMM d, yyyy",
+                      timezone
                     )}{" "}
                     |{" "}
                     {safeFormatDate(
                       addendumDetail.submissionDeadline,
-                      "h:mm a"
+                      "h:mm a",
+                      timezone
                     )}
                   </p>
                 </div>
@@ -200,12 +198,14 @@ const AddendumDetailsSheet: React.FC<AddendumDetailsSheetProps> = ({
                   <p className="text-sm font-medium text-gray-900">
                     {safeFormatDate(
                       deadlines?.[0].submissionDeadline,
-                      "MMMM d, yyyy"
+                      "MMMM d, yyyy",
+                      timezone
                     )}{" "}
                     |{" "}
                     {safeFormatDate(
                       deadlines?.[0].submissionDeadline,
-                      "h:mm a"
+                      "h:mm a",
+                      timezone
                     )}
                   </p>
                 </div>
@@ -218,10 +218,11 @@ const AddendumDetailsSheet: React.FC<AddendumDetailsSheetProps> = ({
                   <p className="text-sm font-medium text-gray-900">
                     {safeFormatDate(
                       addendumDetail.questionDeadline,
-                      "MMMM d, yyyy"
+                      "MMMM d, yyyy",
+                      timezone
                     )}{" "}
                     |{" "}
-                    {safeFormatDate(addendumDetail.questionDeadline, "h:mm a")}
+                    {safeFormatDate(addendumDetail.questionDeadline, "h:mm a", timezone)}
                   </p>
                 </div>
               )}
@@ -249,8 +250,8 @@ const AddendumDetailsSheet: React.FC<AddendumDetailsSheetProps> = ({
 
             <div className="space-y-3">
               <div className="text-xs text-gray-500">
-                {safeFormatDate(addendumDetail.createdAt, "MMMM d, yyyy")} •{" "}
-                {safeFormatDate(addendumDetail.createdAt, "h:mm a")}
+                {safeFormatDate(addendumDetail.createdAt, "MMMM d, yyyy", timezone)} •{" "}
+                {safeFormatDate(addendumDetail.createdAt, "h:mm a", timezone)}
               </div>
               <p className="text-sm text-gray-900 leading-relaxed dark:text-gray-200">
                 {addendumDetail.questions}

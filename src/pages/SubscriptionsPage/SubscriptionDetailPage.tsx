@@ -5,7 +5,6 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getRequest, postRequest } from "@/lib/axiosInstance";
 import { ApiResponse, ApiResponseError } from "@/types";
-import { format } from "date-fns";
 import { DataTable } from "@/components/layouts/DataTable";
 import { ColumnDef } from "@tanstack/react-table";
 import { ChangePlanDialog } from "./components/ChangePlanDialog";
@@ -13,6 +12,7 @@ import { ConfirmAlert } from "@/components/layouts/ConfirmAlert";
 import { useToastHandler } from "@/hooks/useToaster";
 import { useState } from "react";
 import { PageLoader } from "@/components/ui/PageLoader";
+import { formatDateTZ } from "@/lib/utils";
 
 // Subscription type definition
 export interface Subscription {
@@ -59,7 +59,7 @@ const actionLogColumns: ColumnDef<ActionLog>[] = [
       const dateValue = row.getValue("createdAt") as string;
       return (
         <span className="text-sm text-gray-900 dark:text-gray-100">
-          {format(new Date(dateValue), "yyyy-MM-dd HH:mm:ss")}
+          {formatDateTZ(dateValue, "yyyy-MM-dd HH:mm:ss")}
         </span>
       );
     },
@@ -174,7 +174,8 @@ const SubscriptionDetailPage = () => {
 
   const formatDate = (dateString: string) => {
     try {
-      return format(new Date(dateString), "MMMM dd, yyyy");
+      const v = formatDateTZ(dateString, "MMMM dd, yyyy");
+      return v === "N/A" ? dateString : v;
     } catch {
       return dateString;
     }

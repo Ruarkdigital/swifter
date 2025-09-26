@@ -29,6 +29,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Calendar } from "@/components/ui/calendar";
+import { formatDateTZ } from "@/lib/utils";
 
 // Dashboard statistics type
 export interface SubscriptionDashboard {
@@ -383,7 +384,8 @@ const SubscriptionsPage = () => {
 
   const formatDateString = (dateString: string) => {
     try {
-      return format(new Date(dateString), "MMM dd, yyyy, pppp");
+      const formatted = formatDateTZ(dateString, "MMM dd, yyyy, pppp");
+      return formatted === "N/A" ? "Never" : formatted;
     } catch {
       return "Never";
     }
@@ -753,11 +755,11 @@ const SubscriptionsPage = () => {
                   {tempDateRange.from ? (
                     tempDateRange.to ? (
                       <>
-                        {format(tempDateRange.from, "PPP")} -{" "}
-                        {format(tempDateRange.to, "PPP")}
+                        {formatDateTZ(tempDateRange.from, "PPP")} -{" "}
+                        {formatDateTZ(tempDateRange.to, "PPP")}
                       </>
                     ) : (
-                      format(tempDateRange.from, "PPP")
+                      formatDateTZ(tempDateRange.from, "PPP")
                     )
                   ) : (
                     "No date selected"

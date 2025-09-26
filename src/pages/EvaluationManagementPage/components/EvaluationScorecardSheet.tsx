@@ -8,17 +8,19 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Loader2 } from "lucide-react";
 import { useEvaluationScorecard } from "../hooks/useEvaluationScorecard";
-import { format } from "date-fns";
+import { formatDateTZ } from "@/lib/utils";
 import { getEvaluationStatusLabel, getEvaluationStatusColorClass } from "@/lib/evaluationStatusUtils";
 
 interface EvaluationScorecardSheetProps {
   evaluatorId: string;
   solicitationId: string;
+  timezone?: string;
 }
 
 const EvaluationScorecardSheet: React.FC<EvaluationScorecardSheetProps> = ({
   evaluatorId,
   solicitationId,
+  timezone,
 }) => {
   const {
     data: scorecardData,
@@ -99,7 +101,7 @@ const EvaluationScorecardSheet: React.FC<EvaluationScorecardSheetProps> = ({
                        <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Submission Date</p>
                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
                          {activeData.data.evaluator.submission
-                           ? format(new Date(activeData.data.evaluator.submission), "MMMM dd, yyyy")
+                           ? formatDateTZ(new Date(activeData.data.evaluator.submission), "MMMM dd, yyyy", timezone)
                            : "N/A"}
                        </p>
                      </div>

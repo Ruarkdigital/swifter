@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { FileText, MoreHorizontal } from "lucide-react";
-import { format, startOfDay, endOfDay, subDays } from "date-fns";
+import { startOfDay, endOfDay, subDays } from "date-fns";
 import { SearchInput } from "@/components/layouts/SearchInput";
 import { DropdownFilters as SolicitationFilters } from "@/components/layouts/SolicitationFilters";
 import {
@@ -39,22 +39,27 @@ import {
   getStatusLabel,
   getStatusColorClass,
 } from "@/lib/solicitationStatusUtils";
-import { cn } from "@/lib/utils";
+import { cn, formatDateTZ } from "@/lib/utils";
 // import ExportReportSheet from "@/components/layouts/ExportReportSheet";
 
 // Safe date formatting utility
 const safeFormatDate = (
   dateString: string | undefined,
-  formatStr: string
+  formatStr?: string,
+  timezone?: string
 ): string => {
-  if (!dateString) return "N/A";
-  try {
-    const date = new Date(dateString);
-    if (isNaN(date.getTime())) return "N/A";
-    return format(date, formatStr);
-  } catch {
-    return "N/A";
-  }
+  const date = formatDateTZ(dateString, formatStr, timezone);
+  return date;
+};
+
+// Helper: format date as YYYY/MM/DD for API query
+const formatDateSlash = (dateInput: Date | string): string => {
+  const d = typeof dateInput === "string" ? new Date(dateInput) : dateInput;
+  if (!(d instanceof Date) || isNaN(d.getTime())) return "";
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}/${m}/${day}`;
 };
 
 // Types based on API documentation
@@ -165,7 +170,10 @@ const useAllSolicitations = (params?: SolicitationQueryParams) => {
   if (params?.limit) queryParams.append("limit", params.limit.toString());
   if (params?.status) queryParams.append("status", params.status);
   if (params?.categoryId) queryParams.append("categoryId", params.categoryId);
-  if (params?.date) queryParams.append("date", params.date);
+  // Ensure date filter passes actual date range to API (YYYY/MM/DD-YYYY/MM/DD)
+  if (params?.startDate && params?.endDate) {
+    queryParams.append("date", `${params.startDate}-${params.endDate}`);
+  }
 
   const queryString = queryParams.toString();
   const url = `/procurement/solicitations${
@@ -184,8 +192,9 @@ const useMySolicitations = (params?: SolicitationQueryParams) => {
   if (params?.limit) queryParams.append("limit", params.limit.toString());
   if (params?.status) queryParams.append("status", params.status);
   if (params?.categoryId) queryParams.append("categoryId", params.categoryId);
-  if (params?.date)
-    queryParams.append("date", `${params.startDate} - ${params.endDate}`);
+  if (params?.startDate && params?.endDate) {
+    queryParams.append("date", `${params.startDate}-${params.endDate}`);
+  }
 
   const queryString = queryParams.toString();
   const url = `/procurement/solicitations/me${
@@ -205,8 +214,10 @@ const useVendorAllSolicitations = (params?: SolicitationQueryParams) => {
   if (params?.limit) queryParams.append("limit", params.limit.toString());
   if (params?.status) queryParams.append("status", params.status);
   if (params?.categoryId) queryParams.append("categoryId", params.categoryId);
-  if (params?.date)
-    queryParams.append("date", `${params.startDate} - ${params.endDate}`);
+  // Ensure date filter passes actual date range to API
+  if (params?.startDate && params?.endDate) {
+    queryParams.append("date", `${params.startDate}-${params.endDate}`);
+  }
 
   const queryString = queryParams.toString();
   const url = `/vendor/solicitations${queryString ? `?${queryString}` : ""}`;
@@ -223,11 +234,15 @@ const useVendorMySolicitations = (params?: SolicitationQueryParams) => {
   if (params?.limit) queryParams.append("limit", params.limit.toString());
   if (params?.status) queryParams.append("status", params.status);
   if (params?.categoryId) queryParams.append("categoryId", params.categoryId);
-  if (params?.date)
-    queryParams.append("date", `${params.startDate} - ${params.endDate}`);
+  // Ensure date filter passes actual date range to API
+  if (params?.startDate && params?.endDate) {
+    queryParams.append("date", `${params.startDate}-${params.endDate}`);
+  }
 
   const queryString = queryParams.toString();
-  const url = `/vendor/solicitations/me${queryString ? `?${queryString}` : ""}`;
+  const url = `/vendor/solicitations/me${
+    queryString ? `?${queryString}` : ""
+  }`;
 
   return useQuery<ApiResponse<SolicitationsResponse>, ApiResponseError>({
     queryKey: ["vendor-my-solicitations", params],
@@ -568,22 +583,22 @@ export const SolicitationManagementPage = () => {
         ...filters,
         startDate:
           filters.date && dateRange.startDate
-            ? format(dateRange.startDate, "yyyy-MM-dd")
+            ? formatDateSlash(dateRange.startDate)
             : undefined,
         endDate:
           filters.date && dateRange.endDate
-            ? format(dateRange.endDate, "yyyy-MM-dd")
+            ? formatDateSlash(dateRange.endDate)
             : undefined,
       })
     : useAllSolicitations({
         ...filters,
         startDate:
           filters.date && dateRange.startDate
-            ? format(dateRange.startDate, "yyyy-MM-dd")
+            ? formatDateSlash(dateRange.startDate)
             : undefined,
         endDate:
           filters.date && dateRange.endDate
-            ? format(dateRange.endDate, "yyyy-MM-dd")
+            ? formatDateSlash(dateRange.endDate)
             : undefined,
       });
   const { data: mySolicitationsData, isLoading: isLoadingMy } = isVendor
@@ -591,22 +606,22 @@ export const SolicitationManagementPage = () => {
         ...filters,
         startDate:
           filters.date && dateRange.startDate
-            ? format(dateRange.startDate, "yyyy-MM-dd")
+            ? formatDateSlash(dateRange.startDate)
             : undefined,
         endDate:
           filters.date && dateRange.endDate
-            ? format(dateRange.endDate, "yyyy-MM-dd")
+            ? formatDateSlash(dateRange.endDate)
             : undefined,
       })
     : useMySolicitations({
         ...filters,
         startDate:
           filters.date && dateRange.startDate
-            ? format(dateRange.startDate, "yyyy-MM-dd")
+            ? formatDateSlash(dateRange.startDate)
             : undefined,
         endDate:
           filters.date && dateRange.endDate
-            ? format(dateRange.endDate, "yyyy-MM-dd")
+            ? formatDateSlash(dateRange.endDate)
             : undefined,
       });
   const { data: dashboardStatsData } = useDashboardStats();
@@ -770,7 +785,8 @@ export const SolicitationManagementPage = () => {
                   Assigned:{" "}
                   {safeFormatDate(
                     row.original.vendor.assignedAt,
-                    "MMM d, yyyy, h:mm a"
+                    "MMM d, yyyy, h:mm a",
+                    row.original.timezone
                   )}
                 </div>
               ) : (
@@ -778,13 +794,14 @@ export const SolicitationManagementPage = () => {
                   Invited:{" "}
                   {safeFormatDate(
                     row.original.invitedAt,
-                    "MMM d, yyyy, h:mm a"
+                    "MMM d, yyyy, h:mm a",
+                    row.original.timezone
                   )}
                 </div>
               )}
               <div className="text-gray-500 dark:text-gray-400 font-medium">
                 Deadline:
-                {safeFormatDate(row.original.submissionDeadline,"MMM d, yyyy, h:mm a")}
+                {safeFormatDate(row.original.submissionDeadline,"MMM d, yyyy, h:mm a", row.original.timezone)}
               </div>
             </div>
           ),
@@ -881,7 +898,8 @@ export const SolicitationManagementPage = () => {
             <span>
               {safeFormatDate(
                 row.original.submissionDeadline,
-                "MMM d, yyyy, pppp"
+                "MMM d, yyyy, KK:mm:ss",
+                row.original.timezone
               )}
             </span>
           ),
@@ -891,7 +909,7 @@ export const SolicitationManagementPage = () => {
           header: "Question Deadline",
           cell: ({ row }) => (
             <span>
-              {safeFormatDate(row.original.questionDeadline, "MMM d, yyyy")}
+              {safeFormatDate(row.original.questionDeadline, "MMM d, yyyy", row.original.timezone)}
             </span>
           ),
         },
@@ -1485,11 +1503,11 @@ export const SolicitationManagementPage = () => {
                   {tempDateRange.from ? (
                     tempDateRange.to ? (
                       <>
-                        {format(tempDateRange.from, "PPP")} -{" "}
-                        {format(tempDateRange.to, "PPP")}
+                        {formatDateTZ(tempDateRange.from)} -{" "}
+                        {formatDateTZ(tempDateRange.to)}
                       </>
                     ) : (
-                      format(tempDateRange.from, "PPP")
+                      formatDateTZ(tempDateRange.from)
                     )
                   ) : (
                     "No date selected"

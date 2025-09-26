@@ -26,7 +26,6 @@ import CreateCompanyDialog from "./components/CreateCompanyDialog";
 // import EditCompanyDialog from "./components/EditCompanyDialog";
 import { SearchInput } from "@/components/layouts/SearchInput";
 import { DropdownFilters } from "@/components/layouts/SolicitationFilters";
-import { format } from "date-fns";
 import { format as formatDate, startOfDay, subDays, endOfDay } from "date-fns";
 import {
   Dialog,
@@ -38,6 +37,7 @@ import {
 } from "@/components/ui/dialog";
 import { IconMap } from "@/components/layouts/RoleBasedDashboard/components/StatsCard";
 import { Calendar } from "@/components/ui/calendar";
+import { formatDateTZ } from "@/lib/utils";
 
 // Dashboard statistics type - Note: /companies/dashboard endpoint not found in API docs
 // This might need to be implemented or derived from companies list
@@ -431,8 +431,8 @@ const CompaniesPage = () => {
         <div className="flex flex-col text-sm">
           <span className="text-gray-700 dark:text-gray-300">
             {row.getValue("createdAt")
-              ? format(row.getValue("createdAt"), "dd MMM, yyyy, pppp")
-              : null}
+            ? formatDateTZ(row.getValue("createdAt"), "dd MMM, yyyy, pppp")
+            : null}
           </span>
         </div>
       ),
@@ -721,11 +721,11 @@ const CompaniesPage = () => {
                   {tempDateRange.from ? (
                     tempDateRange.to ? (
                       <>
-                        {format(tempDateRange.from, "PPP")} -{" "}
-                        {format(tempDateRange.to, "PPP")}
+                        {formatDateTZ(tempDateRange.from, "PPP")} -{" "}
+                        {formatDateTZ(tempDateRange.to, "PPP")}
                       </>
                     ) : (
-                      format(tempDateRange.from, "PPP")
+                      formatDateTZ(tempDateRange.from, "PPP")
                     )
                   ) : (
                     "No date selected"

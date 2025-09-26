@@ -34,6 +34,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { IconMap } from "@/components/layouts/RoleBasedDashboard/components/StatsCard";
 import { DropdownFilters } from "@/components/layouts/SolicitationFilters";
+import { formatDateTZ } from "@/lib/utils";
 
 // Dashboard statistics type (matching API response)
 type VendorDashboard = {
@@ -500,7 +501,7 @@ export const VendorManagementPage = () => {
         <div className="flex flex-col text-sm">
           <span className="">
             {row.original.lastActive
-              ? format(new Date(row.original.lastActive), "MMM dd, yyyy, pppp")
+             ? formatDateTZ(row.original.lastActive, "MMM dd, yyyy, pppp")
               : "N/A"}
           </span>
         </div>

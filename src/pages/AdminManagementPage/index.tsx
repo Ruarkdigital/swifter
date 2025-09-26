@@ -1,6 +1,5 @@
 import { Button } from "@/components/ui/button";
 import { Users, MoreHorizontal } from "lucide-react";
-import { format } from "date-fns";
 import { useState, useMemo, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -38,6 +37,7 @@ import {
 import { IconMap } from "@/components/layouts/RoleBasedDashboard/components/StatsCard";
 import { SuperAdminDashboardCount } from "@/hooks/useDashboardData";
 import { Calendar } from "@/components/ui/calendar";
+import { formatDateTZ } from "@/lib/utils";
 
 // Admin type definition
 type Admin = {
@@ -455,7 +455,7 @@ const AdminManagementPage = () => {
       cell: ({ row }) => (
         <span className="text-sm text-gray-700 dark:text-gray-300">
           {row.original.lastLogin
-            ? format(new Date(row.original.lastLogin), "MMM dd, yyyy HH:mm")
+            ? formatDateTZ(row.original.lastLogin, "MMM dd, yyyy HH:mm")
             : "Never"}
         </span>
       ),
@@ -757,11 +757,11 @@ const AdminManagementPage = () => {
                   {tempDateRange.from ? (
                     tempDateRange.to ? (
                       <>
-                        {format(tempDateRange.from, "PPP")} -{" "}
-                        {format(tempDateRange.to, "PPP")}
+                        {formatDateTZ(tempDateRange.from, "PPP")} -{" "}
+                        {formatDateTZ(tempDateRange.to, "PPP")}
                       </>
                     ) : (
-                      format(tempDateRange.from, "PPP")
+                      formatDateTZ(tempDateRange.from, "PPP")
                     )
                   ) : (
                     "No date selected"

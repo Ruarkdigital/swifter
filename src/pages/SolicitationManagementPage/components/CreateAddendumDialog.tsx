@@ -17,8 +17,7 @@ import { ApiResponse, ApiResponseError } from "@/types";
 import { useToastHandler } from "@/hooks/useToaster";
 import { useWatch } from "react-hook-form";
 import { useUserRole } from "@/hooks/useUserRole";
-import { format } from "date-fns";
-import { cn } from "@/lib/utils";
+import { cn, formatDateTZ, zonedTimeToUtc } from "@/lib/utils";
 
 // Base schema for form validation - deadline fields are now optional
 const baseSchema = {
@@ -83,12 +82,20 @@ const CreateAddendumDialog: React.FC<CreateAddendumDialogProps> = ({
 
   const solicitation = solicitationData?.data?.data;
 
-  // Helper function to format date for input
+  // Helper to get solicitation timezone (supports different shapes)
+  const getSolicitationTimezone = (): string | undefined => {
+    return (
+      solicitation?.solicitation?.timezone ||
+      solicitation?.timezone ||
+      undefined
+    );
+  };
+
+  // Helper function to format date for input (timezone-aware)
   const formatDateForInput = (dateString: string) => {
     if (!dateString) return "";
-    const date = new Date(dateString);
-    // Return in local datetime format for datetime-local input
-    return format(date, "yyyy-MM-dd'T'HH:mm");
+    const tz = getSolicitationTimezone();
+    return formatDateTZ(dateString, "yyyy-MM-dd'T'HH:mm", tz);
   };
 
   const { control, reset, getValues } = useForge<FormValues>({
@@ -208,15 +215,18 @@ const CreateAddendumDialog: React.FC<CreateAddendumDialogProps> = ({
         uploadedFiles = uploadResponse.data?.data || [];
       }
 
+      const tz = getSolicitationTimezone();
+      const toIso = (val?: string | Date) => {
+        if (!val) return undefined;
+        const d = typeof val === "string" ? new Date(val) : val;
+        return (tz ? zonedTimeToUtc(d, tz) : new Date(d)).toISOString();
+      };
+
       const payload = {
         // title: data.title,
         description: data.description,
-        submissionDeadline: data.submissionDeadline
-          ? new Date(data.submissionDeadline).toISOString()
-          : undefined,
-        questionDeadline: data.questionAcceptanceDeadline
-          ? new Date(data.questionAcceptanceDeadline).toISOString()
-          : undefined,
+        submissionDeadline: toIso(data.submissionDeadline),
+        questionDeadline: toIso(data.questionAcceptanceDeadline),
         status: status === "publish" ? "publish" : "draft",
         files: uploadedFiles.map((file) => ({
           name: file.name,

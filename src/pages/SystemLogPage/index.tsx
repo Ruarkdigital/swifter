@@ -3,9 +3,9 @@ import { useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { getRequest } from "@/lib/axiosInstance";
 import { ApiResponse, ApiResponseError } from "@/types";
-import { format } from "date-fns";
 import { DataTable } from "@/components/layouts/DataTable";
 import { ColumnDef, PaginationState } from "@tanstack/react-table";
+import { formatDateTZ } from "@/lib/utils";
 
 // System log entry type definition based on API response
 type SystemLogEntry = {
@@ -131,13 +131,12 @@ const SystemLogPage = () => {
       accessorKey: "createdAt",
       header: "Date Created",
       cell: ({ row }) => {
-        const date = new Date(row.original.createdAt);
-        const formattedDate = format(date, 'MM/dd/yyyy, h:mm a');
-        return (
-          <span className="text-sm text-gray-700 dark:text-gray-300">
-            {formattedDate}
-          </span>
-        );
+        const formattedDate = formatDateTZ(row.original.createdAt, 'MM/dd/yyyy, h:mm a');
+         return (
+           <span className="text-sm text-gray-700 dark:text-gray-300">
+             {formattedDate}
+           </span>
+         );
       },
     },
     {

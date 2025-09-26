@@ -46,6 +46,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { formatDateTZ } from "@/lib/utils";
 
 // Evaluation type definition
 type Evaluation = {
@@ -81,14 +82,18 @@ type AssignedEvaluation = {
 const safeFormatDate = (
   dateInput: any,
   pattern: string,
-  fallback: string = "N/A"
+  fallback: string = "N/A",
+  timezone?: string
 ): string => {
   if (!dateInput) return fallback;
 
   const date = new Date(dateInput);
-  if (isNaN(date.getTime())) return fallback;
+  if (isNaN(date.getTime())){ 
+    return fallback
+  };
 
-  return format(date, pattern);
+  const v = formatDateTZ(dateInput, pattern, timezone);
+  return v;
 };
 
 // Helper function to calculate days left (negative values indicate overdue)

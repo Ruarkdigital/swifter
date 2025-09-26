@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { format } from "date-fns";
 import { getRequest } from "@/lib/axiosInstance";
 import { ApiResponse, ApiResponseError, Vendor } from "@/types";
 import { Card, CardContent } from "@/components/ui/card";
@@ -24,6 +23,7 @@ import { PageLoader } from "@/components/ui/PageLoader";
 import { getFileExtension, getFileIcon } from "@/lib/fileUtils.tsx";
 import { DocumentViewer } from "@/components/ui/DocumentViewer";
 import { Solicitation } from "../SolicitationManagementPage/SolicitationDetailPage";
+import { formatDateTZ } from "@/lib/utils";
 
 type VendorSubmission = {
   _id: string;
@@ -119,7 +119,7 @@ const OverviewTab = ({ vendor }: { vendor: VendorDetail }) => {
           Registration Date
         </h4>
         <p className="text-sm text-gray-900 font-medium dark:text-gray-200">
-          {vendor.createdAt ? format(vendor.createdAt, "MMMM d, yyyy") : "N/A"}
+          {vendor.createdAt ? formatDateTZ(vendor.createdAt, "MMMM d, yyyy") : "N/A"}
         </p>
       </div>
 
@@ -325,7 +325,11 @@ const SubmissionsTab = ({
       cell: ({ row }) => (
         <span className="text-sm">
           {row.original.createdAt
-            ? format(row?.original?.createdAt, "dd MMMM, yyyy hh:mm aaa")
+            ? formatDateTZ(
+                row?.original?.createdAt,
+                "dd MMMM, yyyy hh:mm aaa",
+                (row?.original as any)?.timezone
+              )
             : "N/A"}
         </span>
       ),

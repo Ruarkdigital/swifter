@@ -29,15 +29,15 @@ import { getRequest, putRequest, deleteRequest } from "@/lib/axiosInstance";
 import { ApiResponse, ApiResponseError } from "@/types";
 import { ConfirmAlert } from "@/components/layouts/ConfirmAlert";
 import { useToastHandler } from "@/hooks/useToaster";
+import { useUserRole } from "@/hooks/useUserRole";
 import { DataTable } from "@/components/layouts/DataTable";
 import { ColumnDef, PaginationState } from "@tanstack/react-table";
-import { useUserRole } from "@/hooks/useUserRole";
-import { format } from "date-fns";
 import { PageLoader } from "@/components/ui/PageLoader";
 import {
   getStatusLabel,
   getStatusColorClass,
 } from "@/lib/solicitationStatusUtils";
+import { formatDateTZ } from "@/lib/utils";
 
 // Vendor proposal type definition
 type VendorProposal = {
@@ -96,6 +96,7 @@ export interface EvaluatorElement {
   submittedScorings: number;
   assignedOnFormatted: null;
   submittedAtFormatted: null;
+  timezone: string
 }
 
 // Define Solicitation type based on API response
@@ -672,10 +673,7 @@ export const SolicitationDetailPage = () => {
           <span className="text-sm">
             Assigned:{" "}
             {row.original.assignedOnFormatted
-              ? format(
-                  new Date(row.original.assignedOnFormatted),
-                  "MMM d, yyyy pppp"
-                )
+              ? formatDateTZ(new Date(row.original.assignedOnFormatted), "MMM d, yyyy pppp", row.original.timezone)
               : "-"}
           </span>
           <span className="text-sm text-gray-400">
@@ -713,19 +711,17 @@ export const SolicitationDetailPage = () => {
                       email: row.original.email,
                       submissionDate:
                         row.original.progress === 100
-                          ? format(new Date(), "MMM d, yyyy pppp")
+                          ? formatDateTZ(new Date(), "MMM d, yyyy pppp", row.original.timezone)
                           : row.original.assignedOnFormatted
-                          ? format(
-                              new Date(row.original.assignedOnFormatted),
-                              "MMM d, yyyy pppp"
-                            )
-                          : format(new Date(), "MMM d, yyyy pppp"),
+                          ? formatDateTZ(new Date(row.original.assignedOnFormatted), "MMM d, yyyy pppp", row.original.timezone)
+                          : formatDateTZ(new Date(), "MMM d, yyyy pppp"),
                       status:
                         row.original.progress === 100
                           ? "Submitted"
                           : row.original.status || "Pending",
                       evaluationScore: 87,
                     }}
+                    timezone={solicitation?.timezone}
                   />
                 </SheetContent>
               </Sheet>
@@ -1071,21 +1067,39 @@ export const SolicitationDetailPage = () => {
                         Submission Deadline
                       </label>
                       <p className="text-gray-900 dark:text-gray-200 font-medium">
-                        {format(
-                          new Date(solicitation.submissionDeadline),
-                          "MMM d, yyyy hh:mm aaa"
+                        {formatDateTZ(
+                          solicitation.submissionDeadline,
+                          "yyyy-MM-dd HH:mm",
+                          solicitation.timezone
                         )}
                       </p>
                     </div>
+                    {solicitation.deadlineUpdate &&
+                      solicitation.deadlineUpdate.length > 0 &&
+                      solicitation.deadlineUpdate[0]?.submissionDeadline && (
+                        <div>
+                          <label className="text-sm font-medium text-gray-500 mb-1 block">
+                            Old Submission Deadline
+                          </label>
+                          <p className="text-gray-900 dark:text-gray-200 font-medium">
+                            {formatDateTZ(
+                              solicitation.deadlineUpdate[0].submissionDeadline,
+                              "yyyy-MM-dd HH:mm",
+                              solicitation.timezone
+                            )}
+                          </p>
+                        </div>
+                      )}
                     {solicitation.questionDeadline && (
                       <div>
                         <label className="text-sm font-medium text-gray-500 mb-1 block">
                           Question Acceptance Deadline
                         </label>
                         <p className="text-gray-900 dark:text-gray-200 font-medium">
-                          {format(
-                            new Date(solicitation.questionDeadline),
-                            "MMM d, yyyy hh:mm aaa"
+                          {formatDateTZ(
+                            solicitation.questionDeadline,
+                            "MMM d, yyyy hh:mm aaa",
+                            solicitation.timezone
                           )}
                         </p>
                       </div>
@@ -1114,7 +1128,7 @@ export const SolicitationDetailPage = () => {
                           Bid Intent Deadline
                         </label>
                         <p className="text-gray-900 dark:text-gray-200 font-medium">
-                          {format(
+                          {formatDateTZ(
                             new Date(solicitation.bidIntentDeadline),
                             "MMM d, yyyy, hh:mm aaa"
                           )}
@@ -1283,12 +1297,30 @@ export const SolicitationDetailPage = () => {
                     Submission Deadline
                   </label>
                   <p className="text-gray-900 dark:text-gray-200 font-medium">
-                    {format(
-                      new Date(solicitation.submissionDeadline),
-                      "yyyy-MM-dd HH:mm"
+                    {formatDateTZ(
+                      solicitation.submissionDeadline,
+                      "yyyy-MM-dd HH:mm",
+                      solicitation.timezone
                     )}
                   </p>
                 </div>
+
+                {solicitation.deadlineUpdate &&
+                  solicitation.deadlineUpdate.length > 0 &&
+                  solicitation.deadlineUpdate[0]?.submissionDeadline && (
+                    <div>
+                      <label className="text-sm font-medium text-gray-500 mb-2 block">
+                        Old Submission Deadline
+                      </label>
+                      <p className="text-gray-900 dark:text-gray-200 font-medium">
+                        {formatDateTZ(
+                          solicitation.deadlineUpdate[0].submissionDeadline,
+                          "yyyy-MM-dd HH:mm",
+                          solicitation.timezone
+                        )}
+                      </p>
+                    </div>
+                  )}
 
                 {solicitation.questionDeadline && (
                   <div>
@@ -1296,9 +1328,10 @@ export const SolicitationDetailPage = () => {
                       Questions Acceptance Deadline
                     </label>
                     <p className="text-gray-900 dark:text-gray-200 font-medium">
-                      {format(
-                        new Date(solicitation.questionDeadline),
-                        "MMMM dd, yyyy pppp"
+                      {formatDateTZ(
+                        solicitation.questionDeadline,
+                        "MMM d, yyyy hh:mm aaa",
+                        solicitation.timezone
                       )}
                     </p>
                   </div>
@@ -1447,6 +1480,7 @@ export const SolicitationDetailPage = () => {
             solicitationId={id}
             deadlines={solicitation.deadlineUpdate || []}
             solicitationStatus={solicitation?.status}
+            timezone={solicitation?.timezone}
           />
         </TabsContent>
       </Tabs>
