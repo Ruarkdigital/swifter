@@ -250,7 +250,6 @@ const SubmittedDocumentPage: React.FC = () => {
     isLoading: pricingLoading,
     error: pricingError,
   } = usePricingBreakdown(proposalId || "");
-  console.log({ pricingData });
   
 
   const submitScoreMutation = useSubmitCriteriaScore();
