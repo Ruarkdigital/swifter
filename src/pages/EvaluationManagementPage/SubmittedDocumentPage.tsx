@@ -106,7 +106,8 @@ type SubmittedDocumentResponse = {
       name: string;
     };
   };
-  pricingTable: string[]
+  pricingTable: string[],
+  proposalId: string
 };
 
 type SubmitEvaluationResponse = {
@@ -240,7 +241,7 @@ const SubmittedDocumentPage: React.FC = () => {
 
   // Get proposalId from bid comparison data
   const proposalId = useMemo(() => {
-    return documentsData?.data?.data?.pricingTable?.[0] || null;
+    return documentsData?.data?.data?.proposalId || null;
   }, [documentsData]);
 
   // Add pricing breakdown API call
