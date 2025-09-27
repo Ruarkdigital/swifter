@@ -407,8 +407,6 @@ const ProposalDetailsPage: React.FC = () => {
   };
 
   const handleConfirmAward = () => {
-    // Note: vendorId should be passed from the award button context
-    // This is a placeholder - actual implementation would need the specific vendor ID
     awardVendorMutation.mutate(vendorId);
   };
 
@@ -1013,7 +1011,7 @@ const ProposalDetailsPage: React.FC = () => {
             onClick={handleSubmitForVendor}
             className="bg-green-600 hover:bg-green-700 text-white"
             disabled={
-              !solicitation?.submissionDeadline
+              (!solicitation?.submissionDeadline
                 ? true
                 : (() => {
                     try {
@@ -1026,7 +1024,9 @@ const ProposalDetailsPage: React.FC = () => {
                     } catch {
                       return true;
                     }
-                  })()
+                  })())
+              || solicitation?.status === "closed"
+              || solicitation?.status === "awarded"
             }
           >
             Submit for Vendor
@@ -1035,7 +1035,11 @@ const ProposalDetailsPage: React.FC = () => {
             <Button
               onClick={handleAwardVendor}
               className="bg-blue-600 hover:bg-blue-700 text-white"
-              disabled={proposal?.proposalDetails?.status !== "submit"}
+              disabled={
+                proposal?.proposalDetails?.status !== "submit"
+                || solicitation?.status === "closed"
+                || solicitation?.status === "awarded"
+              }
             >
               Award Vendor
             </Button>

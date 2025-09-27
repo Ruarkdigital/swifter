@@ -100,8 +100,8 @@ const MessageComponent: React.FC<MessageComponentProps> = ({
                 : "outline"
             }
             size="sm"
-            disabled={solicitationStatus === "closed"}
-            className={solicitationStatus === "closed" ? "opacity-50 cursor-not-allowed" : ""}
+            disabled={solicitationStatus === "closed" || solicitationStatus === "awarded"}
+            className={(solicitationStatus === "closed" || solicitationStatus === "awarded") ? "opacity-50 cursor-not-allowed" : ""}
             onClick={() => {
               setIsClicked(id);
               onReply(id, "addendum");

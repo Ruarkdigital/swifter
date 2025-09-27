@@ -588,12 +588,15 @@ export const SolicitationDetailPage = () => {
             </Button>
           )}
           {isCompanyAdmin &&
-            (solicitation.status !== "closed" || isCompanyAdmin) && (
+            (solicitation.status !== "closed" && solicitation.status !== "awarded" || isCompanyAdmin) && (
               <Button
                 variant="link"
                 className=""
                 onClick={() => setExtendOpen(true)}
-                disabled={solicitation.status === "closed" && !isCompanyAdmin}
+                disabled={
+                  remindEvaluatorMutation.isPending ||
+                  ((solicitation.status === "closed" || solicitation.status === "awarded") && !isCompanyAdmin)
+                }
               >
                 Extend Deadline
               </Button>
@@ -743,7 +746,7 @@ export const SolicitationDetailPage = () => {
                       className="text-blue-600"
                       disabled={
                         remindEvaluatorMutation.isPending ||
-                        (solicitation.status === "closed" && !isCompanyAdmin)
+                        ((solicitation.status === "closed" || solicitation.status === "awarded") && !isCompanyAdmin)
                       }
                     >
                       {remindEvaluatorMutation.isPending
@@ -769,7 +772,7 @@ export const SolicitationDetailPage = () => {
                       className="text-red-600"
                       disabled={
                         removeEvaluatorMutation.isPending ||
-                        (solicitation.status === "closed" && !isCompanyAdmin)
+                        (solicitation.status === "closed" || solicitation.status === "awarded") && !isCompanyAdmin
                       }
                     >
                       {removeEvaluatorMutation.isPending
@@ -963,7 +966,7 @@ export const SolicitationDetailPage = () => {
                       variant="outline"
                       className="space-x-4 rounded-xl"
                       disabled={
-                        solicitation.status === "closed" && !isCompanyAdmin
+                        (solicitation.status === "closed" || solicitation.status === "awarded") && !isCompanyAdmin
                       }
                     >
                       <Share2 className="h-4 w-4 mr-3" />
@@ -971,7 +974,7 @@ export const SolicitationDetailPage = () => {
                     </Button>
                   </ExportReportSheet>
                   {isOwner &&
-                    (solicitation.status !== "closed" || isCompanyAdmin) && (
+                    (solicitation.status !== "closed" && solicitation.status !== "awarded" || isCompanyAdmin) && (
                       <>
                         <EditSolicitationDialog
                           solicitation={solicitation as any}
@@ -1293,7 +1296,7 @@ export const SolicitationDetailPage = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="text-sm font-medium text-gray-500 mb-2 block">
+                  <label className="text-sm font-medium text-gray-500 mb-1 block">
                     Submission Deadline
                   </label>
                   <p className="text-gray-900 dark:text-gray-200 font-medium">
@@ -1309,7 +1312,7 @@ export const SolicitationDetailPage = () => {
                   solicitation.deadlineUpdate.length > 0 &&
                   solicitation.deadlineUpdate[0]?.submissionDeadline && (
                     <div>
-                      <label className="text-sm font-medium text-gray-500 mb-2 block">
+                      <label className="text-sm font-medium text-gray-500 mb-1 block">
                         Old Submission Deadline
                       </label>
                       <p className="text-gray-900 dark:text-gray-200 font-medium">
@@ -1324,7 +1327,7 @@ export const SolicitationDetailPage = () => {
 
                 {solicitation.questionDeadline && (
                   <div>
-                    <label className="text-sm font-medium text-gray-500 mb-2 block">
+                    <label className="text-sm font-medium text-gray-500 mb-1 block">
                       Questions Acceptance Deadline
                     </label>
                     <p className="text-gray-900 dark:text-gray-200 font-medium">
@@ -1338,7 +1341,7 @@ export const SolicitationDetailPage = () => {
                 )}
 
                 <div>
-                  <label className="text-sm font-medium text-gray-500 mb-2 block">
+                  <label className="text-sm font-medium text-gray-500 mb-1 block">
                     Timezone
                   </label>
                   <p className="text-gray-900 dark:text-gray-200 font-medium">

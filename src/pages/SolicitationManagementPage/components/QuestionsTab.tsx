@@ -190,7 +190,7 @@ const QuestionsTab: React.FC<QuestionsTabProps> = ({ solicitationStatus }) => {
       createQuestionMutation.mutate({
         note: content.trim(),
       });
-    } else if ((type === "addendum" || sendType === "addendum") && replyToQuestion && solicitationStatus !== "closed") {
+    } else if ((type === "addendum" || sendType === "addendum") && replyToQuestion && solicitationStatus !== "closed" && solicitationStatus !== "awarded") {
       // Handle replying with addendum - open CreateAddendumDialog
       setIsCreateAddendumDialogOpen(true);
     } else {
@@ -209,7 +209,7 @@ const QuestionsTab: React.FC<QuestionsTabProps> = ({ solicitationStatus }) => {
 
     setReplyToQuestion(question);
     setSendType(type);
-    if (type === "addendum" && solicitationStatus !== "closed") setIsCreateAddendumDialogOpen(true)
+    if (type === "addendum" && solicitationStatus !== "closed" && solicitationStatus !== "awarded") setIsCreateAddendumDialogOpen(true)
     setShowCreateQuestion(false);
   };
 

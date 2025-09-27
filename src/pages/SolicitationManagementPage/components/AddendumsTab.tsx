@@ -13,9 +13,23 @@ import {
 } from "@/components/ui/dialog";
 import { DataTable } from "@/components/layouts/DataTable";
 import { ColumnDef, PaginationState } from "@tanstack/react-table";
-import { Search, Plus, FileText, Edit, Upload, FileIcon, CheckCircle, AlertCircle } from "lucide-react";
+import {
+  Search,
+  Plus,
+  FileText,
+  Edit,
+  Upload,
+  FileIcon,
+  CheckCircle,
+  AlertCircle,
+} from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getRequest, deleteRequest, putRequest, postRequest } from "@/lib/axiosInstance";
+import {
+  getRequest,
+  deleteRequest,
+  putRequest,
+  postRequest,
+} from "@/lib/axiosInstance";
 import { ApiResponse, ApiResponseError } from "@/types";
 import { useToastHandler } from "@/hooks/useToaster";
 import { ConfirmAlert } from "@/components/layouts/ConfirmAlert";
@@ -78,7 +92,10 @@ interface AddendumsTabProps {
 }
 
 // Transform API addendum data to component format
-const transformAddendumData = (apiAddendum: SolicitationAddendum, timezone?: string): Addendum => {
+const transformAddendumData = (
+  apiAddendum: SolicitationAddendum,
+  timezone?: string
+): Addendum => {
   const formatDate = (dateString: string | undefined) => {
     if (!dateString) return "N/A";
     return formatDateTZ(dateString, "d MMM yyyy, hh:mm a 'GMT'xxx", timezone);
@@ -179,7 +196,12 @@ const useAddendums = (solicitationId: string) => {
   });
 };
 
-const AddendumsTab: React.FC<AddendumsTabProps> = ({ solicitationId, solicitationStatus, deadlines, timezone }) => {
+const AddendumsTab: React.FC<AddendumsTabProps> = ({
+  solicitationId,
+  solicitationStatus,
+  deadlines,
+  timezone,
+}) => {
   const toast = useToastHandler();
   const queryClient = useQueryClient();
   const { isVendor } = useUserRole();
@@ -259,7 +281,9 @@ const AddendumsTab: React.FC<AddendumsTabProps> = ({ solicitationId, solicitatio
   // Transform API data to component format
   const addendums = useMemo(() => {
     if (!addendumsData?.data?.data) return [] as Addendum[];
-    return addendumsData.data.data.map((a: SolicitationAddendum) => transformAddendumData(a, timezone));
+    return addendumsData.data.data.map((a: SolicitationAddendum) =>
+      transformAddendumData(a, timezone)
+    );
   }, [addendumsData, timezone]);
 
   // Filter addendums based on search query
@@ -424,9 +448,12 @@ const AddendumsTab: React.FC<AddendumsTabProps> = ({ solicitationId, solicitatio
                   onOpenChange={setIsCreateDialogOpen}
                 >
                   <DialogTrigger asChild>
-                    <Button 
+                    <Button
                       className="bg-[#2A4467] hover:bg-[#1e3252] text-white disabled:opacity-50 disabled:cursor-not-allowed"
-                      disabled={solicitationStatus === "closed"}
+                      disabled={
+                        solicitationStatus === "closed" ||
+                        solicitationStatus === "awarded"
+                      }
                     >
                       <Plus className="h-4 w-4 mr-2" />
                       Create Addendum
@@ -519,9 +546,11 @@ const EditAddendumDialog: React.FC<EditAddendumDialogProps> = ({
   isLoading,
 }) => {
   const toast = useToastHandler();
-  
+
   // Upload progress state
-  const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
+  const [uploadProgress, setUploadProgress] = useState<Record<string, number>>(
+    {}
+  );
   const [uploadingFiles, setUploadingFiles] = useState<string[]>([]);
   const [uploadErrors, setUploadErrors] = useState<Record<string, string>>({});
 
@@ -539,7 +568,7 @@ const EditAddendumDialog: React.FC<EditAddendumDialogProps> = ({
 
       // Reset upload states
       setUploadProgress({});
-      setUploadingFiles(files.map(f => f.name));
+      setUploadingFiles(files.map((f) => f.name));
       setUploadErrors({});
 
       return await postRequest({
@@ -554,10 +583,10 @@ const EditAddendumDialog: React.FC<EditAddendumDialogProps> = ({
               const percentCompleted = Math.round(
                 (progressEvent.loaded * 100) / progressEvent.total
               );
-              
+
               // Update progress for all files being uploaded
               const newProgress: Record<string, number> = {};
-              files.forEach(file => {
+              files.forEach((file) => {
                 newProgress[file.name] = percentCompleted;
               });
               setUploadProgress(newProgress);
@@ -574,9 +603,10 @@ const EditAddendumDialog: React.FC<EditAddendumDialogProps> = ({
     onError: (error) => {
       // Mark upload as failed
       setUploadingFiles([]);
-      const errorMessage = error?.response?.data?.message ?? "Failed to upload files";
+      const errorMessage =
+        error?.response?.data?.message ?? "Failed to upload files";
       toast.error("Upload Error", errorMessage);
-      
+
       // Set error for all files
       const currentFiles = getValues().documents || [];
       const newErrors: Record<string, string> = {};
@@ -584,7 +614,7 @@ const EditAddendumDialog: React.FC<EditAddendumDialogProps> = ({
         newErrors[file.name] = errorMessage;
       });
       setUploadErrors(newErrors);
-    }
+    },
   });
 
   // Fetch addendum details
@@ -639,9 +669,11 @@ const EditAddendumDialog: React.FC<EditAddendumDialogProps> = ({
   useEffect(() => {
     if (addendumDetails) {
       // Use addendum data from API, fallback to solicitation data for deadlines if not set
-      const submissionDeadline = solicitation?.solicitation?.submissionDeadline || "";
+      const submissionDeadline =
+        solicitation?.solicitation?.submissionDeadline || "";
 
-      const questionAcceptanceDeadline = solicitation?.solicitation?.questionDeadline || "";
+      const questionAcceptanceDeadline =
+        solicitation?.solicitation?.questionDeadline || "";
 
       reset({
         title: addendumDetails.title,
@@ -660,15 +692,19 @@ const EditAddendumDialog: React.FC<EditAddendumDialogProps> = ({
     // Upload files first if any new files are added
     if (data.documents && data.documents.length > 0) {
       // Filter only File objects (new uploads), not existing file objects
-      const newFiles = data.documents.filter((file: any) => file instanceof File) as File[];
-      
+      const newFiles = data.documents.filter(
+        (file: any) => file instanceof File
+      ) as File[];
+
       if (newFiles.length > 0) {
         const uploadResponse = await uploadFilesMutation.mutateAsync(newFiles);
         uploadedFiles = uploadResponse.data?.data || [];
       }
-      
+
       // Include existing files (non-File objects)
-      const existingFiles = data.documents.filter((file: any) => !(file instanceof File));
+      const existingFiles = data.documents.filter(
+        (file: any) => !(file instanceof File)
+      );
       uploadedFiles = [...uploadedFiles, ...existingFiles];
     }
 
@@ -704,31 +740,41 @@ const EditAddendumDialog: React.FC<EditAddendumDialogProps> = ({
           or drag and drop files here
         </p>
         <p className="text-xs text-gray-500">
-         Supported: PDF, DOC, DOCX, XLS, XLSX, ZIP, PNG, JPEG (Max 10MB each)
-         </p>
+          Supported: PDF, DOC, DOCX, XLS, XLSX, ZIP, PNG, JPEG (Max 10MB each)
+        </p>
       </div>
     </div>
   );
 
   const FileListItem = ({ file }: { file: File | any }) => {
     const fileName = file.name;
-    const fileSize = file instanceof File 
-      ? (file.size / 1024 / 1024).toFixed(2) 
-      : ((file.size || 0) / 1024 / 1024).toFixed(2); // Convert to MB
+    const fileSize =
+      file instanceof File
+        ? (file.size / 1024 / 1024).toFixed(2)
+        : ((file.size || 0) / 1024 / 1024).toFixed(2); // Convert to MB
     const isNewFile = file instanceof File;
     const isUploading = isNewFile && uploadingFiles.includes(fileName);
     const progress = uploadProgress[fileName] || 0;
     const hasError = uploadErrors[fileName];
-    const isComplete = isNewFile && !isUploading && !hasError && progress === 100;
+    const isComplete =
+      isNewFile && !isUploading && !hasError && progress === 100;
 
     return (
       <div className="border border-gray-200 rounded-lg p-4 bg-white hover:bg-gray-50 transition-colors">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center space-x-3">
-            <div className={cn(
-              "p-2 rounded-full",
-              hasError ? "bg-red-100" : isComplete ? "bg-green-100" : isNewFile ? "bg-blue-100" : "bg-gray-100"
-            )}>
+            <div
+              className={cn(
+                "p-2 rounded-full",
+                hasError
+                  ? "bg-red-100"
+                  : isComplete
+                  ? "bg-green-100"
+                  : isNewFile
+                  ? "bg-blue-100"
+                  : "bg-gray-100"
+              )}
+            >
               {hasError ? (
                 <AlertCircle className="h-4 w-4 text-red-600" />
               ) : isComplete ? (
@@ -753,13 +799,11 @@ const EditAddendumDialog: React.FC<EditAddendumDialogProps> = ({
           <div className="mb-2">
             <div className="flex items-center justify-between mb-1">
               <span className="text-xs text-gray-500">Uploading...</span>
-              <span className="text-xs text-gray-700 font-medium">{progress}%</span>
+              <span className="text-xs text-gray-700 font-medium">
+                {progress}%
+              </span>
             </div>
-            <Progress 
-              value={progress} 
-              className="h-2"
-              variant="default" 
-            />
+            <Progress value={progress} className="h-2" variant="default" />
           </div>
         )}
 
@@ -796,7 +840,8 @@ const EditAddendumDialog: React.FC<EditAddendumDialogProps> = ({
     "image/jpeg": [".jpg", ".jpeg"],
   };
 
-  const isUploading = uploadFilesMutation.isPending || uploadingFiles.length > 0;
+  const isUploading =
+    uploadFilesMutation.isPending || uploadingFiles.length > 0;
 
   if (!addendum) return null;
 
@@ -806,7 +851,7 @@ const EditAddendumDialog: React.FC<EditAddendumDialogProps> = ({
         <DialogTitle>Edit Addendum</DialogTitle>
       </DialogHeader>
 
-      <Forge control={control} onSubmit={handleFormSubmit} >
+      <Forge control={control} onSubmit={handleFormSubmit}>
         <div className="space-y-4">
           <Forger
             name="title"
@@ -892,10 +937,10 @@ const EditAddendumDialog: React.FC<EditAddendumDialogProps> = ({
             disabled={isLoading || isUploading}
             className="bg-[#2A4467] hover:bg-[#1e3252] text-white"
           >
-            {isLoading || isUploading 
-              ? isUploading 
-                ? "Uploading files..." 
-                : "Updating..." 
+            {isLoading || isUploading
+              ? isUploading
+                ? "Uploading files..."
+                : "Updating..."
               : "Update Addendum"}
           </Button>
         </DialogFooter>

@@ -190,7 +190,7 @@ const EditSolicitationDialog = ({
   const clearSession = useClearSession();
 
   // Hide edit button if solicitation status is closed
-  if (solicitation.status === "closed") {
+  if (solicitation.status === "closed" || solicitation.status === "awarded") {
     return null;
   }
 
