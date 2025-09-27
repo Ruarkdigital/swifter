@@ -51,10 +51,10 @@ interface ProposalPriceAction {
 }
 
 // Response interface for the API
-interface ProposalPriceBreakdownResponse {
-  message: string;
-  data: ProposalPriceAction[];
-}
+// interface ProposalPriceBreakdownResponse {
+//   message: string;
+//   data: ProposalPriceAction[];
+// }
 
 type EvaluatorCriteria = {
   _id: string;
@@ -174,7 +174,7 @@ const useEvaluationCriteria = (
 };
 
 const usePricingBreakdown = (proposalId: string) => {
-  return useQuery<ApiResponse<ProposalPriceBreakdownResponse>, ApiResponseError>({
+  return useQuery<ApiResponse< ProposalPriceAction[]>, ApiResponseError>({
     queryKey: ["pricing-breakdown", proposalId],
     queryFn: async () => {
       const response = await getRequest({
@@ -250,6 +250,8 @@ const SubmittedDocumentPage: React.FC = () => {
     isLoading: pricingLoading,
     error: pricingError,
   } = usePricingBreakdown(proposalId || "");
+  console.log({ pricingData });
+  
 
   const submitScoreMutation = useSubmitCriteriaScore();
 
@@ -272,7 +274,7 @@ const SubmittedDocumentPage: React.FC = () => {
 
   // Transform pricing data
   const pricingBreakdown = useMemo(() => {
-    return pricingData?.data?.data?.data || [];
+    return pricingData?.data?.data || [];
   }, [pricingData]);
 
   // Calculate total pricing
