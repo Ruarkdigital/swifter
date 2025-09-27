@@ -115,10 +115,10 @@ const ProposalDetailsSheet: React.FC<ProposalDetailsSheetProps> = ({
           <div className="text-gray-900 dark:text-gray-100 truncate">{item?.unitOfMeasurement ?? '-'}</div>
         </div>
         <div className="col-span-1">
-          <div className="text-right text-gray-900 dark:text-gray-100">{formatCurrency(item?.unitPrice ?? 0)}</div>
+          <div className="text-right text-gray-900 dark:text-gray-100">{formatCurrency(item?.unitPrice ?? 0, "en-US", "USD")}</div>
         </div>
         <div className="col-span-1">
-          <div className="text-right font-semibold text-gray-900 dark:text-gray-100">{formatCurrency(item?.subtotal ?? 0)}</div>
+          <div className="text-right font-semibold text-gray-900 dark:text-gray-100">{formatCurrency(item?.subtotal ?? 0, "en-US", "USD")}</div>
         </div>
       </div>
 
@@ -170,7 +170,7 @@ const ProposalDetailsSheet: React.FC<ProposalDetailsSheetProps> = ({
   }
 
   return (
-    <SheetContent className="!max-w-xl overflow-y-auto">
+    <SheetContent className="!max-w-4xl overflow-y-auto">
       {/* Header */}
       <SheetHeader className="pb-4 mb-6">
         <div className="flex items-center justify-between">
@@ -275,7 +275,7 @@ const ProposalDetailsSheet: React.FC<ProposalDetailsSheetProps> = ({
                   <div className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800">
                     <p className="font-semibold text-gray-900 dark:text-gray-100">Total</p>
                     <p className="font-semibold text-gray-900 dark:text-gray-100">
-                      {formatCurrency(computeTotalFromActions(proposal?.data?.action || []))}
+                      {formatCurrency(computeTotalFromActions(proposal?.data?.action || []), "en-US", "USD")}
                     </p>
                   </div>
                 </div>
