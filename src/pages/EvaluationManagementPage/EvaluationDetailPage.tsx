@@ -20,7 +20,7 @@ import {
   Edit,
   ChevronDown,
   ArrowRightIcon,
- Trash2,
+  Trash2,
 } from "lucide-react";
 import { useParams } from "react-router-dom";
 import { DataTable } from "@/components/layouts/DataTable";
@@ -41,7 +41,7 @@ import {
   useWithholdEvaluationGroup,
   useDeleteEvaluationGroup,
   useDeleteEvaluationCriteria,
-   BidComparisonItem,
+  BidComparisonItem,
 } from "./hooks/useEvaluationDetailApi";
 import EditEvaluationDialog from "./components/EditEvaluationDialog";
 import { PageLoader } from "@/components/ui/PageLoader";
@@ -53,7 +53,6 @@ import {
   getEvaluationStatusColorClass,
 } from "@/lib/evaluationStatusUtils";
 import { formatDateTZ } from "@/lib/utils";
-
 
 // Component Types
 
@@ -172,9 +171,10 @@ const EvaluationDetailPage: React.FC = () => {
   // State for dialog management
   const [releaseDialogOpen, setReleaseDialogOpen] = useState(false);
   const [withholdDialogOpen, setWithholdDialogOpen] = useState(false);
- const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedGroupId, setSelectedGroupId] = useState<string>("");
-  const [criteriaDeleteDialogOpen, setCriteriaDeleteDialogOpen] = useState(false);
+  const [criteriaDeleteDialogOpen, setCriteriaDeleteDialogOpen] =
+    useState(false);
   const [selectedCriteriaId, setSelectedCriteriaId] = useState<string>("");
 
   // State for tab management
@@ -188,8 +188,6 @@ const EvaluationDetailPage: React.FC = () => {
   const withholdGroupMutation = useWithholdEvaluationGroup();
   const deleteGroupMutation = useDeleteEvaluationGroup();
   const deleteCriteriaMutation = useDeleteEvaluationCriteria();
-
-
 
   // Export bid comparison mutation
   const exportBidComparisonMutation = useMutation<
@@ -282,7 +280,10 @@ const EvaluationDetailPage: React.FC = () => {
       window.open(url, "_blank", "noopener,noreferrer");
       // It's generally safe to revoke after a short delay to let the new tab load
       setTimeout(() => URL.revokeObjectURL(url), 10000);
-      toastHandlers.success("Preview Ready", "Opening submission instruction preview");
+      toastHandlers.success(
+        "Preview Ready",
+        "Opening submission instruction preview"
+      );
     },
     onError: (error) => {
       toastHandlers.error(
@@ -303,7 +304,8 @@ const EvaluationDetailPage: React.FC = () => {
     onSuccess: (data) => {
       toastHandlers.success(
         "Requirements Sent",
-        data?.data?.message || "Submission requirements sent successfully to all proponents"
+        data?.data?.message ||
+          "Submission requirements sent successfully to all proponents"
       );
     },
     onError: (error) => {
@@ -321,7 +323,7 @@ const EvaluationDetailPage: React.FC = () => {
         evaluationGroupId: selectedGroupId,
         evaluationId: id,
       });
-      
+
       if (result.status === 200) {
         toastHandlers.success("Release Group", "Group released successfully");
         setReleaseDialogOpen(false);
@@ -379,9 +381,12 @@ const EvaluationDetailPage: React.FC = () => {
         evaluationId: id,
         criteriaId: selectedCriteriaId,
       });
-      
+
       if (result.status === 204) {
-        toastHandlers.success("Delete Criteria", "Criteria deleted successfully");
+        toastHandlers.success(
+          "Delete Criteria",
+          "Criteria deleted successfully"
+        );
         setCriteriaDeleteDialogOpen(false);
       } else {
         toastHandlers.error("Delete Criteria", "Failed to delete criteria");
@@ -405,7 +410,7 @@ const EvaluationDetailPage: React.FC = () => {
       if (Array.isArray(group.evaluators)) {
         group.evaluators.forEach((evaluator: any) => {
           flatEvaluators.push({
-            _id: evaluator._id,
+            _id: evaluator.id,
             name: evaluator.name,
             email: evaluator.email,
             evaluationGroup: group.groupName,
@@ -550,41 +555,43 @@ const EvaluationDetailPage: React.FC = () => {
       accessorKey: "evaluationGroup",
       header: "Evaluation Group",
     },
-   {
-     id: "actions",
-     header: "Actions",
-     cell: ({ row }) => (
-       isOwner ? (
-         <ConfirmAlert
-           type="delete"
-           title="Delete Criteria"
-           text={`This will permanently delete the evaluation criterion. This action cannot be undone.`}
-           primaryButtonText="Delete"
-           secondaryButtonText="Cancel"
-           isLoading={deleteCriteriaMutation.isPending}
-           onPrimaryAction={handleDeleteCriteria}
-          open={criteriaDeleteDialogOpen && selectedCriteriaId === row.original._id}
-           onClose={(open) => {
-             setCriteriaDeleteDialogOpen(open);
-             if (!open) setSelectedCriteriaId("");
-           }}
-           trigger={
-             <Button
-               size="sm"
-               variant="ghost"
-               className="text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
-               onClick={() => {
-                 setSelectedCriteriaId(row.original._id);
-                 setCriteriaDeleteDialogOpen(true);
-               }}
-             >
-               <Trash2 className="h-4 w-4" />
-             </Button>
-           }
-         />
-       ) : null
-     ),
-   },
+    {
+      id: "actions",
+      header: "Actions",
+      cell: ({ row }) =>
+        isOwner ? (
+          <ConfirmAlert
+            type="delete"
+            title="Delete Criteria"
+            text={`This will permanently delete the evaluation criterion. This action cannot be undone.`}
+            primaryButtonText="Delete"
+            secondaryButtonText="Cancel"
+            isLoading={deleteCriteriaMutation.isPending}
+            onPrimaryAction={handleDeleteCriteria}
+            open={
+              criteriaDeleteDialogOpen &&
+              selectedCriteriaId === row.original._id
+            }
+            onClose={(open) => {
+              setCriteriaDeleteDialogOpen(open);
+              if (!open) setSelectedCriteriaId("");
+            }}
+            trigger={
+              <Button
+                size="sm"
+                variant="ghost"
+                className="text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+                onClick={() => {
+                  setSelectedCriteriaId(row.original._id);
+                  setCriteriaDeleteDialogOpen(true);
+                }}
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            }
+          />
+        ) : null,
+    },
   ];
 
   // Define bid comparison table columns
@@ -679,7 +686,7 @@ const EvaluationDetailPage: React.FC = () => {
             <EvaluationScorecardSheet
               evaluatorId={row.original._id}
               solicitationId={evaluation?.solicitation?._id || ""}
-             timezone={evaluation?.timezone}
+              timezone={evaluation?.timezone}
             />
           </div>
         );
@@ -709,7 +716,9 @@ const EvaluationDetailPage: React.FC = () => {
             {evaluation?.solicitation?.name}
           </h1>
         </div>
-        <Badge className={getEvaluationStatusColorClass(evaluation?.status || "")}>
+        <Badge
+          className={getEvaluationStatusColorClass(evaluation?.status || "")}
+        >
           {getEvaluationStatusLabel(evaluation?.status || "")}
         </Badge>
       </div>
@@ -728,7 +737,6 @@ const EvaluationDetailPage: React.FC = () => {
             Action
             <ArrowRightIcon
               className="dark:text-gray-200"
-
               size={16}
               aria-hidden="true"
             />
@@ -1001,35 +1009,37 @@ const EvaluationDetailPage: React.FC = () => {
                     {group.groupName}
                   </h3>
                   <div className="flex gap-2">
-                   {isOwner && (
-                     <ConfirmAlert
-                       type="delete"
-                      title="Delete Group"
-                       text={`This will permanently delete the evaluation group and its assignments. This action cannot be undone.`}
-                       primaryButtonText="Delete"
-                       secondaryButtonText="Cancel"
-                       isLoading={deleteGroupMutation.isPending}
-                       onPrimaryAction={handleDeleteGroup}
-                       open={deleteDialogOpen && selectedGroupId === group.groupId}
-                       onClose={(open) => {
-                         setDeleteDialogOpen(open);
-                         if (!open) setSelectedGroupId("");
-                       }}
-                       trigger={
-                         <Button
-                           size="sm"
-                           variant="ghost"
-                           className="text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
-                           onClick={() => {
-                             setSelectedGroupId(group.groupId);
-                             setDeleteDialogOpen(true);
-                           }}
-                         >
-                           <Trash2 className="h-4 w-4" />
-                         </Button>
-                       }
-                     />
-                   )}
+                    {isOwner && (
+                      <ConfirmAlert
+                        type="delete"
+                        title="Delete Group"
+                        text={`This will permanently delete the evaluation group and its assignments. This action cannot be undone.`}
+                        primaryButtonText="Delete"
+                        secondaryButtonText="Cancel"
+                        isLoading={deleteGroupMutation.isPending}
+                        onPrimaryAction={handleDeleteGroup}
+                        open={
+                          deleteDialogOpen && selectedGroupId === group.groupId
+                        }
+                        onClose={(open) => {
+                          setDeleteDialogOpen(open);
+                          if (!open) setSelectedGroupId("");
+                        }}
+                        trigger={
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+                            onClick={() => {
+                              setSelectedGroupId(group.groupId);
+                              setDeleteDialogOpen(true);
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        }
+                      />
+                    )}
                     {isOwner && group.status === "Withhold" && (
                       <ConfirmAlert
                         type="success"
