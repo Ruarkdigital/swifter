@@ -75,7 +75,8 @@ export function formatDateTZ(
   try {
     // Normalize input to Date
     const date =
-      typeof dateInput === "string" ? new Date(dateInput) : dateInput;
+      typeof dateInput === "string" ? new Date(dateInput?.split("T")?.[0] || "") : dateInput;
+    const baseDate = dateInput instanceof Date ? dateInput : new Date(dateInput);
     // Guard: invalid Date -> safe string
     if (!(date instanceof Date) || isNaN(date.getTime())) return "N/A";
 
@@ -87,7 +88,7 @@ export function formatDateTZ(
     // : Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
 
     const formattedTime =
-      date.toISOString()?.split("T")?.[1]?.split(".")?.[0] || "N/A";
+      baseDate.toISOString()?.split("T")?.[1]?.split(".")?.[0] || "N/A";
 
     return (
       date.toLocaleString("en-US", {

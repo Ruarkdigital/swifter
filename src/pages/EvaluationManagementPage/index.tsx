@@ -325,9 +325,9 @@ export const EvaluationManagementPage = () => {
     if (dashboardStats) {
       return {
         allEvaluations: dashboardStats.total || 0,
-        activeEvaluations: dashboardStats.Active || 0,
-        pendingEvaluations: dashboardStats.Pending || 0,
-        completedEvaluations: dashboardStats.Completed || 0,
+        activeEvaluations: dashboardStats.active || 0,
+        pendingEvaluations: dashboardStats.pending || 0,
+        completedEvaluations: dashboardStats.completed || 0,
       };
     }
     // Fallback values
