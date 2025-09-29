@@ -293,11 +293,9 @@ const EditSolicitationDialog = ({
     const vendors =
       s.vendors?.map((vendor: any) => ({
         value: vendor._id,
-        label: vendor?.id?.name|| vendor.email || vendor?.id?.invite?.email,
-        name: vendor?.id?.name|| vendor.email || vendor?.id?.invite?.email,
+        label: vendor?.id?.name || vendor.email || vendor?.id?.invite?.email,
+        name: vendor?.id?.name || vendor.email || vendor?.id?.invite?.email,
       })) || [];
-    
-      // console.log({ vendors, s })
 
     return {
       solicitationName: s.name || "",
@@ -338,7 +336,8 @@ const EditSolicitationDialog = ({
 
   // Single form instance for all steps
   const forge = useForge<EditSolicitationFormData>({
-    defaultValues: getDefaultValues(),
+    // defaultValues: getDefaultValues(),
+    // values: getDefaultValues(),
   });
 
   // Reset form when solicitation changes or when detailed data loads
@@ -900,7 +899,10 @@ const EditSolicitationDialog = ({
 
           {currentStep === 4 && (
             <>
-              <Step4Form />
+              <Step4Form
+                documents={getDefaultValues().documents as any[] || []}
+                control={forge.control as any}
+              />
             </>
           )}
 

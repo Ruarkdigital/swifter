@@ -27,6 +27,7 @@ import {
 
 // Type definitions for uploaded files
 interface UploadedFile {
+  id?: string; // Optional document ID for deduplication
   name: string;
   url: string;
   type: string;
@@ -314,7 +315,13 @@ const FileListItem = ({
 };
 
 // Main file upload manager component
-export const FileUploadManager = ({ control }: { control: any }) => {
+export const FileUploadManager = ({
+  control,
+  documents,
+}: {
+  control: any;
+  documents: DocumentType[];
+}) => {
   // Use persistent file state from Zustand store
   const filesWithState = useFilesWithState();
   const addFiles = useAddFiles();
@@ -327,7 +334,7 @@ export const FileUploadManager = ({ control }: { control: any }) => {
   const [isUploading, setIsUploading] = useState(false);
   const [initialized, setInitialized] = useState(false);
   const toast = useToastHandler();
-  const { setValue, getValues } = useForgeValues({ control });
+  const { setValue } = useForgeValues({ control });
 
   // Initialize session on component mount
   useEffect(() => {
@@ -339,26 +346,50 @@ export const FileUploadManager = ({ control }: { control: any }) => {
     }
   }, [sessionId, setSessionId]);
 
-  // Initialize existing documents from form values
-  useEffect(() => {
-    if (!initialized && sessionId && filesWithState.length === 0) {
-      const formValues = getValues();
-      // console.log({ formValues })
-      const existingDocuments = formValues?.documents;
+  // Helper function to check if a file already exists in the store using document ID
+  const fileExistsInStore = useCallback(
+    (docToCheck: DocumentType) => {
+      // For uploaded files, we only need to check by document ID since that's unique
+      return filesWithState.some((fileState) => {
+        return fileState.uploadedData?.id === docToCheck._id;
+      });
+    },
+    [filesWithState]
+  );
 
-      if (
-        existingDocuments &&
-        Array.isArray(existingDocuments) &&
-        existingDocuments.length > 0
-      ) {
-        // Convert existing documents to FileWithUploadState format
-        const existingFileStates = existingDocuments.map((doc: any) => ({
+  // Initialize existing documents from form values with deduplication
+  useEffect(() => {
+    if (!initialized && sessionId && documents?.length > 0) {
+      // console.log('Initializing documents:', {
+      //   documentsCount: documents.length,
+      //   currentStoreFiles: filesWithState.length,
+      //   storeFileIds: filesWithState.map(f => f.uploadedData?.id).filter(Boolean)
+      // });
+
+      // Filter out documents that already exist in the store
+      const newDocuments = documents.filter((doc: DocumentType) => {
+        const exists = fileExistsInStore(doc);
+        // console.log(`Document ${doc.name} (ID: ${doc._id}) exists in store: ${exists}`);
+        return !exists;
+      });
+      
+      // console.log('Filtering results:', { 
+      //   totalExisting: documents.length,
+      //   newDocuments: newDocuments.length,
+      //   currentStoreFiles: filesWithState.length 
+      // });
+
+      if (newDocuments.length > 0) {
+        // console.log('Adding new documents:', newDocuments.map(d => ({ name: d.name, id: d._id })));
+        // Convert new documents to FileWithUploadState format
+        const newFileStates = newDocuments.map((doc: DocumentType) => ({
           file: new File([], doc.name || "document", {
             type: doc.type || "application/octet-stream",
           }),
           status: "uploaded" as const,
           progress: 100,
           uploadedData: {
+            id: doc._id, // Store the document ID for deduplication
             name: doc.name,
             url: doc.url,
             type: doc.type,
@@ -367,13 +398,13 @@ export const FileUploadManager = ({ control }: { control: any }) => {
           },
         }));
 
-        // Add existing files to state
-        addFiles(existingFileStates);
+        // Add only new files to state
+        addFiles(newFileStates);
       }
 
       setInitialized(true);
     }
-  }, [initialized, sessionId, addFiles, getValues, filesWithState.length]);
+  }, [initialized, sessionId, documents, addFiles]);
 
   // Cleanup on page unload or navigation away
   useEffect(() => {
@@ -396,10 +427,13 @@ export const FileUploadManager = ({ control }: { control: any }) => {
     window.addEventListener("beforeunload", handleBeforeUnload);
     window.addEventListener("unload", handleUnload);
 
-    // Cleanup event listeners
+    // Cleanup function for component unmount
     return () => {
       window.removeEventListener("beforeunload", handleBeforeUnload);
       window.removeEventListener("unload", handleUnload);
+
+      // Clear the initialized flag when component unmounts to allow proper re-initialization
+      setInitialized(false);
     };
   }, [filesWithState.length, clearSession]);
 
@@ -590,8 +624,24 @@ export const FileUploadManager = ({ control }: { control: any }) => {
   );
 };
 
-function Step4Form({ control }: { control?: any }) {
-  return <FileUploadManager control={control} />;
+export interface DocumentType {
+  _id: string;
+  name: string;
+  url: string;
+  size: string;
+  type: string;
+  originalName: string;
+  fileName: string;
+}
+
+function Step4Form({
+  control,
+  documents,
+}: {
+  control: any;
+  documents: DocumentType[];
+}) {
+  return <FileUploadManager control={control} documents={documents} />;
 }
 
 export default Step4Form;
