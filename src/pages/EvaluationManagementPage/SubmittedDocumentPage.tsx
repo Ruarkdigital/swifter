@@ -106,7 +106,7 @@ type SubmittedDocumentResponse = {
       name: string;
     };
   };
-  pricingTable: string[],
+  pricingTable: boolean,
   proposalId: string
 };
 
@@ -242,6 +242,10 @@ const SubmittedDocumentPage: React.FC = () => {
   // Get proposalId from bid comparison data
   const proposalId = useMemo(() => {
     return documentsData?.data?.data?.proposalId || null;
+  }, [documentsData]);
+
+  const isPricingTableEnabled = useMemo(() => {
+    return documentsData?.data?.data?.pricingTable || false;
   }, [documentsData]);
 
   // Add pricing breakdown API call
@@ -569,6 +573,7 @@ const SubmittedDocumentPage: React.FC = () => {
           </TabsTrigger>
           <TabsTrigger
             value="pricing-breakdown"
+            disabled={!isPricingTableEnabled}
             className="data-[state=active]:border-[#2A4467] data-[state=active]:dark:bg-transparent data-[state=active]:dark:text-slate-100 relative rounded-none py-2 after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 border-0 border-b data-[state=active]:bg-transparent data-[state=active]:shadow-none flex-none px-3"
           >
             Pricing Breakdown
