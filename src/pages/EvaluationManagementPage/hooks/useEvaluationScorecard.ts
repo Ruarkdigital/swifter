@@ -9,6 +9,8 @@ interface EvaluationCriteria {
   } | null;
   score: string;
   title: string;
+  vendorId: string;
+  vendorName: string;
 }
 
 interface EvaluatorDetails {

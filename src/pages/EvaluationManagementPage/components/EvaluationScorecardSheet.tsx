@@ -160,6 +160,9 @@ const EvaluationScorecardSheet: React.FC<EvaluationScorecardSheetProps> = ({
                         <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
                           {criterion?.title || `Criterion ${index + 1}`}
                         </span>
+                        <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                          {criterion?.vendorName || `Vendor ${index + 1}`}
+                        </span>
                       </div>
                       <div className="px-4 pb-4 border-t">
                         <div className="grid grid-cols-2 gap-4 mb-4">

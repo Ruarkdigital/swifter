@@ -367,6 +367,11 @@ export const RoleBasedDashboard: React.FC = () => {
                   case "vendors-bid-intent-status":
                     return {
                       ...chart,
+                      centerText: {
+                        label: "Active Bids",
+                        value:
+                          procurementBidIntent?.activeBid.toString() || "0",
+                      },
                       data: transformedBidIntent,
                     };
                   case "vendors-distribution":

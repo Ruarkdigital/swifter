@@ -549,8 +549,7 @@ export class ChartDataTransformer {
       ]);
     }
 
-    const total =
-      (data.invited || 0) + (data.confirmed || 0) + (data.declined || 0);
+    const total = data.totalBid || 0;
     const chartData = [
       {
         name: "Invited",
