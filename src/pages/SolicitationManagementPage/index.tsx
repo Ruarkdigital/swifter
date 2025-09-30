@@ -1391,66 +1391,65 @@ export const SolicitationManagementPage = () => {
 
                   <SolicitationFilters
                     filters={[
-                      {
-                        title: "Date",
-                        options: [
-                          {
-                            hasOptions: true,
-                            value: "date",
-                            label: "Date Published",
-                            subOptions: [
-                              {
-                                title: "All",
-                                value: "all",
-                              },
-                              {
-                                title: "Today",
-                                value: "today",
-                              },
-                              {
-                                title: "Last 7 Days",
-                                value: "7_days",
-                              },
-                              {
-                                title: "Last 30 Days",
-                                value: "30_days",
-                              },
-                              {
-                                title: "Custom",
-                                value: "custom",
-                              },
-                            ],
-                          },
-                        ],
-                      },
-                      {
-                        title: "Status",
-                        showIcon: true,
-                        options: [
-                          {
-                            label: "Active",
-                            value: "active",
-                          },
-                          {
-                            label: "Suspended",
-                            value: "suspended",
-                          },
-                          {
-                            label: "Pending",
-                            value: "pending",
-                          },
-                        ],
-                      },
-                      {
-                        title: "Category",
-                        options: [
-                          {
-                            label: "All",
-                            value: "all",
-                          },
-                        ],
-                      },
-                    ]}
+                        {
+                          title: "Date",
+                          options: [
+                            {
+                              hasOptions: true,
+                              value: "date",
+                              label: "Date Published",
+                              subOptions: [
+                                {
+                                  title: "All",
+                                  value: "all",
+                                },
+                                {
+                                  title: "Today",
+                                  value: "today",
+                                },
+                                {
+                                  title: "Last 7 Days",
+                                  value: "7_days",
+                                },
+                                {
+                                  title: "Last 30 Days",
+                                  value: "30_days",
+                                },
+                                {
+                                  title: "Custom",
+                                  value: "custom",
+                                },
+                              ],
+                            },
+                          ],
+                        },
+                        {
+                          title: "Status",
+                          showIcon: true,
+                          options: [
+                            {
+                              label: "All Status",
+                              value: "all_status",
+                            },
+                            {
+                              label: "Published",
+                              value: "published",
+                            },
+                            {
+                              label: "Draft",
+                              value: "draft",
+                            },
+                            {
+                              label: "Under Evaluation",
+                              value: "under_evaluation",
+                            },
+                            {
+                              label: "Closed",
+                              value: "closed",
+                            },
+                          ],
+                        },
+                      ]}
                     onFilterChange={handleFilterChange}
                   />
                 </div>
