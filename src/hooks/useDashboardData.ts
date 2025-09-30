@@ -70,12 +70,12 @@ export interface VendorsDistributionData {
 // Evaluator Dashboard Data Types
 export interface EvaluatorDashboardData {
   total: number;
-  Active: number;
-  Inactive: number;
-  Suspended: number;
-  Pending: number;
-  Completed: number;
-  Draft: number;
+  active: number;
+  inactive: number;
+  suspended: number;
+  pending: number;
+  completed: number;
+  draft: number;
 }
 
 export interface EvaluatorMyActions {
