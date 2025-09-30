@@ -265,15 +265,39 @@ export const VendorManagementPage = () => {
             endDate = endOfYear(today);
             break;
           default:
-            // For custom date ranges or other options, use the original value
-            params.dateFilter = filters.datePublished;
+            // For custom date ranges, try to parse as date range format
+            if (filters.datePublished.includes('-')) {
+              // If it's already in start_date-end_date format, use it directly
+              params.date = filters.datePublished;
+            } else {
+              // For other predefined options like "7_days", convert to proper date range
+              switch (filters.datePublished) {
+                case "today":
+                  startDate = startOfDay(today);
+                  endDate = endOfDay(today);
+                  break;
+                case "7_days":
+                  startDate = startOfDay(subDays(today, 6));
+                  endDate = endOfDay(today);
+                  break;
+                case "30_days":
+                  startDate = startOfDay(subDays(today, 29));
+                  endDate = endOfDay(today);
+                  break;
+                default:
+                  // Fallback: use the original value if we can't parse it
+                  params.date = filters.datePublished;
+                  break;
+              }
+            }
             break;
         }
 
         // If we calculated a date range, format and add it to params
         if (startDate && endDate) {
-          params.startDate = format(startDate, "yyyy-MM-dd");
-          params.endDate = format(endDate, "yyyy-MM-dd");
+          const formattedStartDate = format(startDate, "yyyy-MM-dd");
+          const formattedEndDate = format(endDate, "yyyy-MM-dd");
+          params.date = `${formattedStartDate}-${formattedEndDate}`;
         }
       }
 
