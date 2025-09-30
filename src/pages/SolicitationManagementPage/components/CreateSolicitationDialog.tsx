@@ -631,7 +631,7 @@ const CreateSolicitationDialog = () => {
 
           {currentStep === 4 && (
             <>
-              <Step4Form control={forge.control} />
+              <Step4Form control={forge.control} documents={[]} />
             </>
           )}
 

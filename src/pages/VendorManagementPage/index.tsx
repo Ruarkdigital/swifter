@@ -703,7 +703,7 @@ export const VendorManagementPage = () => {
                       {
                         hasOptions: true,
                         value: "date",
-                        label: "Date Published",
+                        label: "Date Invited",
                         subOptions: [
                           {
                             title: "All",
@@ -738,21 +738,17 @@ export const VendorManagementPage = () => {
                         value: "all_status",
                       },
                       {
-                        label: "Published",
-                        value: "published",
+                        label: "Active",
+                        value: "active",
                       },
                       {
-                        label: "Draft",
-                        value: "draft",
+                        label: "Pending",
+                        value: "pending",
                       },
                       {
-                        label: "Under Evaluation",
-                        value: "under evaluation",
-                      },
-                      {
-                        label: "Closed",
-                        value: "closed",
-                      },
+                        label: "Suspended",
+                        value: "suspended",
+                      }
                     ],
                   },
                 ]}

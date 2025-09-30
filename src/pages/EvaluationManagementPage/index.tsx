@@ -763,19 +763,20 @@ export const EvaluationManagementPage = () => {
             <div className="mt-6">
               <DataTable
                 header={() => (
-                  <Header
-                    title="All Evaluations"
-                    searchQuery={searchQuery}
-                    setSearchQuery={setSearchQuery}
-                    debouncedSearchQuery={debouncedSearchQuery}
-                    dateFilter={allEvaluationsDateFilter}
-                    statusFilter={statusFilter}
-                    onDateFilterChange={handleDateFilterChange}
-                    onStatusFilterChange={setStatusFilter}
-                    onClearFilters={handleClearFilters}
-                    totalCount={evaluationsResponse?.data?.total?.[0]?.total || 0}
-                  />
-                )}
+                <Header
+                  title="All Evaluations"
+                  searchQuery={searchQuery}
+                  setSearchQuery={setSearchQuery}
+                  debouncedSearchQuery={debouncedSearchQuery}
+                  dateFilter={allEvaluationsDateFilter}
+                  statusFilter={statusFilter}
+                  onDateFilterChange={handleDateFilterChange}
+                  onStatusFilterChange={setStatusFilter}
+                  onClearFilters={handleClearFilters}
+                  totalCount={evaluationsResponse?.data?.total?.[0]?.total || 0}
+                  tabType="all_evaluations"
+                />
+              )}
                 emptyPlaceholder={<EmptyState />}
                 classNames={{
                   container:
@@ -814,6 +815,7 @@ export const EvaluationManagementPage = () => {
                   onStatusFilterChange={setStatusFilter}
                   onClearFilters={handleClearFilters}
                   totalCount={myEvaluationsResponse?.data?.total?.[0]?.total || 0}
+                  tabType="my_evaluations"
                 />
               )}
               emptyPlaceholder={<EmptyState />}
@@ -854,6 +856,7 @@ export const EvaluationManagementPage = () => {
                   onStatusFilterChange={setStatusFilter}
                   onClearFilters={handleClearFilters}
                   totalCount={assignedEvaluationData.length}
+                  tabType="assigned_evaluation"
                 />
               )}
               classNames={{
@@ -951,6 +954,7 @@ type HeaderProps = {
   onStatusFilterChange: (value: string) => void;
   onClearFilters: () => void;
   totalCount?: number;
+  tabType?: 'all_evaluations' | 'my_evaluations' | 'assigned_evaluation';
 };
 
 const Header = ({
@@ -963,6 +967,7 @@ const Header = ({
   onDateFilterChange,
   onStatusFilterChange,
   totalCount,
+  tabType,
 }: HeaderProps) => {
   return (
     <div className="flex items-center w-full justify-between border-b border-[#E9E9EB] dark:border-slate-600 p-3 pt-0">
@@ -997,7 +1002,7 @@ const Header = ({
                 {
                   hasOptions: true,
                   value: "date",
-                  label: "Date Published",
+                  label: "Date Created",
                   subOptions: [
                     {
                       title: "All",
@@ -1039,10 +1044,10 @@ const Header = ({
                   label: "Pending",
                   value: "pending",
                 },
-                {
+                ...(tabType !== 'assigned_evaluation' ? [{
                   label: "Draft",
                   value: "draft",
-                },
+                }] : []),
               ],
             },
           ]}
