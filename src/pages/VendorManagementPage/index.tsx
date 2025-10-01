@@ -35,6 +35,15 @@ import {
 import { IconMap } from "@/components/layouts/RoleBasedDashboard/components/StatsCard";
 import { DropdownFilters } from "@/components/layouts/SolicitationFilters";
 import { formatDateTZ } from "@/lib/utils";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { Calendar } from "@/components/ui/calendar";
+import type { DateRange } from "react-day-picker";
 
 // Dashboard statistics type (matching API response)
 type VendorDashboard = {
@@ -169,6 +178,9 @@ export const VendorManagementPage = () => {
   // Add reminder dialog and selected vendor state
   const [isReminderDialogOpen, setIsReminderDialogOpen] = useState(false);
   const [selectedVendor, setSelectedVendor] = useState<Vendor | null>(null);
+  // Custom date range picker state
+  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
+  const [tempDateRange, setTempDateRange] = useState<DateRange | undefined>();
 
   // Initialize filters from URL parameters
   useEffect(() => {
@@ -476,11 +488,34 @@ export const VendorManagementPage = () => {
 
     // Update filters based on the filter type
     if (filterType === "Date") {
-      setFilters((prev) => ({ ...prev, datePublished: value }));
+      if (value === "custom") {
+        setIsDatePickerOpen(true);
+        setTempDateRange(undefined);
+      } else {
+        setFilters((prev) => ({ ...prev, datePublished: value }));
+      }
     } else if (filterType === "Status") {
       setFilters((prev) => ({ ...prev, status: value }));
     } else if (filterType === "Plan") {
       setFilters((prev) => ({ ...prev, plan: value }));
+    }
+  };
+
+  // Confirm and cancel handlers for custom date range
+  const handleDateRangeConfirm = () => {
+    if (tempDateRange?.from && tempDateRange?.to) {
+      const start = format(startOfDay(tempDateRange.from), "yyyy-MM-dd");
+      const end = format(endOfDay(tempDateRange.to), "yyyy-MM-dd");
+      setFilters((prev) => ({ ...prev, datePublished: `${start}-${end}` }));
+      setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+    }
+    setIsDatePickerOpen(false);
+  };
+
+  const handleDateRangeCancel = () => {
+    setIsDatePickerOpen(false);
+    if (!filters.datePublished || filters.datePublished === "custom") {
+      setFilters((prev) => ({ ...prev, datePublished: "all" }));
     }
   };
 
@@ -806,6 +841,45 @@ export const VendorManagementPage = () => {
           pagination,
         }}
       />
+
+      {/* Custom Date Range Dialog */}
+      <Dialog open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
+        <DialogContent className="sm:max-w-3xl p-0 overflow-hidden shadow-xl">
+          <div className="border-b px-6 py-4">
+            <DialogHeader>
+              <DialogTitle className="text-lg font-semibold">Select Date Range</DialogTitle>
+              <DialogDescription className="text-sm text-muted-foreground">
+                Choose start and end dates to filter vendors.
+              </DialogDescription>
+            </DialogHeader>
+          </div>
+          <div className="px-6 py-5">
+            <Calendar
+              mode="range"
+              selected={tempDateRange}
+              onSelect={setTempDateRange}
+              numberOfMonths={2}
+              className="rounded-md border bg-background"
+              classNames={{
+                day_button:
+                  "relative flex size-9 items-center justify-center whitespace-nowrap rounded-md p-0 text-foreground group-data-selected:bg-primary group-data-selected:text-primary-foreground group-[[data-selected]:not(.range-middle)]:ring-2 group-[[data-selected]:not(.range-middle)]:ring-primary/40 hover:not-in-data-selected:bg-accent hover:not-in-data-selected:text-foreground",
+                range_start: "range-start rounded-e-none",
+                range_end: "range-end rounded-s-none",
+                range_middle:
+                  "range-middle group-data-selected:bg-primary/10 group-data-selected:text-foreground",
+              }}
+            />
+          </div>
+          <div className="flex items-center justify-end gap-3 border-t px-6 py-4">
+            <Button variant="outline" onClick={handleDateRangeCancel} className="transition-colors">
+              Cancel
+            </Button>
+            <Button onClick={handleDateRangeConfirm} className="transition-transform hover:scale-[1.02]">
+              Apply
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Send Reminder Dialog */}
       <ConfirmAlert

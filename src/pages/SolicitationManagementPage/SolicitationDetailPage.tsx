@@ -965,9 +965,9 @@ export const SolicitationDetailPage = () => {
                       size="lg"
                       variant="outline"
                       className="space-x-4 rounded-xl"
-                      disabled={
-                        (solicitation.status === "closed" || solicitation.status === "awarded") && !isCompanyAdmin
-                      }
+                      // disabled={
+                      //   (solicitation.status === "closed" || solicitation.status === "awarded") && !isCompanyAdmin
+                      // }
                     >
                       <Share2 className="h-4 w-4 mr-3" />
                       Export

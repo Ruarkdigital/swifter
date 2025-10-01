@@ -34,7 +34,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Calendar } from "@/components/ui/calendar";
 import type { DateRange } from "react-day-picker";
@@ -241,26 +241,26 @@ export const EvaluationManagementPage = () => {
     if (!dateFilter || dateFilter === "all") return undefined;
 
     if (dateFilter === "custom" && dateRange.startDate && dateRange.endDate) {
-      return `${format(dateRange.startDate, "yyyy-MM-dd")}-${format(
+      return `${format(dateRange.startDate, "yyyy/MM/dd")}-${format(
         dateRange.endDate,
-        "yyyy-MM-dd"
+        "yyyy/MM/dd"
       )}`;
     }
 
     if (dateFilter === "today") {
-      const today = format(new Date(), "yyyy-MM-dd");
+      const today = format(new Date(), "yyyy/MM/dd");
       return `${today}-${today}`;
     }
 
     if (dateFilter === "last7days") {
-      const endDate = format(new Date(), "yyyy-MM-dd");
-      const startDate = format(subDays(new Date(), 7), "yyyy-MM-dd");
+      const endDate = format(new Date(), "yyyy/MM/dd");
+      const startDate = format(subDays(new Date(), 7), "yyyy/MM/dd");
       return `${startDate}-${endDate}`;
     }
 
     if (dateFilter === "last30days") {
-      const endDate = format(new Date(), "yyyy-MM-dd");
-      const startDate = format(subDays(new Date(), 30), "yyyy-MM-dd");
+      const endDate = format(new Date(), "yyyy/MM/dd");
+      const startDate = format(subDays(new Date(), 30), "yyyy/MM/dd");
       return `${startDate}-${endDate}`;
     }
 
@@ -916,25 +916,47 @@ export const EvaluationManagementPage = () => {
 
       {/* Custom Date Range Picker Dialog */}
       <Dialog open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Select Date Range</DialogTitle>
-          </DialogHeader>
-          <div className="flex justify-center py-4">
+        <DialogContent className="sm:max-w-3xl p-0 overflow-hidden shadow-xl">
+          <div className="border-b px-6 py-4">
+            <DialogHeader>
+              <DialogTitle className="text-lg font-semibold">Select Date Range</DialogTitle>
+              <DialogDescription className="text-sm text-muted-foreground">
+                Choose a start and end date to filter evaluations.
+              </DialogDescription>
+            </DialogHeader>
+          </div>
+          <div className="px-6 py-5">
             <Calendar
               mode="range"
               selected={tempDateRange}
               onSelect={setTempDateRange}
               numberOfMonths={2}
-              className="rounded-md border"
+              className="rounded-md border bg-background"
+              classNames={{
+                day_button:
+                  "relative flex size-9 items-center justify-center whitespace-nowrap rounded-md p-0 text-foreground group-data-selected:bg-primary group-data-selected:text-primary-foreground group-[[data-selected]:not(.range-middle)]:ring-2 group-[[data-selected]:not(.range-middle)]:ring-primary/40 hover:not-in-data-selected:bg-accent hover:not-in-data-selected:text-foreground",
+                range_start: "range-start rounded-e-none",
+                range_end: "range-end rounded-s-none",
+                range_middle:
+                  "range-middle group-data-selected:bg-primary/10 group-data-selected:text-foreground",
+              }}
             />
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={handleDateRangeCancel}>
+          <div className="flex items-center justify-end gap-3 border-t px-6 py-4">
+            <Button
+              variant="outline"
+              onClick={handleDateRangeCancel}
+              className="transition-colors"
+            >
               Cancel
             </Button>
-            <Button onClick={handleDateRangeConfirm}>Apply</Button>
-          </DialogFooter>
+            <Button
+              onClick={handleDateRangeConfirm}
+              className="transition-transform hover:scale-[1.02]"
+            >
+              Apply
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

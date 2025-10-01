@@ -115,7 +115,7 @@ const ProposalDetailsSheet: React.FC<ProposalDetailsSheetProps> = ({
           <div className="text-gray-900 dark:text-gray-100 truncate">{item?.unitOfMeasurement ?? '-'}</div>
         </div>
         <div className="col-span-1">
-          <div className="text-right text-gray-900 dark:text-gray-100">{formatCurrency(item?.unitPrice ?? 0, "en-US", "USD")}</div>
+          <div className="text-right text-gray-900 dark:text-gray-100 px-3">{formatCurrency(item?.unitPrice ?? 0, "en-US", "USD")}</div>
         </div>
         <div className="col-span-1">
           <div className="text-right font-semibold text-gray-900 dark:text-gray-100">{formatCurrency(item?.subtotal ?? 0, "en-US", "USD")}</div>
@@ -170,7 +170,7 @@ const ProposalDetailsSheet: React.FC<ProposalDetailsSheetProps> = ({
   }
 
   return (
-    <SheetContent className="!max-w-4xl overflow-y-auto">
+    <SheetContent className="!max-w-6xl overflow-y-auto">
       {/* Header */}
       <SheetHeader className="pb-4 mb-6">
         <div className="flex items-center justify-between">

@@ -26,12 +26,10 @@ import {
   FileText,
   MessageCircle,
   Bot,
-  User,
-  // AlertCircle,
-  CheckCircle2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAIChat, Message } from "@/hooks/useAIChat";
+import MessageContainer from "./components/MessageContainer";
 
 interface FileAttachment {
   id: string;
@@ -344,14 +342,6 @@ const AIChatWidget: React.FC<AIChatWidgetProps> = ({
     }
   }, [inputValue]);
 
-  const formatTime = (date: Date) => {
-    return date.toLocaleTimeString("en-US", {
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false,
-    });
-  };
-
   const formatFileSize = (bytes: number) => {
     if (bytes === 0) return "0 Bytes";
     const k = 1024;
@@ -392,53 +382,17 @@ const AIChatWidget: React.FC<AIChatWidgetProps> = ({
     setIsMinimized(false);
   }, []);
 
-  // Enhanced message rendering with better styling
-  const renderMessage = useCallback((message: any) => {
-    const isUser = message.sender === "user";
-    // const isAssistant = message.sender === 'ai';
-
+  // Enhanced message rendering with MessageContainer
+  const renderMessage = useCallback((message: Message) => {
     return (
-      <div
+      <MessageContainer
         key={message.id}
-        className={cn(
-          "flex items-start gap-3 group",
-          isUser ? "justify-end" : "justify-start"
-        )}
-      >
-        {!isUser && (
-          <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-            <Bot className="h-4 w-4 text-white" />
-          </div>
-        )}
-
-        <div
-          className={cn(
-            "max-w-[75%] rounded-2xl px-4 py-3 text-sm shadow-sm",
-            isUser
-              ? "bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-br-md"
-              : "bg-white border border-gray-200 text-gray-900 rounded-bl-md dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100"
-          )}
-        >
-          <p className="whitespace-pre-wrap leading-relaxed">
-            {message.content}
-          </p>
-          <div
-            className={cn(
-              "flex items-center justify-between mt-2 text-xs opacity-70",
-              isUser ? "text-blue-100" : "text-gray-500 dark:text-gray-400"
-            )}
-          >
-            <span>{formatTime(message.timestamp)}</span>
-            {isUser && <CheckCircle2 className="h-3 w-3 ml-2" />}
-          </div>
-        </div>
-
-        {isUser && (
-          <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center">
-            <User className="h-4 w-4 text-white" />
-          </div>
-        )}
-      </div>
+        id={message.id}
+        content={message.content}
+        sender={message.sender}
+        timestamp={message.timestamp}
+        referencedMessage={message.referencedMessage}
+      />
     );
   }, []);
 

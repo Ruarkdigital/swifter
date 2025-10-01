@@ -1,10 +1,18 @@
 import { useState, useCallback } from 'react';
 
+interface ReferencedMessage {
+  id: string;
+  content: string;
+  sender: 'user' | 'ai';
+  timestamp: Date;
+}
+
 interface Message {
   id: string;
   content: string;
   sender: 'user' | 'ai';
   timestamp: Date;
+  referencedMessage?: ReferencedMessage;
 }
 
 interface UseAIChatOptions {
@@ -104,4 +112,4 @@ export const useAIChat = (options: UseAIChatOptions = {}) => {
   };
 };
 
-export type { Message };
+export type { Message, ReferencedMessage };
