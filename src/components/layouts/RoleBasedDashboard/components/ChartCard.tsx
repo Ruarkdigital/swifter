@@ -78,15 +78,27 @@ export const axisConfig: AxisConfig = {
   },
   horizontal: {
     x: {
+      type: "category" as const,
       dataKey: (data: any[]) => getLabelKey(data),
       tick: { fill: "currentColor", fontSize: 12 },
       stroke: "currentColor",
       className: "text-gray-500 dark:text-gray-400",
+      axisLine: true,
+      tickLine: true,
+      tickMargin: 8,
+      interval: 0,
+      minTickGap: 5,
+      angle: -45,
+      textAnchor: "end",
+      height: 60,
     },
     y: {
       tick: { fill: "currentColor", fontSize: 12 },
       stroke: "currentColor",
       className: "text-gray-500 dark:text-gray-400",
+      axisLine: true,
+      tickLine: true,
+      allowDecimals: false,
     },
   },
 };

@@ -96,7 +96,7 @@ export interface EvaluatorElement {
   submittedScorings: number;
   assignedOnFormatted: null;
   submittedAtFormatted: null;
-  timezone: string
+  timezone: string;
 }
 
 // Define Solicitation type based on API response
@@ -456,12 +456,18 @@ export const SolicitationDetailPage = () => {
   const evaluators = useMemo(() => {
     const evaluation = evaluatorsData?.data?.data;
     if (evaluation) {
-      return (
-        evaluation?.groups?.[0]?.evaluators.map((item) => ({
+      let evaluationGroup: EvaluatorElement[] = [];
+      evaluation?.groups?.forEach((item) => {
+        let groupName = item.groupName;
+        const updatedEvaluator = item.evaluators.map((item) => ({
           ...item,
-          groupName: evaluation?.groups?.[0]?.groupName,
-        })) || []
-      );
+          groupName,
+        }));
+
+        evaluationGroup.push(...updatedEvaluator);
+      });
+      
+      return evaluationGroup;
     }
     // Fallback to mock data if API is not available
     return [];
@@ -588,14 +594,18 @@ export const SolicitationDetailPage = () => {
             </Button>
           )}
           {isCompanyAdmin &&
-            (solicitation.status !== "closed" && solicitation.status !== "awarded" || isCompanyAdmin) && (
+            ((solicitation.status !== "closed" &&
+              solicitation.status !== "awarded") ||
+              isCompanyAdmin) && (
               <Button
                 variant="link"
                 className=""
                 onClick={() => setExtendOpen(true)}
                 disabled={
                   remindEvaluatorMutation.isPending ||
-                  ((solicitation.status === "closed" || solicitation.status === "awarded") && !isCompanyAdmin)
+                  ((solicitation.status === "closed" ||
+                    solicitation.status === "awarded") &&
+                    !isCompanyAdmin)
                 }
               >
                 Extend Deadline
@@ -676,7 +686,11 @@ export const SolicitationDetailPage = () => {
           <span className="text-sm">
             Assigned:{" "}
             {row.original.assignedOnFormatted
-              ? formatDateTZ(new Date(row.original.assignedOnFormatted), "MMM d, yyyy pppp", row.original.timezone)
+              ? formatDateTZ(
+                  new Date(row.original.assignedOnFormatted),
+                  "MMM d, yyyy pppp",
+                  row.original.timezone
+                )
               : "-"}
           </span>
           <span className="text-sm text-gray-400">
@@ -714,9 +728,17 @@ export const SolicitationDetailPage = () => {
                       email: row.original.email,
                       submissionDate:
                         row.original.progress === 100
-                          ? formatDateTZ(new Date(), "MMM d, yyyy pppp", row.original.timezone)
+                          ? formatDateTZ(
+                              new Date(),
+                              "MMM d, yyyy pppp",
+                              row.original.timezone
+                            )
                           : row.original.assignedOnFormatted
-                          ? formatDateTZ(new Date(row.original.assignedOnFormatted), "MMM d, yyyy pppp", row.original.timezone)
+                          ? formatDateTZ(
+                              new Date(row.original.assignedOnFormatted),
+                              "MMM d, yyyy pppp",
+                              row.original.timezone
+                            )
                           : formatDateTZ(new Date(), "MMM d, yyyy pppp"),
                       status:
                         row.original.progress === 100
@@ -746,7 +768,9 @@ export const SolicitationDetailPage = () => {
                       className="text-blue-600"
                       disabled={
                         remindEvaluatorMutation.isPending ||
-                        ((solicitation.status === "closed" || solicitation.status === "awarded") && !isCompanyAdmin)
+                        ((solicitation.status === "closed" ||
+                          solicitation.status === "awarded") &&
+                          !isCompanyAdmin)
                       }
                     >
                       {remindEvaluatorMutation.isPending
@@ -772,7 +796,9 @@ export const SolicitationDetailPage = () => {
                       className="text-red-600"
                       disabled={
                         removeEvaluatorMutation.isPending ||
-                        (solicitation.status === "closed" || solicitation.status === "awarded") && !isCompanyAdmin
+                        ((solicitation.status === "closed" ||
+                          solicitation.status === "awarded") &&
+                          !isCompanyAdmin)
                       }
                     >
                       {removeEvaluatorMutation.isPending
@@ -974,7 +1000,9 @@ export const SolicitationDetailPage = () => {
                     </Button>
                   </ExportReportSheet>
                   {isOwner &&
-                    (solicitation.status !== "closed" && solicitation.status !== "awarded" || isCompanyAdmin) && (
+                    ((solicitation.status !== "closed" &&
+                      solicitation.status !== "awarded") ||
+                      isCompanyAdmin) && (
                       <>
                         <EditSolicitationDialog
                           solicitation={solicitation as any}

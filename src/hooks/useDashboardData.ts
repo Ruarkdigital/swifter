@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { getRequest } from "@/lib/axiosInstance";
 import { ApiResponse, ApiResponseError, UserRole } from "@/types";
 import { DashboardDataTransformer } from "@/lib/dashboardDataTransformer";
+import { useUserQueryKey } from "@/hooks/useUserQueryKey";
 
 // Dashboard data types based on API documentation
 export interface SuperAdminDashboardCount {
@@ -165,7 +166,7 @@ export const useDashboardData = (
     ApiResponse<SuperAdminDashboardCount>,
     ApiResponseError
   >({
-    queryKey: ["dashboard-count", userRole],
+    queryKey: useUserQueryKey(["dashboard-count", userRole]),
     queryFn: async () => await getRequest({ url: "/companies/dashboard" }),
     enabled: userRole === "super_admin",
     staleTime: 5 * 60 * 1000, // 5 minutes
@@ -178,11 +179,11 @@ export const useDashboardData = (
     ApiResponse<RoleDistribution[]>,
     ApiResponseError
   >({
-    queryKey: [
+    queryKey: useUserQueryKey([
       "role-distribution",
       userRole,
       getFilterForChart("role-distribution"),
-    ],
+    ]),
     queryFn: async () =>
       await getRequest({
         url: "/companies/dashboard/role-distribution",
@@ -201,11 +202,11 @@ export const useDashboardData = (
     ApiResponse<WeeklyActivities>,
     ApiResponseError
   >({
-    queryKey: [
+    queryKey: useUserQueryKey([
       "weekly-activities",
       userRole,
       getFilterForChart("weekly-activities"),
-    ],
+    ]),
     queryFn: async () =>
       await getRequest({
         url: "/companies/dashboard/weekly-activities",
@@ -224,11 +225,11 @@ export const useDashboardData = (
     ApiResponse<SubDistribution>,
     ApiResponseError
   >({
-    queryKey: [
+    queryKey: useUserQueryKey([
       "sub-distribution",
       userRole,
       getFilterForChart("sub-distribution"),
-    ],
+    ]),
     queryFn: async () =>
       await getRequest({
         url: "/companies/dashboard/sub-distribution",
@@ -247,7 +248,7 @@ export const useDashboardData = (
     ApiResponse<{ timeStats: TimeStat[] }[]>,
     ApiResponseError
   >({
-    queryKey: ["company-status", userRole, getFilterForChart("company-status")],
+    queryKey: useUserQueryKey(["company-status", userRole, getFilterForChart("company-status")]),
     queryFn: async () =>
       await getRequest({
         url: "/companies/dashboard/company-status",
@@ -266,7 +267,7 @@ export const useDashboardData = (
     ApiResponse<ModuleUsage>,
     ApiResponseError
   >({
-    queryKey: ["module-usage", userRole, getFilterForChart("module-usage")],
+    queryKey: useUserQueryKey(["module-usage", userRole, getFilterForChart("module-usage")]),
     queryFn: async () =>
       await getRequest({
         url: "/companies/dashboard/module-usage",
@@ -283,11 +284,11 @@ export const useDashboardData = (
   // Company Admin Analytics - Solicitation Status
   const { data: solicitationStatus, isLoading: isLoadingSolicitationStatus } =
     useQuery<ApiResponse<SolicitationStatusData>, ApiResponseError>({
-      queryKey: [
+      queryKey: useUserQueryKey([
         "solicitation-status",
         userRole,
         getFilterForChart("solicitation-status"),
-      ],
+      ]),
       queryFn: async () =>
         await getRequest({
           url: "/procurement/solicitations/analytics/status",
@@ -306,7 +307,7 @@ export const useDashboardData = (
     ApiResponse<any>,
     ApiResponseError
   >({
-    queryKey: ["bid-intent", userRole, getFilterForChart("bid-intent")],
+    queryKey: useUserQueryKey(["bid-intent", userRole, getFilterForChart("bid-intent")]),
     queryFn: async () =>
       await getRequest({
         url: "/procurement/solicitations/analytics/bid-intent",
@@ -323,11 +324,11 @@ export const useDashboardData = (
   // Company Admin Analytics - Vendors Distribution
   const { data: vendorsDistribution, isLoading: isLoadingVendorsDistribution } =
     useQuery<ApiResponse<VendorsDistributionData>, ApiResponseError>({
-      queryKey: [
+      queryKey: useUserQueryKey([
         "vendors-distribution",
         userRole,
         getFilterForChart("vendors-distribution"),
-      ],
+      ]),
       queryFn: async () =>
         await getRequest({
           url: "/procurement/solicitations/analytics/vendors-distribution",
@@ -344,11 +345,11 @@ export const useDashboardData = (
   // Company Admin and Procurement Analytics - Proposal Submission
   const { data: proposalSubmission, isLoading: isLoadingProposalSubmission } =
     useQuery<ApiResponse<any>, ApiResponseError>({
-      queryKey: [
+      queryKey: useUserQueryKey([
         "proposal-submission",
         userRole,
         getFilterForChart("proposal-submission"),
-      ],
+      ]),
       queryFn: async () =>
         await getRequest({
           url: "/procurement/solicitations/analytics/proposal-submission",
@@ -369,11 +370,11 @@ export const useDashboardData = (
     data: companyRoleDistribution,
     isLoading: isLoadingCompanyRoleDistribution,
   } = useQuery<ApiResponse<any>, ApiResponseError>({
-    queryKey: [
+    queryKey: useUserQueryKey([
       "company-role-distribution",
       userRole,
       getFilterForChart("company-role-distribution"),
-    ],
+    ]),
     queryFn: async () =>
       await getRequest({
         url: "/admins/dashboard/role-distribution",
@@ -392,7 +393,7 @@ export const useDashboardData = (
     ApiResponse<any>,
     ApiResponseError
   >({
-    queryKey: ["general-updates", userRole],
+    queryKey: useUserQueryKey(["general-updates", userRole]),
     queryFn: async () =>
       await getRequest({ url: "/admins/dashboard/general-updates" }),
     enabled: userRole === "company_admin",
@@ -404,7 +405,7 @@ export const useDashboardData = (
   // Evaluator Dashboard - Evaluation Status Summary
   const { data: evaluatorDashboard, isLoading: isLoadingEvaluatorDashboard } =
     useQuery<ApiResponse<EvaluatorDashboardData>, ApiResponseError>({
-      queryKey: ["evaluator-dashboard", userRole],
+      queryKey: useUserQueryKey(["evaluator-dashboard", userRole]),
       queryFn: async () =>
         await getRequest({ url: "/procurement/evaluations/dashboard" }),
       enabled: userRole === "evaluator",
@@ -416,7 +417,7 @@ export const useDashboardData = (
   // Evaluator Dashboard - My Actions
   const { data: evaluatorMyActions, isLoading: isLoadingEvaluatorMyActions } =
     useQuery<ApiResponse<EvaluatorMyActions>, ApiResponseError>({
-      queryKey: ["evaluator-my-actions", userRole],
+      queryKey: useUserQueryKey(["evaluator-my-actions", userRole]),
       queryFn: async () =>
         await getRequest({ url: "/evaluator/dashboard/my-actions" }),
       enabled: userRole === "evaluator",
@@ -430,7 +431,7 @@ export const useDashboardData = (
     data: evaluatorEvaluationUpdates,
     isLoading: isLoadingEvaluatorEvaluationUpdates,
   } = useQuery<ApiResponse<EvaluatorEvaluationActivity>, ApiResponseError>({
-    queryKey: ["evaluator-evaluation-updates", userRole],
+    queryKey: useUserQueryKey(["evaluator-evaluation-updates", userRole]),
     queryFn: async () =>
       await getRequest({ url: "/evaluator/dashboard/evalutions-update" }),
     enabled: userRole === "evaluator",
@@ -442,7 +443,7 @@ export const useDashboardData = (
   // Vendor Dashboard - Solicitation Overview
   const { data: vendorDashboard, isLoading: isLoadingVendorDashboard } =
     useQuery<ApiResponse<VendorDashboardStats[]>, ApiResponseError>({
-      queryKey: ["vendor-dashboard", userRole],
+      queryKey: useUserQueryKey(["vendor-dashboard", userRole]),
       queryFn: async () =>
         await getRequest({ url: "/vendor/solicitations/dashboard" }),
       enabled: userRole === "vendor",
@@ -454,7 +455,7 @@ export const useDashboardData = (
   // Vendor Dashboard - My Actions
   const { data: vendorMyActions, isLoading: isLoadingVendorMyActions } =
     useQuery<ApiResponse<VendorMyActions[]>, ApiResponseError>({
-      queryKey: ["vendor-my-actions", userRole],
+      queryKey: useUserQueryKey(["vendor-my-actions", userRole]),
       queryFn: async () =>
         await getRequest({ url: "/vendor/solicitations/my-actions" }),
       enabled: userRole === "vendor",
@@ -468,7 +469,7 @@ export const useDashboardData = (
     data: vendorGeneralUpdates,
     isLoading: isLoadingVendorGeneralUpdates,
   } = useQuery<ApiResponse<VendorGeneralUpdates>, ApiResponseError>({
-    queryKey: ["vendor-general-updates", userRole],
+    queryKey: useUserQueryKey(["vendor-general-updates", userRole]),
     queryFn: async () =>
       await getRequest({ url: "/vendor/solicitations/general-updates" }),
     enabled: userRole === "vendor",
@@ -481,7 +482,7 @@ export const useDashboardData = (
   // Example for procurement role (if needed):
   const { data: procurementDashboard, isLoading: isLoadingProcurement } =
     useQuery<ApiResponse<any>, ApiResponseError>({
-      queryKey: ["procurement-dashboard", userRole],
+    queryKey: useUserQueryKey(["procurement-dashboard", userRole]),
       queryFn: async () =>
         await getRequest({ url: "/procurement/solicitations/dashboard" }),
       enabled: userRole === "procurement",
@@ -495,11 +496,11 @@ export const useDashboardData = (
     data: procurementWeeklyActivities,
     isLoading: isLoadingProcurementWeeklyActivities,
   } = useQuery<ApiResponse<any>, ApiResponseError>({
-    queryKey: [
+    queryKey: useUserQueryKey([
       "solicitation-activities",
       userRole,
       getFilterForChart("solicitation-activities"),
-    ],
+    ]),
     queryFn: async () =>
       await getRequest({
         url: "/procurement/solicitations/analytics/activities",
@@ -518,11 +519,11 @@ export const useDashboardData = (
     data: procurementTotalEvaluations,
     isLoading: isLoadingProcurementTotalEvaluations,
   } = useQuery<ApiResponse<any>, ApiResponseError>({
-    queryKey: [
+    queryKey: useUserQueryKey([
       "procurement-total-evaluations",
       userRole,
       getFilterForChart("procurement-total-evaluations"),
-    ],
+    ]),
     queryFn: async () =>
       await getRequest({
         url: "/procurement/solicitations/analytics/total-evaluations",
@@ -541,7 +542,7 @@ export const useDashboardData = (
     data: procurementMyActions,
     isLoading: isLoadingProcurementMyActions,
   } = useQuery<ApiResponse<any>, ApiResponseError>({
-    queryKey: ["procurement-my-actions", userRole],
+    queryKey: useUserQueryKey(["procurement-my-actions", userRole]),
     queryFn: async () =>
       await getRequest({ url: "/procurement/solicitations/my-actions" }),
     enabled: userRole === "procurement",
@@ -555,7 +556,7 @@ export const useDashboardData = (
     data: procurementGeneralUpdates,
     isLoading: isLoadingProcurementGeneralUpdates,
   } = useQuery<ApiResponse<any>, ApiResponseError>({
-    queryKey: ["procurement-general-updates", userRole],
+    queryKey: useUserQueryKey(["procurement-general-updates", userRole]),
     queryFn: async () =>
       await getRequest({ url: "/procurement/solicitations/general-updates" }),
     enabled: userRole === "procurement",

@@ -1,6 +1,7 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { getRequest, postRequest } from "@/lib/axiosInstance";
 import { ApiResponse, ApiResponseError } from "@/types";
+import { useUserQueryKey } from "@/hooks/useUserQueryKey";
 
 // API Types
 export type EvaluationDashboardStats = {
@@ -55,7 +56,7 @@ export type AssignedEvaluationsListResponse = ApiResponse<{
 // API Hooks
 export const useEvaluationDashboard = () => {
   return useQuery<EvaluationDashboardStats>({
-    queryKey: ["evaluation-dashboard"],
+    queryKey: useUserQueryKey(["evaluation-dashboard"]),
     queryFn: async () => {
       const response = await getRequest({
         url: "/procurement/evaluations/dashboard",
@@ -68,7 +69,7 @@ export const useEvaluationDashboard = () => {
 // Additional Evaluator-specific hooks
 export const useEvaluatorRecentActions = () => {
   return useQuery({
-    queryKey: ["evaluator-recent-actions"],
+    queryKey: useUserQueryKey(["evaluator-recent-actions"]),
     queryFn: async () => {
       const response = await getRequest({
         url: "/evaluator/dashboard/my-actions",
@@ -80,7 +81,7 @@ export const useEvaluatorRecentActions = () => {
 
 export const useEvaluatorRecentEvaluations = () => {
   return useQuery({
-    queryKey: ["evaluator-recent-evaluations"],
+    queryKey: useUserQueryKey(["evaluator-recent-evaluations"]),
     queryFn: async () => {
       const response = await getRequest({
         url: "/evaluator/dashboard/evaluations",
@@ -97,9 +98,9 @@ export const useEvaluationsList = (params?: {
   name?: string;
   category?: string;
   date?: string;
-}) => {
+}, userId?: string) => {
   return useQuery<EvaluationsListResponse>({
-    queryKey: ["evaluations-list", params],
+    queryKey: ["evaluations-list", params, userId],
     queryFn: async () => {
       const searchParams = new URLSearchParams();
       if (params?.page) searchParams.append("page", params.page.toString());
@@ -124,7 +125,7 @@ export const useAssignedEvaluationsList = (params?: {
   page?: number;
   limit?: number;
   name?: string;
-}) => {
+}, userId?: string) => {
   const searchParams = new URLSearchParams();
   if (params?.status) searchParams.append("status", params.status);
   if (params?.category) searchParams.append("category", params.category);
@@ -134,7 +135,7 @@ export const useAssignedEvaluationsList = (params?: {
   if (params?.name) searchParams.append("name", params.name);
 
   return useQuery<{ data: { data: AssignedEvaluationApiResponse[] } }>({
-    queryKey: ["assigned-evaluations-list", params],
+    queryKey: ["assigned-evaluations-list", params, userId],
     queryFn: async () => {
       const response = await getRequest({
         url: `/evaluator/my-evaluations?${searchParams.toString()}`,
@@ -153,9 +154,9 @@ export const useMyEvaluationsList = (params?: {
   category?: string;
   date?: string;
   name?: string;
-}) => {
+}, userId?: string) => {
   return useQuery<EvaluationsListResponse>({
-    queryKey: ["my-evaluations-list", params],
+    queryKey: ["my-evaluations-list", params, userId],
     queryFn: async () => {
       const searchParams = new URLSearchParams();
       if (params?.page) searchParams.append("page", params.page.toString());

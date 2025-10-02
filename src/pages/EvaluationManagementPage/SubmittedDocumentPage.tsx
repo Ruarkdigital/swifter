@@ -28,6 +28,7 @@ import { PageLoader } from "@/components/ui/PageLoader";
 import { ConfirmAlert } from "@/components/layouts/ConfirmAlert";
 import { DocumentViewer } from "@/components/ui/DocumentViewer";
 import * as yup from "yup";
+import { useUser } from "@/store/authSlice";
 
 // API Types based on documentation
 type VendorDocument = {
@@ -131,7 +132,8 @@ const criteriaScoreSchema = yup.object({
 const useSubmittedDocuments = (
   evaluationId: string,
   evaluationGroupId: string,
-  vendorId: string
+  vendorId: string,
+  userId: string
 ) => {
   return useQuery<ApiResponse<SubmittedDocumentResponse>, ApiResponseError>({
     queryKey: [
@@ -139,6 +141,7 @@ const useSubmittedDocuments = (
       evaluationId,
       evaluationGroupId,
       vendorId,
+      userId
     ],
     queryFn: async () => {
       const response = await getRequest({
@@ -218,6 +221,7 @@ const useSubmitCriteriaScore = () => {
 };
 
 const SubmittedDocumentPage: React.FC = () => {
+  const user = useUser();
   const { id, groupId, vendorId } = useParams<{
     id: string;
     groupId: string;
@@ -231,7 +235,7 @@ const SubmittedDocumentPage: React.FC = () => {
     data: documentsData,
     isLoading: documentsLoading,
     error: documentsError,
-  } = useSubmittedDocuments(id || "", groupId || "", vendorId || "");
+  } = useSubmittedDocuments(id || "", groupId || "", vendorId || "", user?._id || "");
 
   const {
     data: criteriaData,
@@ -240,13 +244,9 @@ const SubmittedDocumentPage: React.FC = () => {
   } = useEvaluationCriteria(id || "", groupId || "", vendorId || "");
 
   // Get proposalId from bid comparison data
-  const proposalId = useMemo(() => {
-    return documentsData?.data?.data?.proposalId || null;
-  }, [documentsData]);
+  const proposalId = documentsData?.data?.data?.proposalId || null
 
-  const isPricingTableEnabled = useMemo(() => {
-    return documentsData?.data?.data?.pricingTable || false;
-  }, [documentsData]);
+  const isPricingTableEnabled = documentsData?.data?.data?.pricingTable || false
 
   // Add pricing breakdown API call
   const {

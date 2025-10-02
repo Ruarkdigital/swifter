@@ -543,7 +543,7 @@ const procurementConfig: DashboardConfig = {
         },
         {
           id: "solicitation-activities",
-          title: "Weekly Activities",
+          title: "Solicitations Vs Evaluations",
           type: "area",
           className: "col-span-2",
           data: [],

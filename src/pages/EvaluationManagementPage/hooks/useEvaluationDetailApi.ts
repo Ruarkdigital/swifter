@@ -3,6 +3,7 @@ import { getRequest, putRequest, deleteRequest } from "@/lib/axiosInstance";
 import { ApiResponse, ApiResponseError } from "@/types";
 import { useMutation } from "@tanstack/react-query";
 import { Solicitation } from "@/pages/SolicitationManagementPage/SolicitationDetailPage";
+import { useUserQueryKey } from "@/hooks/useUserQueryKey";
 
 // API Types
 type EvaluationDetail = {
@@ -123,7 +124,7 @@ type EvaluationGroupApi = {
 // API Hooks
 export const useEvaluationDetail = (evaluationId: string) => {
   return useQuery<ApiResponse<EvaluationDetail>, ApiResponseError>({
-    queryKey: ["evaluation-detail", evaluationId],
+    queryKey: useUserQueryKey(["evaluation-detail", evaluationId]),
     queryFn: async () => {
       const response = await getRequest({
         url: `/procurement/evaluations/${evaluationId}`,
@@ -136,7 +137,7 @@ export const useEvaluationDetail = (evaluationId: string) => {
 
 export const useEvaluationEvaluators = (evaluationId: string) => {
   return useQuery<ApiResponse<EvaluatorResponse>, ApiResponseError>({
-    queryKey: ["evaluation-evaluators", evaluationId],
+    queryKey: useUserQueryKey(["evaluation-evaluators", evaluationId]),
     queryFn: async () => {
       const response = await getRequest({
         url: `/procurement/evaluations/${evaluationId}/evaluators`,
@@ -149,7 +150,7 @@ export const useEvaluationEvaluators = (evaluationId: string) => {
 
 export const useEvaluationCriteria = (evaluationId: string) => {
   return useQuery<Criteria[]>({
-    queryKey: ["evaluation-criteria", evaluationId],
+    queryKey: useUserQueryKey(["evaluation-criteria", evaluationId]),
     queryFn: async () => {
       const response = await getRequest({
         url: `/procurement/evaluations/${evaluationId}/criteria`,
@@ -162,7 +163,7 @@ export const useEvaluationCriteria = (evaluationId: string) => {
 
 export const useEvaluationGroups = (evaluationId: string) => {
   return useQuery<ApiResponse<EvaluationGroupApi[]>, ApiResponseError>({
-    queryKey: ["evaluation-groups", evaluationId],
+    queryKey: useUserQueryKey(["evaluation-groups", evaluationId]),
     queryFn: async () => {
       const response = await getRequest({
         url: `/procurement/evaluations/${evaluationId}/groups`,
@@ -186,7 +187,7 @@ export type BidComparisonItem = {
 
 export const useEvaluationBidComparison = (evaluationId: string) => {
   return useQuery<ApiResponse<BidComparisonItem[]>, ApiResponseError>({
-    queryKey: ["evaluation-bid-comparison", evaluationId],
+    queryKey: useUserQueryKey(["evaluation-bid-comparison", evaluationId]),
     queryFn: async () => {
       const response = await getRequest({
         url: `/procurement/evaluations/${evaluationId}/bid-comparison`,

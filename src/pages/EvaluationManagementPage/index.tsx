@@ -47,6 +47,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { formatDateTZ } from "@/lib/utils";
+import { useUser } from "@/store/authSlice";
 
 // Evaluation type definition
 type Evaluation = {
@@ -170,6 +171,7 @@ const transformAssignedEvaluationData = (
 };
 
 export const EvaluationManagementPage = () => {
+  const user = useUser();
   const navigate = useNavigate();
   const { isProcurement, isEvaluator, isCompanyAdmin } = useUserRole();
   const [searchParams] = useSearchParams();
@@ -282,7 +284,7 @@ export const EvaluationManagementPage = () => {
       name: debouncedSearchQuery || undefined,
       status: statusFilter || undefined,
       date: getAllEvaluationsDateParam(),
-    });
+    }, user?._id);
 
   const { data: myEvaluationsResponse, isLoading: isMyEvaluationsLoading } =
     useMyEvaluationsList({
@@ -291,7 +293,7 @@ export const EvaluationManagementPage = () => {
       name: debouncedSearchQuery || undefined,
       status: statusFilter || undefined,
       date: getMyEvaluationsDateParam(),
-    });
+    }, user?._id);
 
   // Removed useEvaluatorMyEvaluations as it's redundant with useAssignedEvaluationsList
 
@@ -303,7 +305,7 @@ export const EvaluationManagementPage = () => {
     limit: pagination.pageSize,
     status: statusFilter || undefined,
     date: getAssignedEvaluationsDateParam(),
-  });
+  }, user?._id);
 
   // Transform API data
   const evaluationData = useMemo(() => {

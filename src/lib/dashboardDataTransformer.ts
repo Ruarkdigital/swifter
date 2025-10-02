@@ -1531,31 +1531,86 @@ export class DashboardDataTransformer {
    * Transform Procurement Weekly Activities data for area chart
    */
   static transformProcurementWeeklyActivities(data: any) {
+    const monthNames = [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
+    ];
+
+    // Build a month-aware label from various possible API shapes
+    const resolveLabel = (item: any): string => {
+      if (item == null) return "Unknown";
+      const raw = item.label;
+      if (typeof raw === "number") {
+        const idx = Math.max(1, Math.min(12, raw));
+        return monthNames[idx - 1];
+      }
+      if (typeof raw === "string") {
+        // If label is numeric string (e.g., "1".."12") map to month
+        if (/^\d+$/.test(raw)) {
+          const idx = Math.max(1, Math.min(12, parseInt(raw, 10)));
+          return monthNames[idx - 1];
+        }
+        return raw;
+      }
+      if (item.month) {
+        const idx = Math.max(1, Math.min(12, Number(item.month)));
+        const m = monthNames[idx - 1] || "Unknown";
+        return item.year ? `${m} ${item.year}` : m;
+      }
+      return "Unknown";
+    };
+
     if (!data || !data.solicitations || !data.evaluations) {
-      return Array.from({ length: 7 }, (_, i) => ({
-        day: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"][i],
+      // Default to 12-month view with zeroed values
+      return Array.from({ length: 12 }, (_, i) => ({
+        month: monthNames[i],
         solicitations: 0,
         evaluations: 0,
       }));
     }
 
-    // Create a map for easy lookup
-    const solicitationsMap = new Map();
-    const evaluationsMap = new Map();
+    // Create lookup maps keyed by resolved month labels
+    const solicitationsMap = new Map<string, number>();
+    const evaluationsMap = new Map<string, number>();
+    const labelSet = new Set<string>();
 
     data.solicitations.forEach((item: any) => {
-      solicitationsMap.set(item.label, item.value);
+      const k = resolveLabel(item);
+      labelSet.add(k);
+      solicitationsMap.set(k, item.value || 0);
     });
 
     data.evaluations.forEach((item: any) => {
-      evaluationsMap.set(item.label, item.value);
+      const k = resolveLabel(item);
+      labelSet.add(k);
+      evaluationsMap.set(k, item.value || 0);
     });
 
-    // Generate the combined data
-    return data.solicitations.map((item: any) => ({
-      day: item.label,
-      solicitations: item.value || 0,
-      evaluations: evaluationsMap.get(item.label) || 0,
+    // Sort labels in calendar order when possible
+    const labels = Array.from(labelSet);
+    labels.sort((a, b) => {
+      const am = a.split(" ")[0];
+      const bm = b.split(" ")[0];
+      const ai = monthNames.indexOf(am);
+      const bi = monthNames.indexOf(bm);
+      if (ai !== -1 && bi !== -1) return ai - bi;
+      return a.localeCompare(b);
+    });
+
+    return labels.map((lbl) => ({
+      month: lbl,
+      solicitations: solicitationsMap.get(lbl) || 0,
+      evaluations: evaluationsMap.get(lbl) || 0,
     }));
   }
 
@@ -1564,8 +1619,22 @@ export class DashboardDataTransformer {
    */
   static transformProcurementProposalSubmission(data: any) {
     if (!data || !Array.isArray(data)) {
-      return Array.from({ length: 7 }, (_, i) => ({
-        day: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"][i],
+      // Default to 12-month view with zeroed values
+      return Array.from({ length: 12 }, (_, i) => ({
+        month: [
+          "Jan",
+          "Feb",
+          "Mar",
+          "Apr",
+          "May",
+          "Jun",
+          "Jul",
+          "Aug",
+          "Sep",
+          "Oct",
+          "Nov",
+          "Dec",
+        ][i],
         submitted: 0,
         missedDeadline: 0,
         declined: 0,
@@ -1592,7 +1661,7 @@ export class DashboardDataTransformer {
       const dateLabel = `${monthLabel} ${item.year}`;
 
       return {
-        day: dateLabel,
+        month: dateLabel,
         submitted: item.submitted || 0,
         missedDeadline: item.missedDeadline || 0,
         declined: item.declined || 0,
