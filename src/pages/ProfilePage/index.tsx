@@ -10,7 +10,7 @@ type TabType = 'profile' | 'company' | 'notification' | 'security';
 
 const ProfilePage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabType>('profile');
-  const { isCompanyAdmin } = useUserRole();
+  const { isCompanyAdmin, isSuperAdmin } = useUserRole();
 
   const allTabs = [
     { id: 'profile' as TabType, label: 'Profile information' },
@@ -23,6 +23,9 @@ const ProfilePage: React.FC = () => {
   const tabs = allTabs.filter(tab => {
     if (tab.id === 'company') {
       return isCompanyAdmin;
+    }
+    if (tab.id === 'notification') {
+      return !isSuperAdmin;
     }
     return true;
   });

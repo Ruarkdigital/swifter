@@ -28,6 +28,7 @@ import {
   Bot,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { postRequest } from "@/lib/axiosInstance";
 import { useAIChat, Message } from "@/hooks/useAIChat";
 import MessageContainer from "./components/MessageContainer";
 
@@ -111,15 +112,22 @@ const AIChatWidget: React.FC<AIChatWidgetProps> = ({
   const isLoading = onSendMessage ? customIsLoading : hookIsLoading;
   const sendMessage = onSendMessage ? undefined : hookSendMessage;
   const clearMessages = onSendMessage
-    ? () =>
-        setCustomMessages([
-          {
-            id: "1",
-            content: "Hello! I'm your AI assistant. How can I help you today?",
-            sender: "ai",
-            timestamp: new Date(),
-          },
-        ])
+    ? async () => {
+        try {
+          await postRequest({ url: "/reset", payload: {} });
+          setCustomMessages([
+            {
+              id: "1",
+              content:
+                "Hello! I'm your AI assistant. How can I help you today?",
+              sender: "ai",
+              timestamp: new Date(),
+            },
+          ]);
+        } catch (error) {
+          console.error("AI Chat reset failed:", error);
+        }
+      }
     : hookClearMessages;
 
   // Position classes mapping

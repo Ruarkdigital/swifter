@@ -5,25 +5,26 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getRequest, putRequest } from "@/lib/axiosInstance";
 import { ApiResponse, ApiResponseError } from "@/types";
 import { useToastHandler } from "@/hooks/useToaster";
-import { useUser } from "@/store/authSlice";
 import { PageLoader } from "@/components/ui/PageLoader";
 
 
+// Types aligned with Profile NotificationSettings (per-user settings)
+type NotificationMethod = "email" | "push" | "sms";
+
 type NotificationItem = {
-  newSolicitations: ("email" | "push" | "sms")[];
-  proposalUpdates: ("email" | "push" | "sms")[];
-  evaluationAssignments: ("email" | "push" | "sms")[];
-  upcomingDeadlines: ("email" | "push" | "sms")[];
-  questionsUpdate: ("email" | "push" | "sms")[];
-}
+  newSolicitations: NotificationMethod[];
+  proposalUpdates: NotificationMethod[];
+  evaluationAssignments: NotificationMethod[];
+  upcomingDeadlines: NotificationMethod[];
+  questionsUpdate: NotificationMethod[];
+};
 
 // Types for notification settings based on API documentation
 export interface NotificationSettings extends NotificationItem {
   _id: string;
-  companyId: string;
+  userId: string;
   createdAt: string;
   updatedAt: string;
-  __v: number;
 }
 
 type NotificationKey =
@@ -36,12 +37,13 @@ type NotificationKey =
 type NotificationCardProps = {
   title: string;
   settingKey: NotificationKey;
-  settings: Omit<NotificationSettings, "_id" | "companyId" | "createdAt" | "updatedAt" | "__v"> | null;
+  settings: NotificationItem | null;
   onSettingChange: (
-    type: "email" | "push" | "sms",
+    type: NotificationMethod,
     key: NotificationKey,
     value: boolean
   ) => void;
+  isUpdating: boolean;
 };
 
 const NotificationCard: React.FC<NotificationCardProps> = ({
@@ -49,6 +51,7 @@ const NotificationCard: React.FC<NotificationCardProps> = ({
   settingKey,
   settings,
   onSettingChange,
+  isUpdating,
 }) => {
   return (
     <div className="flex justify-between border-t border-gray-200 dark:border-gray-700 pt-4">
@@ -63,6 +66,7 @@ const NotificationCard: React.FC<NotificationCardProps> = ({
               onCheckedChange={(checked) =>
                 onSettingChange("push", settingKey, checked)
               }
+              disabled={isUpdating}
               className="data-[state=checked]:bg-[#2A4467] dark:data-[state=checked]:bg-[#2A4467]"
             />
             <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -77,6 +81,7 @@ const NotificationCard: React.FC<NotificationCardProps> = ({
               onCheckedChange={(checked) =>
                 onSettingChange("email", settingKey, checked)
               }
+              disabled={isUpdating}
               className="data-[state=checked]:bg-[#2A4467] dark:data-[state=checked]:bg-[#2A4467]"
             />
             <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -91,6 +96,7 @@ const NotificationCard: React.FC<NotificationCardProps> = ({
               onCheckedChange={(checked) =>
                 onSettingChange("sms", settingKey, checked)
               }
+              disabled={isUpdating}
               className="data-[state=checked]:bg-[#2A4467] dark:data-[state=checked]:bg-[#2A4467]"
             />
             <Label className="text-sm text-gray-500 dark:text-gray-400">
@@ -104,12 +110,10 @@ const NotificationCard: React.FC<NotificationCardProps> = ({
 };
 
 const NotificationSettings: React.FC = () => {
-  const user = useUser();
   const queryClient = useQueryClient();
   const { success: showSuccessToast, error: showErrorToast } =
     useToastHandler();
-  const [localSettings, setLocalSettings] =
-    useState<Omit<NotificationSettings, "_id" | "companyId" | "createdAt" | "updatedAt" | "__v"> | null>(null);
+  const [localSettings, setLocalSettings] = useState<NotificationItem | null>(null);
 
   // Fetch notification settings
   const {
@@ -118,8 +122,7 @@ const NotificationSettings: React.FC = () => {
     error,
   } = useQuery<ApiResponse<NotificationSettings>, ApiResponseError>({
     queryKey: ["notification-settings"],
-    queryFn: async () =>
-      await getRequest({ url: `/notifications/settings/${user?.companyId}` }),
+    queryFn: async () => await getRequest({ url: `/notifications/settings` }),
     staleTime: 5 * 60 * 1000,
   });
 
@@ -127,11 +130,11 @@ const NotificationSettings: React.FC = () => {
   const updateSettingsMutation = useMutation<
     ApiResponse<NotificationSettings>,
     ApiResponseError,
-    NotificationItem
+    Partial<NotificationItem>
   >({
     mutationFn: async (updatedSettings) =>
       await putRequest({
-        url: `/notifications/settings/${user?.companyId}`,
+        url: `/notifications/settings`,
         payload: updatedSettings,
       }),
     onSuccess: () => {
@@ -141,66 +144,66 @@ const NotificationSettings: React.FC = () => {
     onError: (error) => {
       showErrorToast(
         "Error",
-        error.response?.data?.message ||
-          "Failed to update notification settings"
+        error.response?.data?.message || "Failed to update notification settings"
       );
       // Revert local changes on error
-      if (notificationData?.data?.data) {
-        setLocalSettings(notificationData.data.data);
+      if (notificationData?.data) {
+        setLocalSettings({
+          newSolicitations: notificationData.data.data.newSolicitations,
+          proposalUpdates: notificationData.data.data.proposalUpdates,
+          evaluationAssignments: notificationData.data.data.evaluationAssignments,
+          upcomingDeadlines: notificationData.data.data.upcomingDeadlines,
+          questionsUpdate: notificationData.data.data.questionsUpdate,
+        });
       }
     },
   });
 
   // Initialize local settings when data is loaded
   useEffect(() => {
-    if (notificationData?.data?.data) {
-      setLocalSettings(notificationData.data.data);
+    if (notificationData?.data) {
+      setLocalSettings({
+        newSolicitations: notificationData.data.data.newSolicitations,
+        proposalUpdates: notificationData.data.data.proposalUpdates,
+        evaluationAssignments: notificationData.data.data.evaluationAssignments,
+        upcomingDeadlines: notificationData.data.data.upcomingDeadlines,
+        questionsUpdate: notificationData.data.data.questionsUpdate,
+      });
     }
   }, [notificationData]);
 
   // Handle setting changes
   const handleSettingChange = (
-    type: "email" | "push" | "sms",
+    method: NotificationMethod,
     key: NotificationKey,
-    value: boolean
+    enabled: boolean
   ) => {
     if (!localSettings) return;
 
-    const updatedSettings: NotificationItem = {
-      newSolicitations: [],
-      proposalUpdates: [],
-      evaluationAssignments: [],
-      upcomingDeadlines: [],
-      questionsUpdate: [],
-    };
-    const currentArray = updatedSettings[key] as ("email" | "push" | "sms")[] || [] as ("email" | "push" | "sms")[];
+    const currentMethods = localSettings[key] || [];
+    let updatedMethods: NotificationMethod[];
 
-    if (value) {
-      // Add the notification type if it's not already in the array
-      if (!currentArray.includes(type)) {
-        updatedSettings[key] = [...currentArray, type] as ("email" | "push" | "sms")[];
-      }
+    if (enabled) {
+      // Add method if not already present
+      updatedMethods = currentMethods.includes(method)
+        ? currentMethods
+        : [...currentMethods, method];
     } else {
-      // Remove the notification type from the array
-      updatedSettings[key] = currentArray.filter((item) => item !== type);
+      // Remove method
+      updatedMethods = currentMethods.filter((m) => m !== method);
     }
+
+    const updatedSettings = {
+      ...localSettings,
+      [key]: updatedMethods,
+    };
 
     setLocalSettings(updatedSettings);
 
-    // Debounce API calls to avoid too many requests
-    const timeoutId = setTimeout(() => {
-      // Only send the notification data, not the metadata fields
-      const notificationData: NotificationItem = {
-        newSolicitations: updatedSettings.newSolicitations,
-        proposalUpdates: updatedSettings.proposalUpdates,
-        evaluationAssignments: updatedSettings.evaluationAssignments,
-        upcomingDeadlines: updatedSettings.upcomingDeadlines,
-        questionsUpdate: updatedSettings.questionsUpdate,
-      };
-      updateSettingsMutation.mutate(notificationData);
-    }, 500);
-
-    return () => clearTimeout(timeoutId);
+    // Immediate update (no debounce) to match Profile behavior
+    updateSettingsMutation.mutate({
+      [key]: updatedMethods,
+    });
   };
 
   if (isLoading) {
@@ -221,7 +224,8 @@ const NotificationSettings: React.FC = () => {
             Notification settings
           </h2>
           <p className="text-gray-600 dark:text-gray-400">
-            Set platform-wide notifications and triggers
+            We may still send you important notifications about your account
+            outside of your notification settings.
           </p>
         </div>
         <div className="flex items-center justify-center py-8">
@@ -241,7 +245,8 @@ const NotificationSettings: React.FC = () => {
           Notification settings
         </h2>
         <p className="text-gray-600 dark:text-gray-400">
-          Set platform-wide notifications and triggers
+          We may still send you important notifications about your account
+          outside of your notification settings.
         </p>
       </div>
 
@@ -251,38 +256,37 @@ const NotificationSettings: React.FC = () => {
           settingKey="newSolicitations"
           settings={localSettings}
           onSettingChange={handleSettingChange}
+          isUpdating={updateSettingsMutation.isPending}
         />
         <NotificationCard
           title="Proposal updates"
           settingKey="proposalUpdates"
           settings={localSettings}
           onSettingChange={handleSettingChange}
+          isUpdating={updateSettingsMutation.isPending}
         />
         <NotificationCard
           title="Evaluation assignments"
           settingKey="evaluationAssignments"
           settings={localSettings}
           onSettingChange={handleSettingChange}
+          isUpdating={updateSettingsMutation.isPending}
         />
         <NotificationCard
           title="Upcoming deadlines"
           settingKey="upcomingDeadlines"
           settings={localSettings}
           onSettingChange={handleSettingChange}
+          isUpdating={updateSettingsMutation.isPending}
         />
         <NotificationCard
           title="Questions Update"
           settingKey="questionsUpdate"
           settings={localSettings}
           onSettingChange={handleSettingChange}
+          isUpdating={updateSettingsMutation.isPending}
         />
       </div>
-
-      {updateSettingsMutation.isPending && (
-        <div className="mt-4 text-sm text-gray-500 dark:text-gray-400">
-          Updating settings...
-        </div>
-      )}
     </div>
   );
 };
