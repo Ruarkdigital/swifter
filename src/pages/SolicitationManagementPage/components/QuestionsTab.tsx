@@ -181,7 +181,6 @@ const QuestionsTab: React.FC<QuestionsTabProps> = ({ solicitationStatus }) => {
   
   const questions: Question[] = filteredQuestions;
   const unansweredQuestions = questions.filter((q: Question) => !q.isAnswered);
-  const answeredQuestions = questions.filter((q: Question) => q.isAnswered);
 
   const handleSendMessage = (content: string, type?: "reply" | "addendum" | null) => {
     if (!replyToQuestion && !sendType) {
