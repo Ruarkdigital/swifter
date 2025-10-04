@@ -671,6 +671,13 @@ const EvaluationDetailPage: React.FC = () => {
     {
       accessorKey: "progress",
       header: "Progress",
+      cell: ({ row }) => {
+        return (
+          <span className="font-medium">
+            {row.original.progress}%
+          </span>
+        )
+      }
     },
     {
       accessorKey: "status",
