@@ -522,13 +522,13 @@ export const useDashboardData = (
     queryKey: useUserQueryKey([
       "procurement-total-evaluations",
       userRole,
-      getFilterForChart("procurement-total-evaluations"),
+      getFilterForChart("total-evaluation"),
     ]),
     queryFn: async () =>
       await getRequest({
         url: "/procurement/solicitations/analytics/total-evaluations",
         config: {
-          params: { range: getFilterForChart("procurement-total-evaluations") },
+          params: { range: getFilterForChart("total-evaluation") },
         },
       }),
     enabled: userRole === "procurement",
