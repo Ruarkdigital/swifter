@@ -381,7 +381,7 @@ const StatusBadge = ({
 }) => {
   return (
     <Badge
-      className={`${getStatusColorClass(status)} border-0 !text-center mx-auto`}
+      className={`${getStatusColorClass(status)} border-0 !text-centr mx-aut`}
     >
       {getStatusLabel(status)}
     </Badge>

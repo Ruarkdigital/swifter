@@ -100,24 +100,24 @@ const ProposalDetailsSheet: React.FC<ProposalDetailsSheetProps> = ({
   // Helper: render price breakdown item with optional nested subItems
   const renderPriceItem = (item: any, index: number, isSubItem = false) => (
     <div key={`${item?.component ?? 'item'}-${index}`} className={`space-y-2 ${isSubItem ? 'ml-6' : ''}`}>
-      <div className="grid grid-cols-12 gap-4 py-3 px-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-        <div className="col-span-3 flex items-center gap-2">
+      <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 sm:gap-4 py-3 px-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+        <div className="sm:col-span-3 min-w-0 flex items-center gap-2">
           {isSubItem && <CornerDownRight className="text-gray-400 h-4 w-4" />}
           <span className="font-medium text-gray-900 dark:text-gray-100 truncate">{item?.component ?? '-'}</span>
         </div>
-        <div className="col-span-3">
+        <div className="sm:col-span-3 min-w-0">
           <div className="text-gray-600 dark:text-gray-400 truncate">{item?.description ?? '-'}</div>
         </div>
-        <div className="col-span-2">
+        <div className="sm:col-span-2 min-w-0">
           <div className="text-center text-gray-900 dark:text-gray-100">{item?.quantity ?? '-'}</div>
         </div>
-        <div className="col-span-2">
+        <div className="sm:col-span-2 min-w-0">
           <div className="text-gray-900 dark:text-gray-100 truncate">{item?.unitOfMeasurement ?? '-'}</div>
         </div>
-        <div className="col-span-1">
+        <div className="sm:col-span-1 min-w-0">
           <div className="text-right text-gray-900 dark:text-gray-100 px-3">{formatCurrency(item?.unitPrice ?? 0, "en-US", "USD")}</div>
         </div>
-        <div className="col-span-1">
+        <div className="sm:col-span-1 min-w-0">
           <div className="text-right font-semibold text-gray-900 dark:text-gray-100">{formatCurrency(item?.subtotal ?? 0, "en-US", "USD")}</div>
         </div>
       </div>
