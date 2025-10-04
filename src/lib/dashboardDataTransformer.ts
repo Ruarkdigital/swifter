@@ -107,6 +107,18 @@ function applyDynamicStatusTextReplacement(
   activityType: ActivityType,
   data: { id: string; name: string; solId?: string }
 ): string {
+  // Special rule for Procurement General Updates:
+  // Only route to evaluation page if "evaluation" is mentioned in statusText; otherwise route to solicitation.
+  if (userRole === "procurement" && activityType === "general") {
+    const lower = statusText.toLowerCase();
+    const toEvaluation = lower.includes("evaluation");
+    const href = `${toEvaluation ? "/dashboard/evaluation" : "/dashboard/solicitation"}/${data.id}`;
+    return statusText.replace(
+      data.name,
+      `<a href="${href}" class="underline underline-offset-4 text-blue-600">${data.name}</a>`
+    );
+  }
+
   // Extract potential actions from statusText to match against mappings
   const roleMapping = ACTIVITY_LINK_MAPPINGS[userRole]?.[activityType];
   if (!roleMapping) {
