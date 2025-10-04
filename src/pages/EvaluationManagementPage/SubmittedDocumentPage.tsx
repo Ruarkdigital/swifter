@@ -410,10 +410,13 @@ const SubmittedDocumentPage: React.FC = () => {
       reset(savedState);
     } else if (existingScoring) {
       // Pre-populate with existing scoring data from API
+      // For weight-based scoring, map stored percentage (e.g., 80) to radio value (1–5) by dividing by 20
       const scoreValue =
         criteriaType === "pass_fail"
           ? existingScoring.scoring.pass_fail
-          : existingScoring.scoring.weight?.toString() || "";
+          : typeof existingScoring.scoring.weight === "number" && existingScoring.scoring.weight > 0
+            ? existingScoring.scoring.weight / 20
+            : "";
 
       reset({
         comment: existingScoring.comment || "",
