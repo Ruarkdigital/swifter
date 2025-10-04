@@ -29,6 +29,10 @@ export interface DashboardConfig {
       outerRadius?: number;
       className?: string;
       stacked?: boolean; // Whether to stack bars in a bar chart
+      // Axis visibility and overrides
+      showXAxis?: boolean; // Toggle X axis visibility
+      showYAxis?: boolean; // Toggle Y axis visibility
+      axisProps?: { x?: { [key: string]: any }; y?: { [key: string]: any } }; // Axis prop overrides
       layout?: "horizontal" | "vertical"; // Bar chart layout orientation
       showLegend?: boolean; // Whether to show legend
       centerText?: {
@@ -46,6 +50,9 @@ export interface DashboardConfig {
       barClassName?: string; // Bar CSS class
       barRadius?: [number, number, number, number]; // Bar border radius [topLeft, topRight, bottomRight, bottomLeft]
       gridVertical?: boolean; // Show vertical grid lines
+      // Stacking mode for Area/Bar charts (Recharts supported values)
+      // See: https://recharts.org/en-US/api/BarChart#stackOffset
+      stackOffset?: "none" | "expand" | "wiggle" | "silhouette";
       legendPosition?: {
         vertical?: "top" | "middle" | "bottom";
         horizontal?: "left" | "center" | "right";
@@ -606,6 +613,7 @@ const procurementConfig: DashboardConfig = {
           filters: ["12 months", "6 months", "3 months", "30 days", "7 days"],
           data: [],
           stacked: true,
+          showYAxis: false,
           visible: true,
         },
       ],

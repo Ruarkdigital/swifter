@@ -42,17 +42,16 @@ type AxisConfig = {
 const getLabelKey = (data: any[]): string => {
   if (!data || data.length === 0) return "name";
 
-  // Check if this is single key-value data (like module usage)
-  const isSingleKeyData = data.every((item) => Object.keys(item).length === 1);
+  const keys = Object.keys(data[0] || {});
+  if (!keys.length) return "name";
 
-  if (isSingleKeyData) {
-    // For single key data, we need to create a synthetic label
-    // We'll use the key names as labels
-    return "name";
-  } else {
-    // For multi-key data, assume first key is label
-    return Object.keys(data[0] || {})[0];
-  }
+  // Prefer common label keys when present
+  const preferred = ["name", "month", "label", "category", "date"];
+  const found = preferred.find((k) => keys.includes(k));
+  if (found) return found;
+
+  // Fallback to the first key (assumed label)
+  return keys[0];
 };
 
 export const axisConfig: AxisConfig = {
@@ -107,32 +106,44 @@ export const chartMargins = {
   bar: (layout: string) => ({
     top: 10,
     right: 15,
-    left: layout === "horizontal" ? 120 : 20,
+    left: layout === "horizontal" ? 10 : 20,
     bottom: layout === "horizontal" ? 10 : 25,
   }),
   line: { top: 10, right: 20, left: 10, bottom: 20 },
   area: { top: 10, right: 20, left: 10, bottom: 20 },
 };
 
-export const renderAxes = (layout: "horizontal" | "vertical", data: any[]) => {
+export const renderAxes = (
+  layout: "horizontal" | "vertical",
+  data: any[],
+  options?: {
+    showX?: boolean;
+    showY?: boolean;
+    axisProps?: { x?: Record<string, any>; y?: Record<string, any> };
+  }
+) => {
   const config = axisConfig[layout];
 
-  const xProps =
+  const xPropsBase =
     typeof config.x.dataKey === "function"
       ? { ...config.x, dataKey: config.x.dataKey(data) }
       : config.x;
 
-  const yProps =
+  const yPropsBase =
     typeof config.y.dataKey === "function"
       ? { ...config.y, dataKey: config.y.dataKey(data) }
       : config.y;
 
-  return (
-    <>
-      <XAxis {...xProps} />
-      <YAxis {...yProps} />
-    </>
-  );
+  const xProps = { ...xPropsBase, ...(options?.axisProps?.x || {}) };
+  const yProps = { ...yPropsBase, ...(options?.axisProps?.y || {}) };
+
+  const showX = options?.showX !== false;
+  const showY = options?.showY !== false;
+
+  const nodes: React.ReactNode[] = [];
+  if (showX) nodes.push(<XAxis key="x" {...xProps} />);
+  if (showY) nodes.push(<YAxis key="y" {...yProps} />);
+  return nodes;
 };
 
 interface ChartComponentProps {
@@ -318,7 +329,11 @@ export const ChartComponent: React.FC<ChartComponentProps> = ({
           <ChartContainer className="h-full w-full" config={chartConfig}>
             <ResponsiveContainer width="100%" height="100%" minHeight={280}>
               <LineChart data={data} margin={chartMargins.line}>
-                {renderAxes("horizontal", data)}
+                {renderAxes("horizontal", data, {
+                  showX: chart.showXAxis !== false,
+                  showY: chart.showYAxis !== false,
+                  axisProps: chart.axisProps,
+                })}
                 <CartesianGrid
                   strokeDasharray="3 3"
                   className="stroke-gray-200 dark:stroke-gray-700"
@@ -354,9 +369,16 @@ export const ChartComponent: React.FC<ChartComponentProps> = ({
         return (
           <ChartContainer className="h-full w-full" config={chartConfig}>
             <ResponsiveContainer width="100%" height="100%" minHeight={300}>
-              <AreaChart data={data} margin={chartMargins.area}>
-                {renderAxes("horizontal", data)}
-
+              <AreaChart
+                data={data}
+                margin={chartMargins.area}
+                stackOffset={chart.stackOffset}
+              >
+                {renderAxes("horizontal", data, {
+                  showX: chart.showXAxis !== false,
+                  showY: chart.showYAxis !== false,
+                  axisProps: chart.axisProps,
+                })}
                 <CartesianGrid
                   strokeDasharray="3 3"
                   className="stroke-gray-200 dark:stroke-gray-700"
@@ -423,8 +445,13 @@ export const ChartComponent: React.FC<ChartComponentProps> = ({
                 data={data}
                 layout={layout}
                 margin={chartMargins.bar(layout)}
+                stackOffset={chart.stackOffset}
               >
-                {renderAxes(layout, data)}
+                {renderAxes(layout, data, {
+                  showX: chart.showXAxis !== false,
+                  showY: chart.showYAxis !== false,
+                  axisProps: chart.axisProps,
+                })}
                 <CartesianGrid
                   strokeDasharray="3 3"
                   className="stroke-gray-200 dark:stroke-gray-700"
@@ -529,7 +556,7 @@ export const ChartComponent: React.FC<ChartComponentProps> = ({
           </div>
         )}
       </CardHeader>
-      <CardContent className="p-4">
+      <CardContent className="p-0">
         <div className="h-[26rem] w-full">{renderChart()}</div>
       </CardContent>
     </Card>
