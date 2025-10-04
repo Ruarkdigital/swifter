@@ -280,7 +280,7 @@ const QuestionsTab: React.FC<QuestionsTabProps> = ({ solicitationStatus }) => {
                   Answered Questions
                 </h3>
                 <p className="text-3xl font-bold text-gray-900 dark:text-gray-200">
-                  {answeredQuestions.length}
+                  {questionsData?.data.totalAnswer || 0}
                 </p>
               </div>
               <div className="p-3 rounded-full bg-blue-50 dark:bg-slate-900">
