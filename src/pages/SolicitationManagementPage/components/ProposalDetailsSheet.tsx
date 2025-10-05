@@ -10,6 +10,8 @@ import { DocumentViewer } from "@/components/ui/DocumentViewer";
 import { getFileExtension } from "@/lib/fileUtils.tsx";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatCurrency } from "@/lib/utils";
+import { DataTable } from "@/components/layouts/DataTable";
+import { ColumnDef } from "@tanstack/react-table";
 
 type Action = {
   component?: string;
@@ -19,7 +21,7 @@ type Action = {
   unitPrice?: number;
   subtotal?: number;
   subItems?: Action[];
-}
+};
 
 // Proposal Detail type based on API response
 type ProposalDetail = {
@@ -34,7 +36,7 @@ type ProposalDetail = {
       uploadedAt: string;
     }>;
   }>;
-  action: Action[]
+  action: Action[];
   total: number;
   status: "draft" | "submit";
   createdAt: string;
@@ -51,21 +53,21 @@ interface ProposalDetailsSheetProps {
 // Helper function to format file size
 const formatFileSize = (sizeStr: string): string => {
   const bytes = parseInt(sizeStr);
-  if (bytes === 0) return '0 Bytes';
+  if (bytes === 0) return "0 Bytes";
   const k = 1024;
-  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const sizes = ["Bytes", "KB", "MB", "GB"];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
 };
 
 // Helper function to get file icon based on type
 const getFileIcon = (type: string) => {
   const fileType = type.toLowerCase();
-  if (fileType.includes('pdf')) return '📄';
-  if (fileType.includes('doc') || fileType.includes('docx')) return '📝';
-  if (fileType.includes('xls') || fileType.includes('xlsx')) return '📊';
-  if (fileType.includes('zip') || fileType.includes('rar')) return '🗜️';
-  return '📎';
+  if (fileType.includes("pdf")) return "📄";
+  if (fileType.includes("doc") || fileType.includes("docx")) return "📝";
+  if (fileType.includes("xls") || fileType.includes("xlsx")) return "📊";
+  if (fileType.includes("zip") || fileType.includes("rar")) return "🗜️";
+  return "📎";
 };
 
 const ProposalDetailsSheet: React.FC<ProposalDetailsSheetProps> = ({
@@ -76,7 +78,11 @@ const ProposalDetailsSheet: React.FC<ProposalDetailsSheetProps> = ({
 }) => {
   // Document viewer state
   const [viewerOpen, setViewerOpen] = useState(false);
-  const [selectedDocument, setSelectedDocument] = useState<{ url: string; name: string; type: string } | null>(null);
+  const [selectedDocument, setSelectedDocument] = useState<{
+    url: string;
+    name: string;
+    type: string;
+  } | null>(null);
 
   // Fetch proposal details
   const {
@@ -92,39 +98,60 @@ const ProposalDetailsSheet: React.FC<ProposalDetailsSheetProps> = ({
   const proposal = proposalData?.data;
 
   // Handle document viewing
-  const handleViewDocument = (file: { url: string; name: string; type: string }) => {
+  const handleViewDocument = (file: {
+    url: string;
+    name: string;
+    type: string;
+  }) => {
     setSelectedDocument(file);
     setViewerOpen(true);
   };
 
   // Helper: render price breakdown item with optional nested subItems
   const renderPriceItem = (item: any, index: number, isSubItem = false) => (
-    <div key={`${item?.component ?? 'item'}-${index}`} className={`space-y-2 ${isSubItem ? 'ml-6' : ''}`}>
+    <div
+      key={`${item?.component ?? "item"}-${index}`}
+      className={`space-y-2 ${isSubItem ? "ml-6" : ""}`}
+    >
       <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 sm:gap-4 py-3 px-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
         <div className="sm:col-span-3 min-w-0 flex items-center gap-2">
           {isSubItem && <CornerDownRight className="text-gray-400 h-4 w-4" />}
-          <span className="font-medium text-gray-900 dark:text-gray-100 truncate">{item?.component ?? '-'}</span>
+          <span className="font-medium text-gray-900 dark:text-gray-100 truncate">
+            {item?.component ?? "-"}
+          </span>
         </div>
         <div className="sm:col-span-3 min-w-0">
-          <div className="text-gray-600 dark:text-gray-400 truncate">{item?.description ?? '-'}</div>
+          <div className="text-gray-600 dark:text-gray-400 truncate">
+            {item?.description ?? "-"}
+          </div>
         </div>
         <div className="sm:col-span-2 min-w-0">
-          <div className="text-center text-gray-900 dark:text-gray-100">{item?.quantity ?? '-'}</div>
+          <div className="text-center text-gray-900 dark:text-gray-100">
+            {item?.quantity ?? "-"}
+          </div>
         </div>
         <div className="sm:col-span-2 min-w-0">
-          <div className="text-gray-900 dark:text-gray-100 truncate">{item?.unitOfMeasurement ?? '-'}</div>
+          <div className="text-gray-900 dark:text-gray-100 truncate">
+            {item?.unitOfmeasurement ?? "-"}
+          </div>
         </div>
         <div className="sm:col-span-1 min-w-0">
-          <div className="text-right text-gray-900 dark:text-gray-100 px-3">{formatCurrency(item?.unitPrice ?? 0, "en-US", "USD")}</div>
+          <div className="text-right text-gray-900 dark:text-gray-100 px-3">
+            {formatCurrency(item?.unitPrice ?? 0, "en-US", "USD")}
+          </div>
         </div>
         <div className="sm:col-span-1 min-w-0">
-          <div className="text-right font-semibold text-gray-900 dark:text-gray-100">{formatCurrency(item?.subtotal ?? 0, "en-US", "USD")}</div>
+          <div className="text-right font-semibold text-gray-900 dark:text-gray-100">
+            {formatCurrency(item?.subtotal ?? 0, "en-US", "USD")}
+          </div>
         </div>
       </div>
 
       {Array.isArray(item?.subItems) && item.subItems.length > 0 && (
         <div className="space-y-2">
-          {item.subItems.map((sub: any, subIndex: number) => renderPriceItem(sub, subIndex, true))}
+          {item.subItems.map((sub: any, subIndex: number) =>
+            renderPriceItem(sub, subIndex, true)
+          )}
         </div>
       )}
     </div>
@@ -135,17 +162,97 @@ const ProposalDetailsSheet: React.FC<ProposalDetailsSheetProps> = ({
     if (!Array.isArray(items)) return 0;
     const sumWithChildren = (arr: any[]): number =>
       arr.reduce((sum, itm) => {
-        const own = typeof itm?.subtotal === 'number' ? itm.subtotal : 0;
-        const children = Array.isArray(itm?.subItems) ? sumWithChildren(itm.subItems) : 0;
+        const own = typeof itm?.subtotal === "number" ? itm.subtotal : 0;
+        const children = Array.isArray(itm?.subItems)
+          ? sumWithChildren(itm.subItems)
+          : 0;
         return sum + own + children;
       }, 0);
     return sumWithChildren(items);
   };
 
+  // Flatten items to display nested subItems in a single table with indenting
+  const flattenPriceItems = (items: any[], level = 0): Array<any> => {
+    const result: Array<any> = [];
+    if (!Array.isArray(items)) return result;
+
+    items.forEach((item, index) => {
+      result.push({ ...item, level, itemNumber: `${index + 1}` });
+      if (Array.isArray(item?.subItems) && item.subItems.length > 0) {
+        result.push(...flattenPriceItems(item.subItems, level + 1));
+      }
+    });
+
+    return result;
+  };
+
+  // Table columns for price breakdown
+  const columns: ColumnDef<any>[] = [
+    {
+      id: "itemNumber",
+      header: "#",
+      cell: ({ row }) => (
+        <div className="font-medium text-center w-8">
+          {row.original.itemNumber}
+        </div>
+      ),
+    },
+    {
+      accessorKey: "component",
+      header: "Item / Component",
+      cell: ({ row }) => (
+        <div className={`font-medium ${row.original.level > 0 ? "pl-6" : ""}`}>
+          {row.original.component ?? "-"}
+        </div>
+      ),
+    },
+    {
+      accessorKey: "description",
+      header: "Description",
+      cell: ({ row }) => (
+        <div className="text-gray-600 dark:text-gray-400">
+          {row.original.description ?? "-"}
+        </div>
+      ),
+    },
+    {
+      accessorKey: "quantity",
+      header: "Quantity",
+      cell: ({ row }) => (
+        <div className="text-center">{row.original.quantity ?? "-"}</div>
+      ),
+    },
+    {
+      id: "unitOfMeasurement",
+      header: "Unit of Measurement",
+      cell: ({ row }) => (
+        <div className="truncate">{row.original.unitOfmeasurement ?? "-"}</div>
+      ),
+    },
+    {
+      id: "unitPrice",
+      header: "Unit Price",
+      cell: ({ row }) => (
+        <div className="text-right">
+          {formatCurrency(row.original.unitPrice ?? 0, "en-US", "USD")}
+        </div>
+      ),
+    },
+    {
+      id: "subtotal",
+      header: "Subtotal",
+      cell: ({ row }) => (
+        <div className="text-right font-semibold">
+          {formatCurrency(row.original.subtotal ?? 0, "en-US", "USD")}
+        </div>
+      ),
+    },
+  ];
+
   if (isLoading) {
     return (
       <SheetContent className="w-[600px] sm:w-[600px] overflow-y-auto">
-        <PageLoader 
+        <PageLoader
           showHeader={false}
           message="Loading proposal details..."
           className="px-6"
@@ -159,7 +266,9 @@ const ProposalDetailsSheet: React.FC<ProposalDetailsSheetProps> = ({
       <SheetContent className="w-[600px] sm:w-[600px] overflow-y-auto">
         <div className="flex items-center justify-center h-full">
           <div className="text-center">
-            <p className="text-red-500 dark:text-red-400 mb-4">Failed to load proposal details</p>
+            <p className="text-red-500 dark:text-red-400 mb-4">
+              Failed to load proposal details
+            </p>
             <Button onClick={onClose} variant="outline">
               Close
             </Button>
@@ -170,7 +279,7 @@ const ProposalDetailsSheet: React.FC<ProposalDetailsSheetProps> = ({
   }
 
   return (
-    <SheetContent className="!max-w-6xl overflow-y-auto">
+    <SheetContent className="sm:!max-w-none overflow-y-auto">
       {/* Header */}
       <SheetHeader className="pb-4 mb-6">
         <div className="flex items-center justify-between">
@@ -185,12 +294,20 @@ const ProposalDetailsSheet: React.FC<ProposalDetailsSheetProps> = ({
         <div className="p-4">
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
-              <span className="text-gray-600 dark:text-gray-400">Solicitation ID</span>
-              <p className="font-medium text-gray-900 dark:text-gray-100">{solicitationId || 'N/A'}</p>
+              <span className="text-gray-600 dark:text-gray-400">
+                Solicitation ID
+              </span>
+              <p className="font-medium text-gray-900 dark:text-gray-100">
+                {solicitationId || "N/A"}
+              </p>
             </div>
             <div>
-              <span className="text-gray-600 dark:text-gray-400">Solicitation Name</span>
-              <p className="font-medium text-gray-900 dark:text-gray-100">{solicitationName || 'N/A'}</p>
+              <span className="text-gray-600 dark:text-gray-400">
+                Solicitation Name
+              </span>
+              <p className="font-medium text-gray-900 dark:text-gray-100">
+                {solicitationName || "N/A"}
+              </p>
             </div>
           </div>
         </div>
@@ -199,10 +316,18 @@ const ProposalDetailsSheet: React.FC<ProposalDetailsSheetProps> = ({
         <div>
           <Tabs defaultValue="documents" className="w-full bg-transparent">
             <TabsList className="h-auto rounded-none border-b border-gray-300 !bg-transparent p-0 w-full justify-start">
-              <TabsTrigger value="documents"  className="data-[state=active]:border-[#2A4467] data-[state=active]:dark:bg-transparent data-[state=active]:dark:text-slate-100 relative rounded-none py-2 after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 border-0 border-b-2 data-[state=active]:bg-transparent data-[state=active]:shadow-none flex-none px-3"
->Uploaded Documents</TabsTrigger>
-              <TabsTrigger value="price"  className="data-[state=active]:border-[#2A4467] data-[state=active]:dark:bg-transparent data-[state=active]:dark:text-slate-100 relative rounded-none py-2 after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 border-0 border-b-2 data-[state=active]:bg-transparent data-[state=active]:shadow-none flex-none px-3"
->Price Breakdown</TabsTrigger>
+              <TabsTrigger
+                value="documents"
+                className="data-[state=active]:border-[#2A4467] data-[state=active]:dark:bg-transparent data-[state=active]:dark:text-slate-100 relative rounded-none py-2 after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 border-0 border-b-2 data-[state=active]:bg-transparent data-[state=active]:shadow-none flex-none px-3"
+              >
+                Uploaded Documents
+              </TabsTrigger>
+              <TabsTrigger
+                value="price"
+                className="data-[state=active]:border-[#2A4467] data-[state=active]:dark:bg-transparent data-[state=active]:dark:text-slate-100 relative rounded-none py-2 after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 border-0 border-b-2 data-[state=active]:bg-transparent data-[state=active]:shadow-none flex-none px-3"
+              >
+                Price Breakdown
+              </TabsTrigger>
             </TabsList>
 
             <TabsContent value="documents">
@@ -216,7 +341,9 @@ const ProposalDetailsSheet: React.FC<ProposalDetailsSheetProps> = ({
                       <div className="flex items-center space-x-3">
                         <div className="text-2xl">{getFileIcon(file.type)}</div>
                         <div>
-                          <p className="font-medium text-gray-900 dark:text-gray-100">{file.name}</p>
+                          <p className="font-medium text-gray-900 dark:text-gray-100">
+                            {file.name}
+                          </p>
                           <div className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
                             <span>{file.type.toUpperCase()}</span>
                             <span>•</span>
@@ -237,7 +364,7 @@ const ProposalDetailsSheet: React.FC<ProposalDetailsSheetProps> = ({
                           variant="ghost"
                           size="sm"
                           className="h-8 w-8 p-0 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
-                          onClick={() => window.open(file.url, '_blank')}
+                          onClick={() => window.open(file.url, "_blank")}
                         >
                           <Download className="h-4 w-4" />
                         </Button>
@@ -253,39 +380,52 @@ const ProposalDetailsSheet: React.FC<ProposalDetailsSheetProps> = ({
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
                   Price Breakdown
                 </h3>
-                {/* Header */}
-                <div className="grid grid-cols-12 gap-4 py-2 px-4 text-sm font-medium text-gray-700 dark:text-gray-300 border-b border-gray-200 dark:border-gray-700">
-                  <div className="col-span-3">Item / Component</div>
-                  <div className="col-span-3">Description</div>
-                  <div className="col-span-2 text-center">Quantity</div>
-                  <div className="col-span-2">Unit of Measurement</div>
-                  <div className="col-span-1 text-right">Unit Price</div>
-                  <div className="col-span-1 text-right">Subtotal</div>
-                </div>
+                {/* DataTable for price breakdown */}
+                {Array.isArray(proposal?.data?.action) &&
+                proposal?.data.action.length > 0 ? (
+                  <div className="mt-3">
+                    <DataTable
+                      data={flattenPriceItems(proposal?.data?.action || [])}
+                      columns={columns}
+                      options={{
+                        disablePagination: true,
+                        disableSelection: true,
+                        isLoading: false,
+                        totalCounts: (proposal?.data?.action || []).length,
+                        manualPagination: false,
+                        setPagination: () => {},
+                        pagination: {
+                          pageIndex: 0,
+                          pageSize: (proposal?.data?.action || []).length || 10,
+                        },
+                      }}
+                    />
 
-                {/* Items */}
-                <div className="space-y-3 mt-3">
-                  {Array.isArray(proposal?.data?.action) && proposal?.data.action.length > 0 ? (
-                    proposal?.data.action.map((item: any, idx: number) => renderPriceItem(item, idx))
-                  ) : (
-                    <p className="text-sm text-gray-500 dark:text-gray-400">No price breakdown available.</p>
-                  )}
-
-                  {/* Total */}
-                  <div className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800">
-                    <p className="font-semibold text-gray-900 dark:text-gray-100">Total</p>
-                    <p className="font-semibold text-gray-900 dark:text-gray-100">
-                      {formatCurrency(computeTotalFromActions(proposal?.data?.action || []), "en-US", "USD")}
-                    </p>
+                    {/* Total */}
+                    <div className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800 mt-3">
+                      <p className="font-semibold text-gray-900 dark:text-gray-100">
+                        Total
+                      </p>
+                      <p className="font-semibold text-gray-900 dark:text-gray-100">
+                        {formatCurrency(
+                          computeTotalFromActions(proposal?.data?.action || []),
+                          "en-US",
+                          "USD"
+                        )}
+                      </p>
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-3">
+                    No price breakdown available.
+                  </p>
+                )}
               </div>
             </TabsContent>
           </Tabs>
         </div>
-
       </div>
-      
+
       {/* Document Viewer Modal */}
       {selectedDocument && (
         <DocumentViewer
@@ -296,7 +436,10 @@ const ProposalDetailsSheet: React.FC<ProposalDetailsSheetProps> = ({
           }}
           fileUrl={selectedDocument.url}
           fileName={selectedDocument.name}
-          fileType={getFileExtension(selectedDocument.name, selectedDocument.type)}
+          fileType={getFileExtension(
+            selectedDocument.name,
+            selectedDocument.type
+          )}
         />
       )}
     </SheetContent>

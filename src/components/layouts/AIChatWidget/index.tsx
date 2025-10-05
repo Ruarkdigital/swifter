@@ -19,6 +19,8 @@ import {
   Send,
   X,
   Minimize2,
+  Expand,
+  Shrink,
   RotateCcw,
   Paperclip,
   File,
@@ -70,6 +72,7 @@ const AIChatWidget: React.FC<AIChatWidgetProps> = ({
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
   const [inputValue, setInputValue] = useState("");
   const [attachedFiles, setAttachedFiles] = useState<FileAttachment[]>([]);
   const [isDragOver, setIsDragOver] = useState(false);
@@ -390,6 +393,10 @@ const AIChatWidget: React.FC<AIChatWidgetProps> = ({
     setIsMinimized(false);
   }, []);
 
+  const toggleExpand = useCallback(() => {
+    setIsExpanded((prev) => !prev);
+  }, []);
+
   // Enhanced message rendering with MessageContainer
   const renderMessage = useCallback((message: Message) => {
     return (
@@ -441,9 +448,12 @@ const AIChatWidget: React.FC<AIChatWidgetProps> = ({
           <Card
             ref={chatContainerRef}
             className={cn(
-              "w-96 shadow-2xl transition-all duration-300 ease-in-out border-0 backdrop-blur-sm",
+              "shadow-2xl transition-all duration-300 ease-in-out border-0 backdrop-blur-sm",
               isMinimized ? "h-14" : "h-[650px]",
-              isDragOver && "ring-2 ring-blue-500 ring-opacity-50 bg-blue-50/50"
+              isDragOver && "ring-2 ring-blue-500 ring-opacity-50 bg-blue-50/50",
+              isExpanded
+                ? "w-[90vw] sm:w-[85vw] md:w-[50vw]"
+                : "w-96 sm:w-[85vw] md:w-[420px]"
             )}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
@@ -469,6 +479,25 @@ const AIChatWidget: React.FC<AIChatWidgetProps> = ({
                   </div>
                 </div>
                 <div className="flex items-center gap-1">
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={toggleExpand}
+                        className="h-8 w-8 text-white hover:bg-white/20 transition-colors"
+                      >
+                        {isExpanded ? (
+                          <Shrink className="h-4 w-4" />
+                        ) : (
+                          <Expand className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>{isExpanded ? "Collapse width" : "Expand to 50%"}</p>
+                    </TooltipContent>
+                  </Tooltip>
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button
@@ -688,22 +717,6 @@ const AIChatWidget: React.FC<AIChatWidgetProps> = ({
                             Math.min(target.scrollHeight, 120) + "px";
                         }}
                       />
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => fileInputRef.current?.click()}
-                            className="absolute right-2 bottom-2 h-8 w-8 text-gray-500 hover:text-blue-600 hover:bg-blue-50 transition-colors"
-                            disabled={isLoading}
-                          >
-                            <Paperclip className="h-4 w-4" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Attach files</p>
-                        </TooltipContent>
-                      </Tooltip>
                     </div>
 
                     <Tooltip>
