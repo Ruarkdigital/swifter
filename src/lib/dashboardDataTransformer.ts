@@ -1395,7 +1395,7 @@ export class DashboardDataTransformer {
       },
       {
         title: "Pending Evaluations",
-        value: data.underEvaluating || 0,
+        value: data.pending || 0,
         icon: "clock",
         color: "text-yellow-800",
         bgColor: "bg-yellow-500/20",
@@ -1930,37 +1930,65 @@ export class DashboardDataTransformer {
       ];
     }
 
-    // Transform API data into stats format
-    // const statsMap = data.reduce((acc: any, item: any) => {
-    //   acc[item.status] = item.count || 0;
-    //   return acc;
-    // }, {});
+    // Support both legacy vendor dashboard format and invitation dashboard format
+    let confirmed = 0;
+    let declined = 0;
+    let pending = 0;
+    let all = 0;
+
+    if (Array.isArray(data)) {
+      // Legacy array format: [{ status: string, count: number }, ...]
+      const map = (data as any[]).reduce((acc: Record<string, number>, item: any) => {
+        const key = String(item?.status || "").toLowerCase();
+        acc[key] = (item?.count as number) || 0;
+        return acc;
+      }, {});
+      confirmed = map["confirmed"] || map["active"] || 0;
+      declined = map["declined"] || 0;
+      pending = map["invited"] || map["pending"] || map["no_response"] || 0;
+      all = Object.values(map).reduce((sum, v) => sum + (v || 0), 0);
+    } else if (data && typeof data === "object") {
+      // Invitation dashboard format: { confirmed, declined, invited }
+      const obj = data as Record<string, number>;
+      confirmed = obj["confirmed"] || obj["active"] || 0;
+      declined = obj["declined"] || 0;
+      pending = obj["invited"] || obj["pending"] || 0;
+      all =
+        (obj["confirmed"] || 0) + (obj["declined"] || 0) + (obj["invited"] || 0);
+      // Fallback to legacy object keys if present
+      if (!all && (obj["all"] || obj["draft"] || obj["active"] || obj["pending"])) {
+        all = obj["all"] || 0;
+        confirmed = obj["active"] || confirmed;
+        declined = obj["declined"] || declined;
+        pending = obj["pending"] || pending;
+      }
+    }
 
     return [
       {
         title: "All Invitations",
-        value: data.all,
+        value: all || 0,
         icon: "folder-open",
         color: "text-gray-500",
         bgColor: "bg-gray-500/20",
       },
       {
         title: "Confirmed Invitations",
-        value: data?.active || 0,
+        value: confirmed || 0,
         icon: "folder-open",
         color: "text-green-600",
         bgColor: "bg-green-500/20",
       },
       {
         title: "Declined Invitations",
-        value: data.declined || 0,
+        value: declined || 0,
         icon: "folder-open",
         color: "text-red-500",
         bgColor: "bg-red-500/20",
       },
       {
         title: "Pending Invitations",
-        value: data.pending || 0,
+        value: pending || 0,
         icon: "folder-open",
         color: "!text-yellow-500",
         bgColor: "bg-yellow-500/20",

@@ -445,7 +445,7 @@ export const useDashboardData = (
     useQuery<ApiResponse<VendorDashboardStats[]>, ApiResponseError>({
       queryKey: useUserQueryKey(["vendor-dashboard", userRole]),
       queryFn: async () =>
-        await getRequest({ url: "/vendor/solicitations/dashboard" }),
+        await getRequest({ url: "/vendor/solicitations/invitation/dashboard" }),
       enabled: userRole === "vendor",
       staleTime: 5 * 60 * 1000,
       refetchOnWindowFocus: false,

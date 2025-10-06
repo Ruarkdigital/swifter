@@ -423,6 +423,22 @@ export const SolicitationManagementPage = () => {
     limit: 10,
   });
 
+  // Build Status filter options; hide "Under Evaluation" for vendor users
+  const statusOptions = useMemo(
+    () =>
+      [
+        { label: "All Status", value: "all_status" },
+        { label: "Published", value: "published" },
+        { label: "Draft", value: "draft" },
+        // Only show "Under Evaluation" for non-vendor users
+        ...(!isVendor
+          ? [{ label: "Under Evaluation", value: "under_evaluation" }]
+          : []),
+        { label: "Closed", value: "closed" },
+      ],
+    [isVendor]
+  );
+
   // Date range picker states
   const [dateRange, setDateRange] = useState<{
     startDate?: Date;
@@ -1319,28 +1335,7 @@ export const SolicitationManagementPage = () => {
                         {
                           title: "Status",
                           showIcon: true,
-                          options: [
-                            {
-                              label: "All Status",
-                              value: "all_status",
-                            },
-                            {
-                              label: "Published",
-                              value: "published",
-                            },
-                            {
-                              label: "Draft",
-                              value: "draft",
-                            },
-                            {
-                              label: "Under Evaluation",
-                              value: "under_evaluation",
-                            },
-                            {
-                              label: "Closed",
-                              value: "closed",
-                            },
-                          ],
+                          options: statusOptions,
                         },
                       ]}
                       onFilterChange={handleFilterChange}
@@ -1426,28 +1421,7 @@ export const SolicitationManagementPage = () => {
                         {
                           title: "Status",
                           showIcon: true,
-                          options: [
-                            {
-                              label: "All Status",
-                              value: "all_status",
-                            },
-                            {
-                              label: "Published",
-                              value: "published",
-                            },
-                            {
-                              label: "Draft",
-                              value: "draft",
-                            },
-                            {
-                              label: "Under Evaluation",
-                              value: "under_evaluation",
-                            },
-                            {
-                              label: "Closed",
-                              value: "closed",
-                            },
-                          ],
+                          options: statusOptions,
                         },
                       ]}
                     onFilterChange={handleFilterChange}

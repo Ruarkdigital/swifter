@@ -21,6 +21,7 @@ export type EvaluationApiResponse = {
   endDate: string;
   solicitationName: string;
   solicitationType: string;
+  completionDate: string;
   owner: boolean;
   timezone: string;
   solId: string

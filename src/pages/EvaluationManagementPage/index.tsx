@@ -56,11 +56,13 @@ type Evaluation = {
   solicitationId: string;
   type: string;
   deadline: string;
+  deadlineRaw: string;
   daysLeft: number;
   status: string;
   owner: boolean;
   timezone: string;
   solId: string;
+  completionDate?: string;
 };
 
 // Assigned Evaluation type definition
@@ -123,12 +125,14 @@ const transformEvaluationData = (
     name: item.solicitationName,
     solicitationId: item._id,
     type: item.solicitationType,
-    deadline: safeFormatDate(item.endDate, "MMM dd, yyyy, hh:mm aaa", "N/A"),
+    deadline: safeFormatDate(item.endDate, "MMM dd, yyyy, hh:mm aaa", "N/A", item.timezone),
+    deadlineRaw: item.endDate,
     daysLeft: calculateDaysLeft(item.endDate),
     status: item.status as "Active" | "Pending" | "Completed",
     owner: item.owner,
     timezone: item.timezone,
-    solId: item.solId
+    solId: item.solId,
+    completionDate: item.completionDate,
   }));
 };
 
@@ -515,14 +519,58 @@ export const EvaluationManagementPage = () => {
     {
       accessorKey: "deadline",
       header: "Date",
-      cell: ({ row }) => (
-        <div className="flex flex-col">
-          <span className="text-sm">Deadline: {row.original.deadline}</span>
-          <span className="text-sm text-red-600 font-medium">
-            Days Left: {row.original.daysLeft} days
-          </span>
-        </div>
-      ),
+      cell: ({ row }) => {
+        const isCompleted = row.original.status === "Completed";
+        const completionDate = row.original.completionDate;
+        const deadlineRaw = row.original.deadlineRaw;
+
+        let secondary: JSX.Element;
+
+        if (isCompleted && completionDate && deadlineRaw) {
+          const end = new Date(deadlineRaw);
+          const completed = new Date(completionDate);
+
+          if (!isNaN(end.getTime()) && !isNaN(completed.getTime())) {
+            const delta = differenceInDays(end, completed);
+            if (delta === 0) {
+              secondary = (
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Completed on time
+                </span>
+              );
+            } else if (delta > 0) {
+              secondary = (
+                <span className="text-sm text-green-600 font-medium">
+                  Completed {delta} days early
+                </span>
+              );
+            } else {
+              secondary = (
+                <span className="text-sm text-red-600 font-medium">
+                  Completed {Math.abs(delta)} days late
+                </span>
+              );
+            }
+          } else {
+            secondary = (
+              <span className="text-sm text-gray-500 dark:text-gray-400">Completed</span>
+            );
+          }
+        } else {
+          secondary = (
+            <span className="text-sm text-red-600 font-medium">
+              Days Left: {row.original.daysLeft} days
+            </span>
+          );
+        }
+
+        return (
+          <div className="flex flex-col">
+            <span className="text-sm">Deadline: {row.original.deadline}</span>
+            {secondary}
+          </div>
+        );
+      },
     },
     {
       accessorKey: "timezone",
@@ -587,14 +635,58 @@ export const EvaluationManagementPage = () => {
     {
       accessorKey: "deadline",
       header: "Date",
-      cell: ({ row }) => (
-        <div className="flex flex-col">
-          <span className="text-sm">Deadline: {row.original.deadline}</span>
-          <span className="text-sm text-red-600 font-medium">
-            Days Left: {row.original.daysLeft} days
-          </span>
-        </div>
-      ),
+      cell: ({ row }) => {
+        const isCompleted = row.original.status === "Completed";
+        const completionDate = row.original.completionDate;
+        const deadlineRaw = row.original.deadlineRaw;
+
+        let secondary: JSX.Element;
+
+        if (isCompleted && completionDate && deadlineRaw) {
+          const end = new Date(deadlineRaw);
+          const completed = new Date(completionDate);
+
+          if (!isNaN(end.getTime()) && !isNaN(completed.getTime())) {
+            const delta = differenceInDays(end, completed);
+            if (delta === 0) {
+              secondary = (
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Completed on time
+                </span>
+              );
+            } else if (delta > 0) {
+              secondary = (
+                <span className="text-sm text-green-600 font-medium">
+                  Completed {delta} days early
+                </span>
+              );
+            } else {
+              secondary = (
+                <span className="text-sm text-red-600 font-medium">
+                  Completed {Math.abs(delta)} days late
+                </span>
+              );
+            }
+          } else {
+            secondary = (
+              <span className="text-sm text-gray-500 dark:text-gray-400">Completed</span>
+            );
+          }
+        } else {
+          secondary = (
+            <span className="text-sm text-red-600 font-medium">
+              Days Left: {row.original.daysLeft} days
+            </span>
+          );
+        }
+
+        return (
+          <div className="flex flex-col">
+            <span className="text-sm">Deadline: {row.original.deadline}</span>
+            {secondary}
+          </div>
+        );
+      },
     },
     {
       accessorKey: "timezone",
