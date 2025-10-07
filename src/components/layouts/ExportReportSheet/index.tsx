@@ -22,14 +22,8 @@ import { ApiResponse, ApiResponseError } from "@/types";
 import { useToastHandler } from "@/hooks/useToaster";
 
 // API Types
-type DocsOptionResponse = {
-  details?: boolean;
-  submissions?: boolean;
-  "score-summary"?: boolean;
-  "evaluation-summary"?: boolean;
-  "vendor-scores"?: boolean;
-  "criteria-breakdown"?: boolean;
-};
+// Make options dynamic to support any added/removed keys from the API
+type DocsOptionResponse = Record<string, boolean>;
 
 // Component Props Interface
 interface ExportReportSheetProps {
@@ -74,19 +68,12 @@ export const ExportReportSheet: React.FC<ExportReportSheetProps> = ({
 
   // Update selected sections based on API response
   useEffect(() => {
-    if (docsOptionsData?.data?.data) {
-      const options = docsOptionsData.data.data;
+    const options = docsOptionsData?.data?.data;
+    if (options && typeof options === "object") {
       const initialSections: Record<string, boolean> = {};
-
-      if (options.details) initialSections.details = true;
-      if (options.submissions) initialSections.submissions = true;
-      if (options["score-summary"]) initialSections["score-summary"] = true;
-      if (options["evaluation-summary"])
-        initialSections["evaluation-summary"] = true;
-      if (options["vendor-scores"]) initialSections["vendor-scores"] = true;
-      if (options["criteria-breakdown"])
-        initialSections["criteria-breakdown"] = true;
-
+      Object.entries(options).forEach(([key, value]) => {
+        initialSections[key] = Boolean(value);
+      });
       setSelectedSections(initialSections);
     }
   }, [docsOptionsData]);
@@ -194,65 +181,59 @@ export const ExportReportSheet: React.FC<ExportReportSheetProps> = ({
 
   // Get available sections based on API response
   const getAvailableSections = () => {
-    if (docsOptionsData?.data?.data) {
-      const options = docsOptionsData.data.data;
-      const sections = [];
+    const options = docsOptionsData?.data?.data;
+    if (!options || typeof options !== "object") return [];
 
-      if (options.details) {
-        sections.push({
-          key: "details",
-          label: "Solicitation Details",
-          description:
-            "Overview of the solicitation dates, highest ranking vendor, and NDA + COI forms",
-        });
-      }
+    const friendlyLabels: Record<string, { label: string; description: string }> = {
+      details: {
+        label: "Solicitation Details",
+        description:
+          "Overview of the solicitation dates, highest ranking vendor, and NDA + COI forms",
+      },
+      submissions: {
+        label: "Submissions",
+        description:
+          "List of the Vendors (Email Address, Name) that submitted for this Project",
+      },
+      "score-summary": {
+        label: "Score Summary",
+        description: "Scoring Summary Table (Submission and Criteria Scores)",
+      },
+      "evaluation-summary": {
+        label: "Evaluation Summary",
+        description: "Overview of the evaluation process and results",
+      },
+      "vendor-scores": {
+        label: "Vendor Scores",
+        description: "Detailed scoring breakdown for each vendor",
+      },
+      "criteria-breakdown": {
+        label: "Criteria Breakdown",
+        description: "Analysis of evaluation criteria and scoring methodology",
+      },
+      "score-comment": {
+        label: "Score Comment",
+        description: "Scoring summary comment tables per submission",
+      },
+      "submission-score": {
+        label: "Submission Score",
+        description: "Scoring summary tables per submission",
+      },
+    };
 
-      if (options.submissions) {
-        sections.push({
-          key: "submissions",
-          label: "Submissions",
-          description:
-            "List of the Vendors (Email Address, Name) that submitted for this Project",
-        });
-      }
-
-      if (options["score-summary"]) {
-        sections.push({
-          key: "score-summary",
-          label: "Score Summary",
-          description: "Scoring Summary Table (Submission and Criteria Scores)",
-        });
-      }
-
-      if (options["evaluation-summary"]) {
-        sections.push({
-          key: "evaluation-summary",
-          label: "Evaluation Summary",
-          description: "Overview of the evaluation process and results",
-        });
-      }
-
-      if (options["vendor-scores"]) {
-        sections.push({
-          key: "vendor-scores",
-          label: "Vendor Scores",
-          description: "Detailed scoring breakdown for each vendor",
-        });
-      }
-
-      if (options["criteria-breakdown"]) {
-        sections.push({
-          key: "criteria-breakdown",
-          label: "Criteria Breakdown",
-          description:
-            "Analysis of evaluation criteria and scoring methodology",
-        });
-      }
-
-      return sections;
-    }
-
-    return [];
+    return Object.entries(options)
+      .filter(([, isAvailable]) => Boolean(isAvailable))
+      .map(([key]) => {
+        const friendly = friendlyLabels[key];
+        const defaultLabel = key
+          .replace(/[-_]+/g, " ")
+          .replace(/\b\w/g, (c) => c.toUpperCase());
+        return {
+          key,
+          label: friendly?.label ?? defaultLabel,
+          description: friendly?.description ?? "Included section",
+        };
+      });
   };
 
   const availableSections = getAvailableSections();
