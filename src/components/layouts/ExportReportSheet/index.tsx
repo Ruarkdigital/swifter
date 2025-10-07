@@ -191,12 +191,12 @@ export const ExportReportSheet: React.FC<ExportReportSheetProps> = ({
           "Overview of the solicitation dates, highest ranking vendor, and NDA + COI forms",
       },
       submissions: {
-        label: "Submissions",
+        label: "Submission",
         description:
           "List of the Vendors (Email Address, Name) that submitted for this Project",
       },
       "score-summary": {
-        label: "Score Summary",
+        label: "Scoring Summary",
         description: "Scoring Summary Table (Submission and Criteria Scores)",
       },
       "evaluation-summary": {
@@ -212,11 +212,11 @@ export const ExportReportSheet: React.FC<ExportReportSheetProps> = ({
         description: "Analysis of evaluation criteria and scoring methodology",
       },
       "score-comment": {
-        label: "Score Comment",
+        label: "Submission Scores Comment",
         description: "Scoring summary comment tables per submission",
       },
       "submission-score": {
-        label: "Submission Score",
+        label: "Submission Scores",
         description: "Scoring summary tables per submission",
       },
     };
