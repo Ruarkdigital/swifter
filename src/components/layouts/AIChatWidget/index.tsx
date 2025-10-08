@@ -119,9 +119,11 @@ const AIChatWidget: React.FC<AIChatWidgetProps> = ({
   const clearMessages = onSendMessage
     ? async () => {
         try {
-          await axios.post('https://dev.swiftpro.tech/reset', undefined, { headers: {
-            'Authorization': `Bearer ${token}`
-          } });
+          await axios.post("https://dev.swiftpro.tech/reset", undefined, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
           setCustomMessages([
             {
               id: "1",
@@ -454,7 +456,8 @@ const AIChatWidget: React.FC<AIChatWidgetProps> = ({
             className={cn(
               "shadow-2xl transition-all duration-300 ease-in-out border-0 backdrop-blur-sm",
               isMinimized ? "h-14" : "h-[650px]",
-              isDragOver && "ring-2 ring-blue-500 ring-opacity-50 bg-blue-50/50",
+              isDragOver &&
+                "ring-2 ring-blue-500 ring-opacity-50 bg-blue-50/50",
               isExpanded
                 ? "w-[90vw] sm:w-[85vw] md:w-[50vw]"
                 : "w-96 sm:w-[85vw] md:w-[420px]"
