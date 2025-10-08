@@ -30,9 +30,9 @@ import {
   Bot,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { postRequest } from "@/lib/axiosInstance";
 import { useAIChat, Message } from "@/hooks/useAIChat";
 import MessageContainer from "./components/MessageContainer";
+import axios from "axios";
 
 interface FileAttachment {
   id: string;
@@ -117,7 +117,7 @@ const AIChatWidget: React.FC<AIChatWidgetProps> = ({
   const clearMessages = onSendMessage
     ? async () => {
         try {
-          await postRequest({ url: "/reset", payload: {} });
+          await axios.post('https://dev.swiftpro.tech/reset');
           setCustomMessages([
             {
               id: "1",
