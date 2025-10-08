@@ -755,8 +755,11 @@ export const EvaluationManagementPage = () => {
       ),
     },
     {
-      accessorKey: "timezone",
-      header: "Timezone",
+      accessorKey: "progress",
+      header: "Progress",
+      cell: ({ row }) => (
+        <span className="font-medium">{row.original.progress}%</span>
+      ),
     },
     {
       id: "actions",
