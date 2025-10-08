@@ -33,6 +33,7 @@ import { cn } from "@/lib/utils";
 import { useAIChat, Message } from "@/hooks/useAIChat";
 import MessageContainer from "./components/MessageContainer";
 import axios from "axios";
+import { useToken } from "@/store/authSlice";
 
 interface FileAttachment {
   id: string;
@@ -85,6 +86,7 @@ const AIChatWidget: React.FC<AIChatWidgetProps> = ({
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
+  const token = useToken();
 
   // Use the AI chat hook for state management
   const {
@@ -117,7 +119,9 @@ const AIChatWidget: React.FC<AIChatWidgetProps> = ({
   const clearMessages = onSendMessage
     ? async () => {
         try {
-          await axios.post('https://dev.swiftpro.tech/reset');
+          await axios.post('https://dev.swiftpro.tech/reset', undefined, { headers: {
+            'Authorization': `Bearer ${token}`
+          } });
           setCustomMessages([
             {
               id: "1",
