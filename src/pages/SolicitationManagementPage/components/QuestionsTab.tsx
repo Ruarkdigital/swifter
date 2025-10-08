@@ -53,7 +53,7 @@ export interface QuestionResponse {
 type QuestionsResponse = {
   message: string;
   data: {
-    totalAnswer: number;
+    totalAnswers: number;
     questionCount: number;
     questions: Question[];
   };
@@ -279,7 +279,7 @@ const QuestionsTab: React.FC<QuestionsTabProps> = ({ solicitationStatus }) => {
                   Answered Questions
                 </h3>
                 <p className="text-3xl font-bold text-gray-900 dark:text-gray-200">
-                  {questionsData?.data.totalAnswer || 0}
+                  {questionsData?.data.totalAnswers || 0}
                 </p>
               </div>
               <div className="p-3 rounded-full bg-blue-50 dark:bg-slate-900">
