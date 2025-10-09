@@ -317,12 +317,14 @@ export const InvitedVendorCard = ({
   icon: Icon,
   iconBgColor,
   iconColor,
+  isPercent,
 }: {
   title: string;
   count: number;
   icon: any;
   iconBgColor: string;
   iconColor: string;
+  isPercent?: boolean;
 }) => {
   return (
     <Card className="p-6">
@@ -330,7 +332,7 @@ export const InvitedVendorCard = ({
         <div>
           <h3 className="text-lg font-semibold text-gray-500  mb-1">{title}</h3>
           <p className="text-3xl font-bold text-gray-900 dark:text-gray-200">
-            {count?.toFixed(0)}
+            {isPercent ? `${count}%` : count?.toFixed(0)}
           </p>
         </div>
         <div className={`p-3 rounded-full ${iconBgColor}`}>
@@ -1388,6 +1390,7 @@ export const SolicitationDetailPage = () => {
               <InvitedVendorCard
                 title="Evaluation Progress"
                 count={evaluatorsData?.data.data?.summary?.averageProgress || 0}
+                isPercent={true}
                 icon={Folder}
                 iconBgColor="bg-blue-50"
                 iconColor="text-blue-600"
