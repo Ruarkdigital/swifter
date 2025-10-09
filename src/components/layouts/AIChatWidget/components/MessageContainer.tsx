@@ -44,7 +44,7 @@ const MessageContainer: React.FC<MessageContainerProps> = memo(({
   const markdownComponents = useMemo(() => ({
     // Custom paragraph styling
     p: ({ children, ...props }: any) => (
-      <p className="mb-2 last:mb-0 leading-relaxed" {...props}>
+      <p className="mt-0 mb-2 last:mb-0 leading-relaxed" {...props}>
         {children}
       </p>
     ),
@@ -246,7 +246,7 @@ const MessageContainer: React.FC<MessageContainerProps> = memo(({
         {/* Main message content with markdown support */}
         <div 
           className={cn(
-            "prose prose-sm max-w-none whitespace-pre-wrap leading-relaxed",
+            "prose prose-sm max-w-none whitespace-normal leading-relaxed",
             isUser ? "prose-invert" : ""
           )}
         >
