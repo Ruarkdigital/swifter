@@ -142,7 +142,7 @@ const EvaluationScorecardSheet: React.FC<EvaluationScorecardSheetProps> = ({
                         Evaluation Score
                       </p>
                       <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                        {activeData.data.evaluator.score?.toFixed(1) || "N/A"}%
+                        {activeData.data.evaluator.score?.toFixed(0) || "N/A"}%
                       </p>
                     </div>
                   </div>
