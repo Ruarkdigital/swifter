@@ -211,11 +211,11 @@ const useSubmitCriteriaScore = () => {
       return response;
     },
     onSuccess: () => {
-      toast.success("Success", "Score submitted successfully");
+      toast.success("Success", "Evaluation criteria score saved successfully");
       queryClient.invalidateQueries({ queryKey: ["evaluation-criteria"] });
     },
     onError: (error) => {
-      toast.error("Error", error.message || "Failed to submit score");
+      toast.error("Error", error.message || "Failed to save evaluation criteria score");
     },
   });
 };
