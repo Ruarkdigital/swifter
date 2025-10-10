@@ -46,6 +46,10 @@ interface FileAttachment {
 
 interface AIChatWidgetProps {
   onSendMessage?: (message: string) => Promise<string>;
+  onStreamMessage?: (
+    message: string,
+    onDelta: (partial: string) => void
+  ) => Promise<void>;
   apiEndpoint?: string;
   className?: string;
   maxFileSize?: number;
@@ -60,6 +64,7 @@ interface AIChatWidgetProps {
 
 const AIChatWidget: React.FC<AIChatWidgetProps> = ({
   onSendMessage,
+  onStreamMessage,
   apiEndpoint,
   className,
   maxFileSize = 10 * 1024 * 1024, // 10MB default
@@ -101,7 +106,7 @@ const AIChatWidget: React.FC<AIChatWidgetProps> = ({
     },
   });
 
-  // Custom state management when using external onSendMessage
+  // Custom state management when using external onSendMessage/onStreamMessage
   const [customMessages, setCustomMessages] = useState<Message[]>([
     {
       id: "1",
@@ -112,11 +117,12 @@ const AIChatWidget: React.FC<AIChatWidgetProps> = ({
   ]);
   const [customIsLoading, setCustomIsLoading] = useState(false);
 
-  // Use custom state when onSendMessage is provided, otherwise use hook state
-  const messages = onSendMessage ? customMessages : hookMessages;
-  const isLoading = onSendMessage ? customIsLoading : hookIsLoading;
-  const sendMessage = onSendMessage ? undefined : hookSendMessage;
-  const clearMessages = onSendMessage
+  // Use custom state when streaming or custom handler is provided, otherwise use hook state
+  const useCustom = Boolean(onSendMessage || onStreamMessage);
+  const messages = useCustom ? customMessages : hookMessages;
+  const isLoading = useCustom ? customIsLoading : hookIsLoading;
+  const sendMessage = useCustom ? undefined : hookSendMessage;
+  const clearMessages = useCustom
     ? async () => {
         try {
           await axios.post("https://dev.swiftpro.tech/reset", undefined, {
@@ -288,7 +294,42 @@ const AIChatWidget: React.FC<AIChatWidgetProps> = ({
     setAttachedFiles([]);
 
     try {
-      if (onSendMessage) {
+      if (onStreamMessage) {
+        // Add user message to custom state
+        const userMessage = {
+          id: crypto.randomUUID(),
+          content: messageContent,
+          sender: "user" as const,
+          timestamp: new Date(),
+        };
+
+        setCustomMessages((prev) => [...prev, userMessage]);
+        setCustomIsLoading(true);
+
+        // Create placeholder AI message and stream deltas into it
+        const aiMessageId = crypto.randomUUID();
+        setCustomMessages((prev) => [
+          ...prev,
+          {
+            id: aiMessageId,
+            content: "",
+            sender: "ai" as const,
+            timestamp: new Date(),
+          },
+        ]);
+
+        try {
+          await onStreamMessage(messageContent, (partial) => {
+            setCustomMessages((prev) =>
+              prev.map((m) =>
+                m.id === aiMessageId ? { ...m, content: m.content + partial } : m
+              )
+            );
+          });
+        } finally {
+          setCustomIsLoading(false);
+        }
+      } else if (onSendMessage) {
         // Add user message to custom state
         const userMessage = {
           id: crypto.randomUUID(),
@@ -327,7 +368,7 @@ const AIChatWidget: React.FC<AIChatWidgetProps> = ({
     } catch (error) {
       console.error("Failed to send message:", error);
 
-      if (onSendMessage) {
+      if (useCustom) {
         // Add error message to custom state
         const errorMessage = {
           id: crypto.randomUUID(),
@@ -583,7 +624,9 @@ const AIChatWidget: React.FC<AIChatWidgetProps> = ({
                 {messages.length > 0 && (
                   <ScrollArea className="flex-1 p-4">
                     <div className="space-y-6 h-[10rem]">
-                      {messages.map(renderMessage)}
+                      {messages
+                        .filter(message => !isLoading || message.content.trim() !== '')
+                        .map(renderMessage)}
                       {isLoading && (
                         <div className="flex items-start gap-3 animate-in slide-in-from-bottom-2 duration-300">
                           <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
@@ -609,7 +652,7 @@ const AIChatWidget: React.FC<AIChatWidgetProps> = ({
                   </ScrollArea>
                 )}
 
-                {/* Loading overlay when sending message */}
+                {/* Loading overlay when no messages exist */}
                 {isLoading && messages.length === 0 && (
                   <div className="flex-1 flex items-center justify-center p-6">
                     <div className="text-center space-y-4">
@@ -736,18 +779,9 @@ const AIChatWidget: React.FC<AIChatWidgetProps> = ({
                             isLoading
                           }
                           size="icon"
-                          className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 disabled:from-gray-400 disabled:to-gray-500 rounded-xl h-11 w-11 shadow-lg hover:shadow-xl transition-all duration-200 disabled:shadow-none relative overflow-hidden"
+                          className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 disabled:from-gray-400 disabled:to-gray-500 rounded-xl h-11 w-11 shadow-lg hover:shadow-xl transition-all duration-200 disabled:shadow-none"
                         >
-                          {isLoading ? (
-                            <div className="flex items-center justify-center">
-                              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                            </div>
-                          ) : (
-                            <Send className="h-5 w-5 text-white" />
-                          )}
-                          {isLoading && (
-                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-pulse"></div>
-                          )}
+                          <Send className="h-5 w-5 text-white" />
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent>
