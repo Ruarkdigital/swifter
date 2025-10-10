@@ -1388,7 +1388,7 @@ export class DashboardDataTransformer {
       },
       {
         title: "Active Solicitations",
-        value: data.Active || 0,
+        value: data.active || 0,
         icon: "activity",
         color: "text-green-800",
         bgColor: "bg-green-500/20",
