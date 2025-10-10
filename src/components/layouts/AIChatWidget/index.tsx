@@ -326,6 +326,22 @@ const AIChatWidget: React.FC<AIChatWidgetProps> = ({
               )
             );
           });
+        } catch (error) {
+          console.error("Streaming error:", error);
+          // Replace the empty placeholder with a clear error message
+          setCustomMessages((prev) =>
+            prev.map((m) =>
+              m.id === aiMessageId
+                ? {
+                    ...m,
+                    content:
+                      "Sorry, I couldn't process your request right now. Please try again.",
+                  }
+                : m
+            )
+          );
+          // Stop further error propagation to avoid duplicate error messages
+          return;
         } finally {
           setCustomIsLoading(false);
         }
