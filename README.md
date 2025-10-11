@@ -1,30 +1,25 @@
-# React + TypeScript + Forge + Zustand + Vite 
+# SwiftPro
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules. Provides the 
+SwiftPro is a React + TypeScript + Vite application featuring Forge UI utilities, Zustand for state, React Query for data fetching, Axios for HTTP, Tailwind CSS for styling, and Playwright for end-to-end testing.
 
-Currently, two official plugins are available:
+## Developer Onboarding
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- Read the comprehensive onboarding guide: `docs/DEVELOPER_ONBOARDING.md`
+- Configure environment variables: copy `.env.example` to `.env` and edit values
 
-## Expanding the ESLint configuration
+## Getting Started
 
-If you are developing a production application, we recommend updating the configuration to enable type aware lint rules:
+- Install dependencies: `npm install`
+- Start dev server: `npm run dev` (http://localhost:5173)
+- Run tests: `npm test` (see `docs/TESTING.md` for details)
 
-- Configure the top-level `parserOptions` property like this:
+## Stack
 
-```js
-export default {
-  // other rules...
-  parserOptions: {
-    ecmaVersion: 'latest',
-    sourceType: 'module',
-    project: ['./tsconfig.json', './tsconfig.node.json'],
-    tsconfigRootDir: __dirname,
-  },
-}
-```
+- React, TypeScript, Vite
+- Zustand, React Query, Axios
+- Tailwind CSS, Forge components
+- Playwright
 
-- Replace `plugin:@typescript-eslint/recommended` to `plugin:@typescript-eslint/recommended-type-checked` or `plugin:@typescript-eslint/strict-type-checked`
-- Optionally add `plugin:@typescript-eslint/stylistic-type-checked`
-- Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and add `plugin:react/recommended` & `plugin:react/jsx-runtime` to the `extends` list
+## Project Structure
+
+See `docs/DEVELOPER_ONBOARDING.md` for architecture overview, modules, and workflows.

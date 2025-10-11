@@ -277,7 +277,8 @@ const SubmittedDocumentPage: React.FC = () => {
 
   // Transform pricing data
   const pricingBreakdown = useMemo(() => {
-    return pricingData?.data?.data || [];
+    const data = pricingData?.data?.data;
+    return Array.isArray(data) ? data : [];
   }, [pricingData]);
 
   // Calculate total pricing
@@ -498,11 +499,16 @@ const SubmittedDocumentPage: React.FC = () => {
   const flattenPricingItems = (items: ProposalPriceAction[], level = 0): (ProposalPriceAction & { level: number; itemNumber: string })[] => {
     const result: (ProposalPriceAction & { level: number; itemNumber: string })[] = [];
     
+    // Safeguard: Ensure items is an array
+    if (!Array.isArray(items) || items.length === 0) {
+      return result;
+    }
+    
     items.forEach((item, index) => {
       const itemNumber = level === 0 ? (index + 1).toString() : `${Math.floor(index / 10) + 1}.${(index % 10) + 1}`;
       result.push({ ...item, level, itemNumber });
       
-      if (item.subItems && item.subItems.length > 0) {
+      if (Array.isArray(item.subItems) && item.subItems.length > 0) {
         result.push(...flattenPricingItems(item.subItems, level + 1));
       }
     });
