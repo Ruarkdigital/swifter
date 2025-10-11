@@ -282,11 +282,19 @@ const SubmittedDocumentPage: React.FC = () => {
 
   // Calculate total pricing
   const totalAmount = useMemo(() => {
+    // Safeguard: Check if pricingBreakdown exists and is an array
+    if (!pricingBreakdown || !Array.isArray(pricingBreakdown) || pricingBreakdown.length === 0) {
+      return 0;
+    }
+
     return pricingBreakdown.reduce((sum: number, item: ProposalPriceAction) => {
+      // Safeguard: Check if item exists
+      if (!item) return sum;
+      
       const itemTotal = item.subtotal || 0;
       const subItemsTotal = (item.subItems || []).reduce(
         (subSum: number, subItem: ProposalPriceAction) => 
-          subSum + (subItem.subtotal || 0), 
+          subSum + (subItem?.subtotal || 0), 
         0
       );
       return sum + itemTotal + subItemsTotal;
