@@ -61,7 +61,7 @@ type Evaluator = {
   name: string;
   email: string;
   progress: number;
-  evaluationGroup: string;
+  evaluationGroups: string[]; // consolidated list of groups
   criteriaAssigned: number;
   status: "Completed" | "Pending";
 };
@@ -402,26 +402,52 @@ const EvaluationDetailPage: React.FC = () => {
     const data = evaluatorsResponse?.data?.data;
     if (!data) return [];
 
-    const flatEvaluators: Evaluator[] = [];
+    // Consolidate evaluators across groups: one row per evaluator with group list
     const groups = Array.isArray((data as any).groups)
       ? (data as any).groups
       : [];
+    const map = new Map<string, Evaluator>();
+
     groups.forEach((group: any) => {
       if (Array.isArray(group.evaluators)) {
         group.evaluators.forEach((evaluator: any) => {
-          flatEvaluators.push({
-            _id: evaluator.id,
-            name: evaluator.name,
-            email: evaluator.email,
-            evaluationGroup: group.groupName,
-            criteriaAssigned: group.criteriaCount,
-            progress: evaluator.progress ?? 0,
-            status: evaluator.status,
-          });
+          const id = evaluator._id || evaluator.id;
+          const existing = map.get(id);
+          const groupName = group.groupName;
+          const progress = evaluator.progress ?? 0;
+          const status = (evaluator.status === "Completed"
+            ? "Completed"
+            : "Pending") as Evaluator["status"];
+          const criteriaAssigned = group.criteriaCount ?? 0;
+
+          if (existing) {
+            // Append group name if not already present
+            if (!existing.evaluationGroups.includes(groupName)) {
+              existing.evaluationGroups.push(groupName);
+            }
+            // Prefer the max progress/status where available
+            existing.progress = Math.max(existing.progress ?? 0, progress ?? 0);
+            existing.criteriaAssigned = Math.max(
+              existing.criteriaAssigned ?? 0,
+              criteriaAssigned ?? 0
+            );
+            existing.status = status || existing.status;
+          } else {
+            map.set(id, {
+              _id: id,
+              name: evaluator.name,
+              email: evaluator.email,
+              evaluationGroups: [groupName],
+              criteriaAssigned: criteriaAssigned,
+              progress,
+              status,
+            });
+          }
         });
       }
     });
-    return flatEvaluators;
+
+    return Array.from(map.values());
   }, [evaluatorsResponse]);
 
   const criteria = useMemo(() => {
@@ -552,8 +578,17 @@ const EvaluationDetailPage: React.FC = () => {
       },
     },
     {
-      accessorKey: "evaluationGroup",
+      accessorKey: "evaluationGroups",
       header: "Evaluation Group",
+      cell: ({ row }) => {
+        const groups: string[] = row.original.evaluationGroups || [];
+        const text = groups.join(", ");
+        return (
+          <div className="text-sm text-gray-700 dark:text-gray-300 line-clamp-2-fade">
+            {text}
+          </div>
+        );
+      },
     },
     {
       id: "actions",
@@ -665,8 +700,17 @@ const EvaluationDetailPage: React.FC = () => {
       ),
     },
     {
-      accessorKey: "evaluationGroup",
+      accessorKey: "evaluationGroups",
       header: "Evaluation Group",
+      cell: ({ row }) => {
+        const groups: string[] = row.original.evaluationGroups || [];
+        const text = groups.length ? groups.join(", ") : "-";
+        return (
+          <div className="text-sm text-gray-700 dark:text-gray-300 line-clamp-2-fade">
+            {text}
+          </div>
+        );
+      },
     },
     {
       accessorKey: "progress",

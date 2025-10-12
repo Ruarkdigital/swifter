@@ -20,6 +20,7 @@ type EvaluatorEvaluationGroup = {
   email: string;
   uploadCount: number;
   action: string;
+  pricing: number;
   vendorId: string
 };
 
@@ -47,6 +48,7 @@ type Vendor = {
   vendorName: string;
   email: string;
   submittedDocument: number;
+  pricing: number;
   action: string;
 };
 
@@ -83,6 +85,7 @@ const AssignedEvaluationDetailPage: React.FC = () => {
       vendorName: vendor.name,
       email: vendor.email,
       submittedDocument: vendor.uploadCount,
+      pricing: vendor.pricing,
       action: "View",
     }));
   }, [evaluationGroupData]);
@@ -116,6 +119,15 @@ const AssignedEvaluationDetailPage: React.FC = () => {
       cell: ({ row }) => (
         <span className="text-gray-900 dark:text-gray-100">
           {row.original.submittedDocument}
+        </span>
+      ),
+    },
+    {
+      accessorKey: "pricing",
+      header: "Pricing",
+      cell: ({ row }) => (
+        <span className="text-gray-900 dark:text-gray-100">
+          {row.original.pricing}
         </span>
       ),
     },
