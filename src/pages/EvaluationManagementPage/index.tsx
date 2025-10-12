@@ -732,13 +732,22 @@ export const EvaluationManagementPage = () => {
       ),
     },
     {
-      accessorKey: "evaluationGroup",
+      accessorKey: "evaluationGroups",
       header: "Evaluation Group",
-      cell: ({ row }) => (
-        <span className="text-sm text-gray-700 dark:text-gray-300">
-          {row.original.evaluationGroup}
-        </span>
-      ),
+      cell: ({ row }) => {
+        const groups = row.original.evaluationGroups || [];
+        const names = Array.isArray(groups)
+          ? groups.map((g) => g?.name).filter(Boolean)
+          : [];
+        const text = names.length
+          ? names.join(", ")
+          : row.original.evaluationGroup || "No Group Assigned";
+        return (
+          <div className="text-sm text-gray-700 dark:text-gray-300 line-clamp-2-fade">
+            {text}
+          </div>
+        );
+      },
     },
     {
       accessorKey: "date",
