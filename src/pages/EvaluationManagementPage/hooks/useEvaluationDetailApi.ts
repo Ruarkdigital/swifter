@@ -39,6 +39,7 @@ type EvaluationDetail = {
   vendorCount: number;
   requiredDocuments: {
     title: string;
+    type: string;
     groupName: string;
     vendor: number;
     vendorCount: number;
