@@ -88,6 +88,7 @@ export interface Group {
 
 export interface EvaluatorElement {
   _id: string;
+  id: string;
   name: string;
   email: string;
   progress: number;
@@ -474,6 +475,7 @@ export const SolicitationDetailPage = () => {
     // Fallback to mock data if API is not available
     return [];
   }, [evaluatorsData]);
+  console.log("evaluators", evaluators);
 
   // Filter vendor proposals based on search query
   const filteredProposals = useMemo(() => {
@@ -724,7 +726,7 @@ export const SolicitationDetailPage = () => {
                 <SheetContent side="right" className="sm:max-w-2xl p-0">
                   <EvaluationScorecard
                     solicitationId={id!}
-                    evaluatorId={row.original._id}
+                    evaluatorId={row.original._id || row.original.id}
                     evaluatorData={{
                       name: row.original.name,
                       email: row.original.email,

@@ -28,6 +28,8 @@ const EvaluationScorecard: React.FC<EvaluationScorecardProps> = ({
   evaluatorId,
   timezone,
 }) => {
+  console.log("solicitationId", solicitationId);
+  console.log("evaluatorId", evaluatorId);
   const { data: scorecardData, isLoading, error } = useEvaluationScorecard(
     solicitationId,
     evaluatorId
