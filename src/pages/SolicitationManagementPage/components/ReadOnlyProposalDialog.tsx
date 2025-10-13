@@ -12,6 +12,7 @@ import { CornerDownRight, Loader2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { getRequest } from "@/lib/axiosInstance";
 import { useToastHandler } from "@/hooks/useToaster";
+import { formatCurrency } from "@/lib/utils";
 
 // ProposalPriceAction interface based on API schema
 interface ProposalPriceAction {
@@ -98,12 +99,12 @@ const ReadOnlyProposalDialog: React.FC<ReadOnlyProposalDialogProps> = ({
           </div>
           <div className="col-span-1">
             <div className="text-right text-gray-900 dark:text-gray-100">
-              ${item.unitPrice.toFixed(2)}
+              {formatCurrency(item.unitPrice, "en-US", "USD")}
             </div>
           </div>
           <div className="col-span-1">
             <div className="text-right font-medium text-gray-900 dark:text-gray-100">
-              ${item.subtotal.toFixed(2)}
+              {formatCurrency(item.subtotal, "en-US", "USD")}
             </div>
           </div>
         </div>
@@ -177,7 +178,7 @@ const ReadOnlyProposalDialog: React.FC<ReadOnlyProposalDialogProps> = ({
                   </div>
                   <div className="text-right">
                     <div className="text-xl font-bold text-gray-900 dark:text-gray-100">
-                      ${totalAmount.toFixed(2)}
+                      {formatCurrency(totalAmount, "en-US", "USD")}
                     </div>
                   </div>
                 </div>
