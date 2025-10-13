@@ -257,7 +257,7 @@ const ProposalDetailsPage: React.FC = () => {
         : "N/A",
       status: evaluator.status === "Completed" ? "Completed" : "Pending",
       totalScore: evaluator.averageScore
-        ? `${evaluator.averageScore}/100`
+        ? `${evaluator.averageScore}%`
         : "N/A",
       commentSummary: "View details for comments", // Placeholder as API doesn't provide comment summary
     })) || [];
