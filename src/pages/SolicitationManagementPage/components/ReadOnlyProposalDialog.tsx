@@ -18,7 +18,7 @@ interface ProposalPriceAction {
   component: string;
   description?: string;
   quantity: number;
-  unitOfMeasurement: string;
+  unitOfmeasurement: string;
   unitPrice: number;
   subtotal: number;
   subItems?: ProposalPriceAction[];
@@ -93,7 +93,7 @@ const ReadOnlyProposalDialog: React.FC<ReadOnlyProposalDialogProps> = ({
           </div>
           <div className="col-span-2">
             <div className="text-gray-900 dark:text-gray-100">
-              {item.unitOfMeasurement}
+              {item.unitOfmeasurement}
             </div>
           </div>
           <div className="col-span-1">
