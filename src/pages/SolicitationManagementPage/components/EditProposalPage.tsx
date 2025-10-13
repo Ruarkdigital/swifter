@@ -142,6 +142,7 @@ const EditProposalPage: React.FC<EditProposalPageProps> = () => {
     ApiResponse<{
       _id: string;
       action: SubItem[];
+      status: "draft" | "submit";
       solicitation: {
         _id: string;
         status: string;
@@ -207,6 +208,7 @@ const EditProposalPage: React.FC<EditProposalPageProps> = () => {
   const solicitationName = solicitation?.name || "Loading...";
   const solicitationStatus = solicitation?.status || "Unknown";
   const requiredFiles = solicitationData?.data?.data?.documents || [];
+  const proposalStatus = proposalData?.data?.data?.status as "draft" | "submit" | undefined;
 
   const formatFormData = () => {
     const existingProposal = proposalData?.data?.data;
@@ -328,6 +330,7 @@ const EditProposalPage: React.FC<EditProposalPageProps> = () => {
               values: formatFormData(),
               solicitationId,
               proposalId,
+              proposalStatus,
             }}
           />
         </div>
@@ -347,6 +350,7 @@ type ProposalFormProps = {
   };
   solicitationId?: string;
   proposalId?: string;
+  proposalStatus?: "draft" | "submit";
   requiredFiles: {
     title: string;
     link: string;
@@ -361,6 +365,7 @@ const ProposalForm = ({
   values,
   proposalId,
   solicitationId,
+  proposalStatus,
   requiredFiles,
 }: ProposalFormProps) => {
   // State to track completed proposals
@@ -703,7 +708,11 @@ const ProposalForm = ({
             onClick={() => formRef.current?.onSubmit()}
             disabled={isSubmitting}
           >
-            {isSubmitting ? "Updating..." : "Update Proposal"}
+            {isSubmitting
+              ? "Updating..."
+              : proposalStatus === "draft"
+              ? "Submit Proposal"
+              : "Update Proposal"}
           </Button>
         </div>
       </div>
