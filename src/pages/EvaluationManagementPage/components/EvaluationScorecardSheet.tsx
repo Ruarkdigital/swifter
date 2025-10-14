@@ -154,46 +154,61 @@ const EvaluationScorecardSheet: React.FC<EvaluationScorecardSheetProps> = ({
                     Evaluation Criterion Breakdown
                   </h3>
 
-                  {activeData.data.criteria.map((criterion, index) => (
-                    <div key={index} className="border rounded-lg mb-4">
-                      <div className="flex items-center justify-between p-4">
-                        <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                          {criterion?.title || `Criterion ${index + 1}`}
-                        </span>
-                        <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                          {criterion?.vendorName || `Vendor ${index + 1}`}
-                        </span>
-                      </div>
-                      <div className="px-4 pb-4 border-t">
-                        <div className="grid grid-cols-2 gap-4 mb-4">
-                          <div>
-                            <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">
-                              Weight (%)
-                            </p>
-                            <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                              {criterion.criteria?.weight || "N/A"}
-                            </p>
+                  {activeData.data.criteria.map((criterion, index) => {
+                    const isPassFail = criterion?.criteria?.status === "pass_fail";
+                    const weightLabel = isPassFail
+                      ? "N/A"
+                      : (criterion?.criteria?.weight ?? "N/A");
+                    const normalizedScore = String(criterion?.score ?? "").toLowerCase();
+                    const scoreLabel = isPassFail
+                      ? normalizedScore === "pass"
+                        ? "Pass"
+                        : normalizedScore === "fail"
+                          ? "Fail"
+                          : "N/A"
+                      : (criterion?.score ?? "N/A");
+
+                    return (
+                      <div key={index} className="border rounded-lg mb-4">
+                        <div className="flex items-center justify-between p-4">
+                          <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                            {criterion?.title || `Criterion ${index + 1}`}
+                          </span>
+                          <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                            {criterion?.vendorName || `Vendor ${index + 1}`}
+                          </span>
+                        </div>
+                        <div className="px-4 pb-4 border-t">
+                          <div className="grid grid-cols-2 gap-4 mb-4">
+                            <div>
+                              <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">
+                                Weight (%)
+                              </p>
+                              <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                                {weightLabel}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">
+                                Score Given
+                              </p>
+                              <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                                {scoreLabel}
+                              </p>
+                            </div>
                           </div>
                           <div>
-                            <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">
-                              Score Given
+                            <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
+                              Comments
                             </p>
-                            <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                              {criterion.score}
+                            <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+                              {criterion.comment || "No comments provided"}
                             </p>
                           </div>
                         </div>
-                        <div>
-                          <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
-                            Comments
-                          </p>
-                          <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
-                            {criterion.comment || "No comments provided"}
-                          </p>
-                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </>
             )}

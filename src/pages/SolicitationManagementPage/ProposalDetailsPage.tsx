@@ -191,6 +191,7 @@ const ProposalDetailsPage: React.FC = () => {
         status: string;
         timezone?: string;
       };
+      owner?: boolean; // Optional owner flag may be provided by API
     }>,
     ApiResponseError
   >({
@@ -232,6 +233,8 @@ const ProposalDetailsPage: React.FC = () => {
   const proposal = proposalData?.data?.data;
   const submittedDocument = proposalData?.data?.data?.submittedDocument || [];
   const solicitation = solicitationData?.data?.data?.solicitation;
+  // Owner flag provided by API on solicitation details
+  const isOwner = solicitationData?.data?.data?.owner;
   const criterias = proposalData?.data?.data?.overview?.criteria || [];
   const evaluatorScores = evaluatorScoresData?.data?.data;
 
@@ -505,6 +508,7 @@ const ProposalDetailsPage: React.FC = () => {
       id: "actions",
       header: "Actions",
       cell: ({ row }) => {
+        if (!isOwner) return null;
         const status = row.original.status;
         return (
           <div className="flex items-center space-x-2">
@@ -577,6 +581,7 @@ const ProposalDetailsPage: React.FC = () => {
       id: "actions",
       header: "Actions",
       cell: ({ row }) => {
+        if (!isOwner) return null;
         const document = row.original;
         const isDocFile = isViewableFile(document.name, document.type);
 
@@ -677,6 +682,7 @@ const ProposalDetailsPage: React.FC = () => {
       id: "expander",
       header: "",
       cell: ({ row }) => {
+        if (!isOwner) return null;
         return (
           <Button
             variant="ghost"
@@ -753,6 +759,7 @@ const ProposalDetailsPage: React.FC = () => {
       id: "actions",
       header: "Actions",
       cell: ({ row }) => {
+        if (!isOwner) return null;
         const amendment = row.original;
         
         const handleViewDocument = (file: { name: string; url: string; type: string }) => {
@@ -874,25 +881,27 @@ const ProposalDetailsPage: React.FC = () => {
           <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">
             Proposal Details
           </h1>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="flex items-center space-x-2">
-                <Share2 className="h-4 w-4" />
-                <span>Export</span>
-                <ChevronDown className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => handleExport("pdf")}>
-                <Download className="mr-2 h-4 w-4" />
-                Export as PDF
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleExport("docx")}>
-                <Download className="mr-2 h-4 w-4" />
-                Export as DOCX
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {isOwner && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="flex items-center space-x-2">
+                  <Share2 className="h-4 w-4" />
+                  <span>Export</span>
+                  <ChevronDown className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => handleExport("pdf")}>
+                  <Download className="mr-2 h-4 w-4" />
+                  Export as PDF
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleExport("docx")}>
+                  <Download className="mr-2 h-4 w-4" />
+                  Export as DOCX
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
 
         {/* Loading State */}
@@ -1006,45 +1015,47 @@ const ProposalDetailsPage: React.FC = () => {
         </div>
 
         {/* Award Vendor and Submit for Vendor Buttons */}
-        <div className="flex justify-start gap-3">
-          <Button
-            onClick={handleSubmitForVendor}
-            className="bg-green-600 hover:bg-green-700 text-white"
-            disabled={
-              (!solicitation?.submissionDeadline
-                ? true
-                : (() => {
-                    try {
-                      const deadline = parseISO(
-                        solicitation.submissionDeadline
-                      );
-                      return (
-                        !isValid(deadline) || !isAfter(new Date(), deadline)
-                      );
-                    } catch {
-                      return true;
-                    }
-                  })())
-              || solicitation?.status === "closed"
-              || solicitation?.status === "awarded"
-            }
-          >
-            Submit for Vendor
-          </Button>
-          {proposal && (
+        {isOwner && (
+          <div className="flex justify-start gap-3">
             <Button
-              onClick={handleAwardVendor}
-              className="bg-blue-600 hover:bg-blue-700 text-white"
+              onClick={handleSubmitForVendor}
+              className="bg-green-600 hover:bg-green-700 text-white"
               disabled={
-                proposal?.proposalDetails?.status !== "submit"
+                (!solicitation?.submissionDeadline
+                  ? true
+                  : (() => {
+                      try {
+                        const deadline = parseISO(
+                          solicitation.submissionDeadline
+                        );
+                        return (
+                          !isValid(deadline) || !isAfter(new Date(), deadline)
+                        );
+                      } catch {
+                        return true;
+                      }
+                    })())
                 || solicitation?.status === "closed"
                 || solicitation?.status === "awarded"
               }
             >
-              Award Vendor
+              Submit for Vendor
             </Button>
-          )}
-        </div>
+            {proposal && (
+              <Button
+                onClick={handleAwardVendor}
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+                disabled={
+                  proposal?.proposalDetails?.status !== "submit"
+                  || solicitation?.status === "closed"
+                  || solicitation?.status === "awarded"
+                }
+              >
+                Award Vendor
+              </Button>
+            )}
+          </div>
+        )}
 
         {/* Tabs */}
         <Tabs defaultValue="overview" className="w-full">
@@ -1167,19 +1178,20 @@ const ProposalDetailsPage: React.FC = () => {
               Submitted Documents
             </h4>
             {/* Download Archive Button */}
-            <div className="flex justify-end mt-6">
-              <Button
-                onClick={() => downloadArchiveMutation.mutate()}
-                disabled={downloadArchiveMutation.isPending}
-                variant={"ghost"}
-                // className="bg-blue-600 hover:bg-blue-700 text-white"
-              >
-                <Download className="mr-2 h-4 w-4" />
-                {downloadArchiveMutation.isPending
-                  ? "Downloading..."
-                  : "Download Submission Archive"}
-              </Button>
-            </div>
+            {isOwner && (
+              <div className="flex justify-end mt-6">
+                <Button
+                  onClick={() => downloadArchiveMutation.mutate()}
+                  disabled={downloadArchiveMutation.isPending}
+                  variant={"ghost"}
+                >
+                  <Download className="mr-2 h-4 w-4" />
+                  {downloadArchiveMutation.isPending
+                    ? "Downloading..."
+                    : "Download Submission Archive"}
+                </Button>
+              </div>
+            )}
 
             {/* Nested Tabs for Documents */}
             <Tabs defaultValue="original-submission" className="w-full">
@@ -1388,18 +1400,20 @@ const ProposalDetailsPage: React.FC = () => {
       </div>
 
       {/* Award Vendor Confirmation Modal */}
-      <ConfirmAlert
-        open={showAwardModal}
-        onClose={setShowAwardModal}
-        onPrimaryAction={handleConfirmAward}
-        title="Award Vendor"
-        text="Are you sure you want to award this vendor? This action cannot be undone."
-        primaryButtonText="Award Vendor"
-        secondaryButtonText="Cancel"
-        type="award"
-        showSecondaryButton={true}
-        isLoading={awardVendorMutation.isPending}
-      />
+      {isOwner && (
+        <ConfirmAlert
+          open={showAwardModal}
+          onClose={setShowAwardModal}
+          onPrimaryAction={handleConfirmAward}
+          title="Award Vendor"
+          text="Are you sure you want to award this vendor? This action cannot be undone."
+          primaryButtonText="Award Vendor"
+          secondaryButtonText="Cancel"
+          type="award"
+          showSecondaryButton={true}
+          isLoading={awardVendorMutation.isPending}
+        />
+      )}
 
       {/* Amend Submission Dialog */}
       {selectedDocumentForAmend && (

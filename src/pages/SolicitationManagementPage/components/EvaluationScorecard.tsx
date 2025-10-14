@@ -170,10 +170,14 @@ const EvaluationScorecard: React.FC<EvaluationScorecardProps> = ({
                       </span>
                       <div className="flex items-center gap-4">
                         <span className="text-sm text-gray-500 dark:text-slate-200">
-                          Weight: {criteria.weight}%
+                          {criteria.type === "pass_fail"
+                            ? "Weight: N/A"
+                            : `Weight: ${criteria.weight}%`}
                         </span>
                         <span className="text-sm font-medium dark:text-slate-200">
-                          Score: {criteria.score}/100
+                          {criteria.type === "pass_fail"
+                            ? `Score: ${String(criteria.score).toLowerCase() === "pass" ? "Pass" : String(criteria.score).toLowerCase() === "fail" ? "Fail" : "N/A"}`
+                            : `Score: ${criteria.score}/100`}
                         </span>
                       </div>
                     </div>

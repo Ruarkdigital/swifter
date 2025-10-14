@@ -581,7 +581,7 @@ export const SolicitationDetailPage = () => {
       header: "Actions",
       cell: ({ row }) => (
         <div className="flex items-center gap-2">
-          {isOwner && row.original.status !== "invited" && (
+          {row.original.status !== "invited" && (
             <Button
               variant="link"
               className="text-green-700"
@@ -713,7 +713,7 @@ export const SolicitationDetailPage = () => {
       header: "Actions",
       cell: ({ row }) => (
         <>
-          {isOwner && (
+          { (
             <div className="flex items-center">
               <Sheet>
                 {row.original.status !== "Not Started" && (
