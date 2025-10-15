@@ -22,7 +22,8 @@ export const getUser = (roleName?: UserRole): User => {
       __v: 0
     },
     status: faker.helpers.arrayElement(['active', 'inactive', 'suspended']),
-    updatedAt: faker.date.recent().toISOString()
+    updatedAt: faker.date.recent().toISOString(),
+    isAi: true
   }
 }
 
