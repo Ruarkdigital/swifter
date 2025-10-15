@@ -3,7 +3,7 @@ import { ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useForge, Forge, Forger } from "@/lib/forge";
+import { useForge, Forge, Forger, usePersist } from "@/lib/forge";
 import { ModuleToggle } from "@/components/layouts/FormInputs/ModuleToggle";
 import { DataTable } from "@/components/layouts/DataTable";
 import { ColumnDef } from "@tanstack/react-table";
@@ -224,7 +224,7 @@ const CompanyDetailPage = () => {
   });
 
   // Initialize form with portal settings data or default values
-  const { control, reset } = useForge<ModuleFormValues>({
+  const { control, reset, handleSubmit } = useForge<ModuleFormValues>({
     resolver: yupResolver(moduleSchema),
     defaultValues: {
       solicitationsManagement:
@@ -240,6 +240,7 @@ const CompanyDetailPage = () => {
       isAi: portalSettingsData?.isAi ?? false,
     },
   });
+
 
   // Reset form when portal settings data changes
   React.useEffect(() => {
@@ -335,6 +336,28 @@ const CompanyDetailPage = () => {
       setShowConfirmDialog(false);
     }
   };
+      // Auto-submit when any module toggle changes (without touching forge)
+  usePersist<ModuleFormValues>({
+    control,
+    handler: (_, { name, type }) => {
+      if (
+        type === "change" &&
+        [
+          "solicitationsManagement",
+          "evaluationsManagement",
+          "vendorManagement",
+          "reportsAnalytics",
+          "generalUpdatesNotifications",
+          "myActions",
+          "vendorsQA",
+          "addendumManagement",
+          "isAi",
+        ].includes(name ?? "")
+      ) {
+        handleSubmit(handleModuleSubmit)();
+      }
+    },
+  });
 
   // Format date helper
   const formatDate = (dateString: string) => {
