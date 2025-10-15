@@ -219,7 +219,7 @@ function App() {
             <Suspense fallback={<RenderLoader />}>
               <RouterProvider router={router} />
             </Suspense>
-            {isAuthenticated && !isVendor && user?.isAi && (
+            {Boolean(user?.isAi) && isAuthenticated && !isVendor && (
               <AIChatWidget
                 onSendMessage={handleAIChatMessage}
                 onStreamMessage={handleAIChatMessageStream}
