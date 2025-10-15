@@ -260,6 +260,29 @@ const CompanyDetailPage = () => {
     }
   }, [portalSettingsData, reset]);
 
+  // Auto-submit when any module toggle changes (without touching forge)
+  usePersist<ModuleFormValues>({
+    control,
+    handler: (_, { name, type }) => {
+      if (
+        type === "change" &&
+        [
+          "solicitationsManagement",
+          "evaluationsManagement",
+          "vendorManagement",
+          "reportsAnalytics",
+          "generalUpdatesNotifications",
+          "myActions",
+          "vendorsQA",
+          "addendumManagement",
+          "isAi",
+        ].includes(name ?? "")
+      ) {
+        handleSubmit(handleModuleSubmit)();
+      }
+    },
+  });
+
   // Handle loading state
   if (isLoadingCompany || isLoadingPortalSettings || isLoadingAdmins) {
     return (
@@ -336,28 +359,7 @@ const CompanyDetailPage = () => {
       setShowConfirmDialog(false);
     }
   };
-      // Auto-submit when any module toggle changes (without touching forge)
-  usePersist<ModuleFormValues>({
-    control,
-    handler: (_, { name, type }) => {
-      if (
-        type === "change" &&
-        [
-          "solicitationsManagement",
-          "evaluationsManagement",
-          "vendorManagement",
-          "reportsAnalytics",
-          "generalUpdatesNotifications",
-          "myActions",
-          "vendorsQA",
-          "addendumManagement",
-          "isAi",
-        ].includes(name ?? "")
-      ) {
-        handleSubmit(handleModuleSubmit)();
-      }
-    },
-  });
+  
 
   // Format date helper
   const formatDate = (dateString: string) => {
