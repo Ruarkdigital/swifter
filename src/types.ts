@@ -30,6 +30,7 @@ export type User = {
   secondaryEmail?: string[];
   website?: string;
   logo?: string
+  isAi: boolean
 };
 
 export type ApiError = {

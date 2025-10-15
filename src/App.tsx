@@ -8,7 +8,7 @@ import Loading from "@/components/ui/Spinner";
 import AIChatWidget from "./components/layouts/AIChatWidget";
 import { useAuthentication } from "@/hooks/useAuthentication";
 import { useUserRole } from "@/hooks/useUserRole";
-import { useToken } from "@/store/authSlice";
+import { useToken, useUser } from "@/store/authSlice";
 
 import * as Sentry from "@sentry/react";
 import { routes } from "./routes";
@@ -31,6 +31,7 @@ function App() {
   const isAuthenticated = useAuthentication();
   const { isVendor } = useUserRole();
   const token = useToken();
+  const user = useUser();
   
   // Custom function to handle AI chat messages
   const handleAIChatMessage = async (message: string): Promise<string> => {
@@ -218,7 +219,7 @@ function App() {
             <Suspense fallback={<RenderLoader />}>
               <RouterProvider router={router} />
             </Suspense>
-            {isAuthenticated && !isVendor && (
+            {isAuthenticated && !isVendor && user?.isAi && (
               <AIChatWidget
                 onSendMessage={handleAIChatMessage}
                 onStreamMessage={handleAIChatMessageStream}

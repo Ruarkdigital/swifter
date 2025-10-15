@@ -29,6 +29,7 @@ const moduleSchema = yup.object().shape({
   myActions: yup.boolean(),
   vendorsQA: yup.boolean(),
   addendumManagement: yup.boolean(),
+  isAi: yup.boolean(),
 });
 
 type ModuleFormValues = yup.InferType<typeof moduleSchema>;
@@ -91,6 +92,7 @@ type ModuleSettings = {
   myActions: boolean;
   vendorsQA: boolean;
   addendumManagement: boolean;
+  isAi: boolean;
 };
 
 // Portal Settings type based on API documentation
@@ -105,6 +107,7 @@ type PortalSettings = {
   myActions: boolean;
   vendorsQA: boolean;
   addendumManagement: boolean;
+  isAi?: boolean;
   createdAt: string;
   updatedAt: string;
 };
@@ -234,6 +237,7 @@ const CompanyDetailPage = () => {
       myActions: portalSettingsData?.myActions ?? true,
       vendorsQA: portalSettingsData?.vendorsQA ?? true,
       addendumManagement: portalSettingsData?.addendumManagement ?? false,
+      isAi: portalSettingsData?.isAi ?? false,
     },
   });
 
@@ -250,6 +254,7 @@ const CompanyDetailPage = () => {
         myActions: portalSettingsData.myActions,
         vendorsQA: portalSettingsData.vendorsQA,
         addendumManagement: portalSettingsData.addendumManagement,
+        isAi: portalSettingsData.isAi ?? false,
       });
     }
   }, [portalSettingsData, reset]);
@@ -297,6 +302,7 @@ const CompanyDetailPage = () => {
         myActions: data.myActions || false,
         vendorsQA: data.vendorsQA || false,
         addendumManagement: data.addendumManagement || false,
+        isAi: data.isAi || false,
       });
     } catch (error) {
       // Error is handled in the mutation
@@ -693,6 +699,13 @@ const CompanyDetailPage = () => {
               <Forger
                 name="addendumManagement"
                 label="Addendum Management"
+                component={ModuleToggle}
+                disabled={isUpdatingPortalSettings}
+              />
+
+              <Forger
+                name="isAi"
+                label="AI Assistant"
                 component={ModuleToggle}
                 disabled={isUpdatingPortalSettings}
               />
