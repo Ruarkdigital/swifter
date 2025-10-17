@@ -1093,7 +1093,6 @@ export class DashboardDataTransformer {
    * Transform module usage data for pie chart
    */
   static transformModuleUsage(data: any) {
-    console.log({ data });
     if (!data) {
       return [
         { name: "Solicitation", value: 0 },

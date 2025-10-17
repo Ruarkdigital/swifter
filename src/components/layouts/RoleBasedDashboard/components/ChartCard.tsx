@@ -42,6 +42,8 @@ type AxisConfig = {
 const getLabelKey = (data: any[]): string => {
   if (!data || data.length === 0) return "name";
 
+  if (data[0]?.name === "Module Usage") return "";
+
   const keys = Object.keys(data[0] || {});
   if (!keys.length) return "name";
 
@@ -182,6 +184,9 @@ export const ChartComponent: React.FC<ChartComponentProps> = ({
       data = [consolidatedData];
     }
   }
+
+  // Detect consolidated Module Usage chart to conditionally hide x-axis
+  const isModuleUsageChart = data?.[0]?.name === "Module Usage";
 
   const chartConfig = {
     value: {
@@ -330,7 +335,7 @@ export const ChartComponent: React.FC<ChartComponentProps> = ({
             <ResponsiveContainer width="100%" height="100%" minHeight={280}>
               <LineChart data={data} margin={chartMargins.line}>
                 {renderAxes("horizontal", data, {
-                  showX: chart.showXAxis !== false,
+                  showX: chart.showXAxis !== false && !isModuleUsageChart,
                   showY: chart.showYAxis !== false,
                   axisProps: chart.axisProps,
                 })}
@@ -375,7 +380,7 @@ export const ChartComponent: React.FC<ChartComponentProps> = ({
                 stackOffset={chart.stackOffset}
               >
                 {renderAxes("horizontal", data, {
-                  showX: chart.showXAxis !== false,
+                  showX: chart.showXAxis !== false && !isModuleUsageChart,
                   showY: chart.showYAxis !== false,
                   axisProps: chart.axisProps,
                 })}
@@ -448,7 +453,7 @@ export const ChartComponent: React.FC<ChartComponentProps> = ({
                 stackOffset={chart.stackOffset}
               >
                 {renderAxes(layout, data, {
-                  showX: chart.showXAxis !== false,
+                  showX: chart.showXAxis !== false && !isModuleUsageChart,
                   showY: chart.showYAxis !== false,
                   axisProps: chart.axisProps,
                 })}
