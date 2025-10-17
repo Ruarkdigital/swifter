@@ -165,9 +165,14 @@ const EvaluationScorecard: React.FC<EvaluationScorecardProps> = ({
                 <AccordionItem key={criteria.id || index} value={criteria.id || `criteria-${index}`}>
                   <AccordionTrigger className="text-left">
                     <div className="flex justify-between items-center w-full pr-4">
-                      <span className="font-medium dark:text-slate-200 max-w-sm">
-                        {criteria.title}
-                      </span>
+                      <div className="flex flex-col max-w-sm">
+                        <span className="font-medium dark:text-slate-200">
+                          {criteria.title}
+                        </span>
+                        <span className="text-sm text-gray-500 dark:text-slate-200">
+                          Vendor: {criteria.vendorName || "N/A"}
+                        </span>
+                      </div>
                       <div className="flex items-center gap-4">
                         <span className="text-sm text-gray-500 dark:text-slate-200">
                           {criteria.type === "pass_fail"

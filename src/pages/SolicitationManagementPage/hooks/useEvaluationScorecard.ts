@@ -10,6 +10,9 @@ interface EvaluationCriteria {
   weight: number;
   comment?: string;
   group: string;
+  // Optional vendor fields based on API response
+  vendorId?: string;
+  vendorName?: string;
 }
 
 interface EvaluatorDetails {
