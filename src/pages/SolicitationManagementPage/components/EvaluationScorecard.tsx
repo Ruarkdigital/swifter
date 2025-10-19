@@ -28,8 +28,6 @@ const EvaluationScorecard: React.FC<EvaluationScorecardProps> = ({
   evaluatorId,
   timezone,
 }) => {
-  console.log("solicitationId", solicitationId);
-  console.log("evaluatorId", evaluatorId);
   const { data: scorecardData, isLoading, error } = useEvaluationScorecard(
     solicitationId,
     evaluatorId
@@ -37,7 +35,15 @@ const EvaluationScorecard: React.FC<EvaluationScorecardProps> = ({
 
   // Use API data if available, otherwise fallback to prop data
   const displayData = scorecardData?.data?.evaluator;
-  const criteriaData = scorecardData?.data?.criteria || [];
+  const criteriaData = ((scorecardData?.data?.criteria || []) as EvaluationCriteria[])
+    .slice()
+    .sort((a: EvaluationCriteria, b: EvaluationCriteria) => {
+      const aName = a.vendorName?.toLowerCase() || "\uffff";
+      const bName = b.vendorName?.toLowerCase() || "\uffff";
+      if (aName < bName) return -1;
+      if (aName > bName) return 1;
+      return 0;
+    });
 
   if (isLoading) {
     return (

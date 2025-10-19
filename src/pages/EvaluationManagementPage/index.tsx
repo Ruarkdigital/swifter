@@ -743,7 +743,10 @@ export const EvaluationManagementPage = () => {
           ? names.join(", ")
           : row.original.evaluationGroup || "No Group Assigned";
         return (
-          <div className="text-sm text-gray-700 dark:text-gray-300 line-clamp-2-fade">
+          <div
+            className="text-sm text-gray-900 dark:text-gray-100 truncate max-w-[280px]"
+            title={text}
+          >
             {text}
           </div>
         );

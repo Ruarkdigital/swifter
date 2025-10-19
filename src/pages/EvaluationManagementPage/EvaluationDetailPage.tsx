@@ -584,48 +584,61 @@ const EvaluationDetailPage: React.FC = () => {
         const groups: string[] = row.original.evaluationGroups || [];
         const text = groups.join(", ");
         return (
-          <div className="text-sm text-gray-700 dark:text-gray-300 line-clamp-2-fade">
+          <div
+            className="text-sm text-gray-900 dark:text-gray-100 truncate max-w-[280px]"
+            title={text}
+          >
             {text}
           </div>
         );
       },
     },
     {
+      accessorKey: "evaluationGroups",
+      header: "Evaluation Group",
+      cell: ({ row }) => {
+        const groups: string[] = row.original.evaluationGroups || [];
+        const text = groups.length ? groups.join(", ") : "-";
+        return (
+          <div
+            className="text-sm text-gray-900 dark:text-gray-100 truncate max-w-[280px]"
+            title={text}
+          >
+            {text}
+          </div>
+        );
+      },
+    },
+    {
+      accessorKey: "progress",
+      header: "Progress",
+      cell: ({ row }) => {
+        return (
+          <span className="font-medium">
+            {row.original.progress}%
+          </span>
+        )
+      }
+    },
+    {
+      accessorKey: "status",
+      header: "Status",
+      cell: ({ row }) => <EvaluatorStatusBadge status={row.original.status} />,
+    },
+    {
       id: "actions",
       header: "Actions",
-      cell: ({ row }) =>
-        isOwner ? (
-          <ConfirmAlert
-            type="delete"
-            title="Delete Criteria"
-            text={`This will permanently delete the evaluation criterion. This action cannot be undone.`}
-            primaryButtonText="Delete"
-            secondaryButtonText="Cancel"
-            isLoading={deleteCriteriaMutation.isPending}
-            onPrimaryAction={handleDeleteCriteria}
-            open={
-              criteriaDeleteDialogOpen &&
-              selectedCriteriaId === row.original._id
-            }
-            onClose={(open) => {
-              setCriteriaDeleteDialogOpen(open);
-              if (!open) setSelectedCriteriaId("");
-            }}
-            trigger={
-              <Button
-                size="sm"
-                variant="ghost"
-                className="text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
-                onClick={() => {
-                  setSelectedCriteriaId(row.original._id);
-                  setCriteriaDeleteDialogOpen(true);
-                }}
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            }
-          />
-        ) : null,
+      cell({ row }) {
+        return (
+          <div className="flex items-center gap-2">
+            <EvaluationScorecardSheet
+              evaluatorId={row.original._id}
+              solicitationId={evaluation?.solicitation?._id || ""}
+              timezone={evaluation?.timezone}
+            />
+          </div>
+        );
+      },
     },
   ];
 
