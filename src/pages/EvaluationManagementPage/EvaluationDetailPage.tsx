@@ -40,7 +40,7 @@ import {
   useReleaseEvaluationGroup,
   useWithholdEvaluationGroup,
   useDeleteEvaluationGroup,
-  useDeleteEvaluationCriteria,
+  // useDeleteEvaluationCriteria,
   BidComparisonItem,
 } from "./hooks/useEvaluationDetailApi";
 import EditEvaluationDialog from "./components/EditEvaluationDialog";
@@ -173,9 +173,9 @@ const EvaluationDetailPage: React.FC = () => {
   const [withholdDialogOpen, setWithholdDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedGroupId, setSelectedGroupId] = useState<string>("");
-  const [criteriaDeleteDialogOpen, setCriteriaDeleteDialogOpen] =
-    useState(false);
-  const [selectedCriteriaId, setSelectedCriteriaId] = useState<string>("");
+  // const [criteriaDeleteDialogOpen, setCriteriaDeleteDialogOpen] =
+  //   useState(false);
+  // const [selectedCriteriaId, setSelectedCriteriaId] = useState<string>("");
 
   // State for tab management
   const [activeTab, setActiveTab] = useState("overview");
@@ -187,7 +187,7 @@ const EvaluationDetailPage: React.FC = () => {
   const releaseGroupMutation = useReleaseEvaluationGroup();
   const withholdGroupMutation = useWithholdEvaluationGroup();
   const deleteGroupMutation = useDeleteEvaluationGroup();
-  const deleteCriteriaMutation = useDeleteEvaluationCriteria();
+  // const deleteCriteriaMutation = useDeleteEvaluationCriteria();
 
   // Export bid comparison mutation
   const exportBidComparisonMutation = useMutation<
@@ -375,27 +375,27 @@ const EvaluationDetailPage: React.FC = () => {
   };
 
   // Handle delete criteria
-  const handleDeleteCriteria = async () => {
-    try {
-      const result = await deleteCriteriaMutation.mutateAsync({
-        evaluationId: id,
-        criteriaId: selectedCriteriaId,
-      });
+  // const handleDeleteCriteria = async () => {
+  //   try {
+  //     const result = await deleteCriteriaMutation.mutateAsync({
+  //       evaluationId: id,
+  //       criteriaId: selectedCriteriaId,
+  //     });
 
-      if (result.status === 204) {
-        toastHandlers.success(
-          "Delete Criteria",
-          "Criteria deleted successfully"
-        );
-        setCriteriaDeleteDialogOpen(false);
-      } else {
-        toastHandlers.error("Delete Criteria", "Failed to delete criteria");
-      }
-    } catch (error) {
-      const err = error as ApiResponseError;
-      toastHandlers.error("Delete Criteria", err);
-    }
-  };
+  //     if (result.status === 204) {
+  //       toastHandlers.success(
+  //         "Delete Criteria",
+  //         "Criteria deleted successfully"
+  //       );
+  //       setCriteriaDeleteDialogOpen(false);
+  //     } else {
+  //       toastHandlers.error("Delete Criteria", "Failed to delete criteria");
+  //     }
+  //   } catch (error) {
+  //     const err = error as ApiResponseError;
+  //     toastHandlers.error("Delete Criteria", err);
+  //   }
+  // };
 
   // Transform the API response to flat evaluator list for the table
   const evaluators = useMemo(() => {

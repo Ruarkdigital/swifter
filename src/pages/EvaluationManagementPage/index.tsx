@@ -520,7 +520,7 @@ export const EvaluationManagementPage = () => {
       accessorKey: "deadline",
       header: "Date",
       cell: ({ row }) => {
-        const isCompleted = row.original.status === "Completed";
+        const isCompleted = row.original.status === "completed";
         const completionDate = row.original.completionDate;
         const deadlineRaw = row.original.deadlineRaw;
 
@@ -636,7 +636,7 @@ export const EvaluationManagementPage = () => {
       accessorKey: "deadline",
       header: "Date",
       cell: ({ row }) => {
-        const isCompleted = row.original.status === "Completed";
+        const isCompleted = row.original.status === "completed";
         const completionDate = row.original.completionDate;
         const deadlineRaw = row.original.deadlineRaw;
 

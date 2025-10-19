@@ -180,16 +180,32 @@ const EvaluationScorecard: React.FC<EvaluationScorecardProps> = ({
                         </span>
                       </div>
                       <div className="flex items-center gap-4">
-                        <span className="text-sm text-gray-500 dark:text-slate-200">
-                          {criteria.type === "pass_fail"
-                            ? "Weight: N/A"
-                            : `Weight: ${criteria.weight}%`}
-                        </span>
-                        <span className="text-sm font-medium dark:text-slate-200">
-                          {criteria.type === "pass_fail"
-                            ? `Score: ${String(criteria.score).toLowerCase() === "pass" ? "Pass" : String(criteria.score).toLowerCase() === "fail" ? "Fail" : "N/A"}`
-                            : `Score: ${criteria.score}/100`}
-                        </span>
+                        {(() => {
+                          const passFailRaw = (criteria as any)?.criteria?.pass_fail ?? "";
+                          
+                          const scoreNum = typeof criteria.score === "number" ? criteria.score : parseFloat(String(criteria.score));
+                          const hasScoreNumber = Number.isFinite(scoreNum);
+                          const hasPassFail = !!String(passFailRaw).trim();
+                          const pf = String(passFailRaw).trim().toLowerCase();
+                          const passFailLabel = pf === "pass" ? "Pass" : pf === "fail" ? "Fail" : String(passFailRaw).trim();
+                          
+                          const weightText = hasPassFail
+                            ? "Weight: Pass/Fail"
+                            :`Weight: ${((criteria as any)?.criteria?.weight * scoreNum / 100).toFixed(1)}`;
+
+                          const scoreText = hasPassFail
+                            ? `Score: ${passFailLabel}`
+                            : hasScoreNumber
+                            ? `Score: ${scoreNum}/100`
+                            : "Score: N/A";
+
+                          return (
+                            <>
+                              <span className="text-sm text-gray-500 dark:text-slate-200">{weightText}</span>
+                              <span className="text-sm font-medium dark:text-slate-200">{scoreText}</span>
+                            </>
+                          );
+                        })()}
                       </div>
                     </div>
                   </AccordionTrigger>
