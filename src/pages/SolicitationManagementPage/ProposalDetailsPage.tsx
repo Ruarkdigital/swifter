@@ -258,7 +258,7 @@ const ProposalDetailsPage: React.FC = () => {
             solicitation?.timezone
           )
         : "N/A",
-      status: evaluator.status === "Completed" ? "Completed" : "Pending",
+      status: evaluator.status === "completed" ? "Completed" : "Pending",
       totalScore: evaluator.averageScore
         ? `${evaluator.averageScore}%`
         : "N/A",

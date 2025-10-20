@@ -100,7 +100,7 @@ const MessageComposer: React.FC<MessageComposerProps> = ({
           {/* Character Count */}
           <div className="flex justify-between items-center mt-2">
             <span className="text-xs text-gray-500">
-              Character count: {content.replace(/<[^>]*>/g, "").length} of 500
+              Character count: {content.replace(/<[^>]*>/g, "").length}
             </span>
           </div>
         </div>

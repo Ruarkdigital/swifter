@@ -344,13 +344,28 @@ export class ChartDataTransformer {
       return this.getDefaultBarData(chartId);
     }
 
-    // Handle stacked bar charts (like company-status)
+    // Handle stacked bar charts explicitly
     if (chartId === "company-status" || chartId === "total-evaluation") {
       return this.transformStackedBarData(rawData);
     }
 
+    // Module usage can be stacked (labels/datasets) or simple counts
+    if (chartId === "module-usage") {
+      const isNewFormat =
+        rawData &&
+        (rawData as any).labels &&
+        (rawData as any).datasets &&
+        Array.isArray((rawData as any).labels) &&
+        Array.isArray((rawData as any).datasets);
+
+      if (isNewFormat) {
+        return this.transformStackedBarData(rawData);
+      }
+      return this.transformVerticalBarData(rawData);
+    }
+
     // Handle vertical bar charts (like role-distribution)
-    if (chartId === "role-distribution" || chartId === "module-usage") {
+    if (chartId === "role-distribution") {
       return this.transformVerticalBarData(rawData);
     }
 
@@ -1090,32 +1105,37 @@ export class DashboardDataTransformer {
   }
 
   /**
-   * Transform module usage data for pie chart
+   * Transform Module Usage data
+   * Supports both legacy single-object counts and new labels/datasets format.
    */
   static transformModuleUsage(data: any) {
-    if (!data) {
+    // New stacked bar format with labels + datasets
+    if (
+      data &&
+      (data as any).labels &&
+      (data as any).datasets &&
+      Array.isArray((data as any).labels) &&
+      Array.isArray((data as any).datasets)
+    ) {
+      // Delegate to unified bar transformer for 'module-usage'
+      return ChartDataTransformer.transformBarChart(data, "module-usage");
+    }
+
+    // Legacy format: single object with usage counts
+    if (!data || typeof data !== "object") {
       return [
-        { name: "Solicitation", value: 0 },
-        { name: "Evaluation", value: 0 },
-        { name: "Vendor", value: 0 },
-        { name: "Addendum", value: 0 },
+        { solicitation: 0 },
+        { evaluation: 0 },
+        { Vendor: 0 },
+        { Addendum: 0 },
       ];
     }
 
-    // Use raw values directly as indicators, not percentages
     return [
-      {
-        solicitation: data.solicitationUsage || 0,
-      },
-      {
-        evaluation: data.evaluationUsage || 0,
-      },
-      {
-        Vendor: data.vendorUage || 0, // Keep original typo from API
-      },
-      {
-        Addendum: data.adendumUsage || 0,
-      },
+      { solicitation: data.solicitationUsage || 0 },
+      { evaluation: data.evaluationUsage || 0 },
+      { Vendor: data.vendorUage || 0 },
+      { Addendum: data.adendumUsage || 0 },
     ];
   }
 

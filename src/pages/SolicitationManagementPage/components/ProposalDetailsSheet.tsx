@@ -219,7 +219,7 @@ const ProposalDetailsSheet: React.FC<ProposalDetailsSheetProps> = ({
       accessorKey: "quantity",
       header: "Quantity",
       cell: ({ row }) => (
-        <div className="text-center">{row.original.quantity ?? "-"}</div>
+        <div className="">{row.original.quantity ?? "-"}</div>
       ),
     },
     {
@@ -233,7 +233,7 @@ const ProposalDetailsSheet: React.FC<ProposalDetailsSheetProps> = ({
       id: "unitPrice",
       header: "Unit Price",
       cell: ({ row }) => (
-        <div className="text-right">
+        <div className="">
           {formatCurrency(row.original.unitPrice ?? 0, "en-US", "USD")}
         </div>
       ),
@@ -242,7 +242,7 @@ const ProposalDetailsSheet: React.FC<ProposalDetailsSheetProps> = ({
       id: "subtotal",
       header: "Subtotal",
       cell: ({ row }) => (
-        <div className="text-right font-semibold">
+        <div className="font-semibold">
           {formatCurrency(row.original.subtotal ?? 0, "en-US", "USD")}
         </div>
       ),

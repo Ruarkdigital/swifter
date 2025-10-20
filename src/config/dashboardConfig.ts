@@ -477,10 +477,20 @@ const superAdminConfig: DashboardConfig = {
           type: "bar",
           data: [],
           visible: true,
+          stacked: true,
+          showXAxis: true,
           showLegend: true,
+          legendIconType: "circle",
           selectors: ["solicitation", "evaluation", "Vendor", "Addendum"],
           filters: ["12 months", "6 months", "3 months", "30 days", "7 days"],
-          legendIconType: "circle",
+          colors: {
+            solicitation: "#3b82f6", // Blue
+            evaluation: "#10b981",   // Green
+            vendor: "#f59e0b",       // Amber
+            Vendor: "#f59e0b",       // Amber (legacy key)
+            addendum: "#ef4444",     // Red
+            Addendum: "#ef4444",     // Red (legacy key)
+          },
         },
       ],
     },

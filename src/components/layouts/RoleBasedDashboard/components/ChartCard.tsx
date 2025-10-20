@@ -9,6 +9,7 @@ import {
 import { DashboardConfig } from "@/config/dashboardConfig";
 import { cn } from "@/lib/utils";
 import { getStatusColor } from "@/lib/chartColorUtils";
+import { RoundedStackedBar, getSegmentPosition } from "@/components/ui/RoundedStackedBar";
 import {
   Area,
   AreaChart,
@@ -41,8 +42,6 @@ type AxisConfig = {
 // Helper function to determine label key for axes
 const getLabelKey = (data: any[]): string => {
   if (!data || data.length === 0) return "name";
-
-  if (data[0]?.name === "Module Usage") return "";
 
   const keys = Object.keys(data[0] || {});
   if (!keys.length) return "name";
@@ -184,9 +183,6 @@ export const ChartComponent: React.FC<ChartComponentProps> = ({
       data = [consolidatedData];
     }
   }
-
-  // Detect consolidated Module Usage chart to conditionally hide x-axis
-  const isModuleUsageChart = data?.[0]?.name === "Module Usage";
 
   const chartConfig = {
     value: {
@@ -335,7 +331,7 @@ export const ChartComponent: React.FC<ChartComponentProps> = ({
             <ResponsiveContainer width="100%" height="100%" minHeight={280}>
               <LineChart data={data} margin={chartMargins.line}>
                 {renderAxes("horizontal", data, {
-                  showX: chart.showXAxis !== false && !isModuleUsageChart,
+                  showX: chart.showXAxis !== false,
                   showY: chart.showYAxis !== false,
                   axisProps: chart.axisProps,
                 })}
@@ -380,7 +376,7 @@ export const ChartComponent: React.FC<ChartComponentProps> = ({
                 stackOffset={chart.stackOffset}
               >
                 {renderAxes("horizontal", data, {
-                  showX: chart.showXAxis !== false && !isModuleUsageChart,
+                  showX: chart.showXAxis !== false,
                   showY: chart.showYAxis !== false,
                   axisProps: chart.axisProps,
                 })}
@@ -453,7 +449,7 @@ export const ChartComponent: React.FC<ChartComponentProps> = ({
                 stackOffset={chart.stackOffset}
               >
                 {renderAxes(layout, data, {
-                  showX: chart.showXAxis !== false && !isModuleUsageChart,
+                  showX: chart.showXAxis !== false,
                   showY: chart.showYAxis !== false,
                   axisProps: chart.axisProps,
                 })}
@@ -503,6 +499,40 @@ export const ChartComponent: React.FC<ChartComponentProps> = ({
                       index,
                       chart.colors?.[key]
                     );
+
+                    // Use custom rounded component for stacked charts
+                    if (chart.stacked && layout === "horizontal") {
+                      return (
+                        <Bar
+                          key={key}
+                          dataKey={key}
+                          className={chart.barClassName || "rounded-md"}
+                          barSize={
+                            chart.barSize || (layout === "horizontal" ? 20 : 30)
+                          }
+                          fill={color}
+                          stackId="stack"
+                          shape={(props: any) => {
+                            const { isTop, isBottom } = getSegmentPosition(
+                              dataKeys,
+                              key,
+                              data,
+                              props.payload ? data.indexOf(props.payload) : 0
+                            );
+                            return (
+                              <RoundedStackedBar
+                                {...props}
+                                isTopSegment={isTop}
+                                isBottomSegment={isBottom}
+                                cornerRadius={8}
+                              />
+                            );
+                          }}
+                        />
+                      );
+                    }
+
+                    // Default bar rendering for non-stacked or vertical charts
                     return (
                       <Bar
                         key={key}
