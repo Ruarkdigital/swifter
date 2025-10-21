@@ -475,7 +475,8 @@ export const SolicitationDetailPage = () => {
     // Fallback to mock data if API is not available
     return [];
   }, [evaluatorsData]);
-  console.log("evaluators", evaluators);
+
+  console.log({ solicitation })
 
   // Filter vendor proposals based on search query
   const filteredProposals = useMemo(() => {
@@ -1060,9 +1061,13 @@ export const SolicitationDetailPage = () => {
                     Project Owner Contact
                   </label>
                   <p className="text-blue-600 dark:text-gray-200 font-medium">
-                    {solicitation.projectOwner?.email ||
-                      solicitation.contact ||
-                      "N/A"}
+                    {solicitation.createdBy?.email ? (
+                      <a href={`mailto:${solicitation.createdBy.email}`} className="hover:underline">
+                        {solicitation.createdBy.email}
+                      </a>
+                    ) : (
+                      "N/A"
+                    )}
                   </p>
                 </div>
                 <div>
