@@ -53,6 +53,7 @@ import {
   getEvaluationStatusColorClass,
 } from "@/lib/evaluationStatusUtils";
 import { formatDateTZ } from "@/lib/utils";
+import { truncate } from "lodash";
 
 // Component Types
 
@@ -719,8 +720,8 @@ const EvaluationDetailPage: React.FC = () => {
         const groups: string[] = row.original.evaluationGroups || [];
         const text = groups.length ? groups.join(", ") : "-";
         return (
-          <div className="text-sm text-gray-700 dark:text-gray-300 line-clamp-2-fade">
-            {text}
+          <div className="text-sm text-gray-700 dark:text-gray-300 truncate">
+            {truncate(text, { length: 60 })}
           </div>
         );
       },
