@@ -190,14 +190,16 @@ const EvaluationScorecard: React.FC<EvaluationScorecardProps> = ({
                           const passFailLabel = pf === "pass" ? "Pass" : pf === "fail" ? "Fail" : String(passFailRaw).trim();
                           
                           const weightText = hasPassFail
-                            ? "Weight: Pass/Fail"
-                            :`Weight: ${((criteria as any)?.criteria?.weight * scoreNum / 100).toFixed(1)}`;
-
-                          const scoreText = hasPassFail
                             ? `Score: ${passFailLabel}`
                             : hasScoreNumber
                             ? `Score: ${scoreNum}/100`
-                            : "Score: N/A";
+                            : "Score: N/A"
+                          
+                         
+                          const scoreText = hasPassFail
+                            ? "Weight: Pass/Fail"
+                            :`Weight: ${((criteria as any)?.criteria?.weight * scoreNum / 100).toFixed(1)}`;
+                          ;
 
                           return (
                             <>
