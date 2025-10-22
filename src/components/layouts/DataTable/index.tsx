@@ -137,6 +137,8 @@ export function DataTable<T = unknown>({
   });
 
   const activePage = table?.getState()?.pagination?.pageIndex + 1;
+  const canPreviousPage = table.getCanPreviousPage();
+  const canNextPage = table.getCanNextPage();
 
   const renderTable = (
     <Table
@@ -267,9 +269,17 @@ export function DataTable<T = unknown>({
             >
               <PaginationItem>
                 <PaginationPrevious
-                  className="dark:text-gray-200"
+                  className={cn(
+                    "dark:text-gray-200",
+                    !canPreviousPage && "pointer-events-none opacity-50",
+                    classNames?.paginationPrevious,
+                    !canPreviousPage && classNames?.paginationLinkDisabled
+                  )}
+                  data-testid="previous-page"
                   onClick={() => {
-                    table.previousPage();
+                    if (canPreviousPage) {
+                      table.previousPage();
+                    }
                   }}
                 />
               </PaginationItem>
@@ -297,9 +307,17 @@ export function DataTable<T = unknown>({
 
               <PaginationItem>
                 <PaginationNext
-                  className="dark:text-gray-200"
+                  className={cn(
+                    "dark:text-gray-200",
+                    !canNextPage && "pointer-events-none opacity-50",
+                    classNames?.paginationNext,
+                    !canNextPage && classNames?.paginationLinkDisabled
+                  )}
+                  data-testid="next-page"
                   onClick={() => {
-                    table.nextPage();
+                    if (canNextPage) {
+                      table.nextPage();
+                    }
                   }}
                 />
               </PaginationItem>

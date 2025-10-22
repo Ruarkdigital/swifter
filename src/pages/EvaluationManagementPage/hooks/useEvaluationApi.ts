@@ -46,12 +46,12 @@ export type AssignedEvaluationApiResponse = {
 
 export type EvaluationsListResponse = ApiResponse<{
   evaluations: EvaluationApiResponse[];
-  total: Record<string, number>[];
+  total: number;
 }>["data"];
 
 export type AssignedEvaluationsListResponse = ApiResponse<{
   evaluations: AssignedEvaluationApiResponse[];
-  total: Record<string, number>[];
+  total: number;
 }>["data"];
 
 // API Hooks

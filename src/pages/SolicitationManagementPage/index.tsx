@@ -1263,14 +1263,14 @@ export const SolicitationManagementPage = () => {
             value="all"
             className="data-[state=active]:border-[#2A4467] data-[state=active]:dark:bg-transparent data-[state=active]:dark:text-slate-100 relative rounded-none py-2 after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 border-0 border-b-2 data-[state=active]:bg-transparent data-[state=active]:shadow-none flex-none px-3"
           >
-            All Solicitation
+            All Solicitations
           </TabsTrigger>
           {(isProcurement || isVendor) && (
             <TabsTrigger
               value="my"
               className="data-[state=active]:border-[#2A4467] data-[state=active]:dark:bg-transparent data-[state=active]:dark:text-slate-100 relative rounded-none py-2 after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 border-0 border-b-2 data-[state=active]:bg-transparent data-[state=active]:shadow-none flex-none px-3"
             >
-              My Solicitation
+              My Solicitations
             </TabsTrigger>
           )}
         </TabsList>

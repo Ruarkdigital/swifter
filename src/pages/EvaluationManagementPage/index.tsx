@@ -113,7 +113,7 @@ const calculateDaysLeft = (deadline: string): number => {
 // Transform API data to component format
 const transformEvaluationData = (
   apiData:
-    | { evaluations: EvaluationApiResponse[]; total: Record<string, number>[] }
+    | { evaluations: EvaluationApiResponse[]; total: number }
     | undefined
 ): Evaluation[] => {
   if (!apiData || !Array.isArray(apiData.evaluations)) {
@@ -882,7 +882,7 @@ export const EvaluationManagementPage = () => {
                   onDateFilterChange={handleDateFilterChange}
                   onStatusFilterChange={setStatusFilter}
                   onClearFilters={handleClearFilters}
-                  totalCount={evaluationsResponse?.data?.total?.[0]?.total || 0}
+                  totalCount={evaluationsResponse?.data?.total || 0}
                   tabType="all_evaluations"
                 />
               )}
@@ -899,7 +899,7 @@ export const EvaluationManagementPage = () => {
                   disableSelection: true,
                   isLoading: isEvaluationsLoading,
                   totalCounts:
-                    evaluationsResponse?.data?.total?.[0]?.total || 0,
+                    evaluationsResponse?.data?.total || 0,
                   manualPagination: true,
                   setPagination,
                   pagination,
@@ -923,7 +923,7 @@ export const EvaluationManagementPage = () => {
                   onDateFilterChange={handleDateFilterChange}
                   onStatusFilterChange={setStatusFilter}
                   onClearFilters={handleClearFilters}
-                  totalCount={myEvaluationsResponse?.data?.total?.[0]?.total || 0}
+                  totalCount={myEvaluationsResponse?.data?.total || 0}
                   tabType="my_evaluations"
                 />
               )}
@@ -940,7 +940,7 @@ export const EvaluationManagementPage = () => {
                 disableSelection: true,
                 isLoading: isMyEvaluationsLoading,
                 totalCounts:
-                  myEvaluationsResponse?.data?.total?.[0]?.total || 0,
+                  myEvaluationsResponse?.data?.total || 0,
                 manualPagination: true,
                 setPagination,
                 pagination,
