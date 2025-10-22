@@ -558,12 +558,22 @@ const EvaluationDetailPage: React.FC = () => {
     },
     {
       accessorKey: "passFail",
-      header: "Score",
+      header: "Pass/Fail",
       cell: ({ row }) => {
         const value = row.original.passFail;
         if (value === "-")
           return <span className="text-muted-foreground">-</span>;
-        return <span>{value === "pass" ? "Pass / Fail" : value}</span>;
+        return (
+          <Badge 
+            className={`${
+              value === "pass" 
+                ? "bg-green-100 text-green-800 hover:bg-green-100 border-green-200" 
+                : "bg-red-100 text-red-800 hover:bg-red-100 border-red-200"
+            } border`}
+          >
+            {value === "pass" ? "Pass" : "Fail"}
+          </Badge>
+        );
       },
     },
     {
@@ -574,38 +584,21 @@ const EvaluationDetailPage: React.FC = () => {
         return value === "-" ? (
           <span className="text-muted-foreground">-</span>
         ) : (
-          <span>{value}%</span>
+          <span>{value}</span>
         );
       },
     },
     {
-      accessorKey: "evaluationGroups",
+      accessorKey: "evaluationGroup",
       header: "Evaluation Group",
       cell: ({ row }) => {
-        const groups: string[] = row.original.evaluationGroups || [];
-        const text = groups.join(", ");
+        const group = row.original.evaluationGroup;
         return (
           <div
             className="text-sm text-gray-900 dark:text-gray-100 truncate max-w-[280px]"
-            title={text}
+            title={group}
           >
-            {text}
-          </div>
-        );
-      },
-    },
-    {
-      accessorKey: "evaluationGroups",
-      header: "Evaluation Group",
-      cell: ({ row }) => {
-        const groups: string[] = row.original.evaluationGroups || [];
-        const text = groups.length ? groups.join(", ") : "-";
-        return (
-          <div
-            className="text-sm text-gray-900 dark:text-gray-100 truncate max-w-[280px]"
-            title={text}
-          >
-            {text}
+            {group}
           </div>
         );
       },
@@ -621,11 +614,7 @@ const EvaluationDetailPage: React.FC = () => {
         )
       }
     },
-    {
-      accessorKey: "status",
-      header: "Status",
-      cell: ({ row }) => <EvaluatorStatusBadge status={row.original.status} />,
-    },
+  
     {
       id: "actions",
       header: "Actions",
