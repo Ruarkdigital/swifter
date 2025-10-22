@@ -532,6 +532,10 @@ const UserManagementPage = () => {
         open={isUserDetailsOpen}
         onOpenChange={setIsUserDetailsOpen}
         userId={selectedUserId || undefined}
+        onEdit={(userId) => {
+          setEditUserId(userId ?? "");
+          setIsEditUserOpen(true);
+        }}
         onStatusUpdate={() => {
           // Refetch users data to reflect status changes
           queryClient.invalidateQueries({ queryKey: ["users"] });
