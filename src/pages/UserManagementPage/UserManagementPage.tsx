@@ -124,6 +124,8 @@ const UserManagementPage = () => {
   const [statusFilter, setStatusFilter] = useState<string>("");
   const [roleFilter, setRoleFilter] = useState<string>("");
   const [isActivateUserOpen, setIsActivateUserOpen] = useState(false);
+  const [isSuspendUserOpen, setIsSuspendUserOpen] = useState(false);
+  const [isUnsuspendUserOpen, setIsUnsuspendUserOpen] = useState(false);
 
   // Initialize filters from URL parameters
   useEffect(() => {
@@ -250,6 +252,26 @@ const UserManagementPage = () => {
     try {
       await updateUserStatus({ userId, status: "active" });
       setIsActivateUserOpen(false);
+    } catch (error) {
+      // Error is already handled in onError callback
+    }
+  };
+
+  // Handle user status update (suspend user)
+  const handleSuspendUser = async (userId: string) => {
+    try {
+      await updateUserStatus({ userId, status: "suspended" });
+      setIsSuspendUserOpen(false);
+    } catch (error) {
+      // Error is already handled in onError callback
+    }
+  };
+
+  // Handle user status update (unsuspend user -> active)
+  const handleUnsuspendUser = async (userId: string) => {
+    try {
+      await updateUserStatus({ userId, status: "active" });
+      setIsUnsuspendUserOpen(false);
     } catch (error) {
       // Error is already handled in onError callback
     }
@@ -419,7 +441,32 @@ const UserManagementPage = () => {
                     Edit User
                   </DropdownMenuItem>
 
-                  {row.original.status === "active" || row.original.status === "accepted" ? (
+                  {/* Suspend / Unsuspend */}
+                  {row.original.status === "active" && (
+                    <DropdownMenuItem
+                      onClick={() => {
+                        setSelectedUserId(row.original?.userId ?? "");
+                        setIsSuspendUserOpen(true);
+                      }}
+                      className="p-3 text-orange-600"
+                    >
+                      Suspend User
+                    </DropdownMenuItem>
+                  )}
+                  {row.original.status === "suspended" && (
+                    <DropdownMenuItem
+                      onClick={() => {
+                        setSelectedUserId(row.original?.userId ?? "");
+                        setIsUnsuspendUserOpen(true);
+                      }}
+                      className="p-3 text-green-600"
+                    >
+                      Unsuspend User
+                    </DropdownMenuItem>
+                  )}
+
+                  {/* Deactivate / Activate */}
+                  {row.original.status === "active" ? (
                     <DropdownMenuItem
                       onClick={() => {
                         setSelectedUserId(row.original?.userId ?? "");
@@ -597,6 +644,24 @@ const UserManagementPage = () => {
         title="Activate User"
         isLoading={isDeactivatingUser}
         onPrimaryAction={() => handleActivateUser(selectedUserId ?? "")}
+      />
+
+      <ConfirmAlert
+        open={isSuspendUserOpen}
+        onClose={setIsSuspendUserOpen}
+        text="Are you sure you want to suspend this user? They will be temporarily blocked from accessing the system."
+        title="Suspend User"
+        isLoading={isDeactivatingUser}
+        onPrimaryAction={() => handleSuspendUser(selectedUserId ?? "")}
+      />
+
+      <ConfirmAlert
+        open={isUnsuspendUserOpen}
+        onClose={setIsUnsuspendUserOpen}
+        text="Are you sure you want to unsuspend this user? Their status will return to active."
+        title="Unsuspend User"
+        isLoading={isDeactivatingUser}
+        onPrimaryAction={() => handleUnsuspendUser(selectedUserId ?? "")}
       />
 
       {/* Send Reminder Dialog */}
