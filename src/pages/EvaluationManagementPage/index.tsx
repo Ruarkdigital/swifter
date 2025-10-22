@@ -861,7 +861,7 @@ export const EvaluationManagementPage = () => {
               value="assigned_evaluation"
               className="data-[state=active]:border-[#2A4467] data-[state=active]:dark:bg-transparent data-[state=active]:dark:text-slate-100 relative rounded-none py-2 after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 border-0 border-b data-[state=active]:bg-transparent data-[state=active]:shadow-none flex-none px-3"
             >
-              Assigned Evaluation
+              Assigned Evaluations
             </TabsTrigger>
           )}
         </TabsList>

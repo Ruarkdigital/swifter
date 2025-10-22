@@ -1215,7 +1215,7 @@ export const SolicitationManagementPage = () => {
           />
         )}
         <StatCard
-          title={"Awarded Solicitation"}
+          title={"Awarded Solicitations"}
           value={dashboardStats.awarded}
           icon={IconMap["folder-open"] as any}
           iconColor="text-blue-600"
