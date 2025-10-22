@@ -33,6 +33,7 @@ import { isAfter, parseISO, isValid } from "date-fns";
 import { formatCurrency, formatDateTZ } from "@/lib/utils";
 import { DocumentViewer } from "@/components/ui/DocumentViewer";
 import { getFileExtension, isViewableFile } from "@/lib/fileUtils.tsx";
+import EvaluationScorecardSheet from "@/pages/EvaluationManagementPage/components/EvaluationScorecardSheet";
 
 // Define the evaluator data type
 type EvaluatorData = {
@@ -513,7 +514,11 @@ const ProposalDetailsPage: React.FC = () => {
         return (
           <div className="flex items-center space-x-2">
             {status === "Completed" ? (
-              <></>
+              <EvaluationScorecardSheet
+                evaluatorId={row.original.id}
+                solicitationId={id || ""}
+                timezone={solicitation?.timezone}
+              />
             ) : (
               <Button
                 variant="ghost"
