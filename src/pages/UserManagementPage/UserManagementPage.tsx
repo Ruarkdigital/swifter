@@ -442,7 +442,7 @@ const UserManagementPage = () => {
                   </DropdownMenuItem>
 
                   {/* Suspend / Unsuspend */}
-                  {row.original.status === "active" && (
+                  {row.original.status === "accepted" && (
                     <DropdownMenuItem
                       onClick={() => {
                         setSelectedUserId(row.original?.userId ?? "");
@@ -466,7 +466,7 @@ const UserManagementPage = () => {
                   )}
 
                   {/* Deactivate / Activate */}
-                  {row.original.status === "active" ? (
+                  {row.original.status === "accepted" ? (
                     <DropdownMenuItem
                       onClick={() => {
                         setSelectedUserId(row.original?.userId ?? "");
