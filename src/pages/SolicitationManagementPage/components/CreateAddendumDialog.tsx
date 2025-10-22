@@ -17,7 +17,7 @@ import { ApiResponse, ApiResponseError } from "@/types";
 import { useToastHandler } from "@/hooks/useToaster";
 import { useWatch } from "react-hook-form";
 import { useUserRole } from "@/hooks/useUserRole";
-import { cn, formatDateTZ, zonedTimeToUtc } from "@/lib/utils";
+import { cn, formatDateTZ, } from "@/lib/utils";
 
 // Base schema for form validation - deadline fields are now optional
 const baseSchema = {
@@ -215,18 +215,11 @@ const CreateAddendumDialog: React.FC<CreateAddendumDialogProps> = ({
         uploadedFiles = uploadResponse.data?.data || [];
       }
 
-      const tz = getSolicitationTimezone();
-      const toIso = (val?: string | Date) => {
-        if (!val) return undefined;
-        const d = typeof val === "string" ? new Date(val) : val;
-        return (tz ? zonedTimeToUtc(d, tz) : new Date(d)).toISOString();
-      };
-
       const payload = {
         // title: data.title,
         description: data.description,
-        submissionDeadline: toIso(data.submissionDeadline),
-        questionDeadline: toIso(data.questionAcceptanceDeadline),
+        submissionDeadline:new Date(data.submissionDeadline as unknown as Date).toISOString(),
+        questionDeadline: new Date(data.questionAcceptanceDeadline as unknown as Date).toISOString(),
         status: status === "publish" ? "publish" : "draft",
         files: uploadedFiles.map((file) => ({
           name: file.name,
