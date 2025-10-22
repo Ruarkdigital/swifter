@@ -419,7 +419,7 @@ const UserManagementPage = () => {
                     Edit User
                   </DropdownMenuItem>
 
-                  {row.original.status === "active" ? (
+                  {row.original.status === "active" || row.original.status === "accepted" ? (
                     <DropdownMenuItem
                       onClick={() => {
                         setSelectedUserId(row.original?.userId ?? "");
