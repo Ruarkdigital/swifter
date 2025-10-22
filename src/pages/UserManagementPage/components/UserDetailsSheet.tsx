@@ -30,13 +30,14 @@ interface UserDetails {
   createdAt: string;
   updatedAt: string;
   employeeId?: string;
+  user_id: string;
   solicitationsCreated?: number;
   activeSolicitations?: number;
   closedSolicitations?: number;
   awardedSolicitations?: number;
   activeEvaluations?: number;
   completedEvaluations?: number;
-  status: "pending" | "active" | "inactive";
+  status: "pending" | "active" | "inactive" | "expired";
 }
 
 interface UserActivity {
@@ -235,7 +236,7 @@ const UserDetailsSheet: React.FC<UserDetailsSheetProps> = ({
 
   const handleStatusUpdate = (status: "active" | "inactive") => {
     if (userData) {
-      statusMutation.mutate({ userId: userData._id, status });
+      statusMutation.mutate({ userId: userData.user_id, status });
     }
   };
 

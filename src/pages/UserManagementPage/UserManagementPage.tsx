@@ -30,7 +30,7 @@ type User = {
   name: string;
   email: string;
   role: "Admin" | "Procurement Lead" | "Evaluator" | "Vendor";
-  status: "active" | "accepted" | "suspended" | "inactive" | "pending";
+  status: "active" | "accepted" | "suspended" | "inactive" | "pending" | "expired";
   lastActivity: string;
   createdAt: string;
   phone?: string;
@@ -121,6 +121,7 @@ const UserManagementPage = () => {
   });
   const [statusFilter, setStatusFilter] = useState<string>("");
   const [roleFilter, setRoleFilter] = useState<string>("");
+  const [isActivateUserOpen, setIsActivateUserOpen] = useState(false);
 
   // Initialize filters from URL parameters
   useEffect(() => {
@@ -187,7 +188,7 @@ const UserManagementPage = () => {
   });
 
   // Update user status mutation (since there's no delete endpoint, we'll use status update)
-  const { mutateAsync: updateUserStatus } = useMutation<
+  const { mutateAsync: updateUserStatus, isPending: isDeactivatingUser } = useMutation<
     ApiResponse<any>,
     ApiResponseError,
     { userId: string; status: string }
@@ -201,7 +202,6 @@ const UserManagementPage = () => {
       queryClient.invalidateQueries({ queryKey: ["users"] });
     },
     onError: (error) => {
-      console.log(error);
       setSelectedUserId(null);
       const err = error as ApiResponseError;
       toast.error(
@@ -237,6 +237,17 @@ const UserManagementPage = () => {
   const handleDeactivateUser = async (userId: string) => {
     try {
       await updateUserStatus({ userId, status: "inactive" });
+      setIsDeactivateUserOpen(false);
+    } catch (error) {
+      // Error is already handled in onError callback
+    }
+  };
+
+  // Handle user status update (activate user)
+  const handleActivateUser = async (userId: string) => {
+    try {
+      await updateUserStatus({ userId, status: "active" });
+      setIsActivateUserOpen(false);
     } catch (error) {
       // Error is already handled in onError callback
     }
@@ -406,15 +417,27 @@ const UserManagementPage = () => {
                     Edit User
                   </DropdownMenuItem>
 
-                  <DropdownMenuItem
-                    onClick={() => {
-                      setSelectedUserId(row.original?._id);
-                      setIsDeactivateUserOpen(true);
-                    }}
-                    className="p-3 text-red-600 dark:text-red-40"
-                  >
-                    Deactivate User
-                  </DropdownMenuItem>
+                  {row.original.status === "active" ? (
+                    <DropdownMenuItem
+                      onClick={() => {
+                        setSelectedUserId(row.original?.userId ?? "");
+                        setIsDeactivateUserOpen(true);
+                      }}
+                      className="p-3 text-red-600 dark:text-red-40"
+                    >
+                      Deactivate User
+                    </DropdownMenuItem>
+                  ) : row.original.status === "expired" ? (
+                    <DropdownMenuItem
+                      onClick={() => {
+                        setSelectedUserId(row.original?.userId ?? "");
+                        setIsActivateUserOpen(true);
+                      }}
+                      className="p-3 text-green-600"
+                    >
+                      Activate User
+                    </DropdownMenuItem>
+                  ) : null}
                 </>
               )}
             </DropdownMenuContent>
@@ -561,8 +584,18 @@ const UserManagementPage = () => {
         onClose={setIsDeactivateUserOpen}
         text="Are you sure you want to deactivate this user? They will no longer be able to access the system."
         title="Deactivate User"
+        isLoading={isDeactivatingUser}
         onPrimaryAction={() => handleDeactivateUser(selectedUserId ?? "")}
-      ></ConfirmAlert>
+      />
+
+      <ConfirmAlert
+        open={isActivateUserOpen}
+        onClose={setIsActivateUserOpen}
+        text="Are you sure you want to activate this user? They will regain access to the system."
+        title="Activate User"
+        isLoading={isDeactivatingUser}
+        onPrimaryAction={() => handleActivateUser(selectedUserId ?? "")}
+      />
 
       {/* Send Reminder Dialog */}
       <ConfirmAlert
