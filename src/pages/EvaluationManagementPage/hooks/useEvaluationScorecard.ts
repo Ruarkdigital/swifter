@@ -8,6 +8,11 @@ interface EvaluationCriteria {
     status: "weight" | "pass_fail";
   } | null;
   score: string;
+  newScore: {
+    score: number;
+    weight: number;
+  } | null;
+  totalVendorScore: number;
   title: string;
   vendorId: string;
   vendorName: string;

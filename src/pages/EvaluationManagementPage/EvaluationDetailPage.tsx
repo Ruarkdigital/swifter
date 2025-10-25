@@ -416,9 +416,9 @@ const EvaluationDetailPage: React.FC = () => {
           const existing = map.get(id);
           const groupName = group.groupName;
           const progress = evaluator.progress ?? 0;
-          const status = (evaluator.status === "Completed"
-            ? "Completed"
-            : "Pending") as Evaluator["status"];
+          const status = (
+            evaluator.status === "Completed" ? "Completed" : "Pending"
+          ) as Evaluator["status"];
           const criteriaAssigned = group.criteriaCount ?? 0;
 
           if (existing) {
@@ -459,6 +459,7 @@ const EvaluationDetailPage: React.FC = () => {
       description: criterion.description,
       passFail: criterion.criteria.pass_fail || "-",
       weight: criterion.criteria.weight || "-",
+      progress: criterion.progress || "-",
       evaluationGroup: criterion.evaluationGroup || "-",
     }));
   }, [evaluation?.criterias]);
@@ -564,14 +565,10 @@ const EvaluationDetailPage: React.FC = () => {
         if (value === "-")
           return <span className="text-muted-foreground">-</span>;
         return (
-          <Badge 
-            className={`${
-              value === "pass" 
-                ? "bg-green-100 text-green-800 hover:bg-green-100 border-green-200" 
-                : "bg-red-100 text-red-800 hover:bg-red-100 border-red-200"
-            } border`}
+          <Badge
+            className={`${"bg-green-100 text-green-800 hover:bg-green-100 border-green-200"} border`}
           >
-            {value === "pass" ? "Pass" : "Fail"}
+            Pass/Fail
           </Badge>
         );
       },
@@ -607,14 +604,11 @@ const EvaluationDetailPage: React.FC = () => {
       accessorKey: "progress",
       header: "Progress",
       cell: ({ row }) => {
-        return (
-          <span className="font-medium">
-            {row.original.progress}%
-          </span>
-        )
-      }
+        console.log({ data: row.original });
+        return <span className="font-medium">{row.original.progress}%</span>;
+      },
     },
-  
+
     {
       id: "actions",
       header: "Actions",
@@ -719,12 +713,8 @@ const EvaluationDetailPage: React.FC = () => {
       accessorKey: "progress",
       header: "Progress",
       cell: ({ row }) => {
-        return (
-          <span className="font-medium">
-            {row.original.progress}%
-          </span>
-        )
-      }
+        return <span className="font-medium">{row.original.progress}%</span>;
+      },
     },
     {
       accessorKey: "status",

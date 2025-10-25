@@ -10,6 +10,8 @@ interface EvaluationCriteria {
   weight: number;
   comment?: string;
   group: string;
+  newScore: { score: number, weight: number },
+  totalVendorScore: number,
   // Optional vendor fields based on API response
   vendorId?: string;
   vendorName?: string;

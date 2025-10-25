@@ -9,6 +9,7 @@ import {
   getEvaluationStatusLabel,
   getEvaluationStatusColorClass,
 } from "@/lib/evaluationStatusUtils";
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 
 interface EvaluationScorecardSheetProps {
   evaluatorId: string;
@@ -137,14 +138,14 @@ const EvaluationScorecardSheet: React.FC<EvaluationScorecardSheetProps> = ({
                         )}
                       </Badge>
                     </div>
-                    <div className="col-span-2">
+                    {/* <div className="col-span-2">
                       <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">
                         Evaluation Score
                       </p>
                       <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                         {activeData.data.evaluator.score?.toFixed(0) || "N/A"}%
                       </p>
-                    </div>
+                    </div> */}
                   </div>
                 </div>
 
@@ -154,61 +155,111 @@ const EvaluationScorecardSheet: React.FC<EvaluationScorecardSheetProps> = ({
                     Evaluation Criterion Breakdown
                   </h3>
 
-                  {activeData.data.criteria.map((criterion, index) => {
-                    const isPassFail = criterion?.criteria?.status === "pass_fail";
-                    const weightLabel = isPassFail
-                      ? "N/A"
-                      : (criterion?.criteria?.weight ?? "N/A");
-                    const normalizedScore = String(criterion?.score ?? "").toLowerCase();
-                    const scoreLabel = isPassFail
-                      ? normalizedScore === "pass"
-                        ? "Pass"
-                        : normalizedScore === "fail"
-                          ? "Fail"
-                          : "N/A"
-                      : (criterion?.score ?? "N/A");
+                  {/* Group by vendor and render as accordion */}
+                  {(() => {
+                    const criteria = activeData.data.criteria || [];
+                    const groupsMap = new Map<string, { vendorName: string; items: typeof criteria }>();
+                    criteria.forEach((c) => {
+                      const id = c.vendorId || c.vendorName || "";
+                      const name = c.vendorName || "Vendor";
+                      const existing = groupsMap.get(id);
+                      if (existing) {
+                        existing.items.push(c);
+                      } else {
+                        groupsMap.set(id, { vendorName: name, items: [c] });
+                      }
+                    });
+                    const vendorGroups = Array.from(groupsMap.entries());
+
+                    if (vendorGroups.length === 0) {
+                      return (
+                        <div className="text-sm text-gray-500 dark:text-gray-400">No criteria available.</div>
+                      );
+                    }
 
                     return (
-                      <div key={index} className="border rounded-lg mb-4">
-                        <div className="flex items-center justify-between p-4">
-                          <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                            {criterion?.title || `Criterion ${index + 1}`}
-                          </span>
-                          <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                            {criterion?.vendorName || `Vendor ${index + 1}`}
-                          </span>
-                        </div>
-                        <div className="px-4 pb-4 border-t">
-                          <div className="grid grid-cols-2 gap-4 mb-4">
-                            <div>
-                              <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">
-                                Weight (%)
-                              </p>
-                              <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                                {weightLabel}
-                              </p>
-                            </div>
-                            <div>
-                              <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">
-                                Score Given
-                              </p>
-                              <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                                {scoreLabel}
-                              </p>
-                            </div>
-                          </div>
-                          <div>
-                            <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
-                              Comments
-                            </p>
-                            <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
-                              {criterion.comment || "No comments provided"}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
+                      <Accordion type="single" collapsible>
+                        {vendorGroups.map(([vendorId, group], idx) => {
+                          const first = group.items[0];
+                          const totalFromApi = first?.totalVendorScore;
+                          const computedFallback = group.items.reduce((sum, item) => {
+                            const numericScore =
+                              typeof item.newScore?.score === "number"
+                                ? item.newScore?.score || 0
+                                : (() => {
+                                    const val = parseFloat(String(item.score ?? "0"));
+                                    return isNaN(val) ? 0 : val;
+                                  })();
+                            return sum + numericScore;
+                          }, 0);
+                          const vendorScore = (totalFromApi ?? computedFallback) || 0;
+
+                          return (
+                            <AccordionItem
+                              key={vendorId || idx}
+                              value={`vendor-${vendorId || idx}`}
+                              className="last:border-b"
+                            >
+                              <AccordionTrigger>
+                                <div className="flex items-center w-full justify-between">
+                                  <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                                    {group.vendorName}
+                                  </span>
+                                  <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                                    Evaluator Score: {Number(vendorScore).toFixed(0)}
+                                  </span>
+                                </div>
+                              </AccordionTrigger>
+                              <AccordionContent>
+                                {group.items.map((criterion, index) => {
+                                  return (
+                                    <div key={index} className="border rounded-lg mb-4">
+                                      <div className="flex items-center justify-between p-4">
+                                        <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                                          {criterion?.title || `Criterion ${index + 1}`}
+                                        </span>
+                                        {/* <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                                          {criterion?.vendorName || `Vendor ${index + 1}`}
+                                        </span> */}
+                                      </div>
+                                      <div className="px-4 pb-4 border-t">
+                                        <div className="grid grid-cols-2 gap-4 mb-4">
+                                          <div>
+                                            <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">
+                                              Weight
+                                            </p>
+                                            <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                                              {criterion?.newScore?.weight || "N/A"}
+                                            </p>
+                                          </div>
+                                          <div>
+                                            <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">
+                                              Score
+                                            </p>
+                                            <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                                              {criterion?.newScore?.score || "N/A"}
+                                            </p>
+                                          </div>
+                                        </div>
+                                        <div>
+                                          <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
+                                            Comments
+                                          </p>
+                                          <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+                                            {criterion.comment || "No comments provided"}
+                                          </p>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </AccordionContent>
+                            </AccordionItem>
+                          );
+                        })}
+                      </Accordion>
                     );
-                  })}
+                  })()}
                 </div>
               </>
             )}

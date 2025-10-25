@@ -7,7 +7,10 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { useEvaluationScorecard, EvaluationCriteria } from "../hooks/useEvaluationScorecard";
+import {
+  useEvaluationScorecard,
+  EvaluationCriteria,
+} from "../hooks/useEvaluationScorecard";
 import { formatDateTZ } from "@/lib/utils";
 
 interface EvaluationScorecardProps {
@@ -28,14 +31,17 @@ const EvaluationScorecard: React.FC<EvaluationScorecardProps> = ({
   evaluatorId,
   timezone,
 }) => {
-  const { data: scorecardData, isLoading, error } = useEvaluationScorecard(
-    solicitationId,
-    evaluatorId
-  );
+  const {
+    data: scorecardData,
+    isLoading,
+    error,
+  } = useEvaluationScorecard(solicitationId, evaluatorId);
 
   // Use API data if available, otherwise fallback to prop data
   const displayData = scorecardData?.data?.evaluator;
-  const criteriaData = ((scorecardData?.data?.criteria || []) as EvaluationCriteria[])
+  const criteriaData = (
+    (scorecardData?.data?.criteria || []) as EvaluationCriteria[]
+  )
     .slice()
     .sort((a: EvaluationCriteria, b: EvaluationCriteria) => {
       const aName = a.vendorName?.toLowerCase() || "\uffff";
@@ -50,7 +56,9 @@ const EvaluationScorecard: React.FC<EvaluationScorecardProps> = ({
       <div className="w-full h-full flex items-center justify-center">
         <div className="flex items-center gap-2">
           <Loader2 className="h-6 w-6 animate-spin" />
-          <span className="text-gray-600 dark:text-slate-200">Loading evaluation scorecard...</span>
+          <span className="text-gray-600 dark:text-slate-200">
+            Loading evaluation scorecard...
+          </span>
         </div>
       </div>
     );
@@ -60,8 +68,12 @@ const EvaluationScorecard: React.FC<EvaluationScorecardProps> = ({
     return (
       <div className="w-full h-full flex items-center justify-center">
         <div className="text-center">
-          <p className="text-red-600 dark:text-slate-200 mb-2">Failed to load evaluation scorecard</p>
-          <p className="text-gray-500 dark:text-slate-200 text-sm">Please try again later</p>
+          <p className="text-red-600 dark:text-slate-200 mb-2">
+            Failed to load evaluation scorecard
+          </p>
+          <p className="text-gray-500 dark:text-slate-200 text-sm">
+            Please try again later
+          </p>
         </div>
       </div>
     );
@@ -70,7 +82,9 @@ const EvaluationScorecard: React.FC<EvaluationScorecardProps> = ({
   if (!displayData) {
     return (
       <div className="w-full h-full flex items-center justify-center">
-        <p className="text-gray-500 dark:text-slate-200">No evaluation data available</p>
+        <p className="text-gray-500 dark:text-slate-200">
+          No evaluation data available
+        </p>
       </div>
     );
   }
@@ -116,27 +130,43 @@ const EvaluationScorecard: React.FC<EvaluationScorecardProps> = ({
             {/* Row 1 */}
             <div className="flex justify-between">
               <div className="flex-1">
-                <p className="text-sm text-gray-600 dark:text-slate-200 mb-1">Evaluator Name</p>
+                <p className="text-sm text-gray-600 dark:text-slate-200 mb-1">
+                  Evaluator Name
+                </p>
                 <p className="text-sm font-medium text-gray-900 dark:text-slate-200">
                   {displayData.name}
                 </p>
               </div>
               <div className="flex-1">
-                <p className="text-sm text-gray-600 dark:text-slate-200 mb-1">Contact</p>
-                <p className="text-sm text-blue-600 dark:text-slate-200">{displayData.email}</p>
+                <p className="text-sm text-gray-600 dark:text-slate-200 mb-1">
+                  Contact
+                </p>
+                <p className="text-sm text-blue-600 dark:text-slate-200">
+                  {displayData.email}
+                </p>
               </div>
             </div>
 
             {/* Row 2 */}
             <div className="flex justify-between">
               <div className="flex-1">
-                <p className="text-sm text-gray-600 dark:text-slate-200 mb-1">Submission Date</p>
+                <p className="text-sm text-gray-600 dark:text-slate-200 mb-1">
+                  Submission Date
+                </p>
                 <p className="text-sm font-medium dark:text-slate-200 text-gray-900">
-                  { displayData?.submission ? formatDateTZ(new Date(displayData?.submission), "MMM d, yyyy pppp", timezone) : 'N/A'}
+                  {displayData?.submission
+                    ? formatDateTZ(
+                        new Date(displayData?.submission),
+                        "MMM d, yyyy pppp",
+                        timezone
+                      )
+                    : "N/A"}
                 </p>
               </div>
               <div className="flex-1">
-                <p className="text-sm text-gray-600 dark:text-slate-200 mb-1">Status</p>
+                <p className="text-sm text-gray-600 dark:text-slate-200 mb-1">
+                  Status
+                </p>
                 <div className="inline-flex items-center px-3 py-1 rounded-xl bg-green-100">
                   <span className="text-sm font-medium text-green-700">
                     {displayData.status}
@@ -146,14 +176,14 @@ const EvaluationScorecard: React.FC<EvaluationScorecardProps> = ({
             </div>
 
             {/* Row 3 */}
-            <div className="flex justify-between">
+            {/* <div className="flex justify-between">
               <div className="flex-1">
                 <p className="text-sm text-gray-600 dark:text-slate-200 mb-1">Evaluation Score</p>
                 <p className="text-sm font-medium text-gray-900 dark:text-slate-200">
                   {displayData.score}%
                 </p>
               </div>
-            </div>
+            </div> */}
           </div>
         </div>
 
@@ -165,77 +195,123 @@ const EvaluationScorecard: React.FC<EvaluationScorecardProps> = ({
             </h3>
           </div>
 
-          <Accordion type="multiple" className="w-full">
-            {criteriaData.length > 0 ? (
-              criteriaData.map((criteria: EvaluationCriteria, index: number) => (
-                <AccordionItem key={criteria.id || index} value={criteria.id || `criteria-${index}`}>
-                  <AccordionTrigger className="text-left">
-                    <div className="flex justify-between items-center w-full pr-4">
-                      <div className="flex flex-col max-w-sm">
-                        <span className="font-medium dark:text-slate-200">
-                          {criteria.title}
-                        </span>
-                        <span className="text-sm text-gray-500 dark:text-slate-200">
-                          Vendor: {criteria.vendorName || "N/A"}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-4">
-                        {(() => {
-                          const passFailRaw = (criteria as any)?.criteria?.pass_fail ?? "";
-                          
-                          const scoreNum = typeof criteria.score === "number" ? criteria.score : parseFloat(String(criteria.score));
-                          const hasScoreNumber = Number.isFinite(scoreNum);
-                          const hasPassFail = !!String(passFailRaw).trim();
-                          const pf = String(passFailRaw).trim().toLowerCase();
-                          const passFailLabel = pf === "pass" ? "Pass" : pf === "fail" ? "Fail" : String(passFailRaw).trim();
-                          
-                          const weightText = hasPassFail
-                            ? `Weight: Pass/Fail`
-                            : hasScoreNumber
-                            ? `Weight: ${criteria.weight}`
-                            : "Weight: N/A"
-                          
-                         
-                          const scoreText = hasPassFail
-                            ? `Score: ${passFailLabel}`
-                            :`Score: ${((criteria as any)?.criteria?.weight * scoreNum / 100).toFixed(0)}`;
-                          ;
+          {(() => {
+            // Group criteria by vendor name
+            const vendorGroups = criteriaData.reduce(
+              (
+                groups: Record<
+                  string,
+                  {
+                    vendorName: string;
+                    criteria: EvaluationCriteria[];
+                    totalVendorScore?: number;
+                  }
+                >,
+                item: EvaluationCriteria
+              ) => {
+                const key = item.vendorName || "N/A";
+                if (!groups[key]) {
+                  groups[key] = {
+                    vendorName: key,
+                    criteria: [],
+                    totalVendorScore: item.totalVendorScore,
+                  };
+                }
+                groups[key].criteria.push(item);
+                if (typeof item.totalVendorScore === "number") {
+                  groups[key].totalVendorScore = item.totalVendorScore;
+                }
+                return groups;
+              },
+              {}
+            );
+            const groupedVendors = Object.values(vendorGroups);
 
-                          return (
-                            <>
-                              <span className="text-sm text-gray-500 dark:text-slate-200">{weightText}</span>
-                              <span className="text-sm font-medium dark:text-slate-200">{scoreText}</span>
-                            </>
-                          );
-                        })()}
-                      </div>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent>
-                    <div className="pt-4 space-y-3">
-                      <p className="text-sm text-gray-600 dark:text-slate-200 max-w-lg">
-                        {criteria.description}
-                      </p>
-                      {criteria.comment && (
-                        <div className="bg-gray-50 p-3 rounded-lg dark:bg-slate-700">
-                          <p className="text-sm font-medium text-gray-700 dark:text-slate-200 mb-1">
-                            Comments:
-                          </p>
-                          <p className="text-sm text-gray-600 dark:text-slate-200">
-                            {criteria.comment}
-                          </p>
+            return (
+              <Accordion type="multiple" className="w-full">
+                {groupedVendors.length > 0 ? (
+                  groupedVendors.map((group, idx) => (
+                    <AccordionItem
+                      key={group.vendorName || idx}
+                      value={group.vendorName || `vendor-${idx}`}
+                      className={
+                        idx === groupedVendors.length - 1
+                          ? "border-b border-gray-200 dark:border-gray-700"
+                          : "border-none"
+                      }
+                    >
+                      <AccordionTrigger className="text-left">
+                        <div className="flex justify-between items-center w-full pr-4">
+                          <div className="flex flex-col max-w-sm">
+                            <span className="font-medium dark:text-slate-200">
+                              {group.vendorName || "N/A"}
+                            </span>
+                            <span className="text-sm text-gray-500 dark:text-slate-200">
+                              Criteria: {group.criteria.length}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-4">
+                            <span className="text-sm font-medium dark:text-slate-200">
+                              Evaluator Score:{" "}
+                              {typeof group.totalVendorScore === "number"
+                                ? group.totalVendorScore
+                                : group.criteria.reduce(
+                                    (acc, c) =>
+                                      acc +
+                                      (typeof c.newScore?.score === "number"
+                                        ? c.newScore.score
+                                        : 0),
+                                    0
+                                  )}
+                            </span>
+                          </div>
                         </div>
-                      )}
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-              ))
-            ) : (
-              // Fallback to static data if no API data available
-              <>
-              </>
-            )}
-          </Accordion>
+                      </AccordionTrigger>
+                      <AccordionContent>
+                        <div className="pt-4 space-y-3">
+                          {group.criteria.map((criteria, cIdx) => (
+                            <div
+                              key={criteria.id || cIdx}
+                              className="space-y-2"
+                            >
+                              <div className="flex items-center justify-between px-2">
+                                <p className="text-sm font-medium dark:text-slate-200">
+                                  {criteria.title}
+                                </p>
+                                <div className="flex items-center gap-4">
+                                  <span className="text-sm font-medium dark:text-slate-200">
+                                    Weight: {criteria.newScore.weight}
+                                  </span>
+                                  <span className="text-sm font-medium dark:text-slate-200">
+                                    Score: {criteria.newScore.score}
+                                  </span>
+                                </div>
+                              </div>
+                              <p className="text-sm text-gray-600 dark:text-slate-200 max-w-lg">
+                                {criteria.description}
+                              </p>
+                              {criteria.comment && (
+                                <div className="bg-gray-50 p-3 rounded-lg dark:bg-slate-700">
+                                  <p className="text-sm font-medium text-gray-700 dark:text-slate-200 mb-1">
+                                    Comments:
+                                  </p>
+                                  <p className="text-sm text-gray-600 dark:text-slate-200">
+                                    {criteria.comment}
+                                  </p>
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                  ))
+                ) : (
+                  <></>
+                )}
+              </Accordion>
+            );
+          })()}
         </div>
       </div>
     </div>

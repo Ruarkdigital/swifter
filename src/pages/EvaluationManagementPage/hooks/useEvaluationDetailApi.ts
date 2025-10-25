@@ -49,6 +49,7 @@ type EvaluationDetail = {
     title: string;
     description: string;
     evaluationGroup: string;
+    progress: number | null;
     criteria: {
       pass_fail: string;
       weight: number;
