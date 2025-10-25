@@ -40,14 +40,22 @@ interface UserDetails {
   status: "pending" | "active" | "inactive" | "expired";
 }
 
-interface UserActivity {
-  status: string;
-  count: number;
+
+
+export interface UserActivityResponse {
+  activity: Activity[];
 }
 
-interface UserActivityResponse {
-  activity: UserActivity[];
+export interface Data {
+  activity: Activity[];
 }
+
+export interface Activity {
+  count:  number;
+  status: string;
+  title?: string;
+}
+
 
 interface UserDetailsSheetProps {
   open?: boolean;
@@ -93,16 +101,19 @@ const UserDetailsSheet: React.FC<UserDetailsSheetProps> = ({
     error: userActivityError,
   } = useQuery<ApiResponse<UserActivityResponse>, ApiResponseError>({
     queryKey: ["user-activity", userId],
-    queryFn: async () => await getRequest({ url: "/users/activity" }),
+    queryFn: async () => await getRequest({ url: `/users/activity/${userId}` }),
     enabled: !!userId && !!open,
   });
 
-  const userActivity = userActivityResponse?.data?.data?.activity || [];
-
-  // Helper function to get activity count by status
-  const getActivityCount = (status: string): number => {
-    const activity = userActivity.find(item => item.status === status);
-    return activity?.count || 0;
+  const userActivity: Activity[] = userActivityResponse?.data?.data?.activity ?? [];
+  // Map of activity status to human-friendly labels
+  const activityLabelMap: Record<string, string> = {
+    solicitations_created: "Number of Solicitations created",
+    active_solicitations: "Active Solicitations",
+    closed_solicitations: "Closed Solicitations",
+    awarded_solicitations: "Awarded Solicitations",
+    active_evaluations: "Active Evaluation",
+    completed_evaluations: "Completed Evaluations",
   };
 
   // Status update mutation
@@ -282,9 +293,9 @@ const UserDetailsSheet: React.FC<UserDetailsSheetProps> = ({
                     <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-1">
                       {userData.name}
                     </h3>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
+                    {/* <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
                       {userData ? `${userData._id}` : "Loading..."}
-                    </p>
+                    </p> */}
                   </div>
                   <Badge
                     className={`${getStatusColor(
@@ -414,54 +425,16 @@ const UserDetailsSheet: React.FC<UserDetailsSheetProps> = ({
                     </div>
                   ) : (
                     <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-                          Number of Solicitations created
-                        </label>
-                        <p className="text-sm text-gray-900 dark:text-gray-100 mt-1">
-                          {getActivityCount('solicitations_created')}
-                        </p>
-                      </div>
-                      <div>
-                        <label className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-                          Active Solicitations
-                        </label>
-                        <p className="text-sm text-gray-900 dark:text-gray-100 mt-1">
-                          {getActivityCount('active_solicitations')}
-                        </p>
-                      </div>
-                      <div>
-                        <label className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-                          Closed Solicitations
-                        </label>
-                        <p className="text-sm text-gray-900 dark:text-gray-100 mt-1">
-                          {getActivityCount('closed_solicitations')}
-                        </p>
-                      </div>
-                      <div>
-                        <label className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-                          Awarded Solicitations
-                        </label>
-                        <p className="text-sm text-gray-900 dark:text-gray-100 mt-1">
-                          {getActivityCount('awarded_solicitations')}
-                        </p>
-                      </div>
-                      <div>
-                        <label className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-                          Active Evaluation
-                        </label>
-                        <p className="text-sm text-gray-900 dark:text-gray-100 mt-1">
-                          {getActivityCount('active_evaluations')}
-                        </p>
-                      </div>
-                      <div>
-                        <label className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-                          Completed Evaluations
-                        </label>
-                        <p className="text-sm text-gray-900 dark:text-gray-100 mt-1">
-                          {getActivityCount('completed_evaluations')}
-                        </p>
-                      </div>
+                      {userActivity.map((item) => (
+                        <div key={item.status}>
+                          <label className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                            {item.title ?? activityLabelMap[item.status] ?? item.status.replace(/_/g, " ")}
+                          </label>
+                          <p className="text-sm text-gray-900 dark:text-gray-100 mt-1">
+                            {item.count}
+                          </p>
+                        </div>
+                      ))}
                     </div>
                   )}
                 </div>
