@@ -137,8 +137,6 @@ type Solicitation = {
 // API Response types based on documentation
 type SolicitationsResponse = {
   total: number;
-  page: number;
-  limit: number;
   data: Solicitation[];
 };
 
@@ -240,9 +238,7 @@ const useVendorMySolicitations = (params?: SolicitationQueryParams) => {
   }
 
   const queryString = queryParams.toString();
-  const url = `/vendor/solicitations/me${
-    queryString ? `?${queryString}` : ""
-  }`;
+  const url = `/vendor/solicitations/me${queryString ? `?${queryString}` : ""}`;
 
   return useQuery<ApiResponse<SolicitationsResponse>, ApiResponseError>({
     queryKey: ["vendor-my-solicitations", params],
@@ -425,17 +421,16 @@ export const SolicitationManagementPage = () => {
 
   // Build Status filter options; hide "Under Evaluation" for vendor users
   const statusOptions = useMemo(
-    () =>
-      [
-        { label: "All Status", value: "all_status" },
-        { label: "Published", value: "published" },
-        { label: "Draft", value: "draft" },
-        // Only show "Under Evaluation" for non-vendor users
-        ...(!isVendor
-          ? [{ label: "Under Evaluation", value: "under_evaluation" }]
-          : []),
-        { label: "Closed", value: "closed" },
-      ],
+    () => [
+      { label: "All Status", value: "all_status" },
+      { label: "Published", value: "published" },
+      { label: "Draft", value: "draft" },
+      // Only show "Under Evaluation" for non-vendor users
+      ...(!isVendor
+        ? [{ label: "Under Evaluation", value: "under_evaluation" }]
+        : []),
+      { label: "Closed", value: "closed" },
+    ],
     [isVendor]
   );
 
@@ -657,17 +652,9 @@ export const SolicitationManagementPage = () => {
   // Get current data based on active tab
   const currentData = useMemo(() => {
     if (activeTab === "all") {
-      return (
-        allSolicitationsData?.data?.data?.data ||
-        (allSolicitationsData?.data?.data as unknown as Solicitation[]) ||
-        []
-      );
+      return allSolicitationsData?.data?.data?.data || [];
     } else {
-      return (
-        mySolicitationsData?.data?.data?.data ||
-        (mySolicitationsData?.data?.data as unknown as Solicitation[]) ||
-        []
-      );
+      return mySolicitationsData?.data?.data?.data || [];
     }
   }, [activeTab, allSolicitationsData, mySolicitationsData]);
 
@@ -817,7 +804,11 @@ export const SolicitationManagementPage = () => {
               )}
               <div className="text-gray-500 dark:text-gray-400 font-medium">
                 Deadline:
-                {safeFormatDate(row.original.submissionDeadline,"MMM d, yyyy, h:mm a", row.original.timezone)}
+                {safeFormatDate(
+                  row.original.submissionDeadline,
+                  "MMM d, yyyy, h:mm a",
+                  row.original.timezone
+                )}
               </div>
             </div>
           ),
@@ -925,7 +916,11 @@ export const SolicitationManagementPage = () => {
           header: "Question Deadline",
           cell: ({ row }) => (
             <span>
-              {safeFormatDate(row.original.questionDeadline, "MMM d, yyyy", row.original.timezone)}
+              {safeFormatDate(
+                row.original.questionDeadline,
+                "MMM d, yyyy",
+                row.original.timezone
+              )}
             </span>
           ),
         },
@@ -1386,44 +1381,44 @@ export const SolicitationManagementPage = () => {
 
                   <SolicitationFilters
                     filters={[
-                        {
-                          title: "Date",
-                          options: [
-                            {
-                              hasOptions: true,
-                              value: "date",
-                              label: "Date Published",
-                              subOptions: [
-                                {
-                                  title: "All",
-                                  value: "all",
-                                },
-                                {
-                                  title: "Today",
-                                  value: "today",
-                                },
-                                {
-                                  title: "Last 7 Days",
-                                  value: "7_days",
-                                },
-                                {
-                                  title: "Last 30 Days",
-                                  value: "30_days",
-                                },
-                                {
-                                  title: "Custom",
-                                  value: "custom",
-                                },
-                              ],
-                            },
-                          ],
-                        },
-                        {
-                          title: "Status",
-                          showIcon: true,
-                          options: statusOptions,
-                        },
-                      ]}
+                      {
+                        title: "Date",
+                        options: [
+                          {
+                            hasOptions: true,
+                            value: "date",
+                            label: "Date Published",
+                            subOptions: [
+                              {
+                                title: "All",
+                                value: "all",
+                              },
+                              {
+                                title: "Today",
+                                value: "today",
+                              },
+                              {
+                                title: "Last 7 Days",
+                                value: "7_days",
+                              },
+                              {
+                                title: "Last 30 Days",
+                                value: "30_days",
+                              },
+                              {
+                                title: "Custom",
+                                value: "custom",
+                              },
+                            ],
+                          },
+                        ],
+                      },
+                      {
+                        title: "Status",
+                        showIcon: true,
+                        options: statusOptions,
+                      },
+                    ]}
                     onFilterChange={handleFilterChange}
                   />
                 </div>

@@ -1065,6 +1065,8 @@ export const SolicitationDetailPage = () => {
                       <a href={`mailto:${solicitation.createdBy.email}`} className="hover:underline">
                         {solicitation.createdBy.email}
                       </a>
+                    ) : solicitation.createdBy?.name ? (
+                      <span>{solicitation.createdBy.name}</span>
                     ) : (
                       "N/A"
                     )}
