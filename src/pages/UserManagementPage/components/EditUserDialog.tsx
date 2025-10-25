@@ -49,13 +49,13 @@ const EditUserDialog = ({ open, onOpenChange, userId }: EditUserDialogProps) => 
   const queryClient = useQueryClient();
 
   // Fetch user data
-  const { data: userData, isLoading } = useQuery<ApiResponse<User>, ApiResponseError>({
+  const { data: userData, isLoading } = useQuery<ApiResponse<{ user: User }>, ApiResponseError>({
     queryKey: ["user", userId],
     queryFn: async () => await getRequest({ url: `/users/${userId}` }),
     enabled: open && !!userId,
   });
 
-  const user = userData?.data?.data;
+  const user = userData?.data?.data?.user;
 
   // Form setup
   const { control, reset } = useForge<EditUserFormValues>({
@@ -72,6 +72,7 @@ const EditUserDialog = ({ open, onOpenChange, userId }: EditUserDialogProps) => 
   // Update form values when user data is loaded
   useEffect(() => {
     if (user) {
+      console.log({ user })
       reset({
         name: user.name || "",
         phone: user.phone || "",
