@@ -74,11 +74,13 @@ export function formatDateTZ(
   console.log({ formatStr, timezone })
   try {
     // Normalize input to Date
+    // const date =
+    //   typeof dateInput === "string" ? new Date(dateInput?.split("T")?.[0] || "") : dateInput;
     const date =
-      typeof dateInput === "string" ? new Date(dateInput?.split("T")?.[0] || "") : dateInput;
+      typeof dateInput === "string" ? dateInput?.split("T")?.[0] || "" : dateInput;
     const baseDate = dateInput instanceof Date ? dateInput : new Date(dateInput);
     // Guard: invalid Date -> safe string
-    if (!(date instanceof Date) || isNaN(date.getTime())) return "N/A";
+    // if (!(date instanceof Date) || isNaN(date.getTime())) return "N/A";
 
     // Use formatInTimeZone exclusively.
     // If timezone is missing or empty, default to the runtime's IANA guess by using Intl.DateTimeFormat.
@@ -91,12 +93,7 @@ export function formatDateTZ(
       baseDate.toISOString()?.split("T")?.[1]?.split(".")?.[0] || "N/A";
 
     return (
-      date.toLocaleString("en-US", {
-        weekday: "long",
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      }) +
+      date +
       " " +
       formattedTime
     );

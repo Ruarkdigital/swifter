@@ -5,7 +5,7 @@ import rehypeHighlight from "rehype-highlight";
 import rehypeRaw from "rehype-raw";
 import { cn } from "@/lib/utils";
 import { Bot, User, CheckCircle2, Quote } from "lucide-react";
-import "highlight.js/styles/github.css";
+import "@/assets/highlight-github.css";
 
 export interface ReferencedMessage {
   id: string;
