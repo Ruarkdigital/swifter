@@ -1207,7 +1207,7 @@ const EvaluationDetailPage: React.FC = () => {
                     </h4>
                     <p className="text-gray-600 dark:text-gray-400">
                       {/* Placeholder for progress - would need additional API data */}
-                      {group.averageProgress ?? 0}%
+                      {group.averageProgress?.toFixed(0) ?? 0}%
                     </p>
                   </div>
 
