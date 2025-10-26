@@ -303,6 +303,7 @@ const SubmittedDocumentPage: React.FC = () => {
   }, [pricingBreakdown]);
 
   const [activeCriteriaId, setActiveCriteriaId] = useState<string | null>(null);
+  const [editingCriteriaId, setEditingCriteriaId] = useState<string | null>(null);
   const [showSubmitDialog, setShowSubmitDialog] = useState(false);
 
   // Document viewer state
@@ -370,11 +371,19 @@ const SubmittedDocumentPage: React.FC = () => {
   const onSubmitScore = async (data: CriteriaScorePayload) => {
     if (!activeCriteriaId || !id || !vendorId) return;
 
+    const normalizedPayload: CriteriaScorePayload = {
+      ...data,
+      score:
+        data.type === "weight"
+          ? Number(data.score)
+          : data.score,
+    };
+
     await submitScoreMutation.mutateAsync({
       evaluationId: id,
       criteriaId: activeCriteriaId,
       vendorId,
-      payload: data,
+      payload: normalizedPayload,
     });
 
     // Remove the saved form state for this criteria after successful submission
@@ -387,6 +396,7 @@ const SubmittedDocumentPage: React.FC = () => {
     // Reset form and close
     reset();
     setActiveCriteriaId(null);
+    setEditingCriteriaId(null);
   };
 
   // Handle criteria scoring
@@ -408,6 +418,7 @@ const SubmittedDocumentPage: React.FC = () => {
     }
 
     setActiveCriteriaId(criteriaId);
+    setEditingCriteriaId(null);
 
     // Find the criteria item to get existing scoring data
     const criteriaItem = criteria.find((item) => item._id === criteriaId);
@@ -517,6 +528,7 @@ const SubmittedDocumentPage: React.FC = () => {
   };
 
   const flattenedPricingItems = flattenPricingItems(pricingBreakdown);
+  const isEvaluationSubmitted = criteriaData?.data?.data?.submissionStatus === "Submitted";
 
   return (
     <div className="p-6 min-h-full">
@@ -704,15 +716,22 @@ const SubmittedDocumentPage: React.FC = () => {
                                   <div className="flex items-center">
                                     <RadioGroup
                                       value={watch("score") as string}
-                                      onValueChange={(value) =>
-                                        setValue("score", value)
-                                      }
+                                      onValueChange={(value) => {
+                                        const readOnly =
+                                          isEvaluationSubmitted ||
+                                          (!!criteriaItem.scoring?._id && editingCriteriaId !== criteriaItem._id);
+                                        if (!readOnly) setValue("score", value);
+                                      }}
                                       className="flex gap-6"
                                     >
                                       <div className="flex items-center gap-2">
                                         <RadioGroupItem
                                           value="pass"
                                           id={`${criteriaItem._id}-pass`}
+                                          disabled={
+                                            isEvaluationSubmitted ||
+                                            (!!criteriaItem.scoring?._id && editingCriteriaId !== criteriaItem._id)
+                                          }
                                         />
                                         <Label
                                           htmlFor={`${criteriaItem._id}-pass`}
@@ -725,6 +744,10 @@ const SubmittedDocumentPage: React.FC = () => {
                                         <RadioGroupItem
                                           value="fail"
                                           id={`${criteriaItem._id}-fail`}
+                                          disabled={
+                                            isEvaluationSubmitted ||
+                                            (!!criteriaItem.scoring?._id && editingCriteriaId !== criteriaItem._id)
+                                          }
                                         />
                                         <Label
                                           htmlFor={`${criteriaItem._id}-fail`}
@@ -740,9 +763,12 @@ const SubmittedDocumentPage: React.FC = () => {
                                     <div className="flex flex-col">
                                       <RadioGroup
                                         value={watch("score")?.toString()}
-                                        onValueChange={(value) =>
-                                          setValue("score", parseInt(value))
-                                        }
+                                        onValueChange={(value) => {
+                                          const readOnly =
+                                            isEvaluationSubmitted ||
+                                            (!!criteriaItem.scoring?._id && editingCriteriaId !== criteriaItem._id);
+                                          if (!readOnly) setValue("score", parseInt(value));
+                                        }}
                                         className="flex gap-8 justify-center mb-1"
                                       >
                                         {[1, 2, 3, 4, 5].map((score) => (
@@ -753,6 +779,10 @@ const SubmittedDocumentPage: React.FC = () => {
                                             <RadioGroupItem
                                               value={score.toString()}
                                               id={`${criteriaItem._id}-${score}`}
+                                              disabled={
+                                                isEvaluationSubmitted ||
+                                                (!!criteriaItem.scoring?._id && editingCriteriaId !== criteriaItem._id)
+                                              }
                                             />
                                             <Label
                                               htmlFor={`${criteriaItem._id}-${score}`}
@@ -841,34 +871,92 @@ const SubmittedDocumentPage: React.FC = () => {
                                 onChange={(e) =>
                                   setValue("comment", e.target.value)
                                 }
+                                disabled={
+                                  isEvaluationSubmitted ||
+                                  (!!criteriaItem.scoring?._id && editingCriteriaId !== criteriaItem._id)
+                                }
                                 className="w-full dark:text-slate-200"
                                 rows={3}
                                 placeholder="Enter your comments here..."
                               />
                             </div>
 
-                            {!criteriaItem.scoring?._id && (
-                              <div className="p-4 flex justify-end gap-2 border-t border-gray-200">
-                                <Button
-                                  variant="outline"
-                                  className="px-4"
-                                  onClick={() => {
-                                    handleAccordionClose();
-                                    reset();
-                                  }}
-                                >
-                                  Cancel
-                                </Button>
-                                <Button
-                                  className="text-white px-4"
-                                  onClick={handleSubmit(onSubmitScore)}
-                                  disabled={submitScoreMutation.isPending}
-                                >
-                                  {submitScoreMutation.isPending
-                                    ? "Saving..."
-                                    : "Save Score"}
-                                </Button>
-                              </div>
+                            {!isEvaluationSubmitted && (
+                              !criteriaItem.scoring?._id ? (
+                                <div className="p-4 flex justify-end gap-2 border-t border-gray-200">
+                                  <Button
+                                    variant="outline"
+                                    className="px-4"
+                                    onClick={() => {
+                                      handleAccordionClose();
+                                      reset();
+                                    }}
+                                  >
+                                    Cancel
+                                  </Button>
+                                  <Button
+                                    className="text-white px-4"
+                                    onClick={handleSubmit(onSubmitScore)}
+                                    disabled={submitScoreMutation.isPending}
+                                  >
+                                    {submitScoreMutation.isPending
+                                      ? "Saving..."
+                                      : "Save Score"}
+                                  </Button>
+                                </div>
+                              ) : (
+                                editingCriteriaId === criteriaItem._id ? (
+                                  <div className="p-4 flex justify-end gap-2 border-t border-gray-200">
+                                    <Button
+                                      variant="outline"
+                                      className="px-4"
+                                      onClick={() => {
+                                        setEditingCriteriaId(null);
+                                        const type = criteriaItem.criteria.pass_fail ? "pass_fail" : "weight";
+                                        handleStartScoring(criteriaItem._id, type);
+                                      }}
+                                    >
+                                      Cancel
+                                    </Button>
+                                    <Button
+                                      className="text-white px-4"
+                                      onClick={handleSubmit(onSubmitScore)}
+                                      disabled={submitScoreMutation.isPending}
+                                    >
+                                      {submitScoreMutation.isPending
+                                        ? "Updating..."
+                                        : "Update Score"}
+                                    </Button>
+                                  </div>
+                                ) : (
+                                  <div className="p-4 flex justify-end gap-2 border-t border-gray-200">
+                                    <Button
+                                      variant="outline"
+                                      className="px-4"
+                                      onClick={() => {
+                                        setEditingCriteriaId(criteriaItem._id);
+                                        const type = criteriaItem.criteria.pass_fail ? "pass_fail" : "weight";
+                                        const existingScoring = criteriaItem.scoring;
+                                        if (existingScoring) {
+                                          const scoreValue =
+                                            type === "pass_fail"
+                                              ? existingScoring.scoring.pass_fail
+                                              : typeof existingScoring.scoring.weight === "number" && existingScoring.scoring.weight > 0
+                                                ? existingScoring.scoring.weight / 20
+                                                : "";
+                                          reset({
+                                            comment: existingScoring.comment || "",
+                                            score: scoreValue,
+                                            type: type as "pass_fail" | "weight",
+                                          });
+                                        }
+                                      }}
+                                    >
+                                      Edit Score
+                                    </Button>
+                                  </div>
+                                )
+                              )
                             )}
                           </>
                         )}
