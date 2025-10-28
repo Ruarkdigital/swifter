@@ -137,6 +137,7 @@ const VendorOnboardingPage = () => {
           );
           return;
         }
+        // console.log({ decoded })
 
         forge.setValue("name", decoded.name || "");
         forge.setValue("emailAddress", decoded.email || "");
@@ -149,7 +150,7 @@ const VendorOnboardingPage = () => {
         );
       }
     }
-  }, [encodedData, decryptData, forge.setValue, toast]);
+  }, [encodedData, decryptData]);
 
   const queryClient = useQueryClient();
 
@@ -214,7 +215,7 @@ const VendorOnboardingPage = () => {
           const uploadResponse = await uploadFile(fileFormData);
           uploadedFiles = uploadResponse.data?.data || [];
         } catch (uploadError) {
-          console.log("File upload failed:", uploadError);
+          // console.log("File upload failed:", uploadError);
           // Don't return here - continue with registration even if file upload fails
           toast.error(
             "File Upload Warning",
@@ -291,6 +292,7 @@ const VendorOnboardingPage = () => {
             {...{
               control: forge.control,
               onSubmit: onSubmit,
+              debug: true,
             }}
           >
             {currentStep === 1 && <VendorStep1Form />}
