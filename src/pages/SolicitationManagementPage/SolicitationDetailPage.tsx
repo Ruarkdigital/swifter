@@ -30,9 +30,10 @@ import { ApiResponse, ApiResponseError } from "@/types";
 import { ConfirmAlert } from "@/components/layouts/ConfirmAlert";
 import { useToastHandler } from "@/hooks/useToaster";
 import { useUserRole } from "@/hooks/useUserRole";
-import { DataTable } from "@/components/layouts/DataTable";
+import { DataTable, createExpandButton, hasChildren, getSubRows } from "@/components/layouts/DataTable";
 import { ColumnDef, PaginationState } from "@tanstack/react-table";
 import { PageLoader } from "@/components/ui/PageLoader";
+import { EvaluatorsGroupSubTable } from "./components/EvaluatorsGroupSubTable";
 import {
   getStatusLabel,
   getStatusColorClass,
@@ -455,25 +456,9 @@ export const SolicitationDetailPage = () => {
   const proposalStatusCounts =
     solicitationData?.data?.data?.proposalStatusCounts;
 
-  // Use API data for evaluators or fallback to mock data
-  const evaluators = useMemo(() => {
-    const evaluation = evaluatorsData?.data?.data;
-    if (evaluation) {
-      let evaluationGroup: EvaluatorElement[] = [];
-      evaluation?.groups?.forEach((item) => {
-        let groupName = item.groupName;
-        const updatedEvaluator = item.evaluators.map((item) => ({
-          ...item,
-          groupName,
-        }));
-
-        evaluationGroup.push(...updatedEvaluator);
-      });
-      
-      return evaluationGroup;
-    }
-    // Fallback to mock data if API is not available
-    return [];
+  // Group-level data for evaluators (use API groups directly)
+  const evaluatorGroups = useMemo(() => {
+    return evaluatorsData?.data?.data?.groups || [];
   }, [evaluatorsData]);
 
   console.log({ solicitation })
@@ -490,19 +475,20 @@ export const SolicitationDetailPage = () => {
     );
   }, [solicitation, searchQuery]);
 
-  // Filter evaluators based on search query
-  const filteredEvaluators = useMemo(() => {
-    if (!evaluatorSearchQuery) return evaluators;
-    return evaluators.filter(
-      (evaluator) =>
-        evaluator.name
-          .toLowerCase()
-          .includes(evaluatorSearchQuery.toLowerCase()) ||
-        evaluator.email
-          .toLowerCase()
-          .includes(evaluatorSearchQuery.toLowerCase())
-    );
-  }, [evaluators, evaluatorSearchQuery]);
+  // Filter evaluator groups based on search query (matches group name or evaluator name/email)
+  const filteredEvaluatorGroups = useMemo(() => {
+    const q = evaluatorSearchQuery.trim().toLowerCase();
+    if (!q) return evaluatorGroups;
+    return evaluatorGroups.filter((group) => {
+      const inGroupName = group.groupName?.toLowerCase().includes(q);
+      const inMembers = (group.evaluators || []).some(
+        (ev) =>
+          ev.name?.toLowerCase().includes(q) ||
+          ev.email?.toLowerCase().includes(q)
+      );
+      return inGroupName || inMembers;
+    });
+  }, [evaluatorGroups, evaluatorSearchQuery]);
 
   const handleBack = () => {
     navigate(-1);
@@ -676,13 +662,13 @@ export const SolicitationDetailPage = () => {
         </div>
       ),
     },
-    {
-      accessorKey: "groupName",
-      header: "Group",
-      cell: ({ row }) => (
-        <span className="">{row.getValue("groupName") || "-"}</span>
-      ),
-    },
+    // {
+    //   accessorKey: "groupName",
+    //   header: "Group",
+    //   cell: ({ row }) => (
+    //     <span className="">{row.getValue("groupName") || "-"}</span>
+    //   ),
+    // },
     {
       accessorKey: "assignedDate",
       header: "Date",
@@ -816,6 +802,48 @@ export const SolicitationDetailPage = () => {
             </div>
           )}
         </>
+      ),
+    },
+  ];
+
+  // Define evaluator group table columns (with expand control)
+  const evaluatorGroupColumns: ColumnDef<Group>[] = [
+    {
+      id: "expander",
+      header: "",
+      size: 40,
+      cell: ({ row }) => (row.getCanExpand() ? createExpandButton(row) : null),
+    },
+    {
+      accessorKey: "groupName",
+      header: "Group",
+      cell: ({ row }) => (
+        <div className="flex items-center gap-2">
+          <span className="font-medium">{row.original.groupName}</span>
+          {typeof row.original.groupCompletionRate === "number" && (
+            <span className="text-xs text-gray-500 dark:text-gray-400">
+              {Math.round(row.original.groupCompletionRate)}% complete
+            </span>
+          )}
+        </div>
+      ),
+    },
+    {
+      accessorKey: "totalEvaluators",
+      header: "Evaluators",
+      cell: ({ row }) => (
+        <span className="text-sm text-gray-700 dark:text-gray-300">
+          {row.original.totalEvaluators}
+        </span>
+      ),
+    },
+    {
+      accessorKey: "completedEvaluators",
+      header: "Completed",
+      cell: ({ row }) => (
+        <span className="text-sm text-gray-700 dark:text-gray-300">
+          {row.original.completedEvaluators}
+        </span>
       ),
     },
   ];
@@ -1413,7 +1441,7 @@ export const SolicitationDetailPage = () => {
               />
             </div>
 
-            {/* Evaluators Table */}
+            {/* Evaluators by Group (expand to view members) */}
             <DataTable
               header={() => (
                 <div className="flex items-center gap-3 w-full py-5 px-5 rounded-t-2xl">
@@ -1435,19 +1463,29 @@ export const SolicitationDetailPage = () => {
                   </div>
                 </div>
               )}
-              data={filteredEvaluators}
+              data={filteredEvaluatorGroups}
               classNames={{
                 container:
                   "bg-white dark:bg-slate-950 rounded-xl px-3 border border-gray-300 dark:border-slate-600",
               }}
-              columns={evaluatorColumns}
+              columns={evaluatorGroupColumns}
               options={{
                 disableSelection: true,
                 isLoading: isLoadingEvaluators,
-                totalCounts: filteredEvaluators?.length || 0,
+                totalCounts: filteredEvaluatorGroups?.length || 0,
                 manualPagination: false,
                 setPagination,
                 pagination,
+                enableExpanding: true,
+                getSubRows: (row) => getSubRows(row as any, "evaluators"),
+                getRowCanExpand: (row) => hasChildren(row.original as any, "evaluators"),
+                renderSubComponent: ({ row }) => (
+                  <EvaluatorsGroupSubTable
+                    group={row.original as Group}
+                    columns={evaluatorColumns}
+                    isLoading={isLoadingEvaluators}
+                  />
+                ),
               }}
               emptyPlaceholder={
                 <div className="flex flex-col items-center justify-center py-16 px-4">

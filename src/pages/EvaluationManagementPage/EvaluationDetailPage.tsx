@@ -605,7 +605,7 @@ const EvaluationDetailPage: React.FC = () => {
       header: "Progress",
       cell: ({ row }) => {
         console.log({ data: row.original });
-        return <span className="font-medium">{row.original.progress}%</span>;
+        return <span className="font-medium">{row.original.progress?.toFixed?.(0) || 0}%</span>;
       },
     },
 
