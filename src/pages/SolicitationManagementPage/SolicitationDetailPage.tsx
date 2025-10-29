@@ -461,8 +461,6 @@ export const SolicitationDetailPage = () => {
     return evaluatorsData?.data?.data?.groups || [];
   }, [evaluatorsData]);
 
-  console.log({ solicitation })
-
   // Filter vendor proposals based on search query
   const filteredProposals = useMemo(() => {
     if (!searchQuery) return solicitation?.vendors ?? [];
@@ -749,9 +747,9 @@ export const SolicitationDetailPage = () => {
                   type="info"
                   primaryButtonText="Send Reminder"
                   secondaryButtonText="Cancel"
-                  onPrimaryAction={() =>
-                    remindEvaluatorMutation.mutate(row.original._id)
-                  }
+                  onPrimaryAction={() =>{
+                    remindEvaluatorMutation.mutate(row.original.id)
+                  }}
                   isLoading={remindEvaluatorMutation.isPending}
                   trigger={
                     <Button
