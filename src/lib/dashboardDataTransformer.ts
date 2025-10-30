@@ -1895,9 +1895,9 @@ export class DashboardDataTransformer {
         "evaluator",
         "general",
         {
-          id: update?.evaluation?._id,
+          id: update?.evaluationGroup?._id,
           name: update?.evaluation?.solicitation?.name,
-          solId: update?.evaluation?.solicitation?._id,
+          solId: update?.evaluation?._id,
         }
       ),
       type: update.type || "evaluation",
