@@ -112,7 +112,9 @@ function applyDynamicStatusTextReplacement(
   if (userRole === "procurement" && activityType === "general") {
     const lower = statusText.toLowerCase();
     const toEvaluation = lower.includes("evaluation");
-    const href = `${toEvaluation ? "/dashboard/evaluation" : "/dashboard/solicitation"}/${data.id}`;
+    const href = `${
+      toEvaluation ? "/dashboard/evaluation" : "/dashboard/solicitation"
+    }/${data.id}`;
     return statusText.replace(
       data.name,
       `<a href="${href}" class="underline underline-offset-4 text-blue-600">${data.name}</a>`
@@ -1845,35 +1847,37 @@ export class DashboardDataTransformer {
       return [];
     }
 
-    const getFormattedText = (
-      statusText: string,
-      data: { id: string; name: string }
-    ) => {
-      const actions = applyDynamicStatusTextReplacement(
-        statusText,
-        "evaluator",
-        "myActions",
-        data
-      );
+    // const getFormattedText = (
+    //   statusText: string,
+    //   data: { id: string; name: string }
+    // ) => {
+    //   const actions = applyDynamicStatusTextReplacement(
+    //     statusText,
+    //     "evaluator",
+    //     "myActions",
+    //     data
+    //   );
 
-      return actions;
-    };
-
+    //   return actions;
+    // };
+    // console.log(action);
     return data.map((action: any, index: number) => ({
       id: action?.evaluation._id || `action-${index}`,
       title: action?.evaluation.solicitation?.name,
-      text: getFormattedText(action.statusText, {
-        id: action?.evaluation?._id,
-        name: action?.evaluation?.solicitation?.name,
-      }),
+      text: applyDynamicStatusTextReplacement(
+        action.statusText,
+        "evaluator",
+        "general",
+        {
+          id: action?.evaluationGroup?._id,
+          name: action?.evaluation?.solicitation?.name,
+          solId: action?.evaluation?._id,
+        }
+      ),
       type: action.type || "unknown",
-      date:
-       action.createdAt
-          ? format(
-              new Date(action.createdAt),
-              "MMM d, yyyy h:mm a 'GMT'xxx"
-            )
-          : undefined,
+      date: action.createdAt
+        ? format(new Date(action.createdAt), "MMM d, yyyy h:mm a 'GMT'xxx")
+        : undefined,
     }));
   }
 
@@ -1901,13 +1905,12 @@ export class DashboardDataTransformer {
         }
       ),
       type: update.type || "evaluation",
-      date:
-        update.createdAt
-          ? format(
-              new Date(update.date || update.updatedAt || update.createdAt),
-              "MMM d, yyyy h:mm a 'GMT'xxx"
-            )
-          : undefined,
+      date: update.createdAt
+        ? format(
+            new Date(update.date || update.updatedAt || update.createdAt),
+            "MMM d, yyyy h:mm a 'GMT'xxx"
+          )
+        : undefined,
     }));
   }
 
@@ -1957,11 +1960,14 @@ export class DashboardDataTransformer {
 
     if (Array.isArray(data)) {
       // Legacy array format: [{ status: string, count: number }, ...]
-      const map = (data as any[]).reduce((acc: Record<string, number>, item: any) => {
-        const key = String(item?.status || "").toLowerCase();
-        acc[key] = (item?.count as number) || 0;
-        return acc;
-      }, {});
+      const map = (data as any[]).reduce(
+        (acc: Record<string, number>, item: any) => {
+          const key = String(item?.status || "").toLowerCase();
+          acc[key] = (item?.count as number) || 0;
+          return acc;
+        },
+        {}
+      );
       confirmed = map["confirmed"] || map["active"] || 0;
       declined = map["declined"] || 0;
       pending = map["invited"] || map["pending"] || map["no_response"] || 0;
@@ -1973,9 +1979,14 @@ export class DashboardDataTransformer {
       declined = obj["declined"] || 0;
       pending = obj["invited"] || obj["pending"] || 0;
       all =
-        (obj["confirmed"] || 0) + (obj["declined"] || 0) + (obj["invited"] || 0);
+        (obj["confirmed"] || 0) +
+        (obj["declined"] || 0) +
+        (obj["invited"] || 0);
       // Fallback to legacy object keys if present
-      if (!all && (obj["all"] || obj["draft"] || obj["active"] || obj["pending"])) {
+      if (
+        !all &&
+        (obj["all"] || obj["draft"] || obj["active"] || obj["pending"])
+      ) {
         all = obj["all"] || 0;
         confirmed = obj["active"] || confirmed;
         declined = obj["declined"] || declined;
@@ -2120,8 +2131,7 @@ export class DashboardDataTransformer {
           }
         ),
         title: update?.solicitation?.name ?? "Unknown",
-        time:
-           update?.createdAt
+        time: update?.createdAt
           ? `${format(new Date(update.createdAt), "MMM d, yyyy h:mm a")} ${
               update.timezone || "GMT"
             }`
