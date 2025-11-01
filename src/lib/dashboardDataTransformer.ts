@@ -13,7 +13,7 @@ import {
 } from "@/hooks/useDashboardData";
 import { DashboardConfig } from "@/config/dashboardConfig";
 import { applyConsistentColors } from "./chartColorUtils";
-import { format } from "date-fns";
+import { formatDateTZ } from "./utils";
 
 // Dynamic link generation utility
 type UserRole = "procurement" | "evaluator" | "vendor";
@@ -1876,7 +1876,7 @@ export class DashboardDataTransformer {
       ),
       type: action.type || "unknown",
       date: action.createdAt
-        ? format(new Date(action.createdAt), "MMM d, yyyy h:mm a 'GMT'xxx")
+        ? formatDateTZ(action.createdAt, "MMM d, yyyy h:mm a 'GMT'xxx")
         : undefined,
     }));
   }
@@ -1906,8 +1906,8 @@ export class DashboardDataTransformer {
       ),
       type: update.type || "evaluation",
       date: update.createdAt
-        ? format(
-            new Date(update.date || update.updatedAt || update.createdAt),
+        ? formatDateTZ(
+            update.date || update.updatedAt || update.createdAt,
             "MMM d, yyyy h:mm a 'GMT'xxx"
           )
         : undefined,
@@ -2056,7 +2056,7 @@ export class DashboardDataTransformer {
             action?.solicitation?.name ?? action?.evaluation?.name ?? "Unknown",
         }),
         date: action.createdAt
-          ? format(new Date(action.createdAt), "MMM d, yyyy h:mm a")
+          ? formatDateTZ(action.createdAt, "MMM d, yyyy h:mm a")
           : null,
         title: action?.solicitation?.name ?? "Unknown Solicitation",
       };
@@ -2108,11 +2108,11 @@ export class DashboardDataTransformer {
           time:
             update?.time ||
             (campaign.createdAt
-              ? `${format(
-                  new Date(campaign.createdAt),
+              ? `${formatDateTZ(
+                  campaign.createdAt,
                   "MMM d, yyyy"
-                )} • ${format(new Date(campaign.createdAt), "h:mm a 'GMT'xxx")}`
-              : `${format(new Date(), "MMM d, yyyy")} • ${format(
+                )} • ${formatDateTZ(campaign.createdAt, "h:mm a 'GMT'xxx")}`
+              : `${formatDateTZ(new Date(), "MMM d, yyyy")} • ${formatDateTZ(
                   new Date(),
                   "h:mm a 'GMT'xxx"
                 )}`),
@@ -2132,7 +2132,7 @@ export class DashboardDataTransformer {
         ),
         title: update?.solicitation?.name ?? "Unknown",
         time: update?.createdAt
-          ? `${format(new Date(update.createdAt), "MMM d, yyyy h:mm a")} ${
+          ? `${formatDateTZ(update.createdAt, "MMM d, yyyy h:mm a")} ${
               update.timezone || "GMT"
             }`
           : undefined,
@@ -2171,11 +2171,11 @@ export class DashboardDataTransformer {
       title: action?.solicitation?.name ?? "Unknown",
       date:
         action.createdAt || action.date
-          ? format(
-              new Date(action.createdAt || action.date),
+          ? formatDateTZ(
+              action.createdAt || action.date,
               "MMM d, yyyy h:mm a 'GMT'xxx"
             )
-          : format(new Date(), "MMM d, yyyy h:mm a 'GMT'xxx"),
+          : formatDateTZ(new Date(), "MMM d, yyyy h:mm a 'GMT'xxx"),
       status: action.status || "active",
     }));
   }
@@ -2225,11 +2225,11 @@ export class DashboardDataTransformer {
               ? `<strong>${campaign.subject}</strong> — ${campaign.subtitle}`
               : `<strong>${campaign.subject}</strong>`),
           date: campaign.createdAt
-            ? `${format(
-                new Date(campaign.createdAt),
+            ? `${formatDateTZ(
+                campaign.createdAt,
                 "MMM d, yyyy h:mm a"
               )} GMT`
-            : format(new Date(), "MMM d, yyyy h:mm a 'GMT'xxx"),
+            : formatDateTZ(new Date(), "MMM d, yyyy h:mm a 'GMT'xxx"),
           status: update?.status || "active",
           campaign,
         };
@@ -2257,8 +2257,8 @@ export class DashboardDataTransformer {
           }
         ),
         date: update?.createdAt
-          ? `${format(new Date(update.createdAt), "MMM d, yyyy h:mm a")} ${
-              update.timezone || "GMT"
+          ? `${formatDateTZ(update.createdAt, "MMM d, yyyy h:mm a")} ${
+              update.timezone || ""
             }`
           : undefined,
         status: update?.status || "active",
@@ -2312,11 +2312,11 @@ export class DashboardDataTransformer {
               ? `<strong>${campaign.subject}</strong> — ${campaign.subtitle}`
               : `<strong>${campaign.subject}</strong>`),
           date: campaign.createdAt
-            ? `${format(
-                new Date(campaign.createdAt),
+            ? `${formatDateTZ(
+                campaign.createdAt,
                 "MMM d, yyyy h:mm a"
               )} GMT`
-            : format(new Date(), "MMM d, yyyy h:mm a 'GMT'xxx"),
+            : formatDateTZ(new Date(), "MMM d, yyyy h:mm a 'GMT'xxx"),
           status: update?.status || "active",
           campaign,
         };
@@ -2345,11 +2345,11 @@ export class DashboardDataTransformer {
         ),
         date:
           update?.updatedAt || update?.date || update?.createdAt
-            ? `${format(
-                new Date(update.updatedAt || update.date || update.createdAt),
+            ? `${formatDateTZ(
+                update.updatedAt || update.date || update.createdAt,
                 "MMM d, yyyy h:mm a"
               )} ${update.timezone || "GMT"}`
-            : format(new Date(), "MMM d, yyyy h:mm a 'GMT'xxx"),
+            : formatDateTZ(new Date(), "MMM d, yyyy h:mm a 'GMT'xxx"),
         status: update?.status || "active",
       };
     });
