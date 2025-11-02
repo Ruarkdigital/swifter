@@ -79,8 +79,9 @@ function generateDynamicLink(
   userRole: UserRole,
   activityType: ActivityType,
   action: string,
-  data: { id: string; name: string }
+  data: { id: string; name: string, solId?: string }
 ): string | null {
+  console.log({ action, data })
   const roleMapping = ACTIVITY_LINK_MAPPINGS[userRole];
   if (!roleMapping) return null;
 
@@ -90,7 +91,7 @@ function generateDynamicLink(
   const basePath = activityMapping[action];
   if (!basePath) return null;
 
-  return `${basePath}/${data.id}`;
+  return `${basePath}/${data.id ?? data?.solId}`;
 }
 
 /**
@@ -110,11 +111,13 @@ function applyDynamicStatusTextReplacement(
   // Special rule for Procurement General Updates:
   // Only route to evaluation page if "evaluation" is mentioned in statusText; otherwise route to solicitation.
   if (userRole === "procurement" && activityType === "general") {
+
     const lower = statusText.toLowerCase();
     const toEvaluation = lower.includes("evaluation");
     const href = `${
       toEvaluation ? "/dashboard/evaluation" : "/dashboard/solicitation"
     }/${data.id}`;
+
     return statusText.replace(
       data.name,
       `<a href="${href}" class="underline underline-offset-4 text-blue-600">${data.name}</a>`
@@ -135,6 +138,7 @@ function applyDynamicStatusTextReplacement(
   for (const action of Object.keys(roleMapping)) {
     if (statusText.includes(action)) {
       const href = generateDynamicLink(userRole, activityType, action, data);
+      
       if (href) {
         return statusText.replace(
           data.name,
@@ -2148,25 +2152,23 @@ export class DashboardDataTransformer {
       return [];
     }
 
-    const getFormattedText = (
-      statusText: string,
-      data: { id: string; name: string }
-    ) => {
-      return applyDynamicStatusTextReplacement(
-        statusText,
-        "procurement",
-        "myActions",
-        data
-      );
-    };
-
     return data.map((action: any, index: number) => ({
       id: action?.solicitation?._id || `action-${index}`,
-      text: getFormattedText(action.statusText, {
-        id: action?.solicitation?._id || action?.evaluation?._id,
-        name:
-          action?.solicitation?.name || action?.evaluation?.name || "Unknown",
-      }),
+      text: applyDynamicStatusTextReplacement(
+        action.statusText,
+        "procurement",
+        "myActions",
+        {
+          id: action?.evaluation?._id ?? action?.solicitation?._id,
+          name: action?.solicitation?.name,
+          solId: action?.solicitation?._id,
+        }
+      ),
+      // text: getFormattedText(action.statusText, {
+      //   id: action?.solicitation?._id || action?.evaluation?._id,
+      //   name:
+      //     action?.solicitation?.name || action?.evaluation?.name || "Unknown",
+      // }),
       type: action?.replace?.("_", " ") || "",
       title: action?.solicitation?.name ?? "Unknown",
       date:
