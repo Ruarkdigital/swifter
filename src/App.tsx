@@ -25,7 +25,13 @@ const RenderLoader = () => {
 
 // Create router with proper configuration
 const router = createBrowserRouter(routes);
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 30000,
+    },
+  },
+});
 
 function App() {
   const isAuthenticated = useAuthentication();
