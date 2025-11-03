@@ -1885,7 +1885,7 @@ export class DashboardDataTransformer {
       ),
       type: action.type || "unknown",
       date: action.createdAt
-        ? formatDateTZ(action.createdAt, "MMM d, yyyy h:mm a 'GMT'xxx")
+        ? formatDateTZ(action.createdAt, "MMM d, yyyy h:mm a 'GMT'xxx", action.solicitation?.timezone || "")
         : undefined,
     }));
   }
@@ -1918,7 +1918,8 @@ export class DashboardDataTransformer {
       date: update.createdAt
         ? formatDateTZ(
             update.date || update.updatedAt || update.createdAt,
-            "MMM d, yyyy h:mm a 'GMT'xxx"
+            "MMM d, yyyy h:mm a 'GMT'xxx",
+            update.solicitation?.timezone || ""
           )
         : undefined,
     }));
@@ -2067,7 +2068,7 @@ export class DashboardDataTransformer {
           evaId: action?.evaluation?._id,
         }),
         date: action.createdAt
-          ? formatDateTZ(action.createdAt, "MMM d, yyyy h:mm a")
+          ? formatDateTZ(action.createdAt, "MMM d, yyyy h:mm a", action.solicitation?.timezone || "")
           : null,
         title: action?.solicitation?.name ?? "Unknown Solicitation",
       };
@@ -2104,6 +2105,7 @@ export class DashboardDataTransformer {
           campaignType: update?.campaignType ?? update?.type ?? "campaign",
           createdAt:
             update?.createdAt ?? update?.date ?? new Date().toISOString(),
+          timezone: update?.solicitation?.timezone ?? "",
         };
 
         return {
@@ -2121,11 +2123,13 @@ export class DashboardDataTransformer {
             (campaign.createdAt
               ? `${formatDateTZ(
                   campaign.createdAt,
-                  "MMM d, yyyy"
-                )} • ${formatDateTZ(campaign.createdAt, "h:mm a 'GMT'xxx")}`
+                  "MMM d, yyyy",
+                  campaign?.timezone
+                )} • ${formatDateTZ(campaign.createdAt, "h:mm a 'GMT'xxx", campaign?.timezone || "")}`
               : `${formatDateTZ(new Date(), "MMM d, yyyy")} • ${formatDateTZ(
                   new Date(),
-                  "h:mm a 'GMT'xxx"
+                  "h:mm a 'GMT'xxx",
+                  campaign?.timezone || ""
                 )}`),
         };
       }
@@ -2143,7 +2147,7 @@ export class DashboardDataTransformer {
         ),
         title: update?.solicitation?.name ?? "Unknown",
         time: update?.createdAt
-          ? `${formatDateTZ(update.createdAt, "MMM d, yyyy h:mm a")} ${
+          ? `${formatDateTZ(update.createdAt, "MMM d, yyyy h:mm a", update?.solicitation?.timezone || "")} ${
               update.timezone || "GMT"
             }`
           : undefined,
@@ -2159,6 +2163,7 @@ export class DashboardDataTransformer {
       return [];
     }
 
+    console.log({ data })
     return data.map((action: any, index: number) => ({
       id: action?.solicitation?._id || `action-${index}`,
       text: applyDynamicStatusTextReplacement(
@@ -2172,20 +2177,16 @@ export class DashboardDataTransformer {
           evaGroupId: action?.evaluationGroup?._id,
         }
       ),
-      // text: getFormattedText(action.statusText, {
-      //   id: action?.solicitation?._id || action?.evaluation?._id,
-      //   name:
-      //     action?.solicitation?.name || action?.evaluation?.name || "Unknown",
-      // }),
       type: action?.replace?.("_", " ") || "",
       title: action?.solicitation?.name ?? "Unknown",
-      date:
-        action.createdAt || action.date
+      date: 
+        action?.solicitation?.createdAt
           ? formatDateTZ(
-              action.createdAt || action.date,
-              "MMM d, yyyy h:mm a 'GMT'xxx"
+              action?.solicitation?.createdAt,
+              "MMM d, yyyy h:mm a 'GMT'xxx",
+              action?.solicitation?.timezone
             )
-          : formatDateTZ(new Date(), "MMM d, yyyy h:mm a 'GMT'xxx"),
+          : null,
       status: action.status || "active",
     }));
   }
@@ -2223,6 +2224,7 @@ export class DashboardDataTransformer {
             update?.createdAt ??
             update?.date ??
             new Date().toISOString(),
+          timezone: update?.solicitation?.timezone || "",
         };
 
         return {
@@ -2235,8 +2237,8 @@ export class DashboardDataTransformer {
               ? `<strong>${campaign.subject}</strong> — ${campaign.subtitle}`
               : `<strong>${campaign.subject}</strong>`),
           date: campaign.createdAt
-            ? `${formatDateTZ(campaign.createdAt, "MMM d, yyyy h:mm a")} GMT`
-            : formatDateTZ(new Date(), "MMM d, yyyy h:mm a 'GMT'xxx"),
+            ? `${formatDateTZ(campaign.createdAt, "MMM d, yyyy h:mm a", campaign.timezone || "")} `
+            : formatDateTZ(new Date(), "MMM d, yyyy h:mm a 'GMT'xxx", campaign.timezone || ""),
           status: update?.status || "active",
           campaign,
         };
@@ -2263,7 +2265,7 @@ export class DashboardDataTransformer {
         ),
         date: update?.createdAt
           ? `${formatDateTZ(update.createdAt, "MMM d, yyyy h:mm a")} ${
-              update.timezone || ""
+              update.solicitation.timezone || ""
             }`
           : undefined,
         status: update?.status || "active",
@@ -2305,6 +2307,7 @@ export class DashboardDataTransformer {
             update?.createdAt ??
             update?.date ??
             new Date().toISOString(),
+          timezone: update?.solicitation?.timezone || "",
         };
 
         return {
@@ -2317,8 +2320,8 @@ export class DashboardDataTransformer {
               ? `<strong>${campaign.subject}</strong> — ${campaign.subtitle}`
               : `<strong>${campaign.subject}</strong>`),
           date: campaign.createdAt
-            ? `${formatDateTZ(campaign.createdAt, "MMM d, yyyy h:mm a")} GMT`
-            : formatDateTZ(new Date(), "MMM d, yyyy h:mm a 'GMT'xxx"),
+            ? `${formatDateTZ(campaign.createdAt, "MMM d, yyyy h:mm a", campaign.timezone || "")} `
+            : formatDateTZ(new Date(), "MMM d, yyyy h:mm a 'GMT'xxx", campaign.timezone || ""),
           status: update?.status || "active",
           campaign,
         };
@@ -2348,8 +2351,8 @@ export class DashboardDataTransformer {
             ? `${formatDateTZ(
                 update.updatedAt || update.date || update.createdAt,
                 "MMM d, yyyy h:mm a"
-              )} ${update.timezone || "GMT"}`
-            : formatDateTZ(new Date(), "MMM d, yyyy h:mm a 'GMT'xxx"),
+              )} ${update.solicitation?.timezone || ""}`
+            : formatDateTZ(new Date(), "MMM d, yyyy h:mm a 'GMT'xxx", update.solicitation?.timezone || ""),
         status: update?.status || "active",
       };
     });

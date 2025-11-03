@@ -96,6 +96,7 @@ export interface VendorMyActions {
   solicitation?: {
     _id: string;
     name: string;
+    timezone?: string;
     vendors: {
       status: string;
     }[];
