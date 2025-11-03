@@ -79,9 +79,8 @@ function generateDynamicLink(
   userRole: UserRole,
   activityType: ActivityType,
   action: string,
-  data: { id: string; name: string, solId?: string }
+  data: { name: string; solId?: string; evaId?: string; evaGroupId?: string }
 ): string | null {
-  console.log({ action, data })
   const roleMapping = ACTIVITY_LINK_MAPPINGS[userRole];
   if (!roleMapping) return null;
 
@@ -91,7 +90,11 @@ function generateDynamicLink(
   const basePath = activityMapping[action];
   if (!basePath) return null;
 
-  return `${basePath}/${data.id ?? data?.solId}`;
+  const isEvaluation = basePath.includes("/evaluation") ||
+    action.toLowerCase().includes("evaluation");
+  const targetId = isEvaluation ? data.evaId : data.solId;
+
+  return targetId ? `${basePath}/${targetId}` : null;
 }
 
 /**
@@ -106,17 +109,18 @@ function applyDynamicStatusTextReplacement(
   statusText: string,
   userRole: UserRole,
   activityType: ActivityType,
-  data: { id: string; name: string; solId?: string }
+  data: { name: string; solId?: string; evaId?: string; evaGroupId?: string }
 ): string {
   // Special rule for Procurement General Updates:
   // Only route to evaluation page if "evaluation" is mentioned in statusText; otherwise route to solicitation.
   if (userRole === "procurement" && activityType === "general") {
-
     const lower = statusText.toLowerCase();
     const toEvaluation = lower.includes("evaluation");
-    const href = `${
-      toEvaluation ? "/dashboard/evaluation" : "/dashboard/solicitation"
-    }/${data.id}`;
+    const base = toEvaluation
+      ? "/dashboard/evaluation"
+      : "/dashboard/solicitation";
+    const targetId = toEvaluation ? data.evaId : data.solId;
+    const href = targetId ? `${base}/${targetId}` : base;
 
     return statusText.replace(
       data.name,
@@ -130,7 +134,7 @@ function applyDynamicStatusTextReplacement(
     // Fallback to original behavior if no mapping exists
     return statusText.replace(
       data.name,
-      `<a href="/dashboard/solicitation/${data.id}" class="underline underline-offset-4 text-blue-600">${data.name}</a>`
+      `<a href="/dashboard/solicitation/${data.solId ?? ""}" class="underline underline-offset-4 text-blue-600">${data.name}</a>`
     );
   }
 
@@ -138,7 +142,7 @@ function applyDynamicStatusTextReplacement(
   for (const action of Object.keys(roleMapping)) {
     if (statusText.includes(action)) {
       const href = generateDynamicLink(userRole, activityType, action, data);
-      
+
       if (href) {
         return statusText.replace(
           data.name,
@@ -153,14 +157,14 @@ function applyDynamicStatusTextReplacement(
   if (userRole === "evaluator") {
     return statusText.replace(
       data.name,
-      `<a href="/dashboard/evaluation/assigned/${data.solId}/${data.id}" class="underline underline-offset-4 text-blue-600">${data.name}</a>`
+      `<a href="/dashboard/evaluation/assigned/${data.evaId ?? ""}/${data.evaGroupId ?? ""}" class="underline underline-offset-4 text-blue-600">${data.name}</a>`
     );
   }
 
   // Fallback to original behavior if no action matches
   return statusText.replace(
     data.name,
-    `<a href="/dashboard/solicitation/${data.id}" class="underline underline-offset-4 text-blue-600">${data.name}</a>`
+    `<a href="/dashboard/solicitation/${data.solId ?? ""}" class="underline underline-offset-4 text-blue-600">${data.name}</a>`
   );
 }
 
@@ -1873,9 +1877,10 @@ export class DashboardDataTransformer {
         "evaluator",
         "general",
         {
-          id: action?.evaluationGroup?._id,
           name: action?.evaluation?.solicitation?.name,
-          solId: action?.evaluation?._id,
+          solId: action?.evaluation?.solicitation?._id,
+          evaId: action?.evaluation?._id,
+          evaGroupId: action?.evaluationGroup?._id,
         }
       ),
       type: action.type || "unknown",
@@ -1903,9 +1908,10 @@ export class DashboardDataTransformer {
         "evaluator",
         "general",
         {
-          id: update?.evaluationGroup?._id,
           name: update?.evaluation?.solicitation?.name,
-          solId: update?.evaluation?._id,
+          solId: update?.evaluation?.solicitation?._id,
+          evaId: update?.evaluation?._id,
+          evaGroupId: update?.evaluationGroup?._id,
         }
       ),
       type: update.type || "evaluation",
@@ -2041,7 +2047,7 @@ export class DashboardDataTransformer {
 
     const getFormattedText = (
       statusText: string,
-      data: { id: string; name: string }
+      data: { name: string; solId?: string; evaId?: string }
     ) => {
       return applyDynamicStatusTextReplacement(
         statusText,
@@ -2055,9 +2061,10 @@ export class DashboardDataTransformer {
       return {
         id: action._id || `vendor-action-${index}`,
         text: getFormattedText(action.statusText, {
-          id: action?.solicitation?._id ?? action?.evaluation?._id ?? "",
           name:
             action?.solicitation?.name ?? action?.evaluation?.name ?? "Unknown",
+          solId: action?.solicitation?._id,
+          evaId: action?.evaluation?._id,
         }),
         date: action.createdAt
           ? formatDateTZ(action.createdAt, "MMM d, yyyy h:mm a")
@@ -2130,8 +2137,8 @@ export class DashboardDataTransformer {
           "vendor",
           "general",
           {
-            id: update?.solicitation?._id,
             name: update?.solicitation?.name ?? "Unknown",
+            solId: update?.solicitation?._id,
           }
         ),
         title: update?.solicitation?.name ?? "Unknown",
@@ -2159,9 +2166,10 @@ export class DashboardDataTransformer {
         "procurement",
         "myActions",
         {
-          id: action?.evaluation?._id ?? action?.solicitation?._id,
           name: action?.solicitation?.name,
           solId: action?.solicitation?._id,
+          evaId: action?.evaluation?._id,
+          evaGroupId: action?.evaluationGroup?._id,
         }
       ),
       // text: getFormattedText(action.statusText, {
@@ -2227,10 +2235,7 @@ export class DashboardDataTransformer {
               ? `<strong>${campaign.subject}</strong> — ${campaign.subtitle}`
               : `<strong>${campaign.subject}</strong>`),
           date: campaign.createdAt
-            ? `${formatDateTZ(
-                campaign.createdAt,
-                "MMM d, yyyy h:mm a"
-              )} GMT`
+            ? `${formatDateTZ(campaign.createdAt, "MMM d, yyyy h:mm a")} GMT`
             : formatDateTZ(new Date(), "MMM d, yyyy h:mm a 'GMT'xxx"),
           status: update?.status || "active",
           campaign,
@@ -2238,24 +2243,22 @@ export class DashboardDataTransformer {
       }
 
       const sol = update?.solicitation ?? null;
-      const evaluation = update?.evaluation ?? null;
+      const evaluation = update?.solicitation?.evaluation ?? null;
 
       const title = sol?.name ?? evaluation?.name ?? "Unknown";
-      const entityId =
-        sol?._id ?? evaluation?._id ?? update?._id ?? `update-${index}`;
       const entityName = sol?.name ?? evaluation?.name ?? "Unknown";
 
       return {
-        id: update._id || update.id || `update-${index}`,
+        id: update._id || update.id || ``,
         title,
         text: applyDynamicStatusTextReplacement(
           update?.statusText ?? "",
           "procurement",
           "general",
           {
-            id: entityId,
             name: entityName,
             solId: sol?._id,
+            evaId: evaluation?._id,
           }
         ),
         date: update?.createdAt
@@ -2314,10 +2317,7 @@ export class DashboardDataTransformer {
               ? `<strong>${campaign.subject}</strong> — ${campaign.subtitle}`
               : `<strong>${campaign.subject}</strong>`),
           date: campaign.createdAt
-            ? `${formatDateTZ(
-                campaign.createdAt,
-                "MMM d, yyyy h:mm a"
-              )} GMT`
+            ? `${formatDateTZ(campaign.createdAt, "MMM d, yyyy h:mm a")} GMT`
             : formatDateTZ(new Date(), "MMM d, yyyy h:mm a 'GMT'xxx"),
           status: update?.status || "active",
           campaign,
@@ -2328,8 +2328,6 @@ export class DashboardDataTransformer {
       const evaluation = update?.evaluation ?? null;
 
       const title = sol?.name ?? evaluation?.name ?? "Unknown";
-      const entityId =
-        sol?._id ?? evaluation?._id ?? update?._id ?? `admin-update-${index}`;
       const entityName = sol?.name ?? evaluation?.name ?? "Unknown";
 
       return {
@@ -2340,9 +2338,9 @@ export class DashboardDataTransformer {
           "procurement",
           "general",
           {
-            id: entityId,
             name: entityName,
             solId: sol?._id,
+            evaId: evaluation?._id,
           }
         ),
         date:
