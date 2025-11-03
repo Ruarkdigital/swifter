@@ -800,7 +800,7 @@ const EditAddendumDialog: React.FC<EditAddendumDialogProps> = ({
             <div className="flex items-center justify-between mb-1">
               <span className="text-xs text-gray-500">Uploading...</span>
               <span className="text-xs text-gray-700 font-medium">
-                {progress}%
+                {typeof progress === "number" ? progress.toFixed(0) : 0}%
               </span>
             </div>
             <Progress value={progress} className="h-2" variant="default" />

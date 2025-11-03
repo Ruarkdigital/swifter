@@ -27,7 +27,7 @@ export const EvaluatorsGroupSubTable: React.FC<EvaluatorsGroupSubTableProps> = (
         </div>
         {typeof group.groupCompletionRate === "number" && (
           <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
-            Completion: {Math.round(group.groupCompletionRate)}%
+            Completion: {Number(group.groupCompletionRate).toFixed(0)}%
           </span>
         )}
       </div>

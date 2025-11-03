@@ -1,10 +1,14 @@
 import React, { useRef, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Upload, Users, FileIcon, CheckCircle, AlertCircle } from "lucide-react";
 import {
-  TextDatePicker,
-} from "@/components/layouts/FormInputs/TextInput";
+  Upload,
+  Users,
+  FileIcon,
+  CheckCircle,
+  AlertCircle,
+} from "lucide-react";
+import { TextDatePicker } from "@/components/layouts/FormInputs/TextInput";
 import { TextArea } from "@/components/layouts/FormInputs/TextInput";
 import { TextFileUploader } from "@/components/layouts/FormInputs/TextFileInput";
 import { Progress } from "@/components/ui/progress";
@@ -17,7 +21,7 @@ import { ApiResponse, ApiResponseError } from "@/types";
 import { useToastHandler } from "@/hooks/useToaster";
 import { useWatch } from "react-hook-form";
 import { useUserRole } from "@/hooks/useUserRole";
-import { cn, formatDateTZ, } from "@/lib/utils";
+import { cn, formatDateTZ } from "@/lib/utils";
 
 // Base schema for form validation - deadline fields are now optional
 const baseSchema = {
@@ -66,7 +70,9 @@ const CreateAddendumDialog: React.FC<CreateAddendumDialogProps> = ({
   const { isVendor } = useUserRole();
 
   // Upload progress state
-  const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
+  const [uploadProgress, setUploadProgress] = useState<Record<string, number>>(
+    {}
+  );
   const [uploadingFiles, setUploadingFiles] = useState<string[]>([]);
   const [uploadErrors, setUploadErrors] = useState<Record<string, string>>({});
 
@@ -150,7 +156,7 @@ const CreateAddendumDialog: React.FC<CreateAddendumDialogProps> = ({
 
       // Reset upload states
       setUploadProgress({});
-      setUploadingFiles(files.map(f => f.name));
+      setUploadingFiles(files.map((f) => f.name));
       setUploadErrors({});
 
       return await postRequest({
@@ -165,10 +171,10 @@ const CreateAddendumDialog: React.FC<CreateAddendumDialogProps> = ({
               const percentCompleted = Math.round(
                 (progressEvent.loaded * 100) / progressEvent.total
               );
-              
+
               // Update progress for all files being uploaded
               const newProgress: Record<string, number> = {};
-              files.forEach(file => {
+              files.forEach((file) => {
                 newProgress[file.name] = percentCompleted;
               });
               setUploadProgress(newProgress);
@@ -185,9 +191,10 @@ const CreateAddendumDialog: React.FC<CreateAddendumDialogProps> = ({
     onError: (error) => {
       // Mark upload as failed
       setUploadingFiles([]);
-      const errorMessage = error?.response?.data?.message ?? "Failed to upload files";
+      const errorMessage =
+        error?.response?.data?.message ?? "Failed to upload files";
       toast.error("Upload Error", errorMessage);
-      
+
       // Set error for all files
       const currentFiles = getValues().documents || [];
       const newErrors: Record<string, string> = {};
@@ -195,7 +202,7 @@ const CreateAddendumDialog: React.FC<CreateAddendumDialogProps> = ({
         newErrors[file.name] = errorMessage;
       });
       setUploadErrors(newErrors);
-    }
+    },
   });
 
   // Create addendum mutation
@@ -218,8 +225,12 @@ const CreateAddendumDialog: React.FC<CreateAddendumDialogProps> = ({
       const payload = {
         // title: data.title,
         description: data.description,
-        submissionDeadline:new Date(data.submissionDeadline as unknown as Date).toISOString(),
-        questionDeadline: new Date(data.questionAcceptanceDeadline as unknown as Date).toISOString(),
+        submissionDeadline: new Date(
+          data.submissionDeadline as unknown as Date
+        ).toISOString(),
+        questionDeadline: new Date(
+          data.questionAcceptanceDeadline as unknown as Date
+        ).toISOString(),
         status: status === "publish" ? "publish" : "draft",
         files: uploadedFiles.map((file) => ({
           name: file.name,
@@ -379,10 +390,16 @@ const CreateAddendumDialog: React.FC<CreateAddendumDialogProps> = ({
       <div className="border border-gray-200 rounded-lg p-4 bg-white hover:bg-gray-50 transition-colors">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center space-x-3">
-            <div className={cn(
-              "p-2 rounded-full",
-              hasError ? "bg-red-100" : isComplete ? "bg-green-100" : "bg-blue-100"
-            )}>
+            <div
+              className={cn(
+                "p-2 rounded-full",
+                hasError
+                  ? "bg-red-100"
+                  : isComplete
+                  ? "bg-green-100"
+                  : "bg-blue-100"
+              )}
+            >
               {hasError ? (
                 <AlertCircle className="h-4 w-4 text-red-600" />
               ) : isComplete ? (
@@ -395,9 +412,7 @@ const CreateAddendumDialog: React.FC<CreateAddendumDialogProps> = ({
               <p className="text-sm font-medium text-gray-900 truncate">
                 {fileName}
               </p>
-              <p className="text-xs text-gray-500">
-                {fileSize} MB
-              </p>
+              <p className="text-xs text-gray-500">{fileSize} MB</p>
             </div>
           </div>
         </div>
@@ -407,13 +422,11 @@ const CreateAddendumDialog: React.FC<CreateAddendumDialogProps> = ({
           <div className="mb-2">
             <div className="flex items-center justify-between mb-1">
               <span className="text-xs text-gray-500">Uploading...</span>
-              <span className="text-xs text-gray-700 font-medium">{progress}%</span>
+              <span className="text-xs text-gray-700 font-medium">
+                {typeof progress === "number" ? progress.toFixed(0) : 0}%
+              </span>
             </div>
-            <Progress 
-              value={progress} 
-              className="h-2"
-              variant="default" 
-            />
+            <Progress value={progress} className="h-2" variant="default" />
           </div>
         )}
 
@@ -450,7 +463,8 @@ const CreateAddendumDialog: React.FC<CreateAddendumDialogProps> = ({
     "image/jpeg": [".jpg", ".jpeg"],
   };
 
-  const isUploading = uploadFilesMutation.isPending || uploadingFiles.length > 0;
+  const isUploading =
+    uploadFilesMutation.isPending || uploadingFiles.length > 0;
 
   return (
     <div className="w-full">

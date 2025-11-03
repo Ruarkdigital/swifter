@@ -260,9 +260,10 @@ const ProposalDetailsPage: React.FC = () => {
           )
         : "N/A",
       status: evaluator.status === "completed" ? "Completed" : "Pending",
-      totalScore: evaluator.averageScore
-        ? `${evaluator.averageScore}%`
-        : "N/A",
+      totalScore:
+        evaluator.averageScore != null
+          ? `${evaluator.averageScore.toFixed(0)}%`
+          : "N/A",
       commentSummary: "View details for comments", // Placeholder as API doesn't provide comment summary
     })) || [];
 
@@ -964,8 +965,8 @@ const ProposalDetailsPage: React.FC = () => {
                 Evaluation Score (Avg score)
               </label>
               <p className="text-base font-medium text-gray-900 dark:text-white">
-                {proposal?.proposalDetails?.score
-                  ? `${proposal.proposalDetails.score}%`
+                {proposal?.proposalDetails?.score != null
+                  ? `${proposal.proposalDetails.score.toFixed(0)}%`
                   : "N/A"}
               </p>
             </div>
@@ -1133,8 +1134,8 @@ const ProposalDetailsPage: React.FC = () => {
                   Average Score
                 </label>
                 <p className="text-base font-medium text-gray-900 dark:text-white">
-                  {proposal?.proposalDetails?.score
-                    ? `${proposal.proposalDetails.score.toFixed(1)}%`
+                  {proposal?.proposalDetails?.score != null
+                    ? `${proposal.proposalDetails.score.toFixed(0)}%`
                     : "N/A"}
                 </p>
               </div>
@@ -1143,8 +1144,8 @@ const ProposalDetailsPage: React.FC = () => {
                   Evaluation
                 </label>
                 <p className="text-base text-gray-900 dark:text-white">
-                  {proposal?.overview?.evaluation
-                    ? `${proposal.overview.evaluation}% Complete`
+                  {proposal?.overview?.evaluation != null
+                    ? `${proposal.overview.evaluation.toFixed(0)}% Complete`
                     : "N/A"}
                 </p>
               </div>
@@ -1170,8 +1171,9 @@ const ProposalDetailsPage: React.FC = () => {
                   <p className="text-base font-medium text-gray-900 dark:text-white">
                     Avg:{" "}
                     {criteria.scoring?.pass_fail ||
-                      `${criteria.scoring?.weight}%` ||
-                      "N/A"}
+                      (typeof criteria.scoring?.weight === "number"
+                        ? `${criteria.scoring.weight.toFixed(0)}%`
+                        : "N/A")}
                   </p>
                 </div>
               ))}

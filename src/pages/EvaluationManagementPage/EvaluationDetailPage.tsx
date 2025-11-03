@@ -652,7 +652,7 @@ const EvaluationDetailPage: React.FC = () => {
       accessorKey: "score",
       header: "Score",
       cell: ({ row }) => (
-        <span className="font-medium">{row.original.score}%</span>
+        <span className="font-medium">{Number(row.original.score).toFixed(0)}%</span>
       ),
     },
     {

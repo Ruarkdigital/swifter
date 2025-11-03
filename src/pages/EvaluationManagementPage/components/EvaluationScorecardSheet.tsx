@@ -206,7 +206,7 @@ const EvaluationScorecardSheet: React.FC<EvaluationScorecardSheetProps> = ({
                                     {group.vendorName}
                                   </span>
                                   <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                                    Evaluator Score: {Number(vendorScore).toFixed(0)}
+                                    Evaluator Score: {Number(vendorScore).toFixed(0)}%
                                   </span>
                                 </div>
                               </AccordionTrigger>

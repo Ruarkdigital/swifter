@@ -359,7 +359,7 @@ const FileUploadDialog: React.FC<FileUploadDialogProps> = ({
                                 Uploading...
                               </span>
                               <span className="text-xs text-blue-600 dark:text-blue-400">
-                                {progress}%
+                                {typeof progress === "number" ? progress.toFixed(0) : 0}%
                               </span>
                             </div>
                             <Progress value={progress} className="h-2" />

@@ -820,7 +820,7 @@ const SubmittedDocumentPage: React.FC = () => {
                             {criteriaItem.criteria.weight && (
                               <div className="mt-2">
                                 <span className="text-xs text-gray-500 dark:text-slate-200">
-                                  {criteriaItem.criteria.weight}%
+                                  {Number(criteriaItem.criteria.weight).toFixed(0)}%
                                 </span>
                               </div>
                             )}

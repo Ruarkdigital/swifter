@@ -249,7 +249,7 @@ const FileListItem = ({
   const getStatusText = () => {
     switch (fileState.status) {
       case "uploading":
-        return `Uploading... ${fileState.progress}%`;
+        return `Uploading... ${typeof fileState.progress === "number" ? fileState.progress.toFixed(0) : 0}%`;
       case "uploaded":
         return "Uploaded successfully";
       case "failed":

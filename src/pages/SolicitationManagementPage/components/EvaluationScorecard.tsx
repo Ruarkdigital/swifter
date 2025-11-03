@@ -254,15 +254,17 @@ const EvaluationScorecard: React.FC<EvaluationScorecardProps> = ({
                             <span className="text-sm font-medium dark:text-slate-200">
                               Evaluator Score:{" "}
                               {typeof group.totalVendorScore === "number"
-                                ? group.totalVendorScore
-                                : group.criteria.reduce(
-                                    (acc, c) =>
-                                      acc +
-                                      (typeof c.newScore?.score === "number"
-                                        ? c.newScore.score
-                                        : 0),
-                                    0
-                                  )}
+                                ? Number(group.totalVendorScore).toFixed(0)
+                                : Number(
+                                    group.criteria.reduce(
+                                      (acc, c) =>
+                                        acc +
+                                        (typeof c.newScore?.score === "number"
+                                          ? c.newScore.score
+                                          : 0),
+                                      0
+                                    )
+                                  ).toFixed(0)}%
                             </span>
                           </div>
                         </div>

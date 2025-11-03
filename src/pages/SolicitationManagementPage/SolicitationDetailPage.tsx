@@ -820,7 +820,7 @@ export const SolicitationDetailPage = () => {
           <span className="font-medium">{row.original.groupName}</span>
           {typeof row.original.groupCompletionRate === "number" && (
             <span className="text-xs text-gray-500 dark:text-gray-400">
-              {Math.round(row.original.groupCompletionRate)}% complete
+              {Number(row.original.groupCompletionRate).toFixed(0)}% complete
             </span>
           )}
         </div>

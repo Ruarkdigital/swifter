@@ -273,7 +273,7 @@ export const ProposalPriceBreakdownSheet = ({
                 Evaluation Score
               </p>
               <p className="text-base text-gray-900 dark:text-slate-200">
-                {`${evaluationScore}%` || "0%"}
+                {evaluationScore ? `${Number(evaluationScore).toFixed(0)}%` : "0%"}
               </p>
             </div>
             <div>

@@ -770,7 +770,7 @@ export const EvaluationManagementPage = () => {
       accessorKey: "progress",
       header: "Progress",
       cell: ({ row }) => (
-        <span className="font-medium">{row.original.progress}%</span>
+        <span className="font-medium">{Number(row.original.progress).toFixed(0)}%</span>
       ),
     },
     {

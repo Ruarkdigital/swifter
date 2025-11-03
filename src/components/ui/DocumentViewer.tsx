@@ -153,7 +153,7 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
           >
             <ZoomOut className="h-4 w-4" />
           </Button>
-          <span className="text-sm text-foreground">{Math.round(scale * 100)}%</span>
+          <span className="text-sm text-foreground">{(scale * 100).toFixed(0)}%</span>
           <Button
             variant="outline"
             size="sm"

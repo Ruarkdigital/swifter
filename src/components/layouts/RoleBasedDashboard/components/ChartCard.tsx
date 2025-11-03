@@ -238,7 +238,9 @@ export const ChartComponent: React.FC<ChartComponentProps> = ({
                           {item.name}
                         </span>
                         <span className="text-gray-500 dark:text-gray-400">
-                          {item.percentage || item.value}%
+                          {typeof (item.percentage ?? item.value) === "number"
+                            ? Number(item.percentage ?? item.value).toFixed(0)
+                            : 0}%
                         </span>
                       </span>
                     );
@@ -314,7 +316,7 @@ export const ChartComponent: React.FC<ChartComponentProps> = ({
                           {item.name}
                         </span>
                         <span className="text-gray-500 dark:text-gray-400 font-bold">
-                          {item.value}%
+                          {typeof item.value === "number" ? item.value.toFixed(0) : 0}%
                         </span>
                       </span>
                     );
