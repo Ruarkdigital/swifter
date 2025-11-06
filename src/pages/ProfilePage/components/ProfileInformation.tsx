@@ -136,7 +136,7 @@ const ProfileInformation: React.FC = () => {
     department: ["super admin", "evaluator", "procurement"],
     companyName: ["company admin"],
     name: ["company admin", "procurement", "super admin", "evaluator", "vendor"],
-    website: ["company admin"],
+    website: ["company admin", "vendor"],
     businessType: ["vendor"],
     location: ["vendor"],
     category: ["company admin", "vendor"],

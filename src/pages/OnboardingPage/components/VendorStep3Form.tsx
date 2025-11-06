@@ -27,7 +27,7 @@ const VendorStep3Form: React.FC<VendorStep3FormProps> = ({
           </div>
           <div>
             <p className="text-sm font-medium text-gray-900 dark:text-white">
-              RFP_HRSoftware
+              {file.name}
             </p>
             <p className="text-xs text-gray-500 dark:text-gray-400">
               {getSimpleFileExtension(file.name).toUpperCase()} • {formatFileSize(file.size)}

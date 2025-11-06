@@ -19,22 +19,7 @@ interface Step6FormProps {
 const Step6Form = ({ formData, setStep, solicitationTypes, categoryOptions }: Step6FormProps) => {
   // Utility function to safely format date values using date-fns
   const formatDateValue = (value: any): string => {
-    if (!value) return "Not specified";
-    if (value instanceof Date) {
-      return formatDateTZ(value, "MMM dd, yyyy 'at' hh:mm a");
-    }
-    if (typeof value === "string") {
-      try {
-        const date = new Date(value);
-        if (!isNaN(date.getTime())) {
-          return formatDateTZ(date, "MMM dd, yyyy 'at' hh:mm a");
-        }
-        return value;
-      } catch {
-        return value;
-      }
-    }
-    return String(value);
+    return formatDateTZ(value, "MMM dd, yyyy 'at' hh:mm a");
   };
 
   // Utility function to get name from ID using options
