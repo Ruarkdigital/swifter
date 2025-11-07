@@ -398,57 +398,40 @@ const EvaluationDetailPage: React.FC = () => {
   //   }
   // };
 
-  // Transform the API response to flat evaluator list for the table
+  /**
+   * Map evaluator API response to a table-ready list.
+   * Builds one row per evaluator and includes group names.
+   *
+   * @returns {Evaluator[]} Consolidated evaluator list with group membership.
+   * @example
+   * const rows = evaluators; // used by DataTable in Overview tab
+   */
   const evaluators = useMemo(() => {
     const data = evaluatorsResponse?.data?.data;
-    if (!data) return [];
+    if (!data || !Array.isArray(data.groups)) return [];
 
-    // Consolidate evaluators across groups: one row per evaluator with group list
-    const groups = Array.isArray((data as any).groups)
-      ? (data as any).groups
-      : [];
-    const map = new Map<string, Evaluator>();
+    return data.groups.map((e) => {
+      const evaluationGroups = Array.isArray(e.groups)
+        ? e.groups.map((g) => g.groupName).filter(Boolean)
+        : [];
 
-    groups.forEach((group: any) => {
-      if (Array.isArray(group.evaluators)) {
-        group.evaluators.forEach((evaluator: any) => {
-          const id = evaluator._id || evaluator.id;
-          const existing = map.get(id);
-          const groupName = group.groupName;
-          const progress = evaluator.progress ?? 0;
-          const status = (
-            evaluator.status === "Completed" ? "Completed" : "Pending"
-          ) as Evaluator["status"];
-          const criteriaAssigned = group.criteriaCount ?? 0;
+      const progress = typeof e.progress === "number" ? e.progress : 0;
+      const criteriaAssigned =
+        typeof e.totalScorings === "number" ? e.totalScorings : 0;
+      const status = (
+        e.status === "Completed" ? "Completed" : "Pending"
+      ) as Evaluator["status"];
 
-          if (existing) {
-            // Append group name if not already present
-            if (!existing.evaluationGroups.includes(groupName)) {
-              existing.evaluationGroups.push(groupName);
-            }
-            // Prefer the max progress/status where available
-            existing.progress = Math.max(existing.progress ?? 0, progress ?? 0);
-            existing.criteriaAssigned = Math.max(
-              existing.criteriaAssigned ?? 0,
-              criteriaAssigned ?? 0
-            );
-            existing.status = status || existing.status;
-          } else {
-            map.set(id, {
-              _id: id,
-              name: evaluator.name,
-              email: evaluator.email,
-              evaluationGroups: [groupName],
-              criteriaAssigned: criteriaAssigned,
-              progress,
-              status,
-            });
-          }
-        });
-      }
+      return {
+        _id: e.id,
+        name: e.name,
+        email: e.email,
+        evaluationGroups,
+        criteriaAssigned,
+        progress,
+        status,
+      };
     });
-
-    return Array.from(map.values());
   }, [evaluatorsResponse]);
 
   const criteria = useMemo(() => {

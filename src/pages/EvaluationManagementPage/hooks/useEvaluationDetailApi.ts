@@ -98,12 +98,45 @@ type EvaluatorGroup = {
   completedEvaluators: number;
 };
 
-type EvaluatorResponse = {
-  _id: string | null;
-  groups: EvaluatorGroup[];
-  averageProgress: number | null;
-  totalEvaluatorsInEvaluation: number;
-};
+export interface EvaluatorResponse {
+  groups:     DataGroup[];
+  evaluation: Evaluation;
+}
+
+export interface Evaluation {
+  summary: Summary;
+  id:      string;
+}
+
+export interface Summary {
+  totalEvaluators:       number;
+  averageProgress:       number;
+  totalRequiredScorings: number;
+  completedScorings:     number;
+}
+
+export interface DataGroup {
+  id:                string;
+  name:              string;
+  email:             string;
+  progress:          number;
+  status:            string;
+  totalScorings:     number;
+  submittedScorings: number;
+  groups:            GroupGroup[];
+}
+
+export interface GroupGroup {
+  groupId:           string;
+  groupName:         string;
+  groupStatus:       string;
+  progress:          number;
+  status:            string;
+  totalScorings:     number;
+  submittedScorings: number;
+  submittedAt?:      Date;
+}
+
 
 type Criteria = {
   _id: string;
@@ -300,7 +333,7 @@ export type {
   EvaluationDetail,
   EvaluatorInGroup,
   EvaluatorGroup,
-  EvaluatorResponse,
+  // EvaluatorResponse,
   Criteria,
   EvaluationGroupApi,
 };
