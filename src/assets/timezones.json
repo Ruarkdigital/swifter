@@ -7,7 +7,6 @@
   { "label": "PST (Pacific Standard Time)", "value": "PST" },
   { "label": "AST (Atlantic Standard Time)", "value": "AST" },
   { "label": "HST (Hawaii Standard Time)", "value": "HST" },
-  { "label": "AKST (Alaska Standard Time)", "value": "AKST" },
   { "label": "CET (Central European Time)", "value": "CET" },
   { "label": "EET (Eastern European Time)", "value": "EET" },
   { "label": "WET (Western European Time)", "value": "WET" },

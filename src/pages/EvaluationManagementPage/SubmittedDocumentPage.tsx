@@ -1057,30 +1057,30 @@ const SubmittedDocumentPage: React.FC = () => {
                       </thead>
                       <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
                         {flattenedPricingItems.map((item, index) => (
-                          <tr key={index} className={item.level > 0 ? "bg-gray-50 dark:bg-gray-800" : ""}>
-                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                          <tr key={index} className={item.level > 0 ? "bg-gray-50 dark:bg-gray-800 " : ""}>
+                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100 max-w-md">
                               <span style={{ paddingLeft: `${item.level * 20}px` }}>
                                 {item.itemNumber}
                               </span>
                             </td>
-                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                              <span style={{ paddingLeft: `${item.level * 20}px` }}>
+                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100 max-w-md">
+                              <span className="text-wrap" style={{ paddingLeft: `${item.level * 20}px` }}>
                                 {item.component}
                               </span>
                             </td>
-                            <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">
+                            <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100 max-w-md">
                               {item.description || "-"}
                             </td>
-                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100 max-w-md">
                               {item.quantity.toLocaleString()}
                             </td>
-                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100 max-w-md">
                               {item.unitOfMeasurement}
                             </td>
-                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100 max-w-md">
                               ${item.unitPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </td>
-                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100 font-medium">
+                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100 font-medium max-w-md">
                               ${item.subtotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </td>
                           </tr>

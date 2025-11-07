@@ -837,6 +837,21 @@ export const SolicitationManagementPage = () => {
           id: "actions",
           header: "Actions",
           cell: ({ row }) => {
+            // Determine if the confirm intent action should be shown
+            const isPublic = row.original.visibility === "public";
+            const isInvited = row.original.vendor?.status === "invited";
+            const deadlineToCheck =
+              row.original.bidIntentDeadline || row.original.submissionDeadline;
+            const isDeadlinePast = (() => {
+              if (!deadlineToCheck) return false;
+              const deadline = new Date(deadlineToCheck);
+              if (isNaN(deadline.getTime())) return false;
+              return new Date() > deadline;
+            })();
+
+            const hasVendor = !!row.original.vendor;
+            const canShowConfirmButton =
+              isPublic && !isDeadlinePast && (!hasVendor || isInvited);
             return (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -853,6 +868,37 @@ export const SolicitationManagementPage = () => {
                   >
                     View Details
                   </DropdownMenuItem>
+                  {canShowConfirmButton && (
+                    <ConfirmAlert
+                      type="alert"
+                      title="Confirm Interest"
+                      text="Are you sure you want to confirm your intent to bid for this solicitation?"
+                      primaryButtonText="Confirm"
+                      secondaryButtonText="Cancel"
+                      showSecondaryButton
+                      primaryButtonLoading={isConfirmingSolicitation}
+                      trigger={
+                        <Button
+                          className={cn(
+                            "flex items-center gap-2 bg-gray-300 text-gray-800 hover:bg-gray-400",
+                            {
+                              "!bg-transparent !text-gray-600": true,
+                            }
+                          )}
+                          disabled={isConfirmingSolicitation}
+                        >
+                          {isConfirmingSolicitation
+                            ? "Confirming..."
+                            : "Confirm Intent"}
+                        </Button>
+                      }
+                      onPrimaryAction={() =>
+                        confirmPublicSolicitationMutation.mutate(
+                          row.original._id
+                        )
+                      }
+                    />
+                  )}
                 </DropdownMenuContent>
               </DropdownMenu>
             );
