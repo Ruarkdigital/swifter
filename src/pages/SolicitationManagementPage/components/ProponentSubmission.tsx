@@ -775,7 +775,7 @@ const SubmitProponentPage: React.FC<SubmitProposalPageProps> = () => {
               onClick={() => formRef.current?.onSubmit()}
               disabled={isSubmitting}
             >
-              Submit Proposal
+             {existingProposalId ? "Update Proposal" : "Submit Proposal"}
             </Button>
           </div>
         </div>
