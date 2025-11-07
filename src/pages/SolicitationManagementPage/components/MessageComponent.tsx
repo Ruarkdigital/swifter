@@ -30,13 +30,10 @@ interface MessageComponentProps {
 
 // Helper function to format date and time
 const formatDateTime = (dateString: string) => {
-  const date = new Date(dateString);
-  const formattedDate = date.toISOString().split("T")[0];
-  const formattedTime = date.toLocaleTimeString("en-US", {
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: true,
-  });
+  // const date = new Date(dateString);
+  // const formattedDate = date.toISOString().split("T")[0];
+  const formattedDate = dateString?.split("T")?.[0] || "";
+  const formattedTime = dateString?.split("T")?.[1]?.split(".")?.[0] || "N/A";
   return { date: formattedDate, time: formattedTime };
 };
 
@@ -93,22 +90,32 @@ const MessageComponent: React.FC<MessageComponentProps> = ({
       {/* Reply Buttons */}
       {showReplyButtons && onReply && (
         <div className="flex justify-end gap-2 mb-4">
-         {!isVendor && <Button
-            variant={
-              sendType === "addendum" && isClicked === id
-                ? "default"
-                : "outline"
-            }
-            size="sm"
-            disabled={solicitationStatus === "closed" || solicitationStatus === "awarded"}
-            className={(solicitationStatus === "closed" || solicitationStatus === "awarded") ? "opacity-50 cursor-not-allowed" : ""}
-            onClick={() => {
-              setIsClicked(id);
-              onReply(id, "addendum");
-            }}
-          >
-            Respond With Addendum
-          </Button>}
+          {!isVendor && (
+            <Button
+              variant={
+                sendType === "addendum" && isClicked === id
+                  ? "default"
+                  : "outline"
+              }
+              size="sm"
+              disabled={
+                solicitationStatus === "closed" ||
+                solicitationStatus === "awarded"
+              }
+              className={
+                solicitationStatus === "closed" ||
+                solicitationStatus === "awarded"
+                  ? "opacity-50 cursor-not-allowed"
+                  : ""
+              }
+              onClick={() => {
+                setIsClicked(id);
+                onReply(id, "addendum");
+              }}
+            >
+              Respond With Addendum
+            </Button>
+          )}
           <Button
             size="sm"
             variant={
@@ -116,7 +123,7 @@ const MessageComponent: React.FC<MessageComponentProps> = ({
             }
             onClick={() => {
               setIsClicked(id);
-              onReply(id, "reply")
+              onReply(id, "reply");
             }}
           >
             Reply
