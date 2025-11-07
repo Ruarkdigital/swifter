@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { DataTable } from "@/components/layouts/DataTable";
 import { ColumnDef } from "@tanstack/react-table";
-import { Upload } from "lucide-react";
+import { Upload, CheckCircle } from "lucide-react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { getRequest, postRequest, putRequest } from "@/lib/axiosInstance";
@@ -155,6 +155,7 @@ const SubmitProponentPage: React.FC<SubmitProposalPageProps> = () => {
     null
   );
   const [isBackConfirmOpen, setIsBackConfirmOpen] = useState(false);
+  const [completedProposals, setCompletedProposals] = useState<Set<string>>(new Set());
 
   // Check if this is a vendor submission flow
   const isSubmitForVendor = location.state?.isSubmitForVendor || false;
@@ -334,6 +335,27 @@ const SubmitProponentPage: React.FC<SubmitProposalPageProps> = () => {
     } as FormValues;
 
     forge.reset(mapped);
+
+    /**
+     * Initialize completed proposals indicator when pricing data is pre-populated.
+     * Marks pricing-type required documents as completed if any pricing actions exist.
+     * @example If existing proposal contains priceAction entries, show "Proposal Completed".
+     */
+    try {
+      const pricingDocIds = (solicitationData?.data?.data?.documents || [])
+        .filter((d: any) => d?.type?.toLowerCase?.() === "pricing")
+        .map((d: any) => d?._id)
+        .filter(Boolean);
+
+      const hasPricing = (priceActionData || []).length > 0;
+      if (hasPricing && pricingDocIds.length > 0) {
+        setCompletedProposals(new Set(pricingDocIds));
+      } else {
+        setCompletedProposals(new Set());
+      }
+    } catch (_) {
+      // No-op: indicator initialization is best-effort
+    }
   }, [solicitationData?.data?.data?.proposal]);
 
   /**
@@ -592,10 +614,16 @@ const SubmitProponentPage: React.FC<SubmitProposalPageProps> = () => {
           )?.files || [];
 
         const uploadCount = documentFiles.length;
+        const isCompleted = completedProposals.has(doc._id);
 
         return (
           <div className="text-sm text-gray-600 dark:text-gray-400">
-            {uploadCount > 0 ? (
+            {isCompleted ? (
+              <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
+                <CheckCircle className="h-4 w-4" />
+                <span className="font-medium text-sm">Proposal Completed</span>
+              </div>
+            ) : uploadCount > 0 ? (
               <div className="space-y-1">
                 <div className="font-medium">{uploadCount} file(s)</div>
                 <div className="space-y-0.5">
@@ -761,6 +789,11 @@ const SubmitProponentPage: React.FC<SubmitProposalPageProps> = () => {
           setValue={forge.setValue as any}
           getValue={forge.getValues as any}
           id={selectedDocumentId}
+          onComplete={(documentId) => {
+            if (documentId) {
+              setCompletedProposals((prev) => new Set([...prev, documentId]));
+            }
+          }}
         />
 
         <FileUploadDialog
