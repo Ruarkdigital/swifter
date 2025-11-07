@@ -409,6 +409,12 @@ const CreateEvaluationDialog = () => {
       }
 
       await saveDraft(draftData as CreateEvaluationDraftPayload);
+      // Immediately refetch evaluation lists and drafts after successful save
+      await queryClient.refetchQueries({ queryKey: ["getEvaluations"], type: "active" });
+      await queryClient.refetchQueries({ queryKey: ["evaluations-list"], type: "active" });
+      await queryClient.refetchQueries({ queryKey: ["assigned-evaluations-list"], type: "active" });
+      await queryClient.refetchQueries({ queryKey: ["my-evaluations-list"], type: "active" });
+      await queryClient.refetchQueries({ queryKey: ["getEvaluationDrafts"], type: "active" });
       toast.success(
         "Draft Saved",
         "Evaluation draft has been saved successfully"

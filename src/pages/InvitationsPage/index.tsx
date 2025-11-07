@@ -37,7 +37,7 @@ export interface Vendor {
   id: string;
   status: string;
   responseStatus: string;
-  invitedAt: string
+  invitedAt: string;
 }
 
 // API response type for invitation dashboard stats
@@ -56,11 +56,7 @@ type Invitation = {
   rfp: string;
   invitedDate: string;
   deadline: string;
-  status:
-    | "invited"
-    | "confirmed"
-    | "declined"
-    | "not available";
+  status: "invited" | "confirmed" | "declined" | "not available";
 };
 
 // Map API status to UI status
@@ -71,7 +67,7 @@ const mapApiStatusToUIStatus = (apiStatus: string): Invitation["status"] => {
     case "declined":
       return "declined";
     case "invited":
-      return "invited"
+      return "invited";
     default:
       return "not available";
   }
@@ -79,7 +75,7 @@ const mapApiStatusToUIStatus = (apiStatus: string): Invitation["status"] => {
 
 // Transform API data to UI format
 const transformSolicitationToInvitation = (
-  solicitation: VendorSolicitation,
+  solicitation: VendorSolicitation
 ): Invitation => {
   return {
     id: solicitation._id,
@@ -116,7 +112,6 @@ const StatusBadge = ({ status }: { status: Invitation["status"] }) => {
     }
   };
 
-
   const getStatusLabel = (status: string) => {
     switch (status) {
       case "confirmed":
@@ -148,13 +143,12 @@ const InvitationsPage = () => {
     pageIndex: 0,
     pageSize: 10,
   });
-  const [selectedInvitation, setSelectedInvitation] = useState<Invitation | null>(null);
+  const [selectedInvitation, setSelectedInvitation] =
+    useState<Invitation | null>(null);
   const [isSheetOpen, setIsSheetOpen] = useState<boolean>(false);
 
   // Extract invitationId from URL params
   const invitationId = id;
-
-
 
   // Handle filter changes
   const handleFilterChange = (filterTitle: string, value: string) => {
@@ -190,12 +184,11 @@ const InvitationsPage = () => {
         url: "/vendor/solicitations/invitation/dashboard",
       });
     },
-    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
   // API query for vendor invitations
   const { data: invitationsData, isLoading } = useQuery<
-    ApiResponse<VendorSolicitation[]>,
+    ApiResponse<{ data: VendorSolicitation[] }>,
     ApiResponseError
   >({
     queryKey: [
@@ -237,20 +230,21 @@ const InvitationsPage = () => {
 
       return await getRequest({ url });
     },
-    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
   // Transform API data to UI format
   const transformedData = useMemo(() => {
-    if (!invitationsData?.data?.data) return [];
-    return invitationsData.data.data.map(transformSolicitationToInvitation);
+    if (!invitationsData?.data?.data?.data) return [];
+    return invitationsData.data?.data?.data?.map?.(
+      transformSolicitationToInvitation
+    );
   }, [invitationsData]);
 
   // Effect to handle URL parameter and auto-open sheet
   useEffect(() => {
-    if (invitationId && transformedData.length > 0) {
+    if (invitationId && transformedData?.length > 0) {
       // Find the invitation with the matching ID
-      const invitation = transformedData.find(inv => inv.id === invitationId);
+      const invitation = transformedData.find((inv) => inv.id === invitationId);
       if (invitation) {
         setSelectedInvitation(invitation);
         setIsSheetOpen(true);
@@ -283,7 +277,7 @@ const InvitationsPage = () => {
 
   // Use transformed data for display
   const displayData = transformedData;
-  const totalCount = invitationsData?.data?.data?.length || 0;
+  const totalCount = invitationsData?.data?.data?.data?.length || 0;
 
   // Table columns definition
   const columns: ColumnDef<Invitation>[] = [
@@ -331,13 +325,18 @@ const InvitationsPage = () => {
       header: "Actions",
       cell: ({ row }) => {
         // Find the original VendorSolicitation data for this row
-        const originalSolicitation = invitationsData?.data?.data?.find(
+        const originalSolicitation = invitationsData?.data?.data?.data?.find(
           (sol: VendorSolicitation) => sol._id === row.original.id
         );
-        
+
         if (!originalSolicitation) return null;
-        
-        return <SolicitationDetailsSheet solicitation={row.original} originalData={originalSolicitation} />;
+
+        return (
+          <SolicitationDetailsSheet
+            solicitation={row.original}
+            originalData={originalSolicitation}
+          />
+        );
       },
     },
   ];
@@ -499,7 +498,7 @@ const InvitationsPage = () => {
           </div>
         )}
       />
-      
+
       {/* Solicitation Details Sheet */}
       <SolicitationDetailsSheet
         open={isSheetOpen}
@@ -510,15 +509,19 @@ const InvitationsPage = () => {
             setSelectedInvitation(null);
             // Navigate back to invitations page without ID if we came from a direct link
             if (invitationId) {
-              navigate('/dashboard/invitations', { replace: true });
+              navigate("/dashboard/invitations", { replace: true });
             }
           }
         }}
-        solicitation={selectedInvitation ? {
-          id: selectedInvitation.id,
-          solicitationName: selectedInvitation.solicitationName,
-          status: selectedInvitation.status,
-        } : undefined}
+        solicitation={
+          selectedInvitation
+            ? {
+                id: selectedInvitation.id,
+                solicitationName: selectedInvitation.solicitationName,
+                status: selectedInvitation.status,
+              }
+            : undefined
+        }
       />
     </div>
   );

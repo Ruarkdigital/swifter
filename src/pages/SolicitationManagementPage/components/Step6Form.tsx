@@ -16,16 +16,24 @@ interface Step6FormProps {
   categoryOptions: Array<{ label: string; value: string }>;
 }
 
-const Step6Form = ({ formData, setStep, solicitationTypes, categoryOptions }: Step6FormProps) => {
+const Step6Form = ({
+  formData,
+  setStep,
+  solicitationTypes,
+  categoryOptions,
+}: Step6FormProps) => {
   // Utility function to safely format date values using date-fns
   const formatDateValue = (value: any): string => {
     return formatDateTZ(value, "MMM dd, yyyy 'at' hh:mm a");
   };
 
   // Utility function to get name from ID using options
-  const getNameFromId = (id: string, options: Array<{ label: string; value: string }>): string => {
+  const getNameFromId = (
+    id: string,
+    options: Array<{ label: string; value: string }>
+  ): string => {
     if (!id) return "Not specified";
-    const option = (options ?? []).find(opt => opt.value === id);
+    const option = (options ?? []).find((opt) => opt.value === id);
     return option ? option.label : id;
   };
 
@@ -63,7 +71,10 @@ const Step6Form = ({ formData, setStep, solicitationTypes, categoryOptions }: St
                 <div>
                   <p className="text-sm text-gray-500">Type</p>
                   <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                    {getNameFromId(formData?.solicitationType || "", solicitationTypes)}
+                    {getNameFromId(
+                      formData?.solicitationType || "",
+                      solicitationTypes
+                    )}
                   </p>
                 </div>
                 <div>

@@ -91,6 +91,7 @@ export function formatDateTZ(
 
     const formattedTime =
       baseDate.toISOString()?.split("T")?.[1]?.split(".")?.[0] || "N/A";
+      // console.log({ formattedTime })
 
     return (
       date +
