@@ -248,14 +248,14 @@ const ProposalDetailsPage: React.FC = () => {
       assignedDate: evaluator.dateAssigned
         ? formatDateTZ(
             evaluator.dateAssigned,
-            "MMM d, yyyy pppp",
+            "MMM d, yyyy KK:mm a",
             solicitation?.timezone
           )
         : "N/A",
       submittedDate: evaluator.dateSubmitted
         ? formatDateTZ(
             evaluator.dateSubmitted,
-            "MMM d, yyyy pppp",
+            "MMM d, yyyy KK:mm a",
             solicitation?.timezone
           )
         : "N/A",
@@ -955,7 +955,7 @@ const ProposalDetailsPage: React.FC = () => {
                 {solicitation?.submissionDeadline
                   ? formatDateTZ(
                       new Date(solicitation?.submissionDeadline),
-                      "MMMM d, yyyy"
+                      "MMMM d, yyyy KK:mm a"
                     )
                   : "N/A"}
               </p>
@@ -1100,7 +1100,7 @@ const ProposalDetailsPage: React.FC = () => {
                   {proposal?.proposalDetails?.submissiion
                     ? formatDateTZ(
                         proposal.proposalDetails.submissiion,
-                        "MMMM d, yyyy pppp",
+                        "MMMM d, yyyy KK:mm a",
                         solicitation?.timezone
                       )
                     : "N/A"}
@@ -1145,7 +1145,7 @@ const ProposalDetailsPage: React.FC = () => {
                 </label>
                 <p className="text-base text-gray-900 dark:text-white">
                   {proposal?.overview?.evaluation != null
-                    ? `${proposal.overview.evaluation.toFixed(0)}% Complete`
+                    ? `${proposal.overview.evaluation.toFixed(0)}%`
                     : "N/A"}
                 </p>
               </div>

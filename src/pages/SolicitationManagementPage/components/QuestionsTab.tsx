@@ -15,40 +15,40 @@ import CreateAddendumDialog from "./CreateAddendumDialog";
 
 // Question type definition
 export interface Question {
-  _id:          string;
+  _id: string;
   solicitation: string;
-  user:         User;
-  note:         string;
-  responses:    QuestionResponse[];
-  isAnswered:   boolean;
-  createdAt:    string;
-  updatedAt:    string;
-  __v:          number;
+  user: User;
+  note: string;
+  responses: QuestionResponse[];
+  isAnswered: boolean;
+  createdAt: string;
+  updatedAt: string;
+  __v: number;
 }
 
 export interface User {
-  _id:  string;
+  _id: string;
   name: string;
   role: Role;
   avatar: string;
 }
 
 export interface Role {
-  _id:  string;
+  _id: string;
   name: string;
-  __v:  number;
+  __v: number;
 }
 
 export interface QuestionResponse {
-  _id:          string;
+  _id: string;
   solicitation: string;
-  user:         User;
-  note:         string;
-  responses:    QuestionResponse[];
-  isAnswered:   boolean;
-  createdAt:    Date;
-  updatedAt:    Date;
-  __v:          number;
+  user: User;
+  note: string;
+  responses: QuestionResponse[];
+  isAnswered: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  __v: number;
 }
 type QuestionsResponse = {
   message: string;
@@ -72,7 +72,8 @@ const QuestionsTab: React.FC<QuestionsTabProps> = ({ solicitationStatus }) => {
   const [replyToQuestion, setReplyToQuestion] = useState<Question | null>(null);
   const [sendType, setSendType] = useState<"reply" | "addendum" | null>(null);
   const [showCreateQuestion, setShowCreateQuestion] = useState(false);
-  const [isCreateAddendumDialogOpen, setIsCreateAddendumDialogOpen] = useState(false);
+  const [isCreateAddendumDialogOpen, setIsCreateAddendumDialogOpen] =
+    useState(false);
 
   // Fetch questions
   const { data: questionsData, isLoading } = useQuery<QuestionsResponse>({
@@ -150,46 +151,62 @@ const QuestionsTab: React.FC<QuestionsTabProps> = ({ solicitationStatus }) => {
   // Filter questions based on vendor visibility rules
   const filteredQuestions: Question[] = useMemo(() => {
     const allQuestions = questionsData?.data?.questions || [];
-    
+
     if (!isVendor || !user) {
       // Non-vendors see all questions
       return allQuestions;
     }
-    
+
     // For vendors: only show questions they submitted OR questions with published responses
     return allQuestions.filter((question: Question) => {
       // Show questions submitted by the current vendor
       if (question.user._id === user._id) {
         return true;
       }
-      
+
       // Show questions that have been answered (published responses)
-      if (question.isAnswered && question.responses && question.responses.length > 0) {
+      if (
+        question.isAnswered &&
+        question.responses &&
+        question.responses.length > 0
+      ) {
         // Check if any response is from procurement/evaluator (published response)
-        const hasPublishedResponse = question.responses.some((response: QuestionResponse) => {
-          return response.user.role.name === 'procurement' || 
-                 response.user.role.name === 'evaluator' || 
-                 response.user.role.name === 'company_admin' || 
-                 response.user.role.name === 'super_admin';
-        });
+        const hasPublishedResponse = question.responses.some(
+          (response: QuestionResponse) => {
+            return (
+              response.user.role.name === "procurement" ||
+              response.user.role.name === "evaluator" ||
+              response.user.role.name === "company_admin" ||
+              response.user.role.name === "super_admin"
+            );
+          }
+        );
         return hasPublishedResponse;
       }
-      
+
       return false;
     });
   }, [questionsData?.data?.questions, isVendor, user]);
-  
+
   const questions: Question[] = filteredQuestions;
   const unansweredQuestions = questions.filter((q: Question) => !q.isAnswered);
 
-  const handleSendMessage = (content: string, type?: "reply" | "addendum" | null) => {
+  const handleSendMessage = (
+    content: string,
+    type?: "reply" | "addendum" | null
+  ) => {
     if (!replyToQuestion && !sendType) {
       // Handle creating new question (vendors only)
       if (!content.trim()) return;
       createQuestionMutation.mutate({
         note: content.trim(),
       });
-    } else if ((type === "addendum" || sendType === "addendum") && replyToQuestion && solicitationStatus !== "closed" && solicitationStatus !== "awarded") {
+    } else if (
+      (type === "addendum" || sendType === "addendum") &&
+      replyToQuestion &&
+      solicitationStatus !== "closed" &&
+      solicitationStatus !== "awarded"
+    ) {
       // Handle replying with addendum - open CreateAddendumDialog
       setIsCreateAddendumDialogOpen(true);
     } else {
@@ -202,13 +219,21 @@ const QuestionsTab: React.FC<QuestionsTabProps> = ({ solicitationStatus }) => {
     }
   };
 
-  const handleReplyClick = (questionId: string, type: "reply" | "addendum" | null) => {
+  const handleReplyClick = (
+    questionId: string,
+    type: "reply" | "addendum" | null
+  ) => {
     const question = questions.find((q: Question) => q._id === questionId);
     if (!question) return;
 
     setReplyToQuestion(question);
     setSendType(type);
-    if (type === "addendum" && solicitationStatus !== "closed" && solicitationStatus !== "awarded") setIsCreateAddendumDialogOpen(true)
+    if (
+      type === "addendum" &&
+      solicitationStatus !== "closed" &&
+      solicitationStatus !== "awarded"
+    )
+      setIsCreateAddendumDialogOpen(true);
     setShowCreateQuestion(false);
   };
 
@@ -297,11 +322,7 @@ const QuestionsTab: React.FC<QuestionsTabProps> = ({ solicitationStatus }) => {
             key={question._id}
             question={question}
             sendType={sendType}
-            onReply={
-              !question.isAnswered 
-                ? handleReplyClick
-                : undefined
-            }
+            onReply={!question.isAnswered ? handleReplyClick : undefined}
             solicitationStatus={solicitationStatus}
           />
         ))}
@@ -326,7 +347,7 @@ const QuestionsTab: React.FC<QuestionsTabProps> = ({ solicitationStatus }) => {
       </Dialog>
 
       {/* Message Composer - Conditional Visibility */}
-      {((isVendor) ||
+      {(isVendor ||
         ((isProcurement || isEvaluator) &&
           (replyToQuestion || questions.length > 0))) && (
         <div className="mt-6">

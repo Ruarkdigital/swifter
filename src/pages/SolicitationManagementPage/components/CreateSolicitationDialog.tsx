@@ -234,7 +234,7 @@ const CreateSolicitationDialog = () => {
     }
     try {
       const formData = forge.getValues();
-      const completeData = {
+      const completeData: Omit<CreateSolicitationFormData, "submissionDeadline"> & { submissionDeadline: Date } = {
         ...formData,
         ...data,
       };
@@ -253,65 +253,63 @@ const CreateSolicitationDialog = () => {
         description: completeData.description,
         visibility: completeData.visibility as "public" | "invite-only",
         status: "active",
-        submissionDeadline: new Date(
-          completeData.submissionDeadlineDate
-        ).toISOString(),
+        submissionDeadline: format(completeData.submissionDeadlineDate, "yyyy-MM-dd'T'HH:mm:ss"),
         questionDeadline: completeData.questionAcceptanceDeadlineDate
-          ? new Date(completeData.questionAcceptanceDeadlineDate).toISOString()
+          ? format(completeData.questionAcceptanceDeadlineDate, "yyyy-MM-dd'T'HH:mm:ss")
           : undefined,
         bidIntent: completeData.bidIntent as "required" | "not-required",
         bidIntentDeadline: completeData.bidIntentDeadlineDate
-          ? new Date(completeData.bidIntentDeadlineDate).toISOString()
+          ? format(completeData.bidIntentDeadlineDate, "yyyy-MM-dd'T'HH:mm:ss")
           : undefined,
         timezone: completeData.timezone || "Africa/Lagos",
         events: (() => {
-             if (!completeData.event) return undefined;
-             
-             const validEvents: Array<{
-               eventType: string;
-               eventLocation: string;
-               eventDate: string;
-               eventDescription?: string;
-             }> = [];
-             
-             for (const evt of completeData.event) {
-                if (!evt) continue;
-                
-                // Validate date and time before creating Date object
-                if (!evt.date || !evt.time) {
-                  console.warn("Invalid event date or time:", {
-                    date: evt.date,
-                    time: evt.time,
-                  });
-                  continue;
-                }
+          if (!completeData.event) return undefined;
 
-                // Handle Date object from TextDatePicker
-                   const dateStr =
-                     (evt.date as any) instanceof Date
-                       ? format(evt.date as Date, 'yyyy-MM-dd') // Extract YYYY-MM-DD
-                       : evt.date;
+          const validEvents: Array<{
+            eventType: string;
+            eventLocation: string;
+            eventDate: string;
+            eventDescription?: string;
+          }> = [];
 
-                // Validate the constructed date string
-                const dateTimeStr = `${dateStr}T${evt.time}`;
-                const eventDate = new Date(dateTimeStr);
+          for (const evt of completeData.event) {
+            if (!evt) continue;
 
-                if (isNaN(eventDate.getTime())) {
-                  console.warn("Invalid date constructed:", dateTimeStr);
-                  continue;
-                }
+            // Validate date and time before creating Date object
+            if (!evt.date || !evt.time) {
+              console.warn("Invalid event date or time:", {
+                date: evt.date,
+                time: evt.time,
+              });
+              continue;
+            }
 
-                validEvents.push({
-                  eventType: evt.event,
-                  eventLocation: evt.location,
-                  eventDate: eventDate.toISOString(),
-                  eventDescription: evt.note || undefined,
-                });
-              }
-             
-             // Return undefined if no valid events exist
-             return validEvents.length > 0 ? validEvents : undefined;
-           })(),
+            // Handle Date object from TextDatePicker
+            const dateStr =
+              (evt.date as any) instanceof Date
+                ? format(evt.date as unknown as Date, "yyyy-MM-dd") // Extract YYYY-MM-DD
+                : evt.date;
+
+            // Validate the constructed date string
+            const dateTimeStr = `${dateStr}T${evt.time}`;
+            const eventDate = format(dateTimeStr, "yyyy-MM-dd'T'HH:mm:ss");
+
+            if (isNaN(Date.parse(eventDate))) {
+              console.warn("Invalid date constructed:", dateTimeStr);
+              continue;
+            }
+
+            validEvents.push({
+              eventType: evt.event,
+              eventLocation: evt.location,
+              eventDate: eventDate,
+              eventDescription: evt.note || undefined,
+            });
+          }
+
+          // Return undefined if no valid events exist
+          return validEvents.length > 0 ? validEvents : undefined;
+        })(),
         // Use already uploaded files from Step4Form
         files:
           completeData.documents && completeData.documents.length > 0
@@ -408,48 +406,48 @@ const CreateSolicitationDialog = () => {
           : undefined,
         timezone: formData.timezone || "Africa/Lagos",
         events: (() => {
-             if (!formData.event) return undefined;
-             
-             const validEvents: Array<{
-               eventType: string;
-               eventLocation: string;
-               eventDate: string;
-               eventDescription?: string;
-             }> = [];
-             
-             for (const evt of formData.event) {
-                if (!evt) continue;
-                
-                // Validate date and time before creating Date object
-                if (!evt.date || !evt.time) {
-                  continue;
-                }
+          if (!formData.event) return undefined;
 
-                // Handle Date object from TextDatePicker
-                  const dateStr =
-                    evt.date && typeof evt.date === 'object' && evt.date as any
-                      ? format(evt.date, 'yyyy-MM-dd') // Extract YYYY-MM-DD
-                      : evt.date;
+          const validEvents: Array<{
+            eventType: string;
+            eventLocation: string;
+            eventDate: string;
+            eventDescription?: string;
+          }> = [];
 
-                // Validate the constructed date string
-                const dateTimeStr = `${dateStr}T${evt.time}`;
-                const eventDate = new Date(dateTimeStr);
+          for (const evt of formData.event) {
+            if (!evt) continue;
 
-                if (isNaN(eventDate.getTime())) {
-                  continue;
-                }
+            // Validate date and time before creating Date object
+            if (!evt.date || !evt.time) {
+              continue;
+            }
 
-                validEvents.push({
-                  eventType: evt.event,
-                  eventLocation: evt.location,
-                  eventDate: eventDate.toISOString(),
-                  eventDescription: evt.note || undefined,
-                });
-              }
-             
-             // Return undefined if no valid events exist
-             return validEvents.length > 0 ? validEvents : undefined;
-           })(),
+            // Handle Date object from TextDatePicker
+            const dateStr =
+              evt.date && typeof evt.date === "object" && (evt.date as any)
+                ? format(evt.date, "yyyy-MM-dd") // Extract YYYY-MM-DD
+                : evt.date;
+
+            // Validate the constructed date string
+            const dateTimeStr = `${dateStr}T${evt.time}`;
+            const eventDate = new Date(dateTimeStr);
+
+            if (isNaN(eventDate.getTime())) {
+              continue;
+            }
+
+            validEvents.push({
+              eventType: evt.event,
+              eventLocation: evt.location,
+              eventDate: eventDate.toISOString(),
+              eventDescription: evt.note || undefined,
+            });
+          }
+
+          // Return undefined if no valid events exist
+          return validEvents.length > 0 ? validEvents : undefined;
+        })(),
         // Use already uploaded files from Step4Form
         files:
           formData.documents && formData.documents.length > 0

@@ -124,7 +124,7 @@ const AddendumDetailsSheet: React.FC<AddendumDetailsSheetProps> = ({
         {/* Date and Time */}
         <div className="text-sm text-gray-500">
           {addendumDetail
-            ? safeFormatDate(addendumDetail.createdAt, "MMMM d, yyyy", timezone)
+            ? safeFormatDate(addendumDetail.createdAt, "MMMM d, yyyy hh:mm a", timezone)
             : addendum.datePublished}
         </div>
 
@@ -167,7 +167,7 @@ const AddendumDetailsSheet: React.FC<AddendumDetailsSheetProps> = ({
                   Publish Date
                 </h4>
                 <p className="text-sm font-medium text-gray-900">
-                  {safeFormatDate(addendumDetail.createdAt, "MMMM d, yyyy", timezone)}
+                  {safeFormatDate(addendumDetail.createdAt, "MMMM d, yyyy hh:mm a", timezone)}
                 </p>
               </div>
               {addendumDetail.submissionDeadline && (
@@ -178,7 +178,7 @@ const AddendumDetailsSheet: React.FC<AddendumDetailsSheetProps> = ({
                   <p className="text-sm font-medium text-gray-900">
                     {safeFormatDate(
                       addendumDetail.submissionDeadline,
-                      "MMMM d, yyyy",
+                      "MMMM d, yyyy hh:mm a",
                       timezone
                     )}
                   </p>
@@ -192,7 +192,7 @@ const AddendumDetailsSheet: React.FC<AddendumDetailsSheetProps> = ({
                   <p className="text-sm font-medium text-gray-900">
                     {safeFormatDate(
                       deadlines?.[0].submissionDeadline,
-                      "MMMM d, yyyy",
+                      "MMMM d, yyyy hh:mm a",
                       timezone
                     )}
                   </p>
@@ -206,7 +206,7 @@ const AddendumDetailsSheet: React.FC<AddendumDetailsSheetProps> = ({
                   <p className="text-sm font-medium text-gray-900">
                     {safeFormatDate(
                       addendumDetail.questionDeadline,
-                      "MMMM d, yyyy",
+                      "MMMM d, yyyy hh:mm a",
                       timezone
                     )}
                   </p>

@@ -189,6 +189,7 @@ const EditSolicitationDialog = ({
   const [currentStep, setCurrentStep] = useState(1);
   const clearSession = useClearSession();
 
+
   // Hide edit button if solicitation status is closed
   if (solicitation.status === "closed" || solicitation.status === "awarded") {
     return null;
@@ -342,8 +343,9 @@ const EditSolicitationDialog = ({
 
   // Reset form when solicitation changes or when detailed data loads
   useEffect(() => {
+    if(!open) return;
     forge.reset(getDefaultValues());
-  }, [effectiveSolicitation]);
+  }, [effectiveSolicitation, open]);
 
   // File upload mutation
   const { mutateAsync: uploadFiles } = useMutation<

@@ -277,13 +277,16 @@ export const TextDatePicker = (
     if (!date) return undefined;
 
     const [hours, minutes] = time.split(":").map(Number);
-    const combinedDate = new Date(date);
 
-    if (!isNaN(hours) && !isNaN(minutes)) {
-      combinedDate.setHours(hours, minutes, 0, 0);
-    }
-
-    return combinedDate;
+    return new Date(
+      date.getFullYear(),
+      date.getMonth(),
+      date.getDate(),
+      isNaN(hours) ? 0 : hours,
+      isNaN(minutes) ? 0 : minutes,
+      0,
+      0
+    );
   };
 
   return (

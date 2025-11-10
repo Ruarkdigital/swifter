@@ -22,6 +22,7 @@ import { useToastHandler } from "@/hooks/useToaster";
 import { useWatch } from "react-hook-form";
 import { useUserRole } from "@/hooks/useUserRole";
 import { cn, formatDateTZ } from "@/lib/utils";
+import { format } from "date-fns";
 
 // Base schema for form validation - deadline fields are now optional
 const baseSchema = {
@@ -89,19 +90,19 @@ const CreateAddendumDialog: React.FC<CreateAddendumDialogProps> = ({
   const solicitation = solicitationData?.data?.data;
 
   // Helper to get solicitation timezone (supports different shapes)
-  const getSolicitationTimezone = (): string | undefined => {
-    return (
-      solicitation?.solicitation?.timezone ||
-      solicitation?.timezone ||
-      undefined
-    );
-  };
+  // const getSolicitationTimezone = (): string | undefined => {
+  //   return (
+  //     solicitation?.solicitation?.timezone ||
+  //     solicitation?.timezone ||
+  //     undefined
+  //   );
+  // };
 
   // Helper function to format date for input (timezone-aware)
   const formatDateForInput = (dateString: string) => {
     if (!dateString) return "";
-    const tz = getSolicitationTimezone();
-    return formatDateTZ(dateString, "yyyy-MM-dd'T'HH:mm", tz);
+    // const tz = getSolicitationTimezone();
+    return formatDateTZ(dateString, "yyyy-MM-dd'T'HH:mm");
   };
 
   const { control, reset, getValues } = useForge<FormValues>({
@@ -132,7 +133,7 @@ const CreateAddendumDialog: React.FC<CreateAddendumDialogProps> = ({
         question: "",
       });
     }
-  }, [solicitation, reset]);
+  }, [solicitation]);
 
   const submissionDeadlineDate = useWatch({
     name: "submissionDeadline",
@@ -225,12 +226,14 @@ const CreateAddendumDialog: React.FC<CreateAddendumDialogProps> = ({
       const payload = {
         // title: data.title,
         description: data.description,
-        submissionDeadline: new Date(
-          data.submissionDeadline as unknown as Date
-        ).toISOString(),
-        questionDeadline: new Date(
-          data.questionAcceptanceDeadline as unknown as Date
-        ).toISOString(),
+        submissionDeadline: format(
+          data.submissionDeadline as unknown as Date,
+          "yyyy-MM-dd'T'HH:mm:ss"
+        ),
+        questionDeadline: format(
+          data.questionAcceptanceDeadline as unknown as Date,
+          "yyyy-MM-dd'T'HH:mm:ss"
+        ),
         status: status === "publish" ? "publish" : "draft",
         files: uploadedFiles.map((file) => ({
           name: file.name,
@@ -293,10 +296,10 @@ const CreateAddendumDialog: React.FC<CreateAddendumDialogProps> = ({
         // title: data.title,
         description: data.description,
         submissionDeadline: data.submissionDeadline
-          ? new Date(data.submissionDeadline).toISOString()
+          ? format(data.submissionDeadline, "yyyy-MM-dd'T'HH:mm:ss")
           : undefined,
         questionDeadline: data.questionAcceptanceDeadline
-          ? new Date(data.questionAcceptanceDeadline).toISOString()
+          ? format(data.questionAcceptanceDeadline, "yyyy-MM-dd'T'HH:mm:ss")
           : undefined,
         question: data.question,
         status: status,

@@ -1137,7 +1137,7 @@ export const SolicitationDetailPage = () => {
                       <p className="text-gray-900 dark:text-gray-200 font-medium">
                         {formatDateTZ(
                           solicitation.submissionDeadline,
-                          "yyyy-MM-dd HH:mm",
+                          "MMMM dd, yyyy KK:mm a",
                           solicitation.timezone
                         )}
                       </p>
@@ -1152,7 +1152,7 @@ export const SolicitationDetailPage = () => {
                           <p className="text-gray-900 dark:text-gray-200 font-medium">
                             {formatDateTZ(
                               solicitation.deadlineUpdate[0].submissionDeadline,
-                              "yyyy-MM-dd HH:mm",
+                              "MMMM dd, yyyy KK:mm a",
                               solicitation.timezone
                             )}
                           </p>
@@ -1166,7 +1166,7 @@ export const SolicitationDetailPage = () => {
                         <p className="text-gray-900 dark:text-gray-200 font-medium">
                           {formatDateTZ(
                             solicitation.questionDeadline,
-                            "MMM d, yyyy hh:mm aaa",
+                            "MMMM dd, yyyy KK:mm a",
                             solicitation.timezone
                           )}
                         </p>
@@ -1197,8 +1197,9 @@ export const SolicitationDetailPage = () => {
                         </label>
                         <p className="text-gray-900 dark:text-gray-200 font-medium">
                           {formatDateTZ(
-                            new Date(solicitation.bidIntentDeadline),
-                            "MMM d, yyyy, hh:mm aaa"
+                            solicitation.bidIntentDeadline,
+                            "MMMM dd, yyyy KK:mm a",
+                            solicitation.timezone
                           )}
                         </p>
                       </div>

@@ -6,8 +6,9 @@ import {
 } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { formatDateTZ } from "@/lib/utils";
+// import { formatDateTZ } from "@/lib/utils";
 import { CreateSolicitationFormData } from "./CreateSolicitationDialog";
+import { format } from "date-fns";
 
 interface Step6FormProps {
   formData: CreateSolicitationFormData;
@@ -23,8 +24,8 @@ const Step6Form = ({
   categoryOptions,
 }: Step6FormProps) => {
   // Utility function to safely format date values using date-fns
-  const formatDateValue = (value: any): string => {
-    return formatDateTZ(value, "MMM dd, yyyy 'at' hh:mm a");
+  const formatDateValue = (value: any, formatStr?: string): string => {
+    return value ? format(value, formatStr ?? "MMMM dd, yyyy hh:mm a") : "" //formatDateTZ(value, "MMM dd, yyyy 'at' hh:mm a");
   };
 
   // Utility function to get name from ID using options
@@ -197,13 +198,13 @@ const Step6Form = ({
                       <div>
                         <p className="text-sm text-gray-500">Date</p>
                         <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                          {formatDateValue(event.date)}
+                          {formatDateValue(event.date, "MMMM dd, yyyy")}
                         </p>
                       </div>
                       <div>
                         <p className="text-sm text-gray-500">Time</p>
                         <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                          {event.time || "Not specified"}
+                          {event.time ? formatDateValue(new Date(`2014-02-11T${event.time}`), "hh:mm a") : "Not specified"}
                         </p>
                       </div>
                     </div>

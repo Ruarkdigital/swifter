@@ -1,6 +1,7 @@
 import { type ClassValue, clsx } from "clsx";
+import { format, parseISO } from "date-fns";
 import { twMerge } from "tailwind-merge";
-// import { formatInTimeZone, format } from "date-fns-tz";
+import { formatInTimeZone } from "date-fns-tz";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -67,39 +68,60 @@ export const createFormData = (body: Record<string, any>) => {
 export function formatDateTZ(
   dateInput: string | Date | undefined | null,
   formatStr?: string,
-  timezone?: string
+  _timezone?: string
 ): string {
   // Guard: undefined/null -> safe string
   if (!dateInput) return "N/A";
-  console.log({ formatStr, timezone })
+
+  // If a timezone is requested, we'll interpret the input as an actual instant (Date)
+  // and then render it for that timezone using formatInTimeZone.
+  // if (timezone && timezone.trim().length > 0) {
+  //   let instant: Date;
+
+  //   if (typeof dateInput === "string") {
+  //     // If plain YYYY-MM-DD (no time part) -> construct a UTC midnight for that date
+  //     if (/^\d{4}-\d{2}-\d{2}$/.test(dateInput)) {
+  //       const [y, m, d] = dateInput.split("-").map(Number);
+  //       // create a UTC midnight instant for that date
+  //       instant = new Date(Date.UTC(y, m - 1, d, 0, 0, 0));
+  //     } else {
+  //       // For ISO-like strings (with 'T' or timezone suffix) parse as ISO -> real instant
+  //       instant = parseISO(dateInput);
+  //     }
+  //   } else {
+  //     instant = dateInput;
+  //   }
+
+  //   if (isNaN(instant.getTime())) return "N/A";
+
+  //   return formatInTimeZone(instant, timezone, formatStr || "MMM dd, yyyy hh:mm a");
+  // }
+
   try {
-    // Normalize input to Date
-    // const date =
-    //   typeof dateInput === "string" ? new Date(dateInput?.split("T")?.[0] || "") : dateInput;
-    const date =
-      typeof dateInput === "string" ? dateInput?.split("T")?.[0] || "" : dateInput;
-    const baseDate = dateInput instanceof Date ? dateInput : new Date(dateInput);
-    // Guard: invalid Date -> safe string
-    // if (!(date instanceof Date) || isNaN(date.getTime())) return "N/A";
+    let date: Date;
 
-    // Use formatInTimeZone exclusively.
-    // If timezone is missing or empty, default to the runtime's IANA guess by using Intl.DateTimeFormat.
-    // const tz =
-    //   timezone && timezone.trim().length > 0
-    // ? timezone
-    // : Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+    if (typeof dateInput === "string") {
+      const [fullDate, fullTime] = dateInput.split("T");
+      const [year, month, day] = fullDate.split("-").map(Number);
 
-    const formattedTime =
-      baseDate.toISOString()?.split("T")?.[1]?.split(".")?.[0] || "N/A";
-      // console.log({ formattedTime })
+      const [timePart] = fullTime.split("."); // remove .000Z
+      const [hour, minute, second] = timePart.split(":").map(Number);
 
-    return (
-      date +
-      " " +
-      formattedTime
-    );
+      date = new Date(year, month - 1, day, hour, minute, second || 0);
+    } else {
+      // For already-created Date objects
+      date = new Date(
+        dateInput.getFullYear(),
+        dateInput.getMonth(),
+        dateInput.getDate(),
+        dateInput.getHours(),
+        dateInput.getMinutes(),
+        dateInput.getSeconds()
+      );
+    }
+
+    return format(date, formatStr || "MMM dd, yyyy hh:mm a");
   } catch {
-    // Guard: any unexpected errors -> safe string
     return "N/A";
   }
 }

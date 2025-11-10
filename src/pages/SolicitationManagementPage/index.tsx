@@ -424,10 +424,9 @@ export const SolicitationManagementPage = () => {
     () => [
       { label: "All Status", value: "all_status" },
       { label: "Published", value: "published" },
-      { label: "Draft", value: "draft" },
       // Only show "Under Evaluation" for non-vendor users
       ...(!isVendor
-        ? [{ label: "Under Evaluation", value: "under_evaluation" }]
+        ? [{ label: "Under Evaluation", value: "under_evaluation" },  { label: "Draft", value: "draft" },]
         : []),
       { label: "Closed", value: "closed" },
     ],
@@ -788,7 +787,7 @@ export const SolicitationManagementPage = () => {
                   Assigned:{" "}
                   {safeFormatDate(
                     row.original.vendor.assignedAt,
-                    "MMM d, yyyy, h:mm a",
+                    "MMM d, yyyy, hh:mm a",
                     row.original.timezone
                   )}
                 </div>
@@ -797,7 +796,7 @@ export const SolicitationManagementPage = () => {
                   Invited:{" "}
                   {safeFormatDate(
                     row.original.invitedAt,
-                    "MMM d, yyyy, h:mm a",
+                    "MMM d, yyyy, hh:mm a",
                     row.original.timezone
                   )}
                 </div>
@@ -951,7 +950,7 @@ export const SolicitationManagementPage = () => {
             <span>
               {safeFormatDate(
                 row.original.submissionDeadline,
-                "MMM d, yyyy, KK:mm:ss",
+                "MMM d, yyyy, KK:mm a",
                 row.original.timezone
               )}
             </span>
@@ -964,7 +963,7 @@ export const SolicitationManagementPage = () => {
             <span>
               {safeFormatDate(
                 row.original.questionDeadline,
-                "MMM d, yyyy",
+                "MMM d, yyyy KK:mm a",
                 row.original.timezone
               )}
             </span>

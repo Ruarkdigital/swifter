@@ -19,6 +19,7 @@ import { getRequest, postRequest } from "@/lib/axiosInstance";
 import { ApiResponse, ApiResponseError } from "@/types";
 import { useToastHandler } from "@/hooks/useToaster";
 import timezones from "@/assets/timezones.json";
+import { format } from "date-fns";
 
 // Form validation schemas for each step
 const step1Schema = yup.object({
@@ -278,8 +279,12 @@ const CreateEvaluationDialog = () => {
 
   const onSubmit = async (data: CreateEvaluationFormData) => {
     try {
-      const payload = {
+      const payload: Omit<CreateEvaluationFormData, "group"> & {
+        group: { name: string; evaluators: string[] }[];
+      } = {
         ...data,
+        start_date: format(data.start_date, "yyyy-MM-dd'T'HH:mm:ss") || "",
+        end_date: format(data.end_date, "yyyy-MM-dd'T'HH:mm:ss") || "",
         group:
           data.group?.map((item) => ({
             name: item.name,
@@ -341,7 +346,7 @@ const CreateEvaluationDialog = () => {
     try {
       const formData = forge.getValues();
       const draftData: Partial<CreateEvaluationDraftPayload> = {};
-      console.log({ formData })
+      // console.log({ formData })
 
       // Only include fields with actual values
       if (formData.solicitation && typeof formData.solicitation === 'string' && formData.solicitation.trim()) {

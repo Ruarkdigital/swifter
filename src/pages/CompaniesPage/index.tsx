@@ -125,6 +125,17 @@ const EmptyState = () => {
   );
 };
 
+/**
+ * Companies management page.
+ * Manages company listing, filtering, and status updates.
+ * Date filtering derives start and end dates from presets (e.g., today, 7_days, 30_days)
+ * and passes a range to the API for server-side filtering.
+ *
+ * @returns JSX element rendering the companies management UI
+ * @example
+ * // Render the Companies page
+ * <CompaniesPage />
+ */
 const CompaniesPage = () => {
   const navigate = useNavigate();
   const toast = useToastHandler();
@@ -169,9 +180,9 @@ const CompaniesPage = () => {
 
   // Initialize filters from URL parameters
   useEffect(() => {
-    const statusParam = searchParams.get('status');
+    const statusParam = searchParams.get("status");
     if (statusParam) {
-      setFilters(prev => ({ ...prev, status: statusParam }));
+      setFilters((prev) => ({ ...prev, status: statusParam }));
     }
   }, [searchParams]);
 
@@ -319,7 +330,46 @@ const CompaniesPage = () => {
           };
         }
       } else if (filters.datePublished) {
-        dateParams = { datePublished: filters.datePublished };
+        // Derive start/end dates from the selected preset and pass as a date range
+        const now = new Date();
+        let startDate: Date | undefined = dateRange.startDate;
+        let endDate: Date | undefined = dateRange.endDate;
+
+        // If dateRange hasn't been set yet, compute from preset value
+        if (!startDate || !endDate) {
+          switch (filters.datePublished) {
+            case "today":
+              startDate = startOfDay(now);
+              endDate = endOfDay(now);
+              break;
+            case "7_days":
+              startDate = subDays(now, 7);
+              endDate = now;
+              break;
+            case "30_days":
+              startDate = subDays(now, 30);
+              endDate = now;
+              break;
+            case "all":
+              startDate = undefined;
+              endDate = undefined;
+              break;
+            default:
+              break;
+          }
+        }
+
+        // Only include date filter when both boundaries exist
+        if (startDate && endDate) {
+          dateParams = {
+            date: `${formatDate(startDate, "yyyy/MM/dd")}-${formatDate(
+              endDate,
+              "yyyy/MM/dd"
+            )}`,
+          };
+        } else {
+          dateParams = {};
+        }
       }
 
       return await getRequest({
@@ -431,8 +481,8 @@ const CompaniesPage = () => {
         <div className="flex flex-col text-sm">
           <span className="text-gray-700 dark:text-gray-300">
             {row.getValue("createdAt")
-            ? formatDateTZ(row.getValue("createdAt"), "dd MMM, yyyy, pppp")
-            : null}
+              ? formatDateTZ(row.getValue("createdAt"), "MMM dd, yyyy, KK:mm a")
+              : null}
           </span>
         </div>
       ),
@@ -549,7 +599,7 @@ const CompaniesPage = () => {
           iconColor="text-gray-600"
           iconBgColor="bg-gray-100"
           onClick={() => {
-            setFilters(prev => ({ ...prev, status: "" }));
+            setFilters((prev) => ({ ...prev, status: "" }));
             setPagination({ pageIndex: 0, pageSize: 10 });
           }}
         />
@@ -560,7 +610,7 @@ const CompaniesPage = () => {
           iconColor="text-green-600"
           iconBgColor="bg-green-100"
           onClick={() => {
-            setFilters(prev => ({ ...prev, status: "active" }));
+            setFilters((prev) => ({ ...prev, status: "active" }));
             setPagination({ pageIndex: 0, pageSize: 10 });
           }}
         />
@@ -571,7 +621,7 @@ const CompaniesPage = () => {
           iconColor="text-red-600"
           iconBgColor="bg-red-100"
           onClick={() => {
-            setFilters(prev => ({ ...prev, status: "inactive" }));
+            setFilters((prev) => ({ ...prev, status: "inactive" }));
             setPagination({ pageIndex: 0, pageSize: 10 });
           }}
         />
@@ -676,7 +726,7 @@ const CompaniesPage = () => {
                       plansData?.data.data.data?.map(
                         (plan: SubscriptionPlan) => ({
                           label: plan.name,
-                          value: plan.name,
+                          value: plan._id,
                         })
                       ) || [],
                   },

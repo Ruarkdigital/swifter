@@ -98,7 +98,7 @@ const transformAddendumData = (
 ): Addendum => {
   const formatDate = (dateString: string | undefined) => {
     if (!dateString) return "N/A";
-    return formatDateTZ(dateString, "d MMM yyyy, hh:mm a 'GMT'xxx", timezone);
+    return formatDateTZ(dateString, "MMMM dd, yyyy KK:mm a", timezone);
   };
   return {
     id: apiAddendum._id,
