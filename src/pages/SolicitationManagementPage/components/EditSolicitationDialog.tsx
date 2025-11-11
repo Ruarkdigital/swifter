@@ -21,6 +21,7 @@ import Step5Form from "./Step5Form";
 import Step6Form from "./Step6Form";
 import { cn } from "@/lib/utils";
 import { useClearSession } from "@/store/solicitationFileSlice";
+import { format } from "date-fns";
 
 // Form validation schemas for each step
 const step1Schema = yup.object({
@@ -482,13 +483,19 @@ const EditSolicitationDialog = ({
           completeData.submissionDeadlineDate
         ).toISOString(),
         questionDeadline: completeData.questionAcceptanceDeadlineDate
-          ? new Date(completeData.questionAcceptanceDeadlineDate).toISOString()
+          ? format(
+              completeData.questionAcceptanceDeadlineDate,
+              "yyyy-MM-dd'T'HH:mm:ss"
+            )
           : undefined,
         bidIntent: completeData.bidIntent as "required" | "not required",
         bidIntentDeadline: completeData.bidIntentDeadlineDate
-          ? new Date(completeData.bidIntentDeadlineDate).toISOString()
+          ? format(
+              completeData.bidIntentDeadlineDate,
+              "yyyy-MM-dd'T'HH:mm:ss"
+            )
           : undefined,
-        timezone: completeData.timezone || "Africa/Lagos",
+        timezone: completeData.timezone || "",
         events: completeData.event
           ?.map((evt: any) => {
             // Validate date and time before creating Date object
@@ -508,9 +515,9 @@ const EditSolicitationDialog = ({
 
             // Validate the constructed date string
             const dateTimeStr = `${dateStr}T${evt.time}`;
-            const eventDate = new Date(dateTimeStr);
+            const eventDate = format(dateTimeStr, "yyyy-MM-dd'T'HH:mm:ss");
 
-            if (isNaN(eventDate.getTime())) {
+            if (isNaN(Date.parse(eventDate))) {
               console.warn("Invalid date constructed:", dateTimeStr);
               return null;
             }
@@ -518,7 +525,7 @@ const EditSolicitationDialog = ({
             return {
               eventType: evt.event,
               eventLocation: evt.location,
-              eventDate: eventDate.toISOString(),
+              eventDate: eventDate,
               eventDescription: evt.note || undefined,
             };
           })

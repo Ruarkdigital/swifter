@@ -104,6 +104,7 @@ type Solicitation = {
   typeId: SolicitationType;
   type?: SolicitationType;
   categoryIds: Category[];
+  isArchive: boolean
   categories: Category[];
   submissionDeadline: string;
   estimatedCost?: number;
@@ -364,6 +365,35 @@ const useManageSolicitation = () => {
       toast.error(
         "Action Failed",
         error?.message || "Unable to add you as a manager for this solicitation"
+      );
+    },
+  });
+};
+
+// Mutation for unarchiving/restoring a solicitation
+const useUnarchiveSolicitation = () => {
+  const queryClient = useQueryClient();
+  const toast = useToastHandler();
+
+  return useMutation<ApiResponse<any>, ApiResponseError, string>({
+    mutationFn: async (solicitationId: string) =>
+      putRequest({
+        url: `/procurement/solicitations/${solicitationId}/unarchive`,
+      }),
+    onSuccess: (result) => {
+      toast.success(
+        "Solicitation Restored",
+        result?.data?.message || "Solicitation has been restored successfully"
+      );
+      // Refresh related lists
+      queryClient.invalidateQueries({ queryKey: ["solicitations"] });
+      queryClient.invalidateQueries({ queryKey: ["my-solicitations"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard-stats"] });
+    },
+    onError: (error) => {
+      toast.error(
+        "Failed to restore solicitation",
+        error?.message || "Unable to restore solicitation"
       );
     },
   });
@@ -641,12 +671,14 @@ export const SolicitationManagementPage = () => {
   const confirmPublicSolicitationMutation = useConfirmPublicSolicitation();
   const declinePublicSolicitationMutation = useDeclinePublicSolicitation();
   const manageSolicitationMutation = useManageSolicitation();
+  const unarchiveSolicitationMutation = useUnarchiveSolicitation();
 
   // Extract loading states
   const isDeletingSolicitation = deleteSolicitationMutation.isPending;
   const isConfirmingSolicitation = confirmPublicSolicitationMutation.isPending;
   const isDeclining = declinePublicSolicitationMutation.isPending;
   const isManagingSolicitation = manageSolicitationMutation.isPending;
+  const isUnarchivingSolicitation = unarchiveSolicitationMutation.isPending;
 
   // Get current data based on active tab
   const currentData = useMemo(() => {
@@ -836,6 +868,44 @@ export const SolicitationManagementPage = () => {
           id: "actions",
           header: "Actions",
           cell: ({ row }) => {
+            if (row.original.isArchive) {
+              return (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="h-8 w-8 p-0">
+                      <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <ConfirmAlert
+                      type="alert"
+                      title="Undelete Solicitation"
+                      text="Are you sure you want to restore this archived solicitation?"
+                      primaryButtonText="Undelete"
+                      secondaryButtonText="Cancel"
+                      showSecondaryButton
+                      primaryButtonLoading={isUnarchivingSolicitation}
+                      trigger={
+                        <Button
+                          className={cn(
+                            "flex items-center gap-2 bg-gray-300 text-gray-800 hover:bg-gray-400",
+                            {
+                              "!bg-transparent !text-gray-600": true,
+                            }
+                          )}
+                          disabled={isUnarchivingSolicitation}
+                        >
+                          {isUnarchivingSolicitation ? "Restoring..." : "Undelete"}
+                        </Button>
+                      }
+                      onPrimaryAction={() =>
+                        unarchiveSolicitationMutation.mutate(row.original._id)
+                      }
+                    />
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              );
+            }
             // Determine if the confirm intent action should be shown
             const isPublic = row.original.visibility === "public";
             const isInvited = row.original.vendor?.status === "invited";
@@ -995,33 +1065,24 @@ export const SolicitationManagementPage = () => {
         {
           id: "actions",
           header: "Actions",
-          cell: ({ row }) => (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="h-8 w-8 p-0">
-                  <MoreHorizontal className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem
-                  className="py-3 px-4"
-                  onClick={() =>
-                    navigate(`/dashboard/solicitation/${row.original._id}`)
-                  }
-                >
-                  View Details
-                </DropdownMenuItem>
-                {activeTab === "all" &&
-                  isProcurement &&
-                  !row.original.owner && (
+          cell: ({ row }) => {
+            if (row.original.isArchive) {
+              return (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="h-8 w-8 p-0">
+                      <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
                     <ConfirmAlert
                       type="alert"
-                      title="Manage Solicitation"
-                      text="Are you sure you want to add this solicitation to your managed list?"
-                      primaryButtonText="Confirm"
+                      title="Undelete Solicitation"
+                      text="Are you sure you want to restore this archived solicitation?"
+                      primaryButtonText="Undelete"
                       secondaryButtonText="Cancel"
                       showSecondaryButton
-                      primaryButtonLoading={isManagingSolicitation}
+                      primaryButtonLoading={isUnarchivingSolicitation}
                       trigger={
                         <Button
                           className={cn(
@@ -1030,31 +1091,80 @@ export const SolicitationManagementPage = () => {
                               "!bg-transparent !text-gray-600": true,
                             }
                           )}
-                          disabled={isManagingSolicitation}
+                          disabled={isUnarchivingSolicitation}
                         >
-                          {isManagingSolicitation
-                            ? "Adding..."
-                            : "Manage Solicitation"}
+                          {isUnarchivingSolicitation ? "Restoring..." : "Undelete"}
                         </Button>
                       }
                       onPrimaryAction={() =>
-                        manageSolicitationMutation.mutate(row.original._id)
+                        unarchiveSolicitationMutation.mutate(row.original._id)
                       }
                     />
-                  )}
-                <EditSolicitationDialog
-                  solicitation={row.original as any}
-                  isLink
-                />
-                <DropdownMenuItem
-                  className="py-3 px-4 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
-                  onClick={() => handleDeleteClick(row.original._id)}
-                >
-                  Delete
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          ),
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              );
+            }
+            return (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="h-8 w-8 p-0">
+                    <MoreHorizontal className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem
+                    className="py-3 px-4"
+                    onClick={() =>
+                      navigate(`/dashboard/solicitation/${row.original._id}`)
+                    }
+                  >
+                    View Details
+                  </DropdownMenuItem>
+                  {activeTab === "all" &&
+                    isProcurement &&
+                    !row.original.owner && (
+                      <ConfirmAlert
+                        type="alert"
+                        title="Manage Solicitation"
+                        text="Are you sure you want to add this solicitation to your managed list?"
+                        primaryButtonText="Confirm"
+                        secondaryButtonText="Cancel"
+                        showSecondaryButton
+                        primaryButtonLoading={isManagingSolicitation}
+                        trigger={
+                          <Button
+                            className={cn(
+                              "flex items-center gap-2 bg-gray-300 text-gray-800 hover:bg-gray-400",
+                              {
+                                "!bg-transparent !text-gray-600": true,
+                              }
+                            )}
+                            disabled={isManagingSolicitation}
+                          >
+                            {isManagingSolicitation
+                              ? "Adding..."
+                              : "Manage Solicitation"}
+                          </Button>
+                        }
+                        onPrimaryAction={() =>
+                          manageSolicitationMutation.mutate(row.original._id)
+                        }
+                      />
+                    )}
+                  <EditSolicitationDialog
+                    solicitation={row.original as any}
+                    isLink
+                  />
+                  <DropdownMenuItem
+                    className="py-3 px-4 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+                    onClick={() => handleDeleteClick(row.original._id)}
+                  >
+                    Delete
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            );
+          },
         },
       ]
     : [
@@ -1150,25 +1260,65 @@ export const SolicitationManagementPage = () => {
         {
           id: "actions",
           header: "Actions",
-          cell: ({ row }) => (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="h-8 w-8 p-0">
-                  <MoreHorizontal className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem
-                  className="py-3 px-4"
-                  onClick={() =>
-                    navigate(`/dashboard/solicitation/${row.original._id}`)
-                  }
-                >
-                  View Details
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          ),
+          cell: ({ row }) => {
+            if (row.original.isArchive) {
+              return (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="h-8 w-8 p-0">
+                      <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <ConfirmAlert
+                      type="alert"
+                      title="Undelete Solicitation"
+                      text="Are you sure you want to restore this archived solicitation?"
+                      primaryButtonText="Undelete"
+                      secondaryButtonText="Cancel"
+                      showSecondaryButton
+                      primaryButtonLoading={isUnarchivingSolicitation}
+                      trigger={
+                        <Button
+                          className={cn(
+                            "flex items-center gap-2 bg-gray-300 text-gray-800 hover:bg-gray-400",
+                            {
+                              "!bg-transparent !text-gray-600": true,
+                            }
+                          )}
+                          disabled={isUnarchivingSolicitation}
+                        >
+                          {isUnarchivingSolicitation ? "Restoring..." : "Undelete"}
+                        </Button>
+                      }
+                      onPrimaryAction={() =>
+                        unarchiveSolicitationMutation.mutate(row.original._id)
+                      }
+                    />
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              );
+            }
+            return (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="h-8 w-8 p-0">
+                    <MoreHorizontal className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem
+                    className="py-3 px-4"
+                    onClick={() =>
+                      navigate(`/dashboard/solicitation/${row.original._id}`)
+                    }
+                  >
+                    View Details
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            );
+          },
         },
       ];
 
@@ -1397,6 +1547,12 @@ export const SolicitationManagementPage = () => {
                 manualPagination: true,
                 setPagination: handlePaginationChange,
                 pagination,
+                getRowClassName: (row) =>
+                  row.original?.isArchive
+                    ? cn(
+                        "bg-gray-200 opacity-40 dark:bg-slate-900 text-gray-500 dark:text-gray-400"
+                      )
+                    : "",
               }}
             />
           </div>
@@ -1483,6 +1639,12 @@ export const SolicitationManagementPage = () => {
               manualPagination: true,
               setPagination: handlePaginationChange,
               pagination,
+              getRowClassName: (row) =>
+                row.original?.isArchive
+                  ? cn(
+                      "bg-gray-200 opacity-40 dark:bg-slate-900 text-gray-500 dark:text-gray-400"
+                    )
+                  : "",
             }}
           />
         </TabsContent>

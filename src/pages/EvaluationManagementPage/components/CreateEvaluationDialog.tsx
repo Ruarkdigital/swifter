@@ -275,7 +275,7 @@ const CreateEvaluationDialog = () => {
         }))
       );
     }
-  }, [drafts, forge]);
+  }, [drafts]);
 
   const onSubmit = async (data: CreateEvaluationFormData) => {
     try {

@@ -53,6 +53,8 @@ type DataTableOptions<T = unknown> = {
   paginateExpandedRows?: boolean;
   expanded?: ExpandedState;
   onExpandedChange?: OnChangeFn<ExpandedState>;
+  // Optional: per-row className customization
+  getRowClassName?: (row: Row<T>) => string;
 };
 
 type ClassNames = {
@@ -174,7 +176,8 @@ export function DataTable<T = unknown>({
                   data-state={row.getIsSelected() && "selected"}
                   className={cn(
                     "bg-white dark:bg-slate-950 px-3",
-                    classNames?.tRow
+                    classNames?.tRow,
+                    options?.getRowClassName?.(row)
                   )}
                 >
                   {row.getVisibleCells().map((cell) => (

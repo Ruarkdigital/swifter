@@ -1,6 +1,12 @@
 import { Button } from "@/components/ui/button";
 import { FileText } from "lucide-react";
-import { format, startOfDay, endOfDay, subDays, differenceInDays } from "date-fns";
+import {
+  format,
+  startOfDay,
+  endOfDay,
+  subDays,
+  differenceInDays,
+} from "date-fns";
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import CreateEvaluationDialog from "./components/CreateEvaluationDialog";
@@ -91,9 +97,9 @@ const safeFormatDate = (
   if (!dateInput) return fallback;
 
   const date = new Date(dateInput);
-  if (isNaN(date.getTime())){ 
-    return fallback
-  };
+  if (isNaN(date.getTime())) {
+    return fallback;
+  }
 
   const v = formatDateTZ(dateInput, pattern, timezone);
   return v;
@@ -112,9 +118,7 @@ const calculateDaysLeft = (deadline: string): number => {
 
 // Transform API data to component format
 const transformEvaluationData = (
-  apiData:
-    | { evaluations: EvaluationApiResponse[]; total: number }
-    | undefined
+  apiData: { evaluations: EvaluationApiResponse[]; total: number } | undefined
 ): Evaluation[] => {
   if (!apiData || !Array.isArray(apiData.evaluations)) {
     return [];
@@ -125,7 +129,12 @@ const transformEvaluationData = (
     name: item.solicitationName,
     solicitationId: item._id,
     type: item.solicitationType,
-    deadline: safeFormatDate(item.endDate, "MMMM dd, yyyy, KK:mm a", "N/A", item.timezone),
+    deadline: safeFormatDate(
+      item.endDate,
+      "MMMM dd, yyyy, KK:mm a",
+      "N/A",
+      item.timezone
+    ),
     deadlineRaw: item.endDate,
     daysLeft: calculateDaysLeft(item.endDate),
     status: item.status as "Active" | "Pending" | "Completed",
@@ -282,34 +291,43 @@ export const EvaluationManagementPage = () => {
     getDateParam(assignedEvaluationsDateFilter, assignedEvaluationsDateRange);
 
   const { data: evaluationsResponse, isLoading: isEvaluationsLoading } =
-    useEvaluationsList({
-      page: pagination.pageIndex + 1,
-      limit: pagination.pageSize,
-      name: debouncedSearchQuery || undefined,
-      status: statusFilter || undefined,
-      date: getAllEvaluationsDateParam(),
-    }, user?._id);
+    useEvaluationsList(
+      {
+        page: pagination.pageIndex + 1,
+        limit: pagination.pageSize,
+        name: debouncedSearchQuery || undefined,
+        status: statusFilter || undefined,
+        date: getAllEvaluationsDateParam(),
+      },
+      user?._id
+    );
 
   const { data: myEvaluationsResponse, isLoading: isMyEvaluationsLoading } =
-    useMyEvaluationsList({
-      page: pagination.pageIndex + 1,
-      limit: pagination.pageSize,
-      name: debouncedSearchQuery || undefined,
-      status: statusFilter || undefined,
-      date: getMyEvaluationsDateParam(),
-    }, user?._id);
+    useMyEvaluationsList(
+      {
+        page: pagination.pageIndex + 1,
+        limit: pagination.pageSize,
+        name: debouncedSearchQuery || undefined,
+        status: statusFilter || undefined,
+        date: getMyEvaluationsDateParam(),
+      },
+      user?._id
+    );
 
   // Removed useEvaluatorMyEvaluations as it's redundant with useAssignedEvaluationsList
 
   const {
     data: assignedEvaluationsResponse,
     isLoading: isAssignedEvaluationsLoading,
-  } = useAssignedEvaluationsList({
-    page: pagination.pageIndex + 1,
-    limit: pagination.pageSize,
-    status: statusFilter || undefined,
-    date: getAssignedEvaluationsDateParam(),
-  }, user?._id);
+  } = useAssignedEvaluationsList(
+    {
+      page: pagination.pageIndex + 1,
+      limit: pagination.pageSize,
+      status: statusFilter || undefined,
+      date: getAssignedEvaluationsDateParam(),
+    },
+    user?._id
+  );
 
   // Transform API data
   const evaluationData = useMemo(() => {
@@ -553,12 +571,20 @@ export const EvaluationManagementPage = () => {
             }
           } else {
             secondary = (
-              <span className="text-sm text-gray-500 dark:text-gray-400">Completed</span>
+              <span className="text-sm text-gray-500 dark:text-gray-400">
+                Completed
+              </span>
             );
           }
         } else {
           secondary = (
-            <span className="text-sm text-red-600 font-medium">
+            <span
+              className={
+                row.original.daysLeft < 0
+                  ? "text-sm text-red-600 font-medium"
+                  : "text-sm text-gray-500 dark:text-gray-400 font-medium"
+              }
+            >
               Days Left: {row.original.daysLeft} days
             </span>
           );
@@ -669,7 +695,9 @@ export const EvaluationManagementPage = () => {
             }
           } else {
             secondary = (
-              <span className="text-sm text-gray-500 dark:text-gray-400">Completed</span>
+              <span className="text-sm text-gray-500 dark:text-gray-400">
+                Completed
+              </span>
             );
           }
         } else {
@@ -770,7 +798,9 @@ export const EvaluationManagementPage = () => {
       accessorKey: "progress",
       header: "Progress",
       cell: ({ row }) => (
-        <span className="font-medium">{Number(row.original.progress).toFixed(0)}%</span>
+        <span className="font-medium">
+          {Number(row.original.progress).toFixed(0)}%
+        </span>
       ),
     },
     {
@@ -872,20 +902,20 @@ export const EvaluationManagementPage = () => {
             <div className="mt-6">
               <DataTable
                 header={() => (
-                <Header
-                  title="All Evaluations"
-                  searchQuery={searchQuery}
-                  setSearchQuery={setSearchQuery}
-                  debouncedSearchQuery={debouncedSearchQuery}
-                  dateFilter={allEvaluationsDateFilter}
-                  statusFilter={statusFilter}
-                  onDateFilterChange={handleDateFilterChange}
-                  onStatusFilterChange={setStatusFilter}
-                  onClearFilters={handleClearFilters}
-                  totalCount={evaluationsResponse?.data?.total || 0}
-                  tabType="all_evaluations"
-                />
-              )}
+                  <Header
+                    title="All Evaluations"
+                    searchQuery={searchQuery}
+                    setSearchQuery={setSearchQuery}
+                    debouncedSearchQuery={debouncedSearchQuery}
+                    dateFilter={allEvaluationsDateFilter}
+                    statusFilter={statusFilter}
+                    onDateFilterChange={handleDateFilterChange}
+                    onStatusFilterChange={setStatusFilter}
+                    onClearFilters={handleClearFilters}
+                    totalCount={evaluationsResponse?.data?.total || 0}
+                    tabType="all_evaluations"
+                  />
+                )}
                 emptyPlaceholder={<EmptyState />}
                 classNames={{
                   container:
@@ -898,8 +928,7 @@ export const EvaluationManagementPage = () => {
                 options={{
                   disableSelection: true,
                   isLoading: isEvaluationsLoading,
-                  totalCounts:
-                    evaluationsResponse?.data?.total || 0,
+                  totalCounts: evaluationsResponse?.data?.total || 0,
                   manualPagination: true,
                   setPagination,
                   pagination,
@@ -939,8 +968,7 @@ export const EvaluationManagementPage = () => {
               options={{
                 disableSelection: true,
                 isLoading: isMyEvaluationsLoading,
-                totalCounts:
-                  myEvaluationsResponse?.data?.total || 0,
+                totalCounts: myEvaluationsResponse?.data?.total || 0,
                 manualPagination: true,
                 setPagination,
                 pagination,
@@ -996,8 +1024,14 @@ export const EvaluationManagementPage = () => {
                         headers: ["name", "status", "assigned On", "action"],
                         body: evaluationGroups.map((group) => ({
                           ...group,
-                          status: group?.status?.toLowerCase?.() === "release" ? "Released" : "Withheld",
-                          "assigned On": format(group.assignedOn, "dd MMMM yyyy"),
+                          status:
+                            group?.status?.toLowerCase?.() === "release"
+                              ? "Released"
+                              : "Withheld",
+                          "assigned On": format(
+                            group.assignedOn,
+                            "dd MMMM yyyy"
+                          ),
                           action: (
                             <Button
                               variant="ghost"
@@ -1028,7 +1062,9 @@ export const EvaluationManagementPage = () => {
         <DialogContent className="sm:max-w-3xl p-0 overflow-hidden shadow-xl">
           <div className="border-b px-6 py-4">
             <DialogHeader>
-              <DialogTitle className="text-lg font-semibold">Select Date Range</DialogTitle>
+              <DialogTitle className="text-lg font-semibold">
+                Select Date Range
+              </DialogTitle>
               <DialogDescription className="text-sm text-muted-foreground">
                 Choose a start and end date to filter evaluations.
               </DialogDescription>
@@ -1085,7 +1121,7 @@ type HeaderProps = {
   onStatusFilterChange: (value: string) => void;
   onClearFilters: () => void;
   totalCount?: number;
-  tabType?: 'all_evaluations' | 'my_evaluations' | 'assigned_evaluation';
+  tabType?: "all_evaluations" | "my_evaluations" | "assigned_evaluation";
 };
 
 const Header = ({
@@ -1113,7 +1149,8 @@ const Header = ({
             </h2>
             {debouncedSearchQuery && totalCount !== undefined && (
               <span className="text-sm text-gray-500 dark:text-gray-400">
-                Found {totalCount} evaluations with name '{debouncedSearchQuery}'
+                Found {totalCount} evaluations with name '{debouncedSearchQuery}
+                '
               </span>
             )}
           </div>
@@ -1175,10 +1212,14 @@ const Header = ({
                   label: "Pending",
                   value: "pending",
                 },
-                ...(tabType !== 'assigned_evaluation' ? [{
-                  label: "Draft",
-                  value: "draft",
-                }] : []),
+                ...(tabType !== "assigned_evaluation"
+                  ? [
+                      {
+                        label: "Draft",
+                        value: "draft",
+                      },
+                    ]
+                  : []),
               ],
             },
           ]}
@@ -1219,7 +1260,10 @@ const AssignedSubRows = ({ headers, body }: AssignedSubRowsProps) => {
       <TableBody>
         {body.map((item) => {
           return (
-            <TableRow className="bg-white dark:bg-slate-950 px-3 border-b border-gray-50" key={item._id}>
+            <TableRow
+              className="bg-white dark:bg-slate-950 px-3 border-b border-gray-50"
+              key={item._id}
+            >
               {headers.map((header) => {
                 return (
                   <TableCell key={header} className="border-gray-50">
