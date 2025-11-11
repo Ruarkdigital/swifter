@@ -21,6 +21,7 @@ import { useToastHandler } from "@/hooks/useToaster";
 import timezones from "@/assets/timezones.json";
 import { useEvaluationDetail } from "../hooks/useEvaluationDetailApi";
 import { PageLoader } from "@/components/ui/PageLoader";
+import { format } from "date-fns";
 
 // Form validation schemas for each step
 const step1Schema = yup.object({
@@ -344,10 +345,10 @@ const EditEvaluationDialog = ({
         id: evaluationId,
         timezone: data.timezone || undefined,
         start_date: data.start_date
-          ? new Date(data.start_date as any).toISOString()
+          ?  format(data.start_date, "yyyy-MM-dd'T'HH:mm:ss")
           : undefined,
         end_date: data.end_date
-          ? new Date(data.end_date as any).toISOString()
+          ? format(data.end_date, "yyyy-MM-dd'T'HH:mm:ss")
           : undefined,
         group:
           data.group?.map((item) =>
