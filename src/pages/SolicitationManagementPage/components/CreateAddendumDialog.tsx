@@ -30,6 +30,7 @@ const baseSchema = {
   description: yup.string().required("Description is required"),
   submissionDeadline: yup.string().optional(),
   questionAcceptanceDeadline: yup.string().optional(),
+  bidIntentDeadline: yup.string().optional(),
   documents: yup.array().nullable().default(null),
 };
 
@@ -49,6 +50,7 @@ type FormValues = {
   description: string;
   submissionDeadline?: string;
   questionAcceptanceDeadline?: string;
+  bidIntentDeadline?: string;
   documents: any[] | null;
   question?: string;
 };
@@ -113,6 +115,7 @@ const CreateAddendumDialog: React.FC<CreateAddendumDialogProps> = ({
       documents: null,
       submissionDeadline: "",
       questionAcceptanceDeadline: "",
+      bidIntentDeadline: "",
       question: "",
     },
   });
@@ -129,6 +132,9 @@ const CreateAddendumDialog: React.FC<CreateAddendumDialogProps> = ({
         ),
         questionAcceptanceDeadline: formatDateForInput(
           solicitation?.solicitation?.questionDeadline || ""
+        ),
+        bidIntentDeadline: formatDateForInput(
+          solicitation?.solicitation?.bidIntentDeadline || ""
         ),
         question: "",
       });
@@ -540,17 +546,29 @@ const CreateAddendumDialog: React.FC<CreateAddendumDialogProps> = ({
             showTime
           />
 
-          {/* Question Acceptance Deadline */}
-          <Forger
-            name="questionAcceptanceDeadline"
-            component={TextDatePicker}
-            label="Question Acceptance Deadline Date & Time"
-            placeholder="Select Date & Time"
-            minDate={new Date()}
-            dependencies={[maxDate]}
-            maxDate={maxDate}
-            showTime
-          />
+        {/* Question Acceptance Deadline */}
+        <Forger
+          name="questionAcceptanceDeadline"
+          component={TextDatePicker}
+          label="Question Acceptance Deadline Date & Time"
+          placeholder="Select Date & Time"
+          minDate={new Date()}
+          dependencies={[maxDate]}
+          maxDate={maxDate}
+          showTime
+        />
+
+        {/* Bid Intent Deadline */}
+        <Forger
+          name="bidIntentDeadline"
+          component={TextDatePicker}
+          label="Bid Intent Deadline Date & Time"
+          placeholder="Select Date & Time"
+          minDate={new Date()}
+          dependencies={[maxDate]}
+          maxDate={maxDate}
+          showTime
+        />
         </div>
 
         {/* Footer */}

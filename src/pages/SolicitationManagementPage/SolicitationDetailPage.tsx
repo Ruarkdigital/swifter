@@ -5,12 +5,14 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 
 import EvaluationScorecard from "./components/EvaluationScorecard";
 import DocumentsTab from "./components/DocumentsTab";
 import QuestionsTab from "./components/QuestionsTab";
 import AddendumsTab from "./components/AddendumsTab";
 import EditSolicitationDialog from "./components/EditSolicitationDialog";
+import CreateAddendumDialog from "./components/CreateAddendumDialog";
 import ExtendDeadlineDialog from "./components/ExtendDeadlineDialog";
 import ProposalDetailsSheet from "./components/ProposalDetailsSheet";
 import { ExportReportSheet } from "@/components/layouts/ExportReportSheet";
@@ -358,6 +360,7 @@ export const SolicitationDetailPage = () => {
     pageSize: 10,
   });
   const [extendOpen, setExtendOpen] = useState(false);
+  const [isCreateAddendumDialogOpen, setIsCreateAddendumDialogOpen] = useState(false);
 
   // Fetch solicitation details from API
   const {
@@ -1035,9 +1038,32 @@ export const SolicitationDetailPage = () => {
                       solicitation.status !== "awarded") ||
                       isCompanyAdmin) && (
                       <>
-                        <EditSolicitationDialog
-                          solicitation={solicitation as any}
-                        />
+                        {solicitation.status === "draft" ? (
+                          <EditSolicitationDialog solicitation={solicitation as any} />
+                        ) : (
+                          <Dialog
+                            open={isCreateAddendumDialogOpen}
+                            onOpenChange={setIsCreateAddendumDialogOpen}
+                          >
+                            <DialogTrigger asChild>
+                              <Button
+                                className="bg-[#2A4467] hover:bg-[#1e3252] text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                                disabled={
+                                  solicitation.status === "closed" ||
+                                  solicitation.status === "awarded"
+                                }
+                              >
+                                Create Addendum
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent className="sm:max-h-[min(640px,90vh)] overflow-auto">
+                              <CreateAddendumDialog
+                                solicitationId={id!}
+                                onClose={() => setIsCreateAddendumDialogOpen(false)}
+                              />
+                            </DialogContent>
+                          </Dialog>
+                        )}
                       </>
                     )}
                 </div>
