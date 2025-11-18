@@ -30,6 +30,7 @@ import { useMutation } from "@tanstack/react-query";
 import { getRequest } from "@/lib/axiosInstance";
 import EvaluationScorecardSheet from "./components/EvaluationScorecardSheet";
 import { ProposalPriceBreakdownSheet } from "./components/ProposalPriceBreakdownSheet";
+import CriteriaScorecardSheet from "./components/CriteriaScorecardSheet";
 import { ExportReportSheet } from "@/components/layouts/ExportReportSheet";
 import {
   useEvaluationDetail,
@@ -62,7 +63,7 @@ type Evaluator = {
   name: string;
   email: string;
   progress: number;
-  evaluationGroups: string[]; // consolidated list of groups
+  evaluationGroups: string[]; // consolidated list of groups 
   criteriaAssigned: number;
   status: "Completed" | "Pending";
 };
@@ -652,10 +653,9 @@ const EvaluationDetailPage: React.FC = () => {
       cell({ row }) {
         return (
           <div className="flex items-center gap-2">
-            <EvaluationScorecardSheet
-              evaluatorId={row.original._id}
-              solicitationId={evaluation?.solicitation?._id || ""}
-              timezone={evaluation?.timezone}
+            <CriteriaScorecardSheet
+              evaluationId={id!}
+              criteriaId={row.original._id}
             />
           </div>
         );
