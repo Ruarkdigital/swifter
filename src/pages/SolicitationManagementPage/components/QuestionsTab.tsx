@@ -284,11 +284,11 @@ const QuestionsTab: React.FC<QuestionsTabProps> = ({ solicitationStatus }) => {
                 <p className="text-3xl font-bold text-gray-900 dark:text-gray-200">
                   {unansweredQuestions.length}
                 </p>
-                <p className="text-sm text-gray-500 mt-1">
+                {/* <p className="text-sm text-gray-500 mt-1">
                   {unansweredQuestions.length === 1
                     ? "1 Unanswered"
                     : `${unansweredQuestions.length} Unanswered`}
-                </p>
+                </p> */}
               </div>
               <div className="p-3 rounded-full bg-red-50 dark:bg-slate-900">
                 <HelpCircle className="h-6 w-6 text-red-600 dark:text-gray-500" />
