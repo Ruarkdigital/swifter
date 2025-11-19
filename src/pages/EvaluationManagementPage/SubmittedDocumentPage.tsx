@@ -220,6 +220,44 @@ const useSubmitCriteriaScore = () => {
   });
 };
 
+type RevisitCriteriaScoreResponse = {
+  status: number;
+  message: string;
+  data: any;
+};
+
+const useRevisitCriteriaScore = () => {
+  const queryClient = useQueryClient();
+  const toast = useToastHandler();
+
+  return useMutation<
+    ApiResponse<RevisitCriteriaScoreResponse>,
+    ApiResponseError,
+    {
+      evaluationId: string;
+      criteriaId: string;
+      vendorId: string;
+      payload: CriteriaScorePayload;
+    }
+  >({
+    mutationFn: async ({ evaluationId, criteriaId, vendorId, payload }) => {
+      const response = await postRequest({
+        url: `/evaluator/${evaluationId}/criteria-score/${criteriaId}/vendor/${vendorId}/revisit`,
+        payload,
+      });
+      return response;
+    },
+    onSuccess: (response) => {
+      const serverMessage = response?.data?.message || "Revised score submitted successfully";
+      toast.success("Success", serverMessage);
+      queryClient.invalidateQueries({ queryKey: ["evaluation-criteria"] });
+    },
+    onError: (error) => {
+      toast.error("Error", error.message || "Failed to revise evaluation criteria score");
+    },
+  });
+};
+
 const SubmittedDocumentPage: React.FC = () => {
   const user = useUser();
   const { id, groupId, vendorId } = useParams<{
@@ -257,6 +295,7 @@ const SubmittedDocumentPage: React.FC = () => {
   
 
   const submitScoreMutation = useSubmitCriteriaScore();
+  const revisitScoreMutation = useRevisitCriteriaScore();
 
   // Transform API data
   const documents = useMemo(() => {
@@ -304,6 +343,8 @@ const SubmittedDocumentPage: React.FC = () => {
 
   const [activeCriteriaId, setActiveCriteriaId] = useState<string | null>(null);
   const [editingCriteriaId, setEditingCriteriaId] = useState<string | null>(null);
+  const [revisedCriteriaTimestamps, setRevisedCriteriaTimestamps] = useState<Record<string, string>>({});
+  const [submittedCriteriaTimestamps, setSubmittedCriteriaTimestamps] = useState<Record<string, string>>({});
   const [showSubmitDialog, setShowSubmitDialog] = useState(false);
 
   // Document viewer state
@@ -379,12 +420,36 @@ const SubmittedDocumentPage: React.FC = () => {
           : data.score,
     };
 
-    await submitScoreMutation.mutateAsync({
-      evaluationId: id,
-      criteriaId: activeCriteriaId,
-      vendorId,
-      payload: normalizedPayload,
-    });
+    if (isEvaluationSubmitted) {
+      const response = await revisitScoreMutation.mutateAsync({
+        evaluationId: id!,
+        criteriaId: activeCriteriaId,
+        vendorId: vendorId!,
+        payload: normalizedPayload,
+      });
+      const resData = (response as any)?.data?.data || {};
+      const revisedAt = resData?.revisedAt;
+      const submittedAt = resData?.submittedAt;
+      if (revisedAt) {
+        setRevisedCriteriaTimestamps((prev) => ({
+          ...prev,
+          [activeCriteriaId]: revisedAt,
+        }));
+      }
+      if (submittedAt) {
+        setSubmittedCriteriaTimestamps((prev) => ({
+          ...prev,
+          [activeCriteriaId]: submittedAt,
+        }));
+      }
+    } else {
+      await submitScoreMutation.mutateAsync({
+        evaluationId: id!,
+        criteriaId: activeCriteriaId,
+        vendorId: vendorId!,
+        payload: normalizedPayload,
+      });
+    }
 
     // Remove the saved form state for this criteria after successful submission
     setCriteriaFormStates((prev) => {
@@ -529,6 +594,8 @@ const SubmittedDocumentPage: React.FC = () => {
 
   const flattenedPricingItems = flattenPricingItems(pricingBreakdown);
   const isEvaluationSubmitted = criteriaData?.data?.data?.submissionStatus === "Submitted";
+  const evaluationStatus = (evaluationInfo?.status || criteriaEvaluationInfo?.status || "").toString();
+  const isEvaluationCompleted = evaluationStatus.toLowerCase() === "completed";
 
   return (
     <div className="p-6 min-h-full">
@@ -718,8 +785,8 @@ const SubmittedDocumentPage: React.FC = () => {
                                       value={watch("score") as string}
                                       onValueChange={(value) => {
                                         const readOnly =
-                                          isEvaluationSubmitted ||
-                                          (!!criteriaItem.scoring?._id && editingCriteriaId !== criteriaItem._id);
+                                          (isEvaluationSubmitted || !!criteriaItem.scoring?._id) &&
+                                          editingCriteriaId !== criteriaItem._id;
                                         if (!readOnly) setValue("score", value);
                                       }}
                                       className="flex gap-6"
@@ -729,8 +796,8 @@ const SubmittedDocumentPage: React.FC = () => {
                                           value="pass"
                                           id={`${criteriaItem._id}-pass`}
                                           disabled={
-                                            isEvaluationSubmitted ||
-                                            (!!criteriaItem.scoring?._id && editingCriteriaId !== criteriaItem._id)
+                                            (isEvaluationSubmitted || !!criteriaItem.scoring?._id) &&
+                                            editingCriteriaId !== criteriaItem._id
                                           }
                                         />
                                         <Label
@@ -745,8 +812,8 @@ const SubmittedDocumentPage: React.FC = () => {
                                           value="fail"
                                           id={`${criteriaItem._id}-fail`}
                                           disabled={
-                                            isEvaluationSubmitted ||
-                                            (!!criteriaItem.scoring?._id && editingCriteriaId !== criteriaItem._id)
+                                            (isEvaluationSubmitted || !!criteriaItem.scoring?._id) &&
+                                            editingCriteriaId !== criteriaItem._id
                                           }
                                         />
                                         <Label
@@ -765,8 +832,8 @@ const SubmittedDocumentPage: React.FC = () => {
                                         value={watch("score")?.toString()}
                                         onValueChange={(value) => {
                                           const readOnly =
-                                            isEvaluationSubmitted ||
-                                            (!!criteriaItem.scoring?._id && editingCriteriaId !== criteriaItem._id);
+                                            (isEvaluationSubmitted || !!criteriaItem.scoring?._id) &&
+                                            editingCriteriaId !== criteriaItem._id;
                                           if (!readOnly) setValue("score", parseInt(value));
                                         }}
                                         className="flex gap-8 justify-center mb-1"
@@ -780,8 +847,8 @@ const SubmittedDocumentPage: React.FC = () => {
                                               value={score.toString()}
                                               id={`${criteriaItem._id}-${score}`}
                                               disabled={
-                                                isEvaluationSubmitted ||
-                                                (!!criteriaItem.scoring?._id && editingCriteriaId !== criteriaItem._id)
+                                                (isEvaluationSubmitted || !!criteriaItem.scoring?._id) &&
+                                                editingCriteriaId !== criteriaItem._id
                                               }
                                             />
                                             <Label
@@ -836,6 +903,16 @@ const SubmittedDocumentPage: React.FC = () => {
                                     ? criteriaItem.scoring.scoring.pass_fail
                                     : criteriaItem.scoring.scoring.weight}
                                 </p>
+                                {submittedCriteriaTimestamps[criteriaItem._id] && (
+                                  <p className="text-xs text-gray-600 mt-1 dark:text-gray-300">
+                                    Submitted at: {new Date(submittedCriteriaTimestamps[criteriaItem._id]).toLocaleString()}
+                                  </p>
+                                )}
+                                {revisedCriteriaTimestamps[criteriaItem._id] && (
+                                  <p className="text-xs text-green-600 mt-1 dark:text-green-300">
+                                    Revised at: {new Date(revisedCriteriaTimestamps[criteriaItem._id]).toLocaleString()}
+                                  </p>
+                                )}
                                 {criteriaItem.scoring.comment && (
                                   <p
                                     className="text-xs text-blue-500 mt-1 truncate dark:text-slate-200"
@@ -872,8 +949,8 @@ const SubmittedDocumentPage: React.FC = () => {
                                   setValue("comment", e.target.value)
                                 }
                                 disabled={
-                                  isEvaluationSubmitted ||
-                                  (!!criteriaItem.scoring?._id && editingCriteriaId !== criteriaItem._id)
+                                  (isEvaluationSubmitted || !!criteriaItem.scoring?._id) &&
+                                  editingCriteriaId !== criteriaItem._id
                                 }
                                 className="w-full dark:text-slate-200"
                                 rows={3}
@@ -881,7 +958,7 @@ const SubmittedDocumentPage: React.FC = () => {
                               />
                             </div>
 
-                            {!isEvaluationSubmitted && (
+                            {!isEvaluationSubmitted ? (
                               !criteriaItem.scoring?._id ? (
                                 <div className="p-4 flex justify-end gap-2 border-t border-gray-200">
                                   <Button
@@ -957,6 +1034,56 @@ const SubmittedDocumentPage: React.FC = () => {
                                   </div>
                                 )
                               )
+                            ) : (
+                              isEvaluationCompleted && editingCriteriaId === criteriaItem._id ? (
+                                <div className="p-4 flex justify-end gap-2 border-t border-gray-200">
+                                  <Button
+                                    variant="outline"
+                                    className="px-4"
+                                    onClick={() => {
+                                      setEditingCriteriaId(null);
+                                      const type = criteriaItem.criteria.pass_fail ? "pass_fail" : "weight";
+                                      handleStartScoring(criteriaItem._id, type);
+                                    }}
+                                  >
+                                    Cancel
+                                  </Button>
+                                  <Button
+                                    className="text-white px-4"
+                                    onClick={handleSubmit(onSubmitScore)}
+                                    disabled={revisitScoreMutation.isPending}
+                                  >
+                                    {revisitScoreMutation.isPending ? "Resubmitting..." : "Revise Score"}
+                                  </Button>
+                                </div>
+                              ) : isEvaluationCompleted ? (
+                                <div className="p-4 flex justify-end gap-2 border-t border-gray-200">
+                                  <Button
+                                    variant="outline"
+                                    className="px-4"
+                                    onClick={() => {
+                                      setEditingCriteriaId(criteriaItem._id);
+                                      const type = criteriaItem.criteria.pass_fail ? "pass_fail" : "weight";
+                                      const existingScoring = criteriaItem.scoring;
+                                      if (existingScoring) {
+                                        const scoreValue =
+                                          type === "pass_fail"
+                                            ? existingScoring.scoring.pass_fail
+                                            : typeof existingScoring.scoring.weight === "number" && existingScoring.scoring.weight > 0
+                                              ? existingScoring.scoring.weight / 20
+                                              : "";
+                                        reset({
+                                          comment: existingScoring.comment || "",
+                                          score: scoreValue,
+                                          type: type as "pass_fail" | "weight",
+                                        });
+                                      }
+                                    }}
+                                  >
+                                    Revise Score
+                                  </Button>
+                                </div>
+                              ) : null
                             )}
                           </>
                         )}

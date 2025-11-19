@@ -205,15 +205,22 @@ export const SideBar = () => {
   const navigation = getNavigationForRole(userRole, location.pathname);
 
   return (
-    <Sidebar
-      collapsible="none"
-      className={cn(
-        "border-r border-gray-200 dark:border-gray-700 transition-colors",
-        userRole === "super_admin"
-          ? "bg-[#2A4467]"
-          : "bg-white dark:bg-gray-900"
-      )}
-    >
+    <>
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:bg-white focus:text-blue-700 focus:px-3 focus:py-2 focus:rounded shadow"
+      >
+        Skip to main content
+      </a>
+      <Sidebar
+        collapsible="none"
+        className={cn(
+          "border-r border-gray-200 dark:border-gray-700 transition-colors",
+          userRole === "super_admin"
+            ? "bg-[#2A4467]"
+            : "bg-white dark:bg-gray-900"
+        )}
+      >
       <SidebarHeader className="p-6 ">
         <div className="flex items-center gap-3">
           <img
@@ -249,9 +256,7 @@ export const SideBar = () => {
                         className={cn(
                           "h-5 w-5",
                           userRole === "super_admin"
-                            ? item.active
-                              ? "text-white"
-                              : "text-white/80"
+                            ? "text-white"
                             : item.active
                             ? "text-[#2A4467] dark:text-blue-400"
                             : "text-gray-500 dark:text-gray-400"
@@ -275,8 +280,8 @@ export const SideBar = () => {
             className={cn(
               "text-xs font-medium",
               userRole === "super_admin"
-                ? "text-white/60"
-                : "text-gray-500 dark:text-gray-400"
+                ? "text-white"
+                : "text-gray-700 dark:text-gray-300"
             )}
           >
             Version 1.0.1
@@ -284,5 +289,6 @@ export const SideBar = () => {
         </div>
       </SidebarFooter>
     </Sidebar>
+    </>
   );
 };

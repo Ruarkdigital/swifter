@@ -782,7 +782,7 @@ const EvaluationDetailPage: React.FC = () => {
   ];
 
   return (
-    <div className="p-6 min-h-full">
+    <main id="main-content" className="p-6 min-h-full" role="main">
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 mb-6">
         <span>Evaluations</span>
@@ -1480,7 +1480,7 @@ const EvaluationDetailPage: React.FC = () => {
           </div>
         </TabsContent>
       </Tabs>
-    </div>
+    </main>
   );
 };
 

@@ -850,22 +850,26 @@ export const SolicitationDetailPage = () => {
   ];
 
   return (
-    <div className="p-6 min-h-full pb-10">
+    <main id="main-content" className="p-6 min-h-full pb-10" role="main">
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-200 mb-6">
-        <span
+        <button
+          type="button"
           onClick={handleBack}
-          className="cursor-pointer hover:text-gray-700"
+          className="cursor-pointer hover:text-gray-700 underline"
+          aria-label="Go back to Solicitations"
         >
           Solicitations
-        </span>
+        </button>
         <ChevronRight className="h-4 w-4" />
-        <span
+        <button
+          type="button"
           onClick={handleBack}
-          className="cursor-pointer hover:text-gray-700"
+          className="cursor-pointer hover:text-gray-700 underline"
+          aria-label="Go back to My Solicitations"
         >
           My Solicitations
-        </span>
+        </button>
         <ChevronRight className="h-4 w-4" />
         <span>Solicitation Details</span>
         <ChevronRight className="h-4 w-4" />
@@ -1599,7 +1603,7 @@ export const SolicitationDetailPage = () => {
       />
 
       <div className="h-10" />
-    </div>
+    </main>
   );
 };
 
