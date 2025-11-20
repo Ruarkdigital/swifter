@@ -6,6 +6,7 @@ import {
   endOfDay,
   subDays,
   differenceInDays,
+  toDate,
 } from "date-fns";
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -109,7 +110,7 @@ const safeFormatDate = (
 const calculateDaysLeft = (deadline: string): number => {
   if (!deadline) return 0;
 
-  const deadlineDate = new Date(deadline);
+  const deadlineDate = toDate(deadline);
   if (isNaN(deadlineDate.getTime())) return 0;
 
   const today = new Date();
@@ -545,8 +546,24 @@ export const EvaluationManagementPage = () => {
         let secondary: JSX.Element;
 
         if (isCompleted && completionDate && deadlineRaw) {
-          const end = new Date(deadlineRaw);
-          const completed = new Date(completionDate);
+          const formattedDeadline = format(
+            deadlineRaw,
+            "yyyy-MM-dd'T'HH:mm:ss"
+          );
+          const formattedCompletionDate = format(
+            completionDate,
+            "yyyy-MM-dd'T'HH:mm:ss"
+          );
+
+          const end = new Date(formattedDeadline);
+          const completed = new Date(formattedCompletionDate);
+
+          console.log(row.original.name, {
+            formattedCompletionDate,
+            formattedDeadline,
+            end: end.toString(),
+            completed: completed.toString(),
+          });
 
           if (!isNaN(end.getTime()) && !isNaN(completed.getTime())) {
             const delta = differenceInDays(end, completed);
@@ -669,8 +686,17 @@ export const EvaluationManagementPage = () => {
         let secondary: JSX.Element;
 
         if (isCompleted && completionDate && deadlineRaw) {
-          const end = new Date(deadlineRaw);
-          const completed = new Date(completionDate);
+          const formattedDeadline = format(
+            deadlineRaw,
+            "yyyy-MM-dd'T'HH:mm:ss"
+          );
+          const formattedCompletionDate = format(
+            completionDate,
+            "yyyy-MM-dd'T'HH:mm:ss"
+          );
+
+          const end = new Date(formattedDeadline);
+          const completed = new Date(formattedCompletionDate);
 
           if (!isNaN(end.getTime()) && !isNaN(completed.getTime())) {
             const delta = differenceInDays(end, completed);

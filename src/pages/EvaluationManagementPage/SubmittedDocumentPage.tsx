@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ChevronRight, Eye, Download, FileText } from "lucide-react";
+import { ChevronRight, Eye, Download, FileText, InfoIcon } from "lucide-react";
 import { DocSVG } from "@/assets/icons/Doc";
 import { PdfSVG } from "@/assets/icons/Pdf";
 import { ExcelSVG } from "@/assets/icons/Excel";
@@ -17,6 +17,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
@@ -495,12 +496,12 @@ const SubmittedDocumentPage: React.FC = () => {
       reset(savedState);
     } else if (existingScoring) {
       // Pre-populate with existing scoring data from API
-      // For weight-based scoring, map stored percentage (e.g., 80) to radio value (1–5) by dividing by 20
+      // For weight-based scoring, map stored percentage (e.g., 80) to radio value (1–10) by dividing by 10
       const scoreValue =
         criteriaType === "pass_fail"
           ? existingScoring.scoring.pass_fail
           : typeof existingScoring.scoring.weight === "number" && existingScoring.scoring.weight > 0
-            ? existingScoring.scoring.weight / 20
+            ? existingScoring.scoring.weight / 10
             : "";
 
       reset({
@@ -828,6 +829,26 @@ const SubmittedDocumentPage: React.FC = () => {
                                 ) : (
                                   <div>
                                     <div className="flex flex-col">
+                                      <div className="flex items-center justify-end mb-2">
+                                        <TooltipProvider>
+                                          <Tooltip>
+                                            <TooltipTrigger asChild>
+                                              <InfoIcon className="w-4 h-4 text-gray-500 cursor-pointer" />
+                                            </TooltipTrigger>
+                                            <TooltipContent>
+                                              <div className="space-y-1">
+                                                <div className="font-medium">Scoring Legend</div>
+                                                {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
+                                                  <div key={n} className="text-xs text-gray-600 dark:text-gray-300">
+                                                    {n} = {n * 10}% of the weight
+                                                  </div>
+                                                ))}
+                                              </div>
+                                            </TooltipContent>
+                                          </Tooltip>
+                                        </TooltipProvider>
+                                      </div>
+
                                       <RadioGroup
                                         value={watch("score")?.toString()}
                                         onValueChange={(value) => {
@@ -838,7 +859,7 @@ const SubmittedDocumentPage: React.FC = () => {
                                         }}
                                         className="flex gap-8 justify-center mb-1"
                                       >
-                                        {[1, 2, 3, 4, 5].map((score) => (
+                                        {Array.from({ length: 10 }, (_, i) => i + 1).map((score) => (
                                           <div
                                             key={score}
                                             className="flex flex-col items-center gap-1"
@@ -861,12 +882,8 @@ const SubmittedDocumentPage: React.FC = () => {
                                         ))}
                                       </RadioGroup>
                                       <div className="flex justify-between px-4 mt-1">
-                                        <span className="text-xs text-gray-500 dark:text-slate-200">
-                                          Low
-                                        </span>
-                                        <span className="text-xs text-gray-500 dark:text-slate-200">
-                                          High
-                                        </span>
+                                        <span className="text-xs text-gray-500 dark:text-slate-200">Low</span>
+                                        <span className="text-xs text-gray-500 dark:text-slate-200">High</span>
                                       </div>
                                     </div>
                                   </div>
@@ -1019,7 +1036,7 @@ const SubmittedDocumentPage: React.FC = () => {
                                             type === "pass_fail"
                                               ? existingScoring.scoring.pass_fail
                                               : typeof existingScoring.scoring.weight === "number" && existingScoring.scoring.weight > 0
-                                                ? existingScoring.scoring.weight / 20
+                                                ? existingScoring.scoring.weight / 10
                                                 : "";
                                           reset({
                                             comment: existingScoring.comment || "",
@@ -1070,7 +1087,7 @@ const SubmittedDocumentPage: React.FC = () => {
                                           type === "pass_fail"
                                             ? existingScoring.scoring.pass_fail
                                             : typeof existingScoring.scoring.weight === "number" && existingScoring.scoring.weight > 0
-                                              ? existingScoring.scoring.weight / 20
+                                              ? existingScoring.scoring.weight / 10
                                               : "";
                                         reset({
                                           comment: existingScoring.comment || "",
