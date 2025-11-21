@@ -9,7 +9,7 @@ import { ColumnDef } from "@tanstack/react-table";
 import { ApiResponseError } from "@/types";
 
 interface ScoreCardItem {
-  scoring?: { weight?: number };
+  scoring?: { weight?: number, pass_fail?: string };
   _id: string;
   evaluationCriteria: {
     criteria: {
@@ -57,7 +57,11 @@ export const CriteriaScorecardSheet = ({
   });
 
   const rows: ScoreCardItem[] = Array.isArray(scoreData?.data)
-    ? scoreData!.data
+    ? scoreData!.data.sort((a, b) => {
+        const aEvaluator = a.evaluator.name ?? "";
+        const bEvaluator = b.evaluator.name ?? "";
+        return bEvaluator.localeCompare(aEvaluator);
+      })
     : [];
 
   const columns: ColumnDef<ScoreCardItem>[] = [
@@ -70,7 +74,9 @@ export const CriteriaScorecardSheet = ({
     {
       accessorKey: "vendor.name",
       header: "Vendor",
-      cell: ({ row }) => <span className="font-medium">{row.original.vendor?.name}</span>,
+      cell: ({ row }) => (
+        <span className="font-medium">{row.original.vendor?.name}</span>
+      ),
     },
     {
       accessorKey: "evaluator.name",
@@ -80,28 +86,44 @@ export const CriteriaScorecardSheet = ({
     {
       accessorKey: "scoring.weight",
       header: "Score",
-      cell: ({ row }) => <span className="font-medium">{row.original.scoring?.weight ?? "-"}</span>,
+      cell: ({ row }) => (
+        <span className="font-medium">
+          {row.original.scoring?.weight ?? "-"}
+        </span>
+      ),
     },
     {
-      accessorKey: "scoring.weight",
+      accessorKey: "evaluationCriteria.criteria.weight",
       header: "Weight",
-      cell: ({ row }) => <span className="font-medium">{row.original.scoring?.weight ?? "-"}</span>,
+      cell: ({ row }) => (
+        <span className="font-medium">
+          {row.original.evaluationCriteria?.criteria?.weight ?? "-"}
+        </span>
+      ),
     },
     {
       accessorKey: "evaluationCriteria.criteria.pass_fail",
       header: "Pass/Fail",
       cell: ({ row }) => {
         const status = row.original.evaluationCriteria?.criteria?.status;
-        const val = row.original.evaluationCriteria?.criteria?.pass_fail;
-        if (status !== "pass_fail" || !val) return <span className="text-muted-foreground">-</span>;
+        const val = row.original.scoring?.pass_fail;
+
+        if (status !== "pass_fail" || !val)
+          return <span className="text-muted-foreground">-</span>;
+
         const label = String(val).toLowerCase() === "fail" ? "Fail" : "Pass";
+
         return <span className="font-medium">{label}</span>;
       },
     },
     {
       accessorKey: "evaluationCriteria.criteria.status",
       header: "Status",
-      cell: ({ row }) => <span className="capitalize">{row.original.evaluationCriteria?.criteria?.status || "-"}</span>,
+      cell: ({ row }) => (
+        <span className="capitalize">
+          {row.original.evaluationCriteria?.criteria?.status || "-"}
+        </span>
+      ),
     },
     // comment moved to sub-row
   ];
@@ -109,10 +131,7 @@ export const CriteriaScorecardSheet = ({
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
       <SheetTrigger asChild>
-        <Button
-          variant="link"
-          className="text-green-600 p-0 h-auto"
-        >
+        <Button variant="link" className="text-green-600 p-0 h-auto">
           View Scores
         </Button>
       </SheetTrigger>
@@ -120,7 +139,9 @@ export const CriteriaScorecardSheet = ({
         <div className="flex items-center justify-between p-6 border-b">
           <div className="flex items-center gap-3">
             <ChevronLeft className="h-5 w-5 text-gray-600 dark:text-slate-200" />
-            <h2 className="text-lg font-medium text-gray-900 dark:text-slate-200">Criteria Score Card</h2>
+            <h2 className="text-lg font-medium text-gray-900 dark:text-slate-200">
+              Criteria Score Card
+            </h2>
           </div>
         </div>
 
@@ -143,7 +164,8 @@ export const CriteriaScorecardSheet = ({
               setPagination: () => {},
               pagination: { pageIndex: 0, pageSize: 50 },
               enableExpanding: true,
-              getRowCanExpand: (row) => !!(row.original as ScoreCardItem).comment,
+              getRowCanExpand: (row) =>
+                !!(row.original as ScoreCardItem).comment,
               renderSubComponent: ({ row }) => (
                 <div className="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">
                   <div className="font-medium mb-1">Comment</div>
