@@ -28,9 +28,9 @@ import { format } from "date-fns";
 const baseSchema = {
   // title: yup.string().required("Title is required"),
   description: yup.string().required("Description is required"),
-  submissionDeadline: yup.string().optional(),
-  questionAcceptanceDeadline: yup.string().optional(),
-  bidIntentDeadline: yup.string().optional(),
+  submissionDeadline: yup.date().optional().nullable(),
+  questionAcceptanceDeadline: yup.date().optional().nullable(),
+  bidIntentDeadline: yup.date().optional().nullable(),
   documents: yup.array().nullable().default(null),
 };
 
@@ -48,9 +48,9 @@ const createSchema = (isReplyMode: boolean) => {
 type FormValues = {
   // title: string;
   description: string;
-  submissionDeadline?: string;
-  questionAcceptanceDeadline?: string;
-  bidIntentDeadline?: string;
+  submissionDeadline?: Date;
+  questionAcceptanceDeadline?: Date;
+  bidIntentDeadline?: Date;
   documents: any[] | null;
   question?: string;
 };
@@ -102,20 +102,20 @@ const CreateAddendumDialog: React.FC<CreateAddendumDialogProps> = ({
 
   // Helper function to format date for input (timezone-aware)
   const formatDateForInput = (dateString: string) => {
-    if (!dateString) return "";
-    // const tz = getSolicitationTimezone();
-    return formatDateTZ(dateString, "yyyy-MM-dd'T'HH:mm");
+    if (!dateString) return undefined as unknown as Date;
+    const formatted = formatDateTZ(dateString, "yyyy-MM-dd'T'HH:mm");
+    return new Date(formatted);
   };
 
   const { control, reset, getValues } = useForge<FormValues>({
-    resolver: yupResolver(createSchema(isReplyMode)),
+    resolver: yupResolver(createSchema(isReplyMode)) as any,
     defaultValues: {
       // title: "",
       description: "",
       documents: null,
-      submissionDeadline: "",
-      questionAcceptanceDeadline: "",
-      bidIntentDeadline: "",
+      submissionDeadline: undefined,
+      questionAcceptanceDeadline: undefined,
+      bidIntentDeadline: undefined,
       question: "",
     },
   });
@@ -148,7 +148,7 @@ const CreateAddendumDialog: React.FC<CreateAddendumDialogProps> = ({
   });
 
   const maxDate = submissionDeadlineDate
-    ? new Date(submissionDeadlineDate)
+    ? new Date(submissionDeadlineDate as unknown as Date)
     : undefined;
 
   console.log({ maxDate, submissionDeadlineDate, values: getValues() })
@@ -236,14 +236,12 @@ const CreateAddendumDialog: React.FC<CreateAddendumDialogProps> = ({
       const payload = {
         // title: data.title,
         description: data.description,
-        submissionDeadline: format(
-          data.submissionDeadline as unknown as Date,
-          "yyyy-MM-dd'T'HH:mm:ss"
-        ),
-        questionDeadline: format(
-          data.questionAcceptanceDeadline as unknown as Date,
-          "yyyy-MM-dd'T'HH:mm:ss"
-        ),
+        submissionDeadline: data.submissionDeadline
+          ? format(data.submissionDeadline, "yyyy-MM-dd'T'HH:mm:ss")
+          : undefined,
+        questionDeadline: data.questionAcceptanceDeadline
+          ? format(data.questionAcceptanceDeadline, "yyyy-MM-dd'T'HH:mm:ss")
+          : undefined,
         status: status === "publish" ? "publish" : "draft",
         files: uploadedFiles.map((file) => ({
           name: file.name,

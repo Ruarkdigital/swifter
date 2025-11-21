@@ -284,7 +284,7 @@ export const SideBar = () => {
                 : "text-gray-700 dark:text-gray-300"
             )}
           >
-            Version 1.0.2
+            Version 1.0.3
           </span>
         </div>
       </SidebarFooter>
