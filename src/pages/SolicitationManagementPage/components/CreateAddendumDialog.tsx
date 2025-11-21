@@ -144,6 +144,7 @@ const CreateAddendumDialog: React.FC<CreateAddendumDialogProps> = ({
   const submissionDeadlineDate = useWatch({
     name: "submissionDeadline",
     control,
+    defaultValue: getValues("submissionDeadline"),
   });
 
   const maxDate = submissionDeadlineDate
