@@ -150,7 +150,7 @@ const CreateAddendumDialog: React.FC<CreateAddendumDialogProps> = ({
     ? new Date(submissionDeadlineDate)
     : undefined;
 
-  console.log({ maxDate, submissionDeadlineDate })
+  console.log({ maxDate, submissionDeadlineDate, values: getValues() })
 
   // File upload mutation with progress tracking
   const uploadFilesMutation = useMutation<
