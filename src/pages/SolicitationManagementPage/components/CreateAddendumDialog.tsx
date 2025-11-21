@@ -19,7 +19,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { postRequest, getRequest } from "@/lib/axiosInstance";
 import { ApiResponse, ApiResponseError } from "@/types";
 import { useToastHandler } from "@/hooks/useToaster";
-import { useWatch } from "react-hook-form";
+import { } from "react-hook-form";
 import { useUserRole } from "@/hooks/useUserRole";
 import { cn, formatDateTZ } from "@/lib/utils";
 import { format } from "date-fns";
@@ -107,7 +107,7 @@ const CreateAddendumDialog: React.FC<CreateAddendumDialogProps> = ({
     return new Date(formatted);
   };
 
-  const { control, reset, getValues } = useForge<FormValues>({
+  const { control, reset, getValues, watch } = useForge<FormValues>({
     resolver: yupResolver(createSchema(isReplyMode)) as any,
     defaultValues: {
       // title: "",
@@ -141,11 +141,7 @@ const CreateAddendumDialog: React.FC<CreateAddendumDialogProps> = ({
     }
   }, [solicitation]);
 
-  const submissionDeadlineDate = useWatch({
-    name: "submissionDeadline",
-    control,
-    defaultValue: getValues("submissionDeadline"),
-  });
+  const submissionDeadlineDate = watch("submissionDeadline");
 
   const maxDate = submissionDeadlineDate
     ? new Date(submissionDeadlineDate as unknown as Date)
