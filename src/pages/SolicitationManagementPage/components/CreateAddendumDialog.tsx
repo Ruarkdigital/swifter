@@ -145,11 +145,12 @@ const CreateAddendumDialog: React.FC<CreateAddendumDialogProps> = ({
     name: "submissionDeadline",
     control,
   });
+
   const maxDate = submissionDeadlineDate
     ? new Date(submissionDeadlineDate)
     : undefined;
 
-  console.log({ maxDate })
+  console.log({ maxDate, submissionDeadlineDate })
 
   // File upload mutation with progress tracking
   const uploadFilesMutation = useMutation<
@@ -275,7 +276,7 @@ const CreateAddendumDialog: React.FC<CreateAddendumDialogProps> = ({
       onClose();
     },
     onError: (error) => {
-      console.error("Create addendum error:", error);
+      // console.error("Create addendum error:", error);
       toast.error(
         "Error",
         error?.response?.data?.message ?? "Failed to create addendum"
@@ -344,7 +345,7 @@ const CreateAddendumDialog: React.FC<CreateAddendumDialogProps> = ({
       onClose();
     },
     onError: (error) => {
-      console.error("Reply addendum error:", error);
+      // console.error("Reply addendum error:", error);
       toast.error(
         "Error",
         error?.response?.data?.message ?? "Failed to reply with addendum"
@@ -486,7 +487,7 @@ const CreateAddendumDialog: React.FC<CreateAddendumDialogProps> = ({
         </DialogTitle>
       </DialogHeader>
 
-      <Forge control={control} onSubmit={handlePublishAddendum} ref={formRef}>
+      <Forge control={control} onSubmit={handlePublishAddendum} ref={formRef} debug>
         {/* Form Content */}
         <div className="space-y-6 mt-3">
           {/* Description */}
