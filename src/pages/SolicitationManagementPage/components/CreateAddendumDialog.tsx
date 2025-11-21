@@ -149,6 +149,8 @@ const CreateAddendumDialog: React.FC<CreateAddendumDialogProps> = ({
     ? new Date(submissionDeadlineDate)
     : undefined;
 
+  console.log({ maxDate })
+
   // File upload mutation with progress tracking
   const uploadFilesMutation = useMutation<
     ApiResponse<any[]>,
