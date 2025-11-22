@@ -19,7 +19,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { postRequest, getRequest } from "@/lib/axiosInstance";
 import { ApiResponse, ApiResponseError } from "@/types";
 import { useToastHandler } from "@/hooks/useToaster";
-import { } from "react-hook-form";
 import { useUserRole } from "@/hooks/useUserRole";
 import { cn, formatDateTZ } from "@/lib/utils";
 import { format } from "date-fns";
@@ -147,7 +146,7 @@ const CreateAddendumDialog: React.FC<CreateAddendumDialogProps> = ({
     ? new Date(submissionDeadlineDate as unknown as Date)
     : undefined;
 
-  console.log({ maxDate, submissionDeadlineDate, values: getValues() })
+  // console.log({ maxDate, submissionDeadlineDate, values: getValues() })
 
   // File upload mutation with progress tracking
   const uploadFilesMutation = useMutation<
@@ -235,6 +234,9 @@ const CreateAddendumDialog: React.FC<CreateAddendumDialogProps> = ({
         submissionDeadline: data.submissionDeadline
           ? format(data.submissionDeadline, "yyyy-MM-dd'T'HH:mm:ss")
           : undefined,
+        bidIntentDeadline: data.bidIntentDeadline
+          ? format(data.bidIntentDeadline, "yyyy-MM-dd'T'HH:mm:ss")
+          : undefined,
         questionDeadline: data.questionAcceptanceDeadline
           ? format(data.questionAcceptanceDeadline, "yyyy-MM-dd'T'HH:mm:ss")
           : undefined,
@@ -267,6 +269,12 @@ const CreateAddendumDialog: React.FC<CreateAddendumDialogProps> = ({
       });
       queryClient.refetchQueries({
         queryKey: ["addendums", solicitationId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["solicitation", solicitationId],
+      });
+      queryClient.refetchQueries({
+        queryKey: ["solicitation", solicitationId],
       });
       onClose();
     },
@@ -305,6 +313,9 @@ const CreateAddendumDialog: React.FC<CreateAddendumDialogProps> = ({
         questionDeadline: data.questionAcceptanceDeadline
           ? format(data.questionAcceptanceDeadline, "yyyy-MM-dd'T'HH:mm:ss")
           : undefined,
+        bidIntentDeadline: data.bidIntentDeadline
+          ? format(data.bidIntentDeadline, "yyyy-MM-dd'T'HH:mm:ss")
+          : undefined,
         question: data.question,
         status: status,
         files: uploadedFiles.map((file) => ({
@@ -336,6 +347,12 @@ const CreateAddendumDialog: React.FC<CreateAddendumDialogProps> = ({
       });
       queryClient.refetchQueries({
         queryKey: ["addendums", solicitationId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["solicitation", solicitationId],
+      });
+      queryClient.refetchQueries({
+        queryKey: ["solicitation", solicitationId],
       });
       onClose();
     },
@@ -482,7 +499,7 @@ const CreateAddendumDialog: React.FC<CreateAddendumDialogProps> = ({
         </DialogTitle>
       </DialogHeader>
 
-      <Forge control={control} onSubmit={handlePublishAddendum} ref={formRef} debug>
+      <Forge control={control} onSubmit={handlePublishAddendum} ref={formRef}>
         {/* Form Content */}
         <div className="space-y-6 mt-3">
           {/* Description */}
@@ -544,29 +561,29 @@ const CreateAddendumDialog: React.FC<CreateAddendumDialogProps> = ({
             showTime
           />
 
-        {/* Question Acceptance Deadline */}
-        <Forger
-          name="questionAcceptanceDeadline"
-          component={TextDatePicker}
-          label="Question Acceptance Deadline Date & Time"
-          placeholder="Select Date & Time"
-          minDate={new Date()}
-          dependencies={[maxDate]}
-          maxDate={maxDate}
-          showTime
-        />
+          {/* Question Acceptance Deadline */}
+          <Forger
+            name="questionAcceptanceDeadline"
+            component={TextDatePicker}
+            label="Question Acceptance Deadline Date & Time"
+            placeholder="Select Date & Time"
+            minDate={new Date()}
+            dependencies={[maxDate]}
+            maxDate={maxDate}
+            showTime
+          />
 
-        {/* Bid Intent Deadline */}
-        <Forger
-          name="bidIntentDeadline"
-          component={TextDatePicker}
-          label="Bid Intent Deadline Date & Time"
-          placeholder="Select Date & Time"
-          minDate={new Date()}
-          dependencies={[maxDate]}
-          maxDate={maxDate}
-          showTime
-        />
+          {/* Bid Intent Deadline */}
+          <Forger
+            name="bidIntentDeadline"
+            component={TextDatePicker}
+            label="Bid Intent Deadline Date & Time"
+            placeholder="Select Date & Time"
+            minDate={new Date()}
+            dependencies={[maxDate]}
+            maxDate={maxDate}
+            showTime
+          />
         </div>
 
         {/* Footer */}
