@@ -45,6 +45,7 @@ const EvaluationScorecardSheet: React.FC<EvaluationScorecardSheetProps> = ({
   const activeData = isOpen ? scorecardDataEnabled : scorecardData;
   const activeLoading = isOpen ? isLoadingEnabled : isLoading;
   const activeError = isOpen ? errorEnabled : error;
+  const totalCriteriaScore = activeData?.data?.criteriaWeightSummtion || 0;
 
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
@@ -209,7 +210,6 @@ const EvaluationScorecardSheet: React.FC<EvaluationScorecardSheetProps> = ({
                           );
                           const vendorScore =
                             (totalFromApi ?? computedFallback) || 0;
-                          // const totalScore =
 
                           return (
                             <AccordionItem
@@ -224,7 +224,7 @@ const EvaluationScorecardSheet: React.FC<EvaluationScorecardSheetProps> = ({
                                   </span>
                                   <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
                                     Evaluator Score:{" "}
-                                    {Number(vendorScore).toFixed(0)}
+                                    {Number(vendorScore).toFixed(0)}/{totalCriteriaScore.toFixed(0)}
                                   </span>
                                 </div>
                               </AccordionTrigger>

@@ -28,6 +28,7 @@ interface EvaluatorDetails {
 
 interface EvaluationScorecardData {
   evaluator: EvaluatorDetails;
+  criteriaWeightSummtion: number;
   criteria: EvaluationCriteria[];
 }
 
