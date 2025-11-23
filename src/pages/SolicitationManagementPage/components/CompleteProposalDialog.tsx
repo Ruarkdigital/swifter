@@ -15,6 +15,7 @@ import ProposalItemRow from "./ProposalItemRow";
 import { FormValues } from "./SubmitProposalPage";
 import { usePersist } from "@/lib/forge/usePersist/usePersist";
 import { useState, useEffect } from "react";
+import { formatCurrency } from "@/lib/utils";
 import { UseFormSetValue, UseFormGetValues } from "react-hook-form";
 
 interface CompleteProposalDialogProps {
@@ -46,14 +47,26 @@ const CompleteProposalDialog: React.FC<CompleteProposalDialogProps> = ({
     shouldUnregister,
   });
 
-  const [totalAmount, setTotalAmount] = useState("0.00");
+  const [totalAmount, setTotalAmount] = useState(0);
 
   // Initialize total amount when dialog opens with existing data
   useEffect(() => {
     if (open) {
       const currentFormValues = getValue();
+      const items = currentFormValues?.priceAction || [];
+      items.forEach((item: any, index: number) => {
+        const itemSubtotal = calculateItemSubtotal(item);
+        setValue(`priceAction.${index}.subtotal`, itemSubtotal);
+        (item?.subItems || []).forEach((subItem: any, subIndex: number) => {
+          const subSubtotal = (subItem?.quantity || 0) * (subItem?.unitPrice || 0);
+          setValue(
+            `priceAction.${index}.subItems.${subIndex}.subtotal`,
+            subSubtotal
+          );
+        });
+      });
       const total = calculateTotal(currentFormValues);
-      setTotalAmount(total.toFixed(2));
+      setTotalAmount(total);
     }
   }, [open, getValue]);
 
@@ -87,29 +100,21 @@ const CompleteProposalDialog: React.FC<CompleteProposalDialogProps> = ({
         (formState?.name?.includes("unitPrice") ||
           formState?.name?.includes("quantity"))
       ) {
-        // Update subtotals for each item
-        const updatedItems = formValues.priceAction.map((item: any) => {
+        const items = formValues.priceAction as any[];
+        items.forEach((item: any, index: number) => {
           const itemSubtotal = calculateItemSubtotal(item);
-          // Update sub-items subtotals
-          const updatedSubItems = (item.subItems || []).map((subItem: any) => ({
-            ...subItem,
-            subtotal: (subItem.quantity || 0) * (subItem.unitPrice || 0),
-          }));
-          return {
-            ...item,
-            subtotal: itemSubtotal,
-            subItems: updatedSubItems,
-          };
+          setValue(`priceAction.${index}.subtotal`, itemSubtotal);
+          (item.subItems || []).forEach((subItem: any, subIndex: number) => {
+            const subSubtotal = (subItem.quantity || 0) * (subItem.unitPrice || 0);
+            setValue(
+              `priceAction.${index}.subItems.${subIndex}.subtotal`,
+              subSubtotal
+            );
+          });
         });
 
-        // Update the form with calculated subtotals using update method
-        // updatedItems.forEach((item: any, index: number) => {
-        // });
-        setValue("priceAction", updatedItems);
-
-        // Calculate and set total
-        const total = calculateTotal({ priceAction: updatedItems });
-        setTotalAmount(total.toFixed(2));
+        const total = calculateTotal({ priceAction: items });
+        setTotalAmount(total);
         setValue("total", total);
       }
     },
@@ -175,7 +180,7 @@ const CompleteProposalDialog: React.FC<CompleteProposalDialogProps> = ({
     // Recalculate total after removal
     const currentFormValues = getValue();
     const total = calculateTotal(currentFormValues);
-    setTotalAmount(total.toFixed(2));
+    setTotalAmount(total);
     setValue("total", total);
   };
 
@@ -228,6 +233,7 @@ const CompleteProposalDialog: React.FC<CompleteProposalDialogProps> = ({
       updatedItems[itemIndex].subtotal = mainSubtotal + subItemsTotal;
 
       setValue("priceAction", updatedItems);
+      setValue(`priceAction.${itemIndex}.subtotal`, updatedItems[itemIndex].subtotal);
       control.unregister(
         `priceAction.${itemIndex}.subItems.${subItemIndex}.component`
       );
@@ -249,7 +255,7 @@ const CompleteProposalDialog: React.FC<CompleteProposalDialogProps> = ({
 
       // Recalculate total
       const total = calculateTotal({ priceAction: updatedItems });
-      setTotalAmount(total.toFixed(2));
+      setTotalAmount(total);
       setValue("total", total);
     }
   };
@@ -434,7 +440,7 @@ const CompleteProposalDialog: React.FC<CompleteProposalDialogProps> = ({
               </div>
               <div className="text-right">
                 <div className="text-xl font-bold text-gray-900 dark:text-gray-100">
-                  ${totalAmount}
+                  {formatCurrency(totalAmount, "en-US", "USD")}
                 </div>
               </div>
             </div>

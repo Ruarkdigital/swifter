@@ -109,7 +109,7 @@ export const TextInput = (props: TextInputProps & Partial<ForgerSlotProps>) => {
         <Input
           {...inputProps}
           name={name}
-          value={value || ""}
+          value={value ?? ""}
           onChange={onChange}
           onBlur={onBlur}
           className={`w-full h-12 border border-gray-300 rounded-lg px-4 focus:border-[#2A4467] focus:ring-[#2A4467] ${
@@ -166,7 +166,7 @@ export const TextArea = (props: TextAreaProps & Partial<ForgerSlotProps>) => {
         <Textarea
           {...textareaProps}
           name={name}
-          value={value || ""}
+          value={value ?? ""}
           onChange={onChange}
           onBlur={onBlur}
           rows={rows}

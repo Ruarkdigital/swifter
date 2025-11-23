@@ -56,6 +56,7 @@ type Invitation = {
   rfp: string;
   invitedDate: string;
   deadline: string;
+  timezone: string;
   status: "invited" | "confirmed" | "declined" | "not available";
 };
 
@@ -85,14 +86,15 @@ const transformSolicitationToInvitation = (
     rfp: solicitation.typeId?.name || "RFP",
     invitedDate: formatDateTZ(
       solicitation?.vendor?.invitedAt ?? solicitation.createdAt,
-      "MMM d, yyyy, pppp",
+      "MMM d, yyyy hh:mm a",
       solicitation?.timezone
     ),
     deadline: formatDateTZ(
       solicitation.submissionDeadline as any,
-      "MMM d, yyyy, pppp",
+      "MMM d, yyyy hh:mm a",
       solicitation?.timezone
     ),
+    timezone: solicitation?.timezone || "UTC",
     status: mapApiStatusToUIStatus(solicitation.vendor.status),
   };
 };
@@ -311,6 +313,17 @@ const InvitationsPage = () => {
           </span>
           <span className="text-gray-700 dark:text-gray-300">
             Deadline: {row.original.deadline}
+          </span>
+        </div>
+      ),
+    },
+    {
+      accessorKey: "timezone",
+      header: "Timezone",
+      cell: ({ row }) => (
+        <div className="flex flex-col text-sm">
+          <span className="text-gray-700 dark:text-gray-300">
+            {row.original.timezone}
           </span>
         </div>
       ),

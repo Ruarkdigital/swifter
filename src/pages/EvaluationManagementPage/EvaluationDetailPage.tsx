@@ -63,7 +63,7 @@ type Evaluator = {
   name: string;
   email: string;
   progress: number;
-  evaluationGroups: string[]; // consolidated list of groups 
+  evaluationGroups: string[]; // consolidated list of groups
   criteriaAssigned: number;
   status: "Completed" | "Pending";
 };
@@ -651,6 +651,11 @@ const EvaluationDetailPage: React.FC = () => {
       id: "actions",
       header: "Actions",
       cell({ row }) {
+        const p = row.original.progress;
+        const progressNum = typeof p === "number" ? p : Number(p) || 0;
+        if (progressNum !== 100)
+          return <span className="text-muted-foreground">-</span>;
+
         return (
           <div className="flex items-center gap-2">
             <CriteriaScorecardSheet
@@ -768,6 +773,10 @@ const EvaluationDetailPage: React.FC = () => {
       id: "actions",
       header: "Actions",
       cell({ row }) {
+        const p = row.original.progress;
+        const progressNum = typeof p === "number" ? p : Number(p) || 0;
+        if (progressNum !== 100)
+          return <span className="text-muted-foreground">-</span>;
         return (
           <div className="flex items-center gap-2">
             <EvaluationScorecardSheet
@@ -1341,7 +1350,7 @@ const EvaluationDetailPage: React.FC = () => {
                 enableExpanding: true,
                 getRowCanExpand: () => true,
                 renderSubComponent: ({ row }) => (
-                  <div className="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">
+                  <div className="pl-16 py-4 text-sm text-gray-700 dark:text-gray-300">
                     <div className="font-medium mb-1">Description</div>
                     <div>{row.original.description || "-"}</div>
                   </div>

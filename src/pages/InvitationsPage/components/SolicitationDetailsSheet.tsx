@@ -109,7 +109,7 @@ const SolicitationDetailsSheet: React.FC<SolicitationDetailsSheetProps> = ({
   onOpenChange,
   solicitation,
   disableButton,
-  originalData
+  originalData,
 }) => {
   const queryClient = useQueryClient();
   const toastHandlers = useToastHandler();
@@ -121,7 +121,8 @@ const SolicitationDetailsSheet: React.FC<SolicitationDetailsSheetProps> = ({
 
   // Document viewer state
   const [viewerOpen, setViewerOpen] = useState(false);
-  const [selectedDocument, setSelectedDocument] = useState<SolicitationFile | null>(null);
+  const [selectedDocument, setSelectedDocument] =
+    useState<SolicitationFile | null>(null);
 
   // Handle document viewing
   const handleViewDocument = (document: SolicitationFile) => {
@@ -166,7 +167,9 @@ const SolicitationDetailsSheet: React.FC<SolicitationDetailsSheetProps> = ({
         queryKey: ["solicitation-details", solicitation?.id],
       });
       queryClient.invalidateQueries({ queryKey: ["vendor-invitations"] });
-      queryClient.invalidateQueries({ queryKey: ["vendor-invitation-dashboard"] });
+      queryClient.invalidateQueries({
+        queryKey: ["vendor-invitation-dashboard"],
+      });
       // queryClient.invalidateQueries({ queryKey: ["vendor-solicitations"] });
       // Close the dialog and the sheet
       setConfirmDialogOpen(false);
@@ -198,7 +201,9 @@ const SolicitationDetailsSheet: React.FC<SolicitationDetailsSheetProps> = ({
         queryKey: ["solicitation-details", solicitation?.id],
       });
       queryClient.invalidateQueries({ queryKey: ["vendor-invitations"] });
-      queryClient.invalidateQueries({ queryKey: ["vendor-invitation-dashboard"] });
+      queryClient.invalidateQueries({
+        queryKey: ["vendor-invitation-dashboard"],
+      });
       queryClient.invalidateQueries({ queryKey: ["vendor-solicitations"] });
       // Close the dialog and the sheet
       setDeclineDialogOpen(false);
@@ -241,37 +246,42 @@ const SolicitationDetailsSheet: React.FC<SolicitationDetailsSheetProps> = ({
   // Determine if buttons should be hidden based on bid intent and solicitation deadlines
   const shouldHideButtons = useMemo(() => {
     // Use originalData if available (from table), otherwise use API data
-    const status = originalData?.vendor?.status || solicitationData?.data?.data?.status;
-    const bidIntentDeadline = originalData?.bidIntentDeadline || solicitationData?.data?.data?.details?.bidIntentDeadline;
-    const submissionDeadline = originalData?.submissionDeadline || solicitationData?.data?.data?.details?.submissionDeadline;
-    
+    const status =
+      originalData?.vendor?.status || solicitationData?.data?.data?.status;
+    const bidIntentDeadline =
+      originalData?.bidIntentDeadline ||
+      solicitationData?.data?.data?.details?.bidIntentDeadline;
+    const submissionDeadline =
+      originalData?.submissionDeadline ||
+      solicitationData?.data?.data?.details?.submissionDeadline;
+
     // Only show buttons if status is "invited"
     if (status !== "invited") {
       return false;
     }
-    
+
     // If bid intent deadline is provided, check if it has passed
     if (bidIntentDeadline) {
       return !isDatePast(bidIntentDeadline.toString());
     }
-    
+
     // If no bid intent deadline, check solicitation submission deadline
     if (submissionDeadline) {
       return !isDatePast(submissionDeadline.toString());
     }
-    
+
     // Default to showing buttons if no deadlines are available
     return true;
   }, [originalData, solicitationData]);
 
   // Helper function to format date
   const formatDate = (dateString: string): string => {
-    return formatDateTZ(dateString, "MMMM dd, yyyy", details?.timezone);
+    return formatDateTZ(dateString, "MMMM dd, yyyy hh:mm a", details?.timezone);
   };
 
-  const formatTime = (dateString: string): string => {
-    return formatDateTZ(dateString, "hh", details?.timezone);
-  };
+  // const formatTime = (dateString: string): string => {
+  //   return formatDateTZ(dateString, "hh:mm a", details?.timezone);
+  // };
 
   // // Map status to badge variant
   // const getStatusBadge = (status: string) => {
@@ -315,15 +325,15 @@ const SolicitationDetailsSheet: React.FC<SolicitationDetailsSheetProps> = ({
   //   }
   // };
 
-
-
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-     {!disableButton && <SheetTrigger asChild>
-        <h6 className="text-green-600 dark:text-green-400 underline underline-offset-8 cursor-pointer">
-          View Details
-        </h6>
-      </SheetTrigger>}
+      {!disableButton && (
+        <SheetTrigger asChild>
+          <h6 className="text-green-600 dark:text-green-400 underline underline-offset-8 cursor-pointer">
+            View Details
+          </h6>
+        </SheetTrigger>
+      )}
       <SheetContent
         side="right"
         className="w-full sm:max-w-2xl p-0 overflow-auto"
@@ -419,15 +429,6 @@ const SolicitationDetailsSheet: React.FC<SolicitationDetailsSheetProps> = ({
                             {details?.createdBy?.name || "Not specified"}
                           </p>
                         </div>
-
-                        <div>
-                          <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
-                            Description
-                          </h3>
-                          <p className="text-sm text-gray-900 dark:text-gray-100 leading-relaxed">
-                            {details?.description || "No description provided"}
-                          </p>
-                        </div>
                       </div>
 
                       {/* Right Column */}
@@ -464,6 +465,15 @@ const SolicitationDetailsSheet: React.FC<SolicitationDetailsSheetProps> = ({
                         )} */}
                       </div>
                     </div>
+
+                    <div className="mt-6">
+                      <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
+                        Description
+                      </h3>
+                      <p className="text-sm text-gray-900 dark:text-gray-100 leading-relaxed">
+                        {details?.description || "No description provided"}
+                      </p>
+                    </div>
                   </div>
 
                   {/* Timeline & Bid Details Section */}
@@ -494,17 +504,6 @@ const SolicitationDetailsSheet: React.FC<SolicitationDetailsSheetProps> = ({
                             {details?.timezone || "Not specified"}
                           </p>
                         </div>
-
-                        {details?.bidIntentDeadline && (
-                          <div>
-                            <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
-                              Bid Intent Deadline Date
-                            </h3>
-                            <p className="text-sm text-gray-900 dark:text-gray-100">
-                              {formatDate(details.bidIntentDeadline)}
-                            </p>
-                          </div>
-                        )}
                       </div>
 
                       {/* Right Column */}
@@ -520,13 +519,24 @@ const SolicitationDetailsSheet: React.FC<SolicitationDetailsSheetProps> = ({
                           </div>
                         )}
 
-                        {details?.bidIntentDeadline && (
+                        {/* {details?.bidIntentDeadline && (
                           <div>
                             <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
                               Bid Intent Deadline Time
                             </h3>
                             <p className="text-sm text-gray-900 dark:text-gray-100">
                               {formatTime(details.bidIntentDeadline)}
+                            </p>
+                          </div>
+                        )} */}
+
+                        {details?.bidIntentDeadline && (
+                          <div>
+                            <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
+                              Bid Intent Deadline Date
+                            </h3>
+                            <p className="text-sm text-gray-900 dark:text-gray-100">
+                              {formatDate(details.bidIntentDeadline)}
                             </p>
                           </div>
                         )}
@@ -561,12 +571,16 @@ const SolicitationDetailsSheet: React.FC<SolicitationDetailsSheetProps> = ({
                             <div className="flex items-center space-x-3">
                               <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
                                 <span className="text-blue-600 dark:text-blue-400 font-semibold text-xs">
-                                  {getFileIcon(getFileExtension(doc.name, doc.type))}
+                                  {getFileIcon(
+                                    getFileExtension(doc.name, doc.type)
+                                  )}
                                 </span>
                               </div>
                               <div>
                                 <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                                  {doc.name.length > 100 ? doc.name.substring(0, 40) + '...' : doc.name}
+                                  {doc.name.length > 100
+                                    ? doc.name.substring(0, 40) + "..."
+                                    : doc.name}
                                 </h3>
                                 <p className="text-xs text-gray-500 dark:text-gray-400">
                                   {getFileExtension(doc.name, doc.type)} •{" "}
@@ -692,7 +706,10 @@ const SolicitationDetailsSheet: React.FC<SolicitationDetailsSheetProps> = ({
           }}
           fileUrl={selectedDocument.url}
           fileName={selectedDocument.name}
-          fileType={getFileExtension(selectedDocument.name, selectedDocument.type)}
+          fileType={getFileExtension(
+            selectedDocument.name,
+            selectedDocument.type
+          )}
         />
       )}
     </Sheet>
