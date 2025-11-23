@@ -436,7 +436,7 @@ const EmptyState = ({ isProcurement }: { isProcurement: boolean }) => {
 
 export const SolicitationManagementPage = () => {
   const navigate = useNavigate();
-  const { isProcurement, isVendor } = useUserRole();
+  const { isProcurement, isVendor, isCompanyAdmin } = useUserRole();
   const [searchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("all");
@@ -869,6 +869,7 @@ export const SolicitationManagementPage = () => {
           header: "Actions",
           cell: ({ row }) => {
             if (row.original.isArchive) {
+              if (!isCompanyAdmin) return null;
               return (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
