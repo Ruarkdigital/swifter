@@ -482,11 +482,11 @@ const CreateSolicitationDialog = () => {
         forge.reset();
       }
     } catch (error) {
-      console.log(error);
+      // console.log(error);
       const err = error as ApiResponseError;
       toast.error(
         "Save Failed",
-        err?.message ?? "Failed to save draft. Please try again."
+        err ?? "Failed to save draft. Please try again."
       );
     }
   };
