@@ -192,7 +192,8 @@ const EvaluationScorecardSheet: React.FC<EvaluationScorecardSheetProps> = ({
                       <Accordion type="single" collapsible>
                         {vendorGroups.map(([vendorId, group], idx) => {
                           const first = group.items[0];
-                          const totalFromApi = first?.totalVendorScore;
+                          const totalFromApi = first?.totalVendorScore || first.newScore?.score;
+
                           const computedFallback = group.items.reduce(
                             (sum, item) => {
                               const numericScore =
@@ -222,9 +223,16 @@ const EvaluationScorecardSheet: React.FC<EvaluationScorecardSheetProps> = ({
                                   <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
                                     {group.vendorName}
                                   </span>
-                                  <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                                  <span className="text-sm font-semibold text-gray-900 dark:text-gray-100 capitalize">
                                     Evaluator Score:{" "}
-                                    {Number(vendorScore).toFixed(0)}/{totalCriteriaScore.toFixed(0)}
+                                    {typeof totalFromApi === "string" &&
+                                    (totalFromApi as string).trim().length > 0
+                                      ? totalFromApi
+                                      : `${Number(vendorScore).toFixed(
+                                          0
+                                        )}/${Number(totalCriteriaScore).toFixed(
+                                          0
+                                        )}`}
                                   </span>
                                 </div>
                               </AccordionTrigger>

@@ -32,7 +32,12 @@ import { ApiResponse, ApiResponseError } from "@/types";
 import { ConfirmAlert } from "@/components/layouts/ConfirmAlert";
 import { useToastHandler } from "@/hooks/useToaster";
 import { useUserRole } from "@/hooks/useUserRole";
-import { DataTable, createExpandButton, hasChildren, getSubRows } from "@/components/layouts/DataTable";
+import {
+  DataTable,
+  createExpandButton,
+  hasChildren,
+  getSubRows,
+} from "@/components/layouts/DataTable";
 import { ColumnDef, PaginationState } from "@tanstack/react-table";
 import { PageLoader } from "@/components/ui/PageLoader";
 import { EvaluatorsGroupSubTable } from "./components/EvaluatorsGroupSubTable";
@@ -360,7 +365,8 @@ export const SolicitationDetailPage = () => {
     pageSize: 10,
   });
   const [extendOpen, setExtendOpen] = useState(false);
-  const [isCreateAddendumDialogOpen, setIsCreateAddendumDialogOpen] = useState(false);
+  const [isCreateAddendumDialogOpen, setIsCreateAddendumDialogOpen] =
+    useState(false);
 
   // Fetch solicitation details from API
   const {
@@ -679,8 +685,8 @@ export const SolicitationDetailPage = () => {
             Assigned:{" "}
             {row.original.assignedOnFormatted
               ? formatDateTZ(
-                  new Date(row.original.assignedOnFormatted),
-                  "MMM d, yyyy pppp",
+                  row.original.assignedOnFormatted,
+                  "MMM d, yyyy hh:mm a",
                   row.original.timezone
                 )
               : "-"}
@@ -701,7 +707,7 @@ export const SolicitationDetailPage = () => {
       header: "Actions",
       cell: ({ row }) => (
         <>
-          { (
+          {
             <div className="flex items-center">
               <Sheet>
                 {row.original.status !== "Not Started" && (
@@ -750,8 +756,8 @@ export const SolicitationDetailPage = () => {
                   type="info"
                   primaryButtonText="Send Reminder"
                   secondaryButtonText="Cancel"
-                  onPrimaryAction={() =>{
-                    remindEvaluatorMutation.mutate(row.original.id)
+                  onPrimaryAction={() => {
+                    remindEvaluatorMutation.mutate(row.original.id);
                   }}
                   isLoading={remindEvaluatorMutation.isPending}
                   trigger={
@@ -801,7 +807,7 @@ export const SolicitationDetailPage = () => {
                 />
               )}
             </div>
-          )}
+          }
         </>
       ),
     },
@@ -1043,7 +1049,9 @@ export const SolicitationDetailPage = () => {
                       isCompanyAdmin) && (
                       <>
                         {solicitation.status === "draft" ? (
-                          <EditSolicitationDialog solicitation={solicitation as any} />
+                          <EditSolicitationDialog
+                            solicitation={solicitation as any}
+                          />
                         ) : (
                           <Dialog
                             open={isCreateAddendumDialogOpen}
@@ -1063,7 +1071,9 @@ export const SolicitationDetailPage = () => {
                             <DialogContent className="sm:max-h-[min(640px,90vh)] overflow-auto">
                               <CreateAddendumDialog
                                 solicitationId={id!}
-                                onClose={() => setIsCreateAddendumDialogOpen(false)}
+                                onClose={() =>
+                                  setIsCreateAddendumDialogOpen(false)
+                                }
                               />
                             </DialogContent>
                           </Dialog>
@@ -1118,7 +1128,10 @@ export const SolicitationDetailPage = () => {
                   </label>
                   <p className="text-blue-600 dark:text-gray-200 font-medium">
                     {solicitation.createdBy?.email ? (
-                      <a href={`mailto:${solicitation.createdBy.email}`} className="hover:underline">
+                      <a
+                        href={`mailto:${solicitation.createdBy.email}`}
+                        className="hover:underline"
+                      >
                         {solicitation.createdBy.email}
                       </a>
                     ) : solicitation.createdBy?.name ? (
@@ -1507,7 +1520,8 @@ export const SolicitationDetailPage = () => {
                 pagination,
                 enableExpanding: true,
                 getSubRows: (row) => getSubRows(row as any, "evaluators"),
-                getRowCanExpand: (row) => hasChildren(row.original as any, "evaluators"),
+                getRowCanExpand: (row) =>
+                  hasChildren(row.original as any, "evaluators"),
                 renderSubComponent: ({ row }) => (
                   <EvaluatorsGroupSubTable
                     group={row.original as Group}

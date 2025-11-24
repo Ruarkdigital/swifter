@@ -3,13 +3,18 @@ import { useQuery } from "@tanstack/react-query";
 import { getRequest } from "@/lib/axiosInstance";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { ChevronLeft } from "lucide-react";
-import { DataTable, createExpandButton } from "@/components/layouts/DataTable";
-import { ColumnDef } from "@tanstack/react-table";
+import { ChevronLeft, Loader2 } from "lucide-react";
 import { ApiResponseError } from "@/types";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import { Badge } from "@/components/ui/badge";
 
 interface ScoreCardItem {
-  scoring?: { weight?: number, pass_fail?: string };
+  scoring?: { weight?: number; pass_fail?: string };
   _id: string;
   evaluationCriteria: {
     criteria: {
@@ -64,69 +69,23 @@ export const CriteriaScorecardSheet = ({
       })
     : [];
 
-  const columns: ColumnDef<ScoreCardItem>[] = [
-    {
-      id: "expander",
-      header: "",
-      size: 40,
-      cell: ({ row }) => createExpandButton(row as any),
-    },
-    {
-      accessorKey: "vendor.name",
-      header: "Vendor",
-      cell: ({ row }) => (
-        <span className="font-medium">{row.original.vendor?.name}</span>
-      ),
-    },
-    {
-      accessorKey: "evaluator.name",
-      header: "Evaluator",
-      cell: ({ row }) => <span>{row.original.evaluator?.name}</span>,
-    },
-    {
-      accessorKey: "scoring.weight",
-      header: "Score",
-      cell: ({ row }) => (
-        <span className="font-medium">
-          {row.original.scoring?.weight ?? "-"}
-        </span>
-      ),
-    },
-    {
-      accessorKey: "evaluationCriteria.criteria.weight",
-      header: "Weight",
-      cell: ({ row }) => (
-        <span className="font-medium">
-          {row.original.evaluationCriteria?.criteria?.weight ?? "-"}
-        </span>
-      ),
-    },
-    {
-      accessorKey: "evaluationCriteria.criteria.pass_fail",
-      header: "Pass/Fail",
-      cell: ({ row }) => {
-        const status = row.original.evaluationCriteria?.criteria?.status;
-        const val = row.original.scoring?.pass_fail;
-
-        if (status !== "pass_fail" || !val)
-          return <span className="text-muted-foreground">-</span>;
-
-        const label = String(val).toLowerCase() === "fail" ? "Fail" : "Pass";
-
-        return <span className="font-medium">{label}</span>;
-      },
-    },
-    {
-      accessorKey: "evaluationCriteria.criteria.status",
-      header: "Status",
-      cell: ({ row }) => (
-        <span className="capitalize">
-          {row.original.evaluationCriteria?.criteria?.status || "-"}
-        </span>
-      ),
-    },
-    // comment moved to sub-row
-  ];
+  const vendorGroups = (() => {
+    const map = new Map<
+      string,
+      { vendorName: string; items: ScoreCardItem[] }
+    >();
+    rows.forEach((item, idx) => {
+      const key = item.vendor?._id || item.vendor?.name || String(idx);
+      const name = item.vendor?.name || "";
+      const existing = map.get(key);
+      if (existing) {
+        existing.items.push(item);
+      } else {
+        map.set(key, { vendorName: name, items: [item] });
+      }
+    });
+    return Array.from(map.entries());
+  })();
 
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
@@ -152,32 +111,99 @@ export const CriteriaScorecardSheet = ({
             </div>
           )}
 
-          <DataTable
-            data={rows}
-            columns={columns}
-            options={{
-              disableSelection: true,
-              disablePagination: true,
-              isLoading,
-              totalCounts: rows.length,
-              manualPagination: false,
-              setPagination: () => {},
-              pagination: { pageIndex: 0, pageSize: 50 },
-              enableExpanding: true,
-              getRowCanExpand: (row) =>
-                !!(row.original as ScoreCardItem).comment,
-              renderSubComponent: ({ row }) => (
-                <div className="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">
-                  <div className="font-medium mb-1">Comment</div>
-                  <div>{(row.original as ScoreCardItem).comment || "-"}</div>
-                </div>
-              ),
-            }}
-            classNames={{
-              container: "bg-white dark:bg-slate-950 rounded-xl px-3",
-              tCell: "text-sm",
-            }}
-          />
+          {isLoading ? (
+            <div className="flex items-center justify-center py-6">
+              <Loader2 className="h-5 w-5 animate-spin mr-2" />
+              <span className="text-sm text-gray-700 dark:text-gray-300">Loading scores...</span>
+            </div>
+          ) : vendorGroups.length === 0 ? (
+            <div className="px-6 text-sm text-gray-500 dark:text-gray-400">No scores available.</div>
+          ) : (
+            <div className="px-6">
+              <Accordion type="single" collapsible>
+                {vendorGroups.map(([vendorId, group], gIdx) => (
+                  <AccordionItem
+                    key={vendorId || gIdx}
+                    value={`vendor-${vendorId || gIdx}`}
+                  >
+                    <AccordionTrigger>
+                      <span className="font-medium text-gray-900 dark:text-slate-200">
+                        {group.vendorName}
+                      </span>
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      {group.items.map((item, idx) => {
+                        const status =
+                          item.evaluationCriteria?.criteria?.status;
+                        const isPassFail = status === "pass_fail";
+                        const passFailVal = item.scoring?.pass_fail;
+                        const passLabel =
+                          String(passFailVal || "").toLowerCase() === "fail"
+                            ? "Fail"
+                            : "Pass";
+                        const scoreVal = item.scoring?.weight ?? "-";
+                        const weightConfigured =
+                          item.evaluationCriteria?.criteria?.weight ?? "-";
+                        return (
+                          <div key={idx} className="border rounded-lg mb-4">
+                            <div className="flex items-center justify-between p-4">
+                              <span className="text-sm font-medium text-gray-900 dark:text-slate-200">
+                                {item.evaluator?.name}
+                              </span>
+                            </div>
+                            <div className="px-4 pb-4 border-t">
+                              <div className="grid grid-cols-2 gap-4 mb-4">
+                                <div>
+                                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">
+                                    Result
+                                  </p>
+                                  {isPassFail ? (
+                                    <Badge
+                                      className={
+                                        passLabel === "Pass"
+                                          ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+                                          : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
+                                      }
+                                    >
+                                      {passLabel}
+                                    </Badge>
+                                  ) : (
+                                    <p className="text-sm font-medium text-gray-900 dark:text-slate-200">
+                                      {scoreVal}
+                                    </p>
+                                  )}
+                                </div>
+                                {!isPassFail && (
+                                  <div>
+                                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">
+                                      Weight
+                                    </p>
+                                    <p className="text-sm font-medium text-gray-900 dark:text-slate-200">
+                                      {weightConfigured}
+                                    </p>
+                                  </div>
+                                )}
+                              </div>
+                              {item.comment && (
+                                <div>
+                                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
+                                    Comments
+                                  </p>
+                                  <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+                                    {item.comment}
+                                  </p>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </AccordionContent>
+                  </AccordionItem>
+                ))}
+              </Accordion>
+            </div>
+          )}
         </div>
       </SheetContent>
     </Sheet>

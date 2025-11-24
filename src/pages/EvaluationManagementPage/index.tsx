@@ -558,12 +558,12 @@ export const EvaluationManagementPage = () => {
           const end = new Date(formattedDeadline);
           const completed = new Date(formattedCompletionDate);
 
-          console.log(row.original.name, {
-            formattedCompletionDate,
-            formattedDeadline,
-            end: end.toString(),
-            completed: completed.toString(),
-          });
+          // console.log(row.original.name, {
+          //   formattedCompletionDate,
+          //   formattedDeadline,
+          //   end: end.toString(),
+          //   completed: completed.toString(),
+          // });
 
           if (!isNaN(end.getTime()) && !isNaN(completed.getTime())) {
             const delta = differenceInDays(end, completed);
