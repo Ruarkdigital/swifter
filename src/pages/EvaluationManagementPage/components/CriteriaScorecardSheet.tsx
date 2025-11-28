@@ -155,7 +155,7 @@ export const CriteriaScorecardSheet = ({
                               <div className="grid grid-cols-2 gap-4 mb-4">
                                 <div>
                                   <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">
-                                    Result
+                                    Score
                                   </p>
                                   {isPassFail ? (
                                     <Badge

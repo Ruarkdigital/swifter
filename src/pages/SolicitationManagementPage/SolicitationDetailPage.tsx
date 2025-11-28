@@ -728,13 +728,13 @@ export const SolicitationDetailPage = () => {
                         row.original.progress === 100
                           ? formatDateTZ(
                               new Date(),
-                              "MMM d, yyyy pppp",
+                              "MMM d, yyyy hh:mm a",
                               row.original.timezone
                             )
                           : row.original.assignedOnFormatted
                           ? formatDateTZ(
                               new Date(row.original.assignedOnFormatted),
-                              "MMM d, yyyy pppp",
+                              "MMM d, yyyy hh:mm a",
                               row.original.timezone
                             )
                           : formatDateTZ(new Date(), "MMM d, yyyy pppp"),

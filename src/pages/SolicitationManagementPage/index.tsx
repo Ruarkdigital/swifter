@@ -38,6 +38,7 @@ import { putRequest, postRequest } from "@/lib/axiosInstance";
 import {
   getStatusLabel,
   getStatusColorClass,
+  normalizeStatus,
 } from "@/lib/solicitationStatusUtils";
 import { cn, formatDateTZ } from "@/lib/utils";
 // import ExportReportSheet from "@/components/layouts/ExportReportSheet";
@@ -920,8 +921,11 @@ export const SolicitationManagementPage = () => {
             })();
 
             const hasVendor = !!row.original.vendor;
+            const normalizedStatus = normalizeStatus(row.original.status);
+            const isClosedOrCompleted =
+              normalizedStatus === "closed" || normalizedStatus === "completed";
             const canShowConfirmButton =
-              isPublic && !isDeadlinePast && (!hasVendor || isInvited);
+              isPublic && !isDeadlinePast && !isClosedOrCompleted && (!hasVendor || isInvited);
             return (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>

@@ -22785,3 +22785,6 @@
     }
   ]
 }
+
+
+/procurement/evaluations/proposal/{proposalId}/csv

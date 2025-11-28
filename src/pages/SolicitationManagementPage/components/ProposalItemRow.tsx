@@ -18,8 +18,6 @@ const ProposalItemRow: React.FC<ProposalItemRowProps> = ({
   onRemoveItem,
   control,
 }) => {
-  console.log({ control });
-  
   return (
     <div className="grid grid-cols-12 gap-4 py-3">
       <div className="col-span-1 flex items-center text-sm font-medium pl-3">
