@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState } from "react";
 import { VendorSolicitation } from "../index";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
@@ -21,6 +21,7 @@ import { formatDateTZ } from "@/lib/utils";
 import { PageLoader } from "@/components/ui/PageLoader";
 import { getFileExtension, getFileIcon } from "@/lib/fileUtils.tsx";
 import { DocumentViewer } from "@/components/ui/DocumentViewer";
+import { useUser } from "@/store/authSlice";
 
 // Types based on API documentation
 type SolicitationType = {
@@ -70,7 +71,7 @@ type SolicitationDetails = {
   estimatedCost?: number;
   description: string;
   visibility: "public" | "private";
-  status: "invited" | "confirmed" | "declined";
+  status: "invited" | "confirmed" | "declined" | "closed";
   questionDeadline?: string;
   bidIntentDeadline?: string;
   timezone: string;
@@ -113,7 +114,7 @@ const SolicitationDetailsSheet: React.FC<SolicitationDetailsSheetProps> = ({
 }) => {
   const queryClient = useQueryClient();
   const toastHandlers = useToastHandler();
-  // const user = useUser();
+  const user = useUser();
 
   // Manage open state for confirm/decline dialogs so we can control closing programmatically
   const [confirmDialogOpen, setConfirmDialogOpen] = React.useState(false);
@@ -236,24 +237,27 @@ const SolicitationDetailsSheet: React.FC<SolicitationDetailsSheetProps> = ({
   // const currentVendorStatus = currentVendor?.status;
 
   // Helper function to check if current date is past a given deadline
-  const isDatePast = (dateString: string): boolean => {
-    if (!dateString) return false;
-    const deadline = new Date(dateString);
-    const now = new Date();
-    return now > deadline;
-  };
+  // const isDatePast = (dateString: string): boolean => {
+  //   if (!dateString) return false;
+  //   const deadline = new Date(dateString);
+  //   const now = new Date();
+  //   return now > deadline;
+  // };
 
   // Determine if buttons should be hidden based on bid intent and solicitation deadlines
-  const shouldHideButtons = useMemo(() => {
+  const shouldHideButtons = () => {
     // Use originalData if available (from table), otherwise use API data
     const status =
-      originalData?.vendor?.status || solicitationData?.data?.data?.status;
-    const bidIntentDeadline =
-      originalData?.bidIntentDeadline ||
-      solicitationData?.data?.data?.details?.bidIntentDeadline;
-    const submissionDeadline =
-      originalData?.submissionDeadline ||
-      solicitationData?.data?.data?.details?.submissionDeadline;
+      originalData?.vendor?.status ||
+      solicitationData?.data?.data?.details.vendors.find(
+        (item) => item.id._id === user?._id
+      )?.status;
+    // const bidIntentDeadline =
+    //   originalData?.bidIntentDeadline ||
+    //   solicitationData?.data?.data?.details?.bidIntentDeadline;
+    // const submissionDeadline =
+    //   originalData?.submissionDeadline ||
+    //   solicitationData?.data?.data?.details?.submissionDeadline;
 
     // Only show buttons if status is "invited"
     if (status !== "invited") {
@@ -261,23 +265,26 @@ const SolicitationDetailsSheet: React.FC<SolicitationDetailsSheetProps> = ({
     }
 
     // If bid intent deadline is provided, check if it has passed
-    if (bidIntentDeadline) {
-      return !isDatePast(bidIntentDeadline.toString());
-    }
+    // if (bidIntentDeadline) {
+    //   return !isDatePast(bidIntentDeadline.toString());
+    // }
 
-    // If no bid intent deadline, check solicitation submission deadline
-    if (submissionDeadline) {
-      return !isDatePast(submissionDeadline.toString());
-    }
+    // // If no bid intent deadline, check solicitation submission deadline
+    // if (submissionDeadline) {
+    //   return !isDatePast(submissionDeadline.toString());
+    // }
 
     // Default to showing buttons if no deadlines are available
     return true;
-  }, [originalData, solicitationData]);
+  };
 
   // Helper function to format date
   const formatDate = (dateString: string): string => {
     return formatDateTZ(dateString, "MMMM dd, yyyy hh:mm a", details?.timezone);
   };
+
+  // console.log({ status: shouldHideButtons(), title: originalData?.name });
+  const isDisabled = shouldHideButtons();
 
   // const formatTime = (dateString: string): string => {
   //   return formatDateTZ(dateString, "hh:mm a", details?.timezone);
@@ -626,7 +633,7 @@ const SolicitationDetailsSheet: React.FC<SolicitationDetailsSheetProps> = ({
               </Tabs>
 
               {/* Footer */}
-              {shouldHideButtons && (
+              {isDisabled && (
                 <div className="px-6 py-4 mb-5">
                   <div className="flex space-x-3">
                     <ConfirmAlert

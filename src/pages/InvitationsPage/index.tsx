@@ -57,7 +57,7 @@ type Invitation = {
   invitedDate: string;
   deadline: string;
   timezone: string;
-  status: "invited" | "confirmed" | "declined" | "not available";
+  status: "invited" | "confirmed" | "declined" | "not available" | "closed";
 };
 
 // Map API status to UI status
@@ -69,6 +69,8 @@ const mapApiStatusToUIStatus = (apiStatus: string): Invitation["status"] => {
       return "declined";
     case "invited":
       return "invited";
+    case "closed":
+      return "closed";
     default:
       return "not available";
   }
@@ -109,6 +111,8 @@ const StatusBadge = ({ status }: { status: Invitation["status"] }) => {
         return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400";
       case "declined":
         return "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400";
+      case "closed":
+        return "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300";
       default:
         return "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300";
     }
@@ -122,6 +126,8 @@ const StatusBadge = ({ status }: { status: Invitation["status"] }) => {
         return "Invited";
       case "declined":
         return "Declined";
+      case "closed":
+        return "Closed";
       default:
         return "Not Available";
     }
@@ -341,6 +347,7 @@ const InvitationsPage = () => {
         const originalSolicitation = invitationsData?.data?.data?.data?.find(
           (sol: VendorSolicitation) => sol._id === row.original.id
         );
+        // console.log({ originalSolicitation, row: row.original });
 
         if (!originalSolicitation) return null;
 
