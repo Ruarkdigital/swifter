@@ -67,6 +67,7 @@ const ForgerController = <TFieldValues extends FieldValues = FieldValues>(
   };
   
   const handleTrigger = getEventHandlers();
+  const displayValue = value == null ? '' : typeof value === 'string' ? value : String(value);
 
   return (
     <Component
@@ -76,7 +77,7 @@ const ForgerController = <TFieldValues extends FieldValues = FieldValues>(
       onBlur={onBlur}
       error={error?.message}
       control={methods.control}
-      value={getTransformedValue(value)}
+      value={getTransformedValue(displayValue)}
       {...handleTrigger}
     />
   );
