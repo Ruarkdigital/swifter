@@ -610,6 +610,7 @@ const SolicitationDetailsSheet: React.FC<SolicitationDetailsSheetProps> = ({
                                     link.href = doc.url;
                                     link.download = doc.name;
                                     document.body.appendChild(link);
+                                    link.target = "_blank";
                                     link.click();
                                     document.body.removeChild(link);
                                   }}
