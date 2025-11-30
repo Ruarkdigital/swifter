@@ -14,7 +14,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 
 interface ScoreCardItem {
-  scoring?: { weight?: number; pass_fail?: string };
+  scoring?:  number | "pass" | "fail";
   _id: string;
   evaluationCriteria: {
     criteria: {
@@ -136,12 +136,12 @@ export const CriteriaScorecardSheet = ({
                         const status =
                           item.evaluationCriteria?.criteria?.status;
                         const isPassFail = status === "pass_fail";
-                        const passFailVal = item.scoring?.pass_fail;
+                        const passFailVal = item.scoring;
                         const passLabel =
                           String(passFailVal || "").toLowerCase() === "fail"
                             ? "Fail"
                             : "Pass";
-                        const scoreVal = item.scoring?.weight ?? "-";
+                        const scoreVal = item.scoring ?? "-";
                         const weightConfigured =
                           item.evaluationCriteria?.criteria?.weight ?? "-";
                         return (
