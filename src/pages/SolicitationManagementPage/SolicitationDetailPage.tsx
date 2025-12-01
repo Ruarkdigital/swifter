@@ -1043,41 +1043,39 @@ export const SolicitationDetailPage = () => {
                       Export
                     </Button>
                   </ExportReportSheet>
-                  {isOwner &&
+                  {(isOwner || isCompanyAdmin) &&
                     ((solicitation.status !== "closed" &&
                       solicitation.status !== "awarded") ||
                       isCompanyAdmin) && (
                       <>
-                        {solicitation.status === "draft" ? (
+                        {(isCompanyAdmin || solicitation.status === "draft") && (
                           <EditSolicitationDialog
                             solicitation={solicitation as any}
                           />
-                        ) : (
-                          <Dialog
-                            open={isCreateAddendumDialogOpen}
-                            onOpenChange={setIsCreateAddendumDialogOpen}
-                          >
-                            <DialogTrigger asChild>
-                              <Button
-                                className="bg-[#2A4467] hover:bg-[#1e3252] text-white disabled:opacity-50 disabled:cursor-not-allowed"
-                                disabled={
-                                  solicitation.status === "closed" ||
-                                  solicitation.status === "awarded"
-                                }
-                              >
-                                Create Addendum
-                              </Button>
-                            </DialogTrigger>
-                            <DialogContent className="sm:max-h-[min(640px,90vh)] overflow-auto">
-                              <CreateAddendumDialog
-                                solicitationId={id!}
-                                onClose={() =>
-                                  setIsCreateAddendumDialogOpen(false)
-                                }
-                              />
-                            </DialogContent>
-                          </Dialog>
                         )}
+                        <Dialog
+                          open={isCreateAddendumDialogOpen}
+                          onOpenChange={setIsCreateAddendumDialogOpen}
+                        >
+                          <DialogTrigger asChild>
+                            <Button
+                              className="bg-[#2A4467] hover:bg-[#1e3252] text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                              disabled={
+                                (solicitation.status === "closed" ||
+                                  solicitation.status === "awarded") &&
+                                !isCompanyAdmin
+                              }
+                            >
+                              Create Addendum
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent className="sm:max-h-[min(640px,90vh)] overflow-auto">
+                            <CreateAddendumDialog
+                              solicitationId={id!}
+                              onClose={() => setIsCreateAddendumDialogOpen(false)}
+                            />
+                          </DialogContent>
+                        </Dialog>
                       </>
                     )}
                 </div>

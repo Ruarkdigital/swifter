@@ -13,6 +13,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { postRequest, getRequest, putRequest } from "@/lib/axiosInstance";
 import { ApiResponse, ApiResponseError } from "@/types";
 import { useToastHandler } from "@/hooks/useToaster";
+import { useUserRole } from "@/hooks/useUserRole";
 import Step1Form from "./Step1Form";
 import Step2Form from "./Step2Form";
 import Step3Form from "./Step3Form";
@@ -189,10 +190,13 @@ const EditSolicitationDialog = ({
   const [open, setOpen] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
   const clearSession = useClearSession();
+  const { isCompanyAdmin } = useUserRole();
 
-
-  // Hide edit button if solicitation status is closed
-  if (solicitation.status === "closed" || solicitation.status === "awarded") {
+  // Hide edit button for non-company admin when solicitation is closed or awarded
+  if (
+    (solicitation.status === "closed" || solicitation.status === "awarded") &&
+    !isCompanyAdmin
+  ) {
     return null;
   }
 
@@ -344,7 +348,7 @@ const EditSolicitationDialog = ({
 
   // Reset form when solicitation changes or when detailed data loads
   useEffect(() => {
-    if(!open) return;
+    if (!open) return;
     forge.reset(getDefaultValues());
   }, [effectiveSolicitation, open]);
 
@@ -490,10 +494,7 @@ const EditSolicitationDialog = ({
           : undefined,
         bidIntent: completeData.bidIntent as "required" | "not required",
         bidIntentDeadline: completeData.bidIntentDeadlineDate
-          ? format(
-              completeData.bidIntentDeadlineDate,
-              "yyyy-MM-dd'T'HH:mm:ss"
-            )
+          ? format(completeData.bidIntentDeadlineDate, "yyyy-MM-dd'T'HH:mm:ss")
           : undefined,
         timezone: completeData.timezone || "",
         events: completeData.event
@@ -909,7 +910,7 @@ const EditSolicitationDialog = ({
           {currentStep === 4 && (
             <>
               <Step4Form
-                documents={getDefaultValues().documents as any[] || []}
+                documents={(getDefaultValues().documents as any[]) || []}
                 control={forge.control as any}
               />
             </>
