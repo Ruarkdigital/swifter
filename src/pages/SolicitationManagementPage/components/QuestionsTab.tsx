@@ -158,34 +158,35 @@ const QuestionsTab: React.FC<QuestionsTabProps> = ({ solicitationStatus }) => {
     }
 
     // For vendors: only show questions they submitted OR questions with published responses
-    return allQuestions.filter((question: Question) => {
-      // Show questions submitted by the current vendor
-      if (question.user._id === user._id) {
-        return true;
-      }
+    // return allQuestions.filter((question: Question) => {
+    //   // Show questions submitted by the current vendor
+    //   if (question.user._id === user._id) {
+    //     return true;
+    //   }
 
-      // Show questions that have been answered (published responses)
-      if (
-        question.isAnswered &&
-        question.responses &&
-        question.responses.length > 0
-      ) {
-        // Check if any response is from procurement/evaluator (published response)
-        const hasPublishedResponse = question.responses.some(
-          (response: QuestionResponse) => {
-            return (
-              response.user.role.name === "procurement" ||
-              response.user.role.name === "evaluator" ||
-              response.user.role.name === "company_admin" ||
-              response.user.role.name === "super_admin"
-            );
-          }
-        );
-        return hasPublishedResponse;
-      }
+    //   // Show questions that have been answered (published responses)
+    //   if (
+    //     question.isAnswered &&
+    //     question.responses &&
+    //     question.responses.length > 0
+    //   ) {
+    //     // Check if any response is from procurement/evaluator (published response)
+    //     const hasPublishedResponse = question.responses.some(
+    //       (response: QuestionResponse) => {
+    //         return (
+    //           response.user.role.name === "procurement" ||
+    //           response.user.role.name === "evaluator" ||
+    //           response.user.role.name === "company_admin" ||
+    //           response.user.role.name === "super_admin"
+    //         );
+    //       }
+    //     );
+    //     return hasPublishedResponse;
+    //   }
 
-      return false;
-    });
+    //   return false;
+    // });
+    return allQuestions
   }, [questionsData?.data?.questions, isVendor, user]);
 
   const questions: Question[] = filteredQuestions;
@@ -283,11 +284,11 @@ const QuestionsTab: React.FC<QuestionsTabProps> = ({ solicitationStatus }) => {
                 <p className="text-3xl font-bold text-gray-900 dark:text-gray-200">
                   {unansweredQuestions.length}
                 </p>
-                <p className="text-sm text-gray-500 mt-1">
+                {/* <p className="text-sm text-gray-500 mt-1">
                   {unansweredQuestions.length === 1
                     ? "1 Unanswered"
                     : `${unansweredQuestions.length} Unanswered`}
-                </p>
+                </p> */}
               </div>
               <div className="p-3 rounded-full bg-red-50 dark:bg-slate-900">
                 <HelpCircle className="h-6 w-6 text-red-600 dark:text-gray-500" />

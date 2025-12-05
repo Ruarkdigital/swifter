@@ -38,6 +38,7 @@ import { putRequest, postRequest } from "@/lib/axiosInstance";
 import {
   getStatusLabel,
   getStatusColorClass,
+  normalizeStatus,
 } from "@/lib/solicitationStatusUtils";
 import { cn, formatDateTZ } from "@/lib/utils";
 // import ExportReportSheet from "@/components/layouts/ExportReportSheet";
@@ -436,7 +437,7 @@ const EmptyState = ({ isProcurement }: { isProcurement: boolean }) => {
 
 export const SolicitationManagementPage = () => {
   const navigate = useNavigate();
-  const { isProcurement, isVendor } = useUserRole();
+  const { isProcurement, isVendor, isCompanyAdmin } = useUserRole();
   const [searchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("all");
@@ -869,6 +870,7 @@ export const SolicitationManagementPage = () => {
           header: "Actions",
           cell: ({ row }) => {
             if (row.original.isArchive) {
+              if (!isCompanyAdmin) return null;
               return (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -919,8 +921,11 @@ export const SolicitationManagementPage = () => {
             })();
 
             const hasVendor = !!row.original.vendor;
+            const normalizedStatus = normalizeStatus(row.original.status);
+            const isClosedOrCompleted =
+              normalizedStatus === "closed" || normalizedStatus === "completed";
             const canShowConfirmButton =
-              isPublic && !isDeadlinePast && (!hasVendor || isInvited);
+              isPublic && !isDeadlinePast && !isClosedOrCompleted && (!hasVendor || isInvited);
             return (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -1151,10 +1156,14 @@ export const SolicitationManagementPage = () => {
                         }
                       />
                     )}
-                  <EditSolicitationDialog
-                    solicitation={row.original as any}
-                    isLink
-                  />
+
+                  {row.original.status === "draft" && (
+                    <EditSolicitationDialog
+                      solicitation={row.original as any}
+                      isLink
+                    />
+                  )}
+                  
                   <DropdownMenuItem
                     className="py-3 px-4 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
                     onClick={() => handleDeleteClick(row.original._id)}

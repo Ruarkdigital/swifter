@@ -50,6 +50,7 @@ const EvaluationScorecard: React.FC<EvaluationScorecardProps> = ({
       if (aName > bName) return 1;
       return 0;
     });
+  const totalCriteriaScore = scorecardData?.data?.criteriaWeightSummtion || 0;
 
   if (isLoading) {
     return (
@@ -156,8 +157,8 @@ const EvaluationScorecard: React.FC<EvaluationScorecardProps> = ({
                 <p className="text-sm font-medium dark:text-slate-200 text-gray-900">
                   {displayData?.submission
                     ? formatDateTZ(
-                        new Date(displayData?.submission),
-                        "MMM d, yyyy pppp",
+                        displayData?.submission,
+                        "MMM d, yyyy hh:mm a",
                         timezone
                       )
                     : "N/A"}
@@ -219,7 +220,7 @@ const EvaluationScorecard: React.FC<EvaluationScorecardProps> = ({
                 }
                 groups[key].criteria.push(item);
                 if (typeof item.totalVendorScore === "number") {
-                  groups[key].totalVendorScore = item.totalVendorScore;
+                  groups[key].totalVendorScore = item.totalVendorScore || item.newScore.score;
                 }
                 return groups;
               },
@@ -251,20 +252,26 @@ const EvaluationScorecard: React.FC<EvaluationScorecardProps> = ({
                             </span>
                           </div>
                           <div className="flex items-center gap-4">
-                            <span className="text-sm font-medium dark:text-slate-200">
+                            <span className="text-sm font-medium dark:text-slate-200 capitalize">
                               Evaluator Score:{" "}
-                              {typeof group.totalVendorScore === "number"
-                                ? Number(group.totalVendorScore).toFixed(0)
-                                : Number(
-                                    group.criteria.reduce(
-                                      (acc, c) =>
-                                        acc +
-                                        (typeof c.newScore?.score === "number"
-                                          ? c.newScore.score
-                                          : 0),
-                                      0
-                                    )
-                                  ).toFixed(0)}%
+                              {(() => {
+                                const v = (group as any).totalVendorScore;
+                                if (typeof v === "string" && v.trim()) {
+                                  return v;
+                                }
+                                const total =
+                                  typeof v === "number"
+                                    ? v
+                                    : group.criteria.reduce(
+                                        (acc, c) =>
+                                          acc +
+                                          (typeof c.newScore?.score === "number"
+                                            ? c.newScore.score
+                                            : 0),
+                                        0
+                                      );
+                                return `${Number(total).toFixed(0)}/${totalCriteriaScore}`;
+                              })()}
                             </span>
                           </div>
                         </div>

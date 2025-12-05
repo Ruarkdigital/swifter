@@ -172,14 +172,21 @@ const ProposalDetailsSheet: React.FC<ProposalDetailsSheetProps> = ({
   };
 
   // Flatten items to display nested subItems in a single table with indenting
-  const flattenPriceItems = (items: any[], level = 0): Array<any> => {
+  const flattenPriceItems = (
+    items: any[],
+    level = 0,
+    prefix = ""
+  ): Array<any> => {
     const result: Array<any> = [];
     if (!Array.isArray(items)) return result;
 
     items.forEach((item, index) => {
-      result.push({ ...item, level, itemNumber: `${index + 1}` });
+      const currentNumber = prefix ? `${prefix}.${index + 1}` : `${index + 1}`;
+      result.push({ ...item, level, itemNumber: currentNumber });
       if (Array.isArray(item?.subItems) && item.subItems.length > 0) {
-        result.push(...flattenPriceItems(item.subItems, level + 1));
+        result.push(
+          ...flattenPriceItems(item.subItems, level + 1, currentNumber)
+        );
       }
     });
 

@@ -22,13 +22,14 @@ interface EvaluatorDetails {
   email: string;
   submission: string;
   status: string;
-  score: number;
+  score: number | string;
 }
 
 interface EvaluationScorecardData {
   evaluator: EvaluatorDetails;
   criteria: EvaluationCriteria[];
   totalScore: number;
+  criteriaWeightSummtion: number;
   maxScore: number;
 }
 

@@ -19,7 +19,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { postRequest, getRequest } from "@/lib/axiosInstance";
 import { ApiResponse, ApiResponseError } from "@/types";
 import { useToastHandler } from "@/hooks/useToaster";
-import { useWatch } from "react-hook-form";
 import { useUserRole } from "@/hooks/useUserRole";
 import { cn, formatDateTZ } from "@/lib/utils";
 import { format } from "date-fns";
@@ -28,8 +27,9 @@ import { format } from "date-fns";
 const baseSchema = {
   // title: yup.string().required("Title is required"),
   description: yup.string().required("Description is required"),
-  submissionDeadline: yup.string().optional(),
-  questionAcceptanceDeadline: yup.string().optional(),
+  submissionDeadline: yup.date().optional().nullable(),
+  questionAcceptanceDeadline: yup.date().optional().nullable(),
+  bidIntentDeadline: yup.date().optional().nullable(),
   documents: yup.array().nullable().default(null),
 };
 
@@ -47,8 +47,9 @@ const createSchema = (isReplyMode: boolean) => {
 type FormValues = {
   // title: string;
   description: string;
-  submissionDeadline?: string;
-  questionAcceptanceDeadline?: string;
+  submissionDeadline?: Date;
+  questionAcceptanceDeadline?: Date;
+  bidIntentDeadline?: Date;
   documents: any[] | null;
   question?: string;
 };
@@ -100,19 +101,20 @@ const CreateAddendumDialog: React.FC<CreateAddendumDialogProps> = ({
 
   // Helper function to format date for input (timezone-aware)
   const formatDateForInput = (dateString: string) => {
-    if (!dateString) return "";
-    // const tz = getSolicitationTimezone();
-    return formatDateTZ(dateString, "yyyy-MM-dd'T'HH:mm");
+    if (!dateString) return undefined as unknown as Date;
+    const formatted = formatDateTZ(dateString, "yyyy-MM-dd'T'HH:mm");
+    return new Date(formatted);
   };
 
-  const { control, reset, getValues } = useForge<FormValues>({
-    resolver: yupResolver(createSchema(isReplyMode)),
+  const { control, reset, getValues, watch } = useForge<FormValues>({
+    resolver: yupResolver(createSchema(isReplyMode)) as any,
     defaultValues: {
       // title: "",
       description: "",
       documents: null,
-      submissionDeadline: "",
-      questionAcceptanceDeadline: "",
+      submissionDeadline: undefined,
+      questionAcceptanceDeadline: undefined,
+      bidIntentDeadline: undefined,
       question: "",
     },
   });
@@ -130,18 +132,21 @@ const CreateAddendumDialog: React.FC<CreateAddendumDialogProps> = ({
         questionAcceptanceDeadline: formatDateForInput(
           solicitation?.solicitation?.questionDeadline || ""
         ),
+        bidIntentDeadline: formatDateForInput(
+          solicitation?.solicitation?.bidIntentDeadline || ""
+        ),
         question: "",
       });
     }
   }, [solicitation]);
 
-  const submissionDeadlineDate = useWatch({
-    name: "submissionDeadline",
-    control,
-  });
+  const submissionDeadlineDate = watch("submissionDeadline");
+
   const maxDate = submissionDeadlineDate
-    ? new Date(submissionDeadlineDate)
+    ? new Date(submissionDeadlineDate as unknown as Date)
     : undefined;
+
+  // console.log({ maxDate, submissionDeadlineDate, values: getValues() })
 
   // File upload mutation with progress tracking
   const uploadFilesMutation = useMutation<
@@ -226,14 +231,15 @@ const CreateAddendumDialog: React.FC<CreateAddendumDialogProps> = ({
       const payload = {
         // title: data.title,
         description: data.description,
-        submissionDeadline: format(
-          data.submissionDeadline as unknown as Date,
-          "yyyy-MM-dd'T'HH:mm:ss"
-        ),
-        questionDeadline: format(
-          data.questionAcceptanceDeadline as unknown as Date,
-          "yyyy-MM-dd'T'HH:mm:ss"
-        ),
+        submissionDeadline: data.submissionDeadline
+          ? format(data.submissionDeadline, "yyyy-MM-dd'T'HH:mm:ss")
+          : undefined,
+        bidIntentDeadline: data.bidIntentDeadline
+          ? format(data.bidIntentDeadline, "yyyy-MM-dd'T'HH:mm:ss")
+          : undefined,
+        questionDeadline: data.questionAcceptanceDeadline
+          ? format(data.questionAcceptanceDeadline, "yyyy-MM-dd'T'HH:mm:ss")
+          : undefined,
         status: status === "publish" ? "publish" : "draft",
         files: uploadedFiles.map((file) => ({
           name: file.name,
@@ -264,10 +270,16 @@ const CreateAddendumDialog: React.FC<CreateAddendumDialogProps> = ({
       queryClient.refetchQueries({
         queryKey: ["addendums", solicitationId],
       });
+      queryClient.invalidateQueries({
+        queryKey: ["solicitation", solicitationId],
+      });
+      queryClient.refetchQueries({
+        queryKey: ["solicitation", solicitationId],
+      });
       onClose();
     },
     onError: (error) => {
-      console.error("Create addendum error:", error);
+      // console.error("Create addendum error:", error);
       toast.error(
         "Error",
         error?.response?.data?.message ?? "Failed to create addendum"
@@ -301,6 +313,9 @@ const CreateAddendumDialog: React.FC<CreateAddendumDialogProps> = ({
         questionDeadline: data.questionAcceptanceDeadline
           ? format(data.questionAcceptanceDeadline, "yyyy-MM-dd'T'HH:mm:ss")
           : undefined,
+        bidIntentDeadline: data.bidIntentDeadline
+          ? format(data.bidIntentDeadline, "yyyy-MM-dd'T'HH:mm:ss")
+          : undefined,
         question: data.question,
         status: status,
         files: uploadedFiles.map((file) => ({
@@ -333,10 +348,16 @@ const CreateAddendumDialog: React.FC<CreateAddendumDialogProps> = ({
       queryClient.refetchQueries({
         queryKey: ["addendums", solicitationId],
       });
+      queryClient.invalidateQueries({
+        queryKey: ["solicitation", solicitationId],
+      });
+      queryClient.refetchQueries({
+        queryKey: ["solicitation", solicitationId],
+      });
       onClose();
     },
     onError: (error) => {
-      console.error("Reply addendum error:", error);
+      // console.error("Reply addendum error:", error);
       toast.error(
         "Error",
         error?.response?.data?.message ?? "Failed to reply with addendum"
@@ -545,6 +566,18 @@ const CreateAddendumDialog: React.FC<CreateAddendumDialogProps> = ({
             name="questionAcceptanceDeadline"
             component={TextDatePicker}
             label="Question Acceptance Deadline Date & Time"
+            placeholder="Select Date & Time"
+            minDate={new Date()}
+            dependencies={[maxDate]}
+            maxDate={maxDate}
+            showTime
+          />
+
+          {/* Bid Intent Deadline */}
+          <Forger
+            name="bidIntentDeadline"
+            component={TextDatePicker}
+            label="Bid Intent Deadline Date & Time"
             placeholder="Select Date & Time"
             minDate={new Date()}
             dependencies={[maxDate]}

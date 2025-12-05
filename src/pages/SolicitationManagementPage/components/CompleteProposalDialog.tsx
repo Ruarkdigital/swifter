@@ -1,4 +1,4 @@
-import React from "react";
+import React, { memo } from "react";
 import {
   Dialog,
   DialogContent,
@@ -13,9 +13,9 @@ import { TextInput } from "../../../components/layouts/FormInputs/TextInput";
 import { CornerDownRight, Plus, Trash2 } from "lucide-react";
 import ProposalItemRow from "./ProposalItemRow";
 import { FormValues } from "./SubmitProposalPage";
-import { usePersist } from "@/lib/forge/usePersist/usePersist";
-import { useState, useEffect } from "react";
-import { UseFormSetValue, UseFormGetValues } from "react-hook-form";
+import { useEffect, useMemo, useCallback } from "react";
+import { formatCurrency } from "@/lib/utils";
+import { UseFormSetValue, UseFormGetValues, useWatch } from "react-hook-form";
 
 interface CompleteProposalDialogProps {
   open: boolean;
@@ -29,6 +29,25 @@ interface CompleteProposalDialogProps {
   onComplete?: (documentId: string | null) => void;
 }
 
+interface PriceSubItem {
+  component: string;
+  description: string;
+  quantity: number;
+  unitOfmeasurement: string;
+  unitPrice: number;
+  subtotal: number;
+}
+
+interface PriceActionItem {
+  component: string;
+  description: string;
+  quantity: number;
+  unitOfmeasurement: string;
+  unitPrice: number;
+  subtotal: number;
+  subItems?: PriceSubItem[];
+}
+
 const CompleteProposalDialog: React.FC<CompleteProposalDialogProps> = ({
   id,
   open,
@@ -36,7 +55,7 @@ const CompleteProposalDialog: React.FC<CompleteProposalDialogProps> = ({
   control,
   setValue,
   getValue,
-  shouldUnregister = true,
+  shouldUnregister = false,
   onComplete,
 }) => {
   const { fields, append, remove, update } = useFieldArray({
@@ -46,85 +65,72 @@ const CompleteProposalDialog: React.FC<CompleteProposalDialogProps> = ({
     shouldUnregister,
   });
 
-  const [totalAmount, setTotalAmount] = useState("0.00");
-
-  // Initialize total amount when dialog opens with existing data
-  useEffect(() => {
-    if (open) {
-      const currentFormValues = getValue();
-      const total = calculateTotal(currentFormValues);
-      setTotalAmount(total.toFixed(2));
-    }
-  }, [open, getValue]);
+  const watchedPriceAction = useWatch({
+    control: control as any,
+    name: "priceAction",
+  }) as PriceActionItem[] | undefined;
 
   // Calculate subtotal for an item (including its sub-items)
-  const calculateItemSubtotal = (item: any) => {
-    const mainSubtotal = (item.quantity || 0) * (item.unitPrice || 0);
-    const subItemsTotal = (item.subItems || []).reduce(
-      (sum: number, subItem: any) => {
+  const calculateItemSubtotal = useCallback((item: PriceActionItem) => {
+    const mainSubtotal = (item?.quantity || 0) * (item?.unitPrice || 0);
+    const subItemsTotal = (item?.subItems || []).reduce(
+      (sum: number, subItem: PriceSubItem) => {
         return sum + (subItem.quantity || 0) * (subItem.unitPrice || 0);
       },
       0
     );
     return mainSubtotal + subItemsTotal;
-  };
+  }, []);
 
-  // Calculate total amount from all items
-  const calculateTotal = (formValues: any) => {
-    if (!formValues?.priceAction) return 0;
-
-    return formValues.priceAction.reduce((total: number, item: any) => {
+  const totalAmount = useMemo(() => {
+    if (!watchedPriceAction || !Array.isArray(watchedPriceAction)) return 0;
+    return watchedPriceAction.reduce((total: number, item: PriceActionItem) => {
       return total + calculateItemSubtotal(item);
     }, 0);
-  };
+  }, [watchedPriceAction, calculateItemSubtotal]);
 
-  // Use usePersist to watch form changes and update calculations
-  usePersist({
-    control,
-    handler: (formValues, formState) => {
-      if (
-        formValues?.priceAction &&
-        (formState?.name?.includes("unitPrice") ||
-          formState?.name?.includes("quantity"))
-      ) {
-        // Update subtotals for each item
-        const updatedItems = formValues.priceAction.map((item: any) => {
-          const itemSubtotal = calculateItemSubtotal(item);
-          // Update sub-items subtotals
-          const updatedSubItems = (item.subItems || []).map((subItem: any) => ({
-            ...subItem,
-            subtotal: (subItem.quantity || 0) * (subItem.unitPrice || 0),
-          }));
-          return {
-            ...item,
-            subtotal: itemSubtotal,
-            subItems: updatedSubItems,
-          };
-        });
-
-        // Update the form with calculated subtotals using update method
-        // updatedItems.forEach((item: any, index: number) => {
-        // });
-        setValue("priceAction", updatedItems);
-
-        // Calculate and set total
-        const total = calculateTotal({ priceAction: updatedItems });
-        setTotalAmount(total.toFixed(2));
-        setValue("total", total);
+  useEffect(() => {
+    if (open) {
+      const pa = (getValue().priceAction as PriceActionItem[] | undefined);
+      if (pa === undefined) {
+        setValue("priceAction", [], { shouldDirty: false, shouldValidate: false });
       }
-    },
-  });
+    }
 
-  const handleComplete = () => {
+    const items = watchedPriceAction || [];
+
+    items.forEach((item, index) => {
+      const itemSubtotal = calculateItemSubtotal(item as PriceActionItem);
+      if ((item as PriceActionItem)?.subtotal !== itemSubtotal) {
+        setValue(`priceAction.${index}.subtotal`, itemSubtotal as number, {
+          shouldDirty: false,
+          shouldValidate: false,
+        });
+      }
+      ((item as PriceActionItem)?.subItems || []).forEach((subItem, subIndex) => {
+        const subSubtotal = (subItem?.quantity || 0) * (subItem?.unitPrice || 0);
+        if (subItem?.subtotal !== subSubtotal) {
+          setValue(`priceAction.${index}.subItems.${subIndex}.subtotal`, subSubtotal as number, {
+            shouldDirty: false,
+            shouldValidate: false,
+          });
+        }
+      });
+    });
+
+    setValue("total", totalAmount as number, { shouldDirty: false, shouldValidate: false });
+  }, [open, watchedPriceAction, totalAmount, setValue, calculateItemSubtotal, getValue]);
+
+  const handleComplete = useCallback(() => {
     setValue("document", [
       ...(getValue().document ?? []),
       { requiredDocumentId: id ?? "", files: [] },
     ]);
     onComplete?.(id);
     onOpenChange(false);
-  };
+  }, [getValue, id, onComplete, onOpenChange, setValue]);
 
-  const addItem = () => {
+  const addItem = useCallback(() => {
     append({
       component: "",
       description: "",
@@ -134,55 +140,44 @@ const CompleteProposalDialog: React.FC<CompleteProposalDialogProps> = ({
       subtotal: 0,
       subItems: [],
     });
-  };
+  }, [append]);
 
-  const removeItem = (index: number) => {
-    const currentItems = getValue().priceAction || [];
-    // Remove the item using the remove function from useFieldArray
-    remove(index);
-    // check if there's subItems then delete also
-    if (currentItems[index]?.subItems) {
-      currentItems[index].subItems.forEach(
-        (_subItem: any, subItemIndex: number) => {
-          control.unregister(
-            `priceAction.${index}.subItems.${subItemIndex}.component`
-          );
-          control.unregister(
-            `priceAction.${index}.subItems.${subItemIndex}.description`
-          );
-          control.unregister(
-            `priceAction.${index}.subItems.${subItemIndex}.quantity`
-          );
-          control.unregister(
-            `priceAction.${index}.subItems.${subItemIndex}.unitOfmeasurement`
-          );
-          control.unregister(
-            `priceAction.${index}.subItems.${subItemIndex}.unitPrice`
-          );
-          control.unregister(
-            `priceAction.${index}.subItems.${subItemIndex}.subtotal`
-          );
-        }
-      );
-    }
-    control.unregister(`priceAction.${index}.component`);
-    control.unregister(`priceAction.${index}.description`);
-    control.unregister(`priceAction.${index}.quantity`);
-    control.unregister(`priceAction.${index}.unitOfmeasurement`);
-    control.unregister(`priceAction.${index}.unitPrice`);
-    control.unregister(`priceAction.${index}.subtotal`);
+  const unregisterItemFields = useCallback(
+    (itemIndex: number) => {
+      const items = (getValue().priceAction || []) as PriceActionItem[];
+      const subLen = (items[itemIndex]?.subItems || []).length;
+      control.unregister(`priceAction.${itemIndex}.component`);
+      control.unregister(`priceAction.${itemIndex}.description`);
+      control.unregister(`priceAction.${itemIndex}.quantity`);
+      control.unregister(`priceAction.${itemIndex}.unitOfmeasurement`);
+      control.unregister(`priceAction.${itemIndex}.unitPrice`);
+      control.unregister(`priceAction.${itemIndex}.subtotal`);
+      for (let s = 0; s < subLen; s++) {
+        control.unregister(`priceAction.${itemIndex}.subItems.${s}.component`);
+        control.unregister(`priceAction.${itemIndex}.subItems.${s}.description`);
+        control.unregister(`priceAction.${itemIndex}.subItems.${s}.quantity`);
+        control.unregister(
+          `priceAction.${itemIndex}.subItems.${s}.unitOfmeasurement`
+        );
+        control.unregister(`priceAction.${itemIndex}.subItems.${s}.unitPrice`);
+        control.unregister(`priceAction.${itemIndex}.subItems.${s}.subtotal`);
+      }
+    },
+    [control, getValue]
+  );
 
-    // Recalculate total after removal
-    const currentFormValues = getValue();
-    const total = calculateTotal(currentFormValues);
-    setTotalAmount(total.toFixed(2));
-    setValue("total", total);
-  };
+  const removeItem = useCallback(
+    (index: number) => {
+      unregisterItemFields(index);
+      remove(index);
+    },
+    [remove, unregisterItemFields]
+  );
 
-  const addSubItem = (itemIndex: number) => {
-    const currentItem = fields[itemIndex] as any;
+  const addSubItem = useCallback((itemIndex: number) => {
+    const currentItem = fields[itemIndex] as unknown as PriceActionItem;
     if (currentItem) {
-      const updatedItem = {
+      const updatedItem: PriceActionItem = {
         ...currentItem,
         subItems: [
           ...(currentItem.subItems || []),
@@ -196,63 +191,39 @@ const CompleteProposalDialog: React.FC<CompleteProposalDialogProps> = ({
           },
         ],
       };
-      update(itemIndex, updatedItem);
+      update(itemIndex, updatedItem as any);
     }
-  };
+  }, [fields, update]);
 
-  const removeSubItem = (itemIndex: number, subItemIndex: number) => {
-    const currentItems = getValue().priceAction || [];
-    const updatedItems = [...currentItems];
+  const unregisterSubItemFields = useCallback(
+    (itemIndex: number, subIndex: number) => {
+      control.unregister(`priceAction.${itemIndex}.subItems.${subIndex}.component`);
+      control.unregister(`priceAction.${itemIndex}.subItems.${subIndex}.description`);
+      control.unregister(`priceAction.${itemIndex}.subItems.${subIndex}.quantity`);
+      control.unregister(
+        `priceAction.${itemIndex}.subItems.${subIndex}.unitOfmeasurement`
+      );
+      control.unregister(`priceAction.${itemIndex}.subItems.${subIndex}.unitPrice`);
+      control.unregister(`priceAction.${itemIndex}.subItems.${subIndex}.subtotal`);
+    },
+    [control]
+  );
 
-    if (
-      updatedItems[itemIndex]?.subItems &&
-      Array.isArray(updatedItems[itemIndex].subItems) &&
-      updatedItems[itemIndex].subItems.length > subItemIndex
-    ) {
-      // Remove the sub-item from the array
-      updatedItems[itemIndex].subItems.splice(subItemIndex, 1);
-
-      // Defensive: Ensure subItems is always an array
-      updatedItems[itemIndex].subItems = updatedItems[itemIndex].subItems || [];
-
-      // Recalculate the main item's subtotal
-      const mainSubtotal =
-        (updatedItems[itemIndex].quantity || 0) *
-        (updatedItems[itemIndex].unitPrice || 0);
-      const subItemsTotal = updatedItems[itemIndex].subItems.reduce(
-        (sum: number, subItem: any) => {
-          return sum + (subItem?.quantity || 0) * (subItem?.unitPrice || 0);
-        },
-        0
-      );
-      updatedItems[itemIndex].subtotal = mainSubtotal + subItemsTotal;
-
-      setValue("priceAction", updatedItems);
-      control.unregister(
-        `priceAction.${itemIndex}.subItems.${subItemIndex}.component`
-      );
-      control.unregister(
-        `priceAction.${itemIndex}.subItems.${subItemIndex}.description`
-      );
-      control.unregister(
-        `priceAction.${itemIndex}.subItems.${subItemIndex}.quantity`
-      );
-      control.unregister(
-        `priceAction.${itemIndex}.subItems.${subItemIndex}.unitOfmeasurement`
-      );
-      control.unregister(
-        `priceAction.${itemIndex}.subItems.${subItemIndex}.unitPrice`
-      );
-      control.unregister(
-        `priceAction.${itemIndex}.subItems.${subItemIndex}.subtotal`
-      );
-
-      // Recalculate total
-      const total = calculateTotal({ priceAction: updatedItems });
-      setTotalAmount(total.toFixed(2));
-      setValue("total", total);
-    }
-  };
+  const removeSubItem = useCallback(
+    (itemIndex: number, subItemIndex: number) => {
+      const currentItems = (getValue().priceAction || []) as PriceActionItem[];
+      const currentItem = currentItems[itemIndex];
+      if (!currentItem) return;
+      unregisterSubItemFields(itemIndex, subItemIndex);
+      const nextSubItems = (currentItem.subItems || []).filter((_, i) => i !== subItemIndex);
+      const updatedItem: PriceActionItem = {
+        ...currentItem,
+        subItems: nextSubItems,
+      };
+      update(itemIndex, updatedItem as any);
+    },
+    [getValue, update, unregisterSubItemFields]
+  );
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -434,7 +405,7 @@ const CompleteProposalDialog: React.FC<CompleteProposalDialogProps> = ({
               </div>
               <div className="text-right">
                 <div className="text-xl font-bold text-gray-900 dark:text-gray-100">
-                  ${totalAmount}
+                  {formatCurrency(totalAmount, "en-US", "USD")}
                 </div>
               </div>
             </div>
@@ -465,4 +436,6 @@ const CompleteProposalDialog: React.FC<CompleteProposalDialogProps> = ({
   );
 };
 
-export default CompleteProposalDialog;
+const ProposalDialog = memo(CompleteProposalDialog);
+
+export default ProposalDialog;

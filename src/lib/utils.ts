@@ -198,3 +198,9 @@ export function zonedTimeToUtc(
     return new Date(NaN);
   }
 }
+
+export const formatDateForInput = (dateString: string) => {
+  if (!dateString) return "";
+  const date = new Date(dateString);
+  return date.toISOString().split("T")[0];
+};

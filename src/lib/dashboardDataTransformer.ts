@@ -2125,10 +2125,10 @@ export class DashboardDataTransformer {
                   campaign.createdAt,
                   "MMM d, yyyy",
                   campaign?.timezone
-                )} • ${formatDateTZ(campaign.createdAt, "h:mm a 'GMT'xxx", campaign?.timezone || "")}`
+                )} • ${formatDateTZ(campaign.createdAt, "h:mm a", campaign?.timezone || "")}`
               : `${formatDateTZ(new Date(), "MMM d, yyyy")} • ${formatDateTZ(
                   new Date(),
-                  "h:mm a 'GMT'xxx",
+                  "h:mm a",
                   campaign?.timezone || ""
                 )}`),
         };
@@ -2148,7 +2148,7 @@ export class DashboardDataTransformer {
         title: update?.solicitation?.name ?? "Unknown",
         time: update?.createdAt
           ? `${formatDateTZ(update.createdAt, "MMM d, yyyy h:mm a", update?.solicitation?.timezone || "")} ${
-              update.timezone || "GMT"
+              update.timezone || update?.solicitation?.timezone || "UTC"
             }`
           : undefined,
       };

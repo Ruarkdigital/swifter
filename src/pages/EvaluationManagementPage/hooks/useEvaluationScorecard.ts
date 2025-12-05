@@ -23,11 +23,12 @@ interface EvaluatorDetails {
   email: string;
   submission: string | null;
   status: string;
-  score: number;
+  score: number | "pass" | "fail";
 }
 
 interface EvaluationScorecardData {
   evaluator: EvaluatorDetails;
+  criteriaWeightSummtion: number;
   criteria: EvaluationCriteria[];
 }
 

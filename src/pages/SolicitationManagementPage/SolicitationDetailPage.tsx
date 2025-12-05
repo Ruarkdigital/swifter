@@ -5,12 +5,14 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 
 import EvaluationScorecard from "./components/EvaluationScorecard";
 import DocumentsTab from "./components/DocumentsTab";
 import QuestionsTab from "./components/QuestionsTab";
 import AddendumsTab from "./components/AddendumsTab";
 import EditSolicitationDialog from "./components/EditSolicitationDialog";
+import CreateAddendumDialog from "./components/CreateAddendumDialog";
 import ExtendDeadlineDialog from "./components/ExtendDeadlineDialog";
 import ProposalDetailsSheet from "./components/ProposalDetailsSheet";
 import { ExportReportSheet } from "@/components/layouts/ExportReportSheet";
@@ -30,7 +32,12 @@ import { ApiResponse, ApiResponseError } from "@/types";
 import { ConfirmAlert } from "@/components/layouts/ConfirmAlert";
 import { useToastHandler } from "@/hooks/useToaster";
 import { useUserRole } from "@/hooks/useUserRole";
-import { DataTable, createExpandButton, hasChildren, getSubRows } from "@/components/layouts/DataTable";
+import {
+  DataTable,
+  createExpandButton,
+  hasChildren,
+  getSubRows,
+} from "@/components/layouts/DataTable";
 import { ColumnDef, PaginationState } from "@tanstack/react-table";
 import { PageLoader } from "@/components/ui/PageLoader";
 import { EvaluatorsGroupSubTable } from "./components/EvaluatorsGroupSubTable";
@@ -358,6 +365,8 @@ export const SolicitationDetailPage = () => {
     pageSize: 10,
   });
   const [extendOpen, setExtendOpen] = useState(false);
+  const [isCreateAddendumDialogOpen, setIsCreateAddendumDialogOpen] =
+    useState(false);
 
   // Fetch solicitation details from API
   const {
@@ -676,8 +685,8 @@ export const SolicitationDetailPage = () => {
             Assigned:{" "}
             {row.original.assignedOnFormatted
               ? formatDateTZ(
-                  new Date(row.original.assignedOnFormatted),
-                  "MMM d, yyyy pppp",
+                  row.original.assignedOnFormatted,
+                  "MMM d, yyyy hh:mm a",
                   row.original.timezone
                 )
               : "-"}
@@ -698,7 +707,7 @@ export const SolicitationDetailPage = () => {
       header: "Actions",
       cell: ({ row }) => (
         <>
-          { (
+          {
             <div className="flex items-center">
               <Sheet>
                 {row.original.status !== "Not Started" && (
@@ -719,13 +728,13 @@ export const SolicitationDetailPage = () => {
                         row.original.progress === 100
                           ? formatDateTZ(
                               new Date(),
-                              "MMM d, yyyy pppp",
+                              "MMM d, yyyy hh:mm a",
                               row.original.timezone
                             )
                           : row.original.assignedOnFormatted
                           ? formatDateTZ(
                               new Date(row.original.assignedOnFormatted),
-                              "MMM d, yyyy pppp",
+                              "MMM d, yyyy hh:mm a",
                               row.original.timezone
                             )
                           : formatDateTZ(new Date(), "MMM d, yyyy pppp"),
@@ -747,8 +756,8 @@ export const SolicitationDetailPage = () => {
                   type="info"
                   primaryButtonText="Send Reminder"
                   secondaryButtonText="Cancel"
-                  onPrimaryAction={() =>{
-                    remindEvaluatorMutation.mutate(row.original.id)
+                  onPrimaryAction={() => {
+                    remindEvaluatorMutation.mutate(row.original.id);
                   }}
                   isLoading={remindEvaluatorMutation.isPending}
                   trigger={
@@ -798,7 +807,7 @@ export const SolicitationDetailPage = () => {
                 />
               )}
             </div>
-          )}
+          }
         </>
       ),
     },
@@ -847,22 +856,26 @@ export const SolicitationDetailPage = () => {
   ];
 
   return (
-    <div className="p-6 min-h-full pb-10">
+    <main id="main-content" className="p-6 min-h-full pb-10" role="main">
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-200 mb-6">
-        <span
+        <button
+          type="button"
           onClick={handleBack}
-          className="cursor-pointer hover:text-gray-700"
+          className="cursor-pointer hover:text-gray-700 underline"
+          aria-label="Go back to Solicitations"
         >
           Solicitations
-        </span>
+        </button>
         <ChevronRight className="h-4 w-4" />
-        <span
+        <button
+          type="button"
           onClick={handleBack}
-          className="cursor-pointer hover:text-gray-700"
+          className="cursor-pointer hover:text-gray-700 underline"
+          aria-label="Go back to My Solicitations"
         >
           My Solicitations
-        </span>
+        </button>
         <ChevronRight className="h-4 w-4" />
         <span>Solicitation Details</span>
         <ChevronRight className="h-4 w-4" />
@@ -1030,14 +1043,39 @@ export const SolicitationDetailPage = () => {
                       Export
                     </Button>
                   </ExportReportSheet>
-                  {isOwner &&
+                  {(isOwner || isCompanyAdmin) &&
                     ((solicitation.status !== "closed" &&
                       solicitation.status !== "awarded") ||
                       isCompanyAdmin) && (
                       <>
-                        <EditSolicitationDialog
-                          solicitation={solicitation as any}
-                        />
+                        {(isCompanyAdmin || solicitation.status === "draft") && (
+                          <EditSolicitationDialog
+                            solicitation={solicitation as any}
+                          />
+                        )}
+                        <Dialog
+                          open={isCreateAddendumDialogOpen}
+                          onOpenChange={setIsCreateAddendumDialogOpen}
+                        >
+                          <DialogTrigger asChild>
+                            <Button
+                              className="bg-[#2A4467] hover:bg-[#1e3252] text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                              disabled={
+                                (solicitation.status === "closed" ||
+                                  solicitation.status === "awarded") &&
+                                !isCompanyAdmin
+                              }
+                            >
+                              Create Addendum
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent className="sm:max-h-[min(640px,90vh)] overflow-auto">
+                            <CreateAddendumDialog
+                              solicitationId={id!}
+                              onClose={() => setIsCreateAddendumDialogOpen(false)}
+                            />
+                          </DialogContent>
+                        </Dialog>
                       </>
                     )}
                 </div>
@@ -1088,7 +1126,10 @@ export const SolicitationDetailPage = () => {
                   </label>
                   <p className="text-blue-600 dark:text-gray-200 font-medium">
                     {solicitation.createdBy?.email ? (
-                      <a href={`mailto:${solicitation.createdBy.email}`} className="hover:underline">
+                      <a
+                        href={`mailto:${solicitation.createdBy.email}`}
+                        className="hover:underline"
+                      >
                         {solicitation.createdBy.email}
                       </a>
                     ) : solicitation.createdBy?.name ? (
@@ -1477,7 +1518,8 @@ export const SolicitationDetailPage = () => {
                 pagination,
                 enableExpanding: true,
                 getSubRows: (row) => getSubRows(row as any, "evaluators"),
-                getRowCanExpand: (row) => hasChildren(row.original as any, "evaluators"),
+                getRowCanExpand: (row) =>
+                  hasChildren(row.original as any, "evaluators"),
                 renderSubComponent: ({ row }) => (
                   <EvaluatorsGroupSubTable
                     group={row.original as Group}
@@ -1573,7 +1615,7 @@ export const SolicitationDetailPage = () => {
       />
 
       <div className="h-10" />
-    </div>
+    </main>
   );
 };
 

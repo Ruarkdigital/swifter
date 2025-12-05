@@ -40,6 +40,15 @@ export interface RequiredFile {
 
 interface SubmitProposalPageProps {}
 
+type ProposalItem = {
+  _id: string;
+  title: string;
+  link: string;
+  size: string;
+  required: boolean;
+  type: string;
+};
+
 const schema = yup.object().shape({
   total: yup
     .number()
@@ -253,7 +262,7 @@ const SubmitProposalPage: React.FC<SubmitProposalPageProps> = () => {
 
       await submitProposal(draftData);
       toast.success("Success", "Proposal saved as draft successfully");
-      navigate(-1)
+      navigate(-1);
     } catch (error) {
       console.error("Save draft error:", error);
       const err = error as ApiResponseError;
@@ -312,15 +321,34 @@ const SubmitProposalPage: React.FC<SubmitProposalPageProps> = () => {
     }
   };
 
+  const handlePriceActionDialogChange = (doc: ProposalItem) => {
+    const currentPriceActions = forge.getValues().priceAction || [];
+
+    if (currentPriceActions.length > 0) {
+      // Update existing price action
+      const updatedPriceActions = [...currentPriceActions];
+      forge.setValue("priceAction", updatedPriceActions);
+    } else {
+      // Add new price action
+      const newPriceAction =  {
+        component: "",
+        description: "",
+        quantity: 0,
+        unitOfmeasurement: "",
+        requiredDocumentId: doc._id,
+        unitPrice: 0,
+        subtotal: 0,
+        subItems: [],
+      }
+
+      forge.setValue("priceAction", [newPriceAction]);
+    }
+    setSelectedDocumentId(doc._id);
+    setIsCompleteDialogOpen(true);
+  };
+
   // Define table columns
-  const columns: ColumnDef<{
-    _id: string;
-    title: string;
-    link: string;
-    size: string;
-    required: boolean;
-    type: string;
-  }>[] = [
+  const columns: ColumnDef<ProposalItem>[] = [
     {
       accessorKey: "title",
       header: "Requested Doc",
@@ -376,22 +404,7 @@ const SubmitProposalPage: React.FC<SubmitProposalPageProps> = () => {
                   size="sm"
                   className="!w-fit"
                   onClick={() => {
-                    console.log({ doc });
-                    forge.setValue("priceAction", [
-                      ...(forge.getValues().priceAction || []),
-                      {
-                        component: "",
-                        description: "",
-                        quantity: 0,
-                        unitOfmeasurement: "",
-                        requiredDocumentId: doc._id,
-                        unitPrice: 0,
-                        subtotal: 0,
-                        subItems: [],
-                      },
-                    ]);
-                    setSelectedDocumentId(doc._id);
-                    setIsCompleteDialogOpen(true);
+                    handlePriceActionDialogChange(doc);
                   }}
                 >
                   Complete Proposal
@@ -617,6 +630,7 @@ const SubmitProposalPage: React.FC<SubmitProposalPageProps> = () => {
           acceptedTypes={getAcceptedTypesForDocType(type)}
         />
       </div>
+
       <div className="h-10" />
     </div>
   );

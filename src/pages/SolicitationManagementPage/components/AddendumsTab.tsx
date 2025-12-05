@@ -204,7 +204,7 @@ const AddendumsTab: React.FC<AddendumsTabProps> = ({
 }) => {
   const toast = useToastHandler();
   const queryClient = useQueryClient();
-  const { isVendor } = useUserRole();
+  const { isVendor, isCompanyAdmin } = useUserRole();
   const [searchQuery, setSearchQuery] = useState("");
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
@@ -442,7 +442,12 @@ const AddendumsTab: React.FC<AddendumsTabProps> = ({
                   className="pl-10 w-64"
                 />
               </div>
-              {solicitationId && !isVendor && (
+              {solicitationId && (
+                (!isVendor &&
+                  solicitationStatus !== "closed" &&
+                  solicitationStatus !== "awarded") ||
+                (solicitationStatus === "closed" && isCompanyAdmin)
+              ) && (
                 <Dialog
                   open={isCreateDialogOpen}
                   onOpenChange={setIsCreateDialogOpen}
@@ -451,8 +456,9 @@ const AddendumsTab: React.FC<AddendumsTabProps> = ({
                     <Button
                       className="bg-[#2A4467] hover:bg-[#1e3252] text-white disabled:opacity-50 disabled:cursor-not-allowed"
                       disabled={
-                        solicitationStatus === "closed" ||
-                        solicitationStatus === "awarded"
+                        (solicitationStatus === "closed" ||
+                          solicitationStatus === "awarded") &&
+                        !isCompanyAdmin
                       }
                     >
                       <Plus className="h-4 w-4 mr-2" />

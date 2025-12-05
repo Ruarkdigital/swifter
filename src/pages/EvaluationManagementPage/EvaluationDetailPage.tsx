@@ -30,6 +30,7 @@ import { useMutation } from "@tanstack/react-query";
 import { getRequest } from "@/lib/axiosInstance";
 import EvaluationScorecardSheet from "./components/EvaluationScorecardSheet";
 import { ProposalPriceBreakdownSheet } from "./components/ProposalPriceBreakdownSheet";
+import CriteriaScorecardSheet from "./components/CriteriaScorecardSheet";
 import { ExportReportSheet } from "@/components/layouts/ExportReportSheet";
 import {
   useEvaluationDetail,
@@ -443,6 +444,7 @@ const EvaluationDetailPage: React.FC = () => {
       passFail: criterion.criteria.pass_fail || "-",
       weight: criterion.criteria.weight || "-",
       progress: criterion.progress || "-",
+      consensus: (criterion as any).consensus,
       evaluationGroup: criterion.evaluationGroup || "-",
     }));
   }, [evaluation?.criterias]);
@@ -525,20 +527,57 @@ const EvaluationDetailPage: React.FC = () => {
   // Define criteria table columns
   const criteriaColumns: ColumnDef<any>[] = [
     {
+      id: "expander",
+      header: "",
+      size: 40,
+      cell: ({ row }) => {
+        if (!row.getCanExpand()) return null;
+        return (
+          <button
+            onClick={row.getToggleExpandedHandler()}
+            className="flex items-center justify-center w-6 h-6 rounded hover:bg-gray-100 dark:hover:bg-gray-800"
+          >
+            {row.getIsExpanded() ? (
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M19 9l-7 7-7-7"
+                />
+              </svg>
+            ) : (
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 5l7 7-7 7"
+                />
+              </svg>
+            )}
+          </button>
+        );
+      },
+    },
+    {
       accessorKey: "criteria",
       header: "Criteria",
       cell: ({ row }) => (
         <div className=" ">
           <div className="font-medium">{row.original.criteria}</div>
-          {/* <div className="text-sm text-muted-foreground">
-            {row.original.description}
-          </div> */}
         </div>
       ),
-    },
-    {
-      accessorKey: "description",
-      header: "Description",
     },
     {
       accessorKey: "passFail",
@@ -587,8 +626,24 @@ const EvaluationDetailPage: React.FC = () => {
       accessorKey: "progress",
       header: "Progress",
       cell: ({ row }) => {
-        console.log({ data: row.original });
-        return <span className="font-medium">{row.original.progress?.toFixed?.(0) || 0}%</span>;
+        return (
+          <span className="font-medium">
+            {row.original.progress?.toFixed?.(0) || 0}%
+          </span>
+        );
+      },
+    },
+    {
+      accessorKey: "consensus",
+      header: "Consensus",
+      cell: ({ row }) => {
+        const p = row.original.progress;
+        const progressNum = typeof p === "number" ? p : Number(p) || 0;
+        if (progressNum !== 100)
+          return <span className="text-muted-foreground">-</span>;
+        const val = row.original.consensus ?? false;
+        const label = typeof val === "boolean" ? (val ? "Yes" : "No") : "Yes";
+        return <span className="font-medium">{label}</span>;
       },
     },
 
@@ -596,12 +651,16 @@ const EvaluationDetailPage: React.FC = () => {
       id: "actions",
       header: "Actions",
       cell({ row }) {
+        const p = row.original.progress;
+        const progressNum = typeof p === "number" ? p : Number(p) || 0;
+        if (progressNum !== 100)
+          return <span className="text-muted-foreground">-</span>;
+
         return (
           <div className="flex items-center gap-2">
-            <EvaluationScorecardSheet
-              evaluatorId={row.original._id}
-              solicitationId={evaluation?.solicitation?._id || ""}
-              timezone={evaluation?.timezone}
+            <CriteriaScorecardSheet
+              evaluationId={id!}
+              criteriaId={row.original._id}
             />
           </div>
         );
@@ -635,7 +694,9 @@ const EvaluationDetailPage: React.FC = () => {
       accessorKey: "score",
       header: "Score",
       cell: ({ row }) => (
-        <span className="font-medium">{Number(row.original.score).toFixed(0)}%</span>
+        <span className="font-medium">
+          {Number(row.original.score).toFixed(0)}%
+        </span>
       ),
     },
     {
@@ -696,7 +757,11 @@ const EvaluationDetailPage: React.FC = () => {
       accessorKey: "progress",
       header: "Progress",
       cell: ({ row }) => {
-        return <span className="font-medium">{row.original.progress?.toFixed?.(0)}%</span>;
+        return (
+          <span className="font-medium">
+            {row.original.progress?.toFixed?.(0)}%
+          </span>
+        );
       },
     },
     {
@@ -708,6 +773,10 @@ const EvaluationDetailPage: React.FC = () => {
       id: "actions",
       header: "Actions",
       cell({ row }) {
+        const p = row.original.progress;
+        const progressNum = typeof p === "number" ? p : Number(p) || 0;
+        if (progressNum !== 100)
+          return <span className="text-muted-foreground">-</span>;
         return (
           <div className="flex items-center gap-2">
             <EvaluationScorecardSheet
@@ -722,7 +791,7 @@ const EvaluationDetailPage: React.FC = () => {
   ];
 
   return (
-    <div className="p-6 min-h-full">
+    <main id="main-content" className="p-6 min-h-full" role="main">
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 mb-6">
         <span>Evaluations</span>
@@ -1276,6 +1345,17 @@ const EvaluationDetailPage: React.FC = () => {
                   </div>
                 </div>
               )}
+              options={{
+                disableSelection: true,
+                enableExpanding: true,
+                getRowCanExpand: () => true,
+                renderSubComponent: ({ row }) => (
+                  <div className="pl-16 py-4 text-sm text-gray-700 dark:text-gray-300">
+                    <div className="font-medium mb-1">Description</div>
+                    <div>{row.original.description || "-"}</div>
+                  </div>
+                ),
+              }}
               classNames={{
                 container: "bg-white dark:bg-slate-950 rounded-xl px-3",
                 // tCell: "text-center",
@@ -1409,7 +1489,7 @@ const EvaluationDetailPage: React.FC = () => {
           </div>
         </TabsContent>
       </Tabs>
-    </div>
+    </main>
   );
 };
 

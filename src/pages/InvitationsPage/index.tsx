@@ -56,7 +56,8 @@ type Invitation = {
   rfp: string;
   invitedDate: string;
   deadline: string;
-  status: "invited" | "confirmed" | "declined" | "not available";
+  timezone: string;
+  status: "invited" | "confirmed" | "declined" | "not available" | "closed";
 };
 
 // Map API status to UI status
@@ -68,6 +69,8 @@ const mapApiStatusToUIStatus = (apiStatus: string): Invitation["status"] => {
       return "declined";
     case "invited":
       return "invited";
+    case "closed":
+      return "closed";
     default:
       return "not available";
   }
@@ -85,14 +88,15 @@ const transformSolicitationToInvitation = (
     rfp: solicitation.typeId?.name || "RFP",
     invitedDate: formatDateTZ(
       solicitation?.vendor?.invitedAt ?? solicitation.createdAt,
-      "MMM d, yyyy, pppp",
+      "MMM d, yyyy hh:mm a",
       solicitation?.timezone
     ),
     deadline: formatDateTZ(
       solicitation.submissionDeadline as any,
-      "MMM d, yyyy, pppp",
+      "MMM d, yyyy hh:mm a",
       solicitation?.timezone
     ),
+    timezone: solicitation?.timezone || "UTC",
     status: mapApiStatusToUIStatus(solicitation.vendor.status),
   };
 };
@@ -107,6 +111,8 @@ const StatusBadge = ({ status }: { status: Invitation["status"] }) => {
         return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400";
       case "declined":
         return "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400";
+      case "closed":
+        return "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300";
       default:
         return "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300";
     }
@@ -120,6 +126,8 @@ const StatusBadge = ({ status }: { status: Invitation["status"] }) => {
         return "Invited";
       case "declined":
         return "Declined";
+      case "closed":
+        return "Closed";
       default:
         return "Not Available";
     }
@@ -316,6 +324,17 @@ const InvitationsPage = () => {
       ),
     },
     {
+      accessorKey: "timezone",
+      header: "Timezone",
+      cell: ({ row }) => (
+        <div className="flex flex-col text-sm">
+          <span className="text-gray-700 dark:text-gray-300">
+            {row.original.timezone}
+          </span>
+        </div>
+      ),
+    },
+    {
       accessorKey: "status",
       header: "Status",
       cell: ({ row }) => <StatusBadge status={row.original.status} />,
@@ -328,6 +347,7 @@ const InvitationsPage = () => {
         const originalSolicitation = invitationsData?.data?.data?.data?.find(
           (sol: VendorSolicitation) => sol._id === row.original.id
         );
+        // console.log({ originalSolicitation, row: row.original });
 
         if (!originalSolicitation) return null;
 

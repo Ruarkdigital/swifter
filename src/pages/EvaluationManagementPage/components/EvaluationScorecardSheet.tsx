@@ -9,7 +9,12 @@ import {
   getEvaluationStatusLabel,
   getEvaluationStatusColorClass,
 } from "@/lib/evaluationStatusUtils";
-import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
+import {
+  Accordion,
+  AccordionItem,
+  AccordionTrigger,
+  AccordionContent,
+} from "@/components/ui/accordion";
 
 interface EvaluationScorecardSheetProps {
   evaluatorId: string;
@@ -40,6 +45,7 @@ const EvaluationScorecardSheet: React.FC<EvaluationScorecardSheetProps> = ({
   const activeData = isOpen ? scorecardDataEnabled : scorecardData;
   const activeLoading = isOpen ? isLoadingEnabled : isLoading;
   const activeError = isOpen ? errorEnabled : error;
+  const totalCriteriaScore = activeData?.data?.criteriaWeightSummtion || 0;
 
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
@@ -158,7 +164,10 @@ const EvaluationScorecardSheet: React.FC<EvaluationScorecardSheetProps> = ({
                   {/* Group by vendor and render as accordion */}
                   {(() => {
                     const criteria = activeData.data.criteria || [];
-                    const groupsMap = new Map<string, { vendorName: string; items: typeof criteria }>();
+                    const groupsMap = new Map<
+                      string,
+                      { vendorName: string; items: typeof criteria }
+                    >();
                     criteria.forEach((c) => {
                       const id = c.vendorId || c.vendorName || "";
                       const name = c.vendorName || "Vendor";
@@ -173,7 +182,9 @@ const EvaluationScorecardSheet: React.FC<EvaluationScorecardSheetProps> = ({
 
                     if (vendorGroups.length === 0) {
                       return (
-                        <div className="text-sm text-gray-500 dark:text-gray-400">No criteria available.</div>
+                        <div className="text-sm text-gray-500 dark:text-gray-400">
+                          No criteria available.
+                        </div>
                       );
                     }
 
@@ -181,18 +192,25 @@ const EvaluationScorecardSheet: React.FC<EvaluationScorecardSheetProps> = ({
                       <Accordion type="single" collapsible>
                         {vendorGroups.map(([vendorId, group], idx) => {
                           const first = group.items[0];
-                          const totalFromApi = first?.totalVendorScore;
-                          const computedFallback = group.items.reduce((sum, item) => {
-                            const numericScore =
-                              typeof item.newScore?.score === "number"
-                                ? item.newScore?.score || 0
-                                : (() => {
-                                    const val = parseFloat(String(item.score ?? "0"));
-                                    return isNaN(val) ? 0 : val;
-                                  })();
-                            return sum + numericScore;
-                          }, 0);
-                          const vendorScore = (totalFromApi ?? computedFallback) || 0;
+                          const totalFromApi = first?.totalVendorScore || first.newScore?.score;
+
+                          const computedFallback = group.items.reduce(
+                            (sum, item) => {
+                              const numericScore =
+                                typeof item.newScore?.score === "number"
+                                  ? item.newScore?.score || 0
+                                  : (() => {
+                                      const val = parseFloat(
+                                        String(item.score ?? "0")
+                                      );
+                                      return isNaN(val) ? 0 : val;
+                                    })();
+                              return sum + numericScore;
+                            },
+                            0
+                          );
+                          const vendorScore =
+                            (totalFromApi ?? computedFallback) || 0;
 
                           return (
                             <AccordionItem
@@ -205,18 +223,30 @@ const EvaluationScorecardSheet: React.FC<EvaluationScorecardSheetProps> = ({
                                   <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
                                     {group.vendorName}
                                   </span>
-                                  <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                                    Evaluator Score: {Number(vendorScore).toFixed(0)}%
+                                  <span className="text-sm font-semibold text-gray-900 dark:text-gray-100 capitalize">
+                                    Evaluator Score:{" "}
+                                    {typeof totalFromApi === "string" &&
+                                    (totalFromApi as string).trim().length > 0
+                                      ? totalFromApi
+                                      : `${Number(vendorScore).toFixed(
+                                          0
+                                        )}/${Number(totalCriteriaScore).toFixed(
+                                          0
+                                        )}`}
                                   </span>
                                 </div>
                               </AccordionTrigger>
                               <AccordionContent>
                                 {group.items.map((criterion, index) => {
                                   return (
-                                    <div key={index} className="border rounded-lg mb-4">
+                                    <div
+                                      key={index}
+                                      className="border rounded-lg mb-4"
+                                    >
                                       <div className="flex items-center justify-between p-4">
                                         <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                                          {criterion?.title || `Criterion ${index + 1}`}
+                                          {criterion?.title ||
+                                            `Criterion ${index + 1}`}
                                         </span>
                                         {/* <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
                                           {criterion?.vendorName || `Vendor ${index + 1}`}
@@ -229,7 +259,8 @@ const EvaluationScorecardSheet: React.FC<EvaluationScorecardSheetProps> = ({
                                               Weight
                                             </p>
                                             <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                                              {criterion?.newScore?.weight || "N/A"}
+                                              {criterion?.newScore?.weight ||
+                                                "N/A"}
                                             </p>
                                           </div>
                                           <div>
@@ -237,7 +268,8 @@ const EvaluationScorecardSheet: React.FC<EvaluationScorecardSheetProps> = ({
                                               Score
                                             </p>
                                             <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                                              {criterion?.newScore?.score || "N/A"}
+                                              {criterion?.newScore?.score ||
+                                                "N/A"}
                                             </p>
                                           </div>
                                         </div>
@@ -246,7 +278,8 @@ const EvaluationScorecardSheet: React.FC<EvaluationScorecardSheetProps> = ({
                                             Comments
                                           </p>
                                           <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
-                                            {criterion.comment || "No comments provided"}
+                                            {criterion.comment ||
+                                              "No comments provided"}
                                           </p>
                                         </div>
                                       </div>
