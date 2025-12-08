@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Trash2, Plus } from "lucide-react";
 import { useFieldArray, Control, useWatch } from "react-hook-form";
 import { useQuery } from "@tanstack/react-query";
-import { Forger, usePersist } from "@/lib/forge";
+import { Forger } from "@/lib/forge";
 import { TextInput } from "@/components/layouts/FormInputs/TextInput";
 import { TextSelect } from "@/components/layouts/FormInputs/TextSelect";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -88,12 +88,12 @@ const Step3Form = ({ control, isEdit = false }: Step3FormProps) => {
       await getRequest({ url: "/procurement/evaluations/groups" }),
   });
 
-  usePersist({
-    control,
-    handler(payload, formState) {
-      console.log({ payload, formState })
-    },
-  })
+  // usePersist({
+  //   control,
+  //   handler(payload, formState) {
+  //     console.log({ payload, formState })
+  //   },
+  // })
 
   // Transform API data to options format and append to static options
   const apiEvaluationGroupOptions = evaluationGroupsData?.data?.data?.map((group) => ({
