@@ -30,12 +30,12 @@ const ForgerController = <TFieldValues extends FieldValues = FieldValues>(
   } = useController<TFieldValues>({ name, rules, control: methods?.control });
   const Component = component as any;
 
-  const getTextTransform = (text: string) => {
+  const getTextTransform = (text: string ) => {
     return typeof transform === "undefined" ? text : transform.output?.(text);
   };
 
-  const getTransformedValue = (text: string) => {
-    return typeof transform === "undefined" ? text : transform.input?.(text);
+  const getTransformedValue = (data: string | any[] | object) => {
+    return typeof transform === "undefined" || typeof data !== "string" ? data : transform.input?.(data);
   };
 
   // Platform-specific event handlers
@@ -67,7 +67,7 @@ const ForgerController = <TFieldValues extends FieldValues = FieldValues>(
   };
   
   const handleTrigger = getEventHandlers();
-  const displayValue = value == null ? '' : typeof value === 'string' ? value : String(value);
+  const displayValue = value == null ? '' : typeof value === 'string' ? value : value;
 
   return (
     <Component

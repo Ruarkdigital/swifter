@@ -1,7 +1,4 @@
-import {
-  TextArea,
-  TextMultiSelect,
-} from "@/components/layouts/FormInputs";
+import { TextArea, TextMultiSelect } from "@/components/layouts/FormInputs";
 import { Forger } from "@/lib/forge";
 import { useQuery } from "@tanstack/react-query";
 import { getRequest } from "@/lib/axiosInstance";
@@ -16,15 +13,19 @@ type VendorEmailData = {
 
 function Step5Form() {
   // Fetch all company vendors
-  const { data: vendorsData } = useQuery<ApiResponse<VendorEmailData[]>, ApiResponseError>({
+  const { data: vendorsData } = useQuery<
+    ApiResponse<VendorEmailData[]>,
+    ApiResponseError
+  >({
     queryKey: ["solicitationVendors"],
-    queryFn: async () => await getRequest({ url: "/procurement/solicitations/vendors" }),
+    queryFn: async () =>
+      await getRequest({ url: "/procurement/solicitations/vendors" }),
   });
 
   // Transform vendor data to options format
   const vendorTags = useMemo(() => {
     if (!vendorsData?.data?.data) return [];
-    
+
     return vendorsData.data.data.map((vendor) => ({
       label: vendor.name || vendor.email,
       value: vendor._id,

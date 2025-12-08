@@ -136,8 +136,6 @@ export const TextMultiSelect = (props: TextMultiSelectProps & Partial<ForgerSlot
     createLabel = "Create",
     ...selectProps
   } = props;
-
-  // console.log({ value });
   
 
   const handleValueChange = (selectedOptions: Option[]) => {
