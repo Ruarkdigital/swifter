@@ -638,6 +638,7 @@ export const dashboardConfigs: Record<UserRole, DashboardConfig> = {
   company_admin: companyAdminConfig,
   super_admin: superAdminConfig,
   procurement: procurementConfig,
+  contract_manager: procurementConfig,
 };
 
 // Helper function to get dashboard config by role

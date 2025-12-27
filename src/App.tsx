@@ -66,7 +66,9 @@ function App() {
         try {
           const errData = await response.json();
           errMsg = errData.message || errData.error || errMsg;
-        } catch {}
+        } catch {
+          void 0;
+        }
         throw new Error(`API Error: ${response.status} - ${errMsg}`);
       }
 
@@ -156,7 +158,9 @@ function App() {
         try {
           const errData = await response.json();
           errMsg = errData.message || errData.error || errMsg;
-        } catch {}
+        } catch {
+          void 0;
+        }
         throw new Error(`API Error: ${response.status} - ${errMsg}`);
       }
 

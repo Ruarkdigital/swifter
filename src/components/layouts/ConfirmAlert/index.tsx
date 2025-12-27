@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Button } from "@/components/ui/button";
 import { useToastHandler } from "@/hooks/useToaster";
 import { deleteRequest } from "@/lib/axiosInstance";

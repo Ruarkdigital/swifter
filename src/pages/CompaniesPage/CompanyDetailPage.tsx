@@ -24,6 +24,7 @@ const moduleSchema = yup.object().shape({
   solicitationsManagement: yup.boolean(),
   evaluationsManagement: yup.boolean(),
   vendorManagement: yup.boolean(),
+  contractManagement: yup.boolean(),
   reportsAnalytics: yup.boolean(),
   generalUpdatesNotifications: yup.boolean(),
   myActions: yup.boolean(),
@@ -88,6 +89,7 @@ type ModuleSettings = {
   evaluationsManagement: boolean;
   vendorManagement: boolean;
   reportsAnalytics: boolean;
+  contractManagement: boolean;
   generalUpdatesNotifications: boolean;
   myActions: boolean;
   vendorsQA: boolean;
@@ -102,6 +104,7 @@ type PortalSettings = {
   solicitationManagement: boolean;
   evaluationsManagement: boolean;
   vendorManagement: boolean;
+  contractManagement: boolean;
   reportsAnalytics: boolean;
   generalUpdatesNotifications: boolean;
   myActions: boolean;
@@ -230,7 +233,7 @@ const CompanyDetailPage = () => {
       solicitationsManagement:
         portalSettingsData?.solicitationManagement ?? true,
       evaluationsManagement: portalSettingsData?.evaluationsManagement ?? true,
-      vendorManagement: portalSettingsData?.vendorManagement ?? true,
+      contractManagement: portalSettingsData?.contractManagement ?? true,
       reportsAnalytics: portalSettingsData?.reportsAnalytics ?? true,
       generalUpdatesNotifications:
         portalSettingsData?.generalUpdatesNotifications ?? true,
@@ -252,6 +255,7 @@ const CompanyDetailPage = () => {
         reportsAnalytics: portalSettingsData.reportsAnalytics,
         generalUpdatesNotifications:
           portalSettingsData.generalUpdatesNotifications,
+        contractManagement: portalSettingsData.contractManagement,
         myActions: portalSettingsData.myActions,
         vendorsQA: portalSettingsData.vendorsQA,
         addendumManagement: portalSettingsData.addendumManagement,
@@ -275,6 +279,7 @@ const CompanyDetailPage = () => {
           "myActions",
           "vendorsQA",
           "addendumManagement",
+          "contractManagement",
           "isAi",
         ].includes(name ?? "")
       ) {
@@ -320,6 +325,7 @@ const CompanyDetailPage = () => {
       await updatePortalSettings({
         solicitationManagement: data.solicitationsManagement || false,
         evaluationsManagement: data.evaluationsManagement || false,
+        contractManagement: data.contractManagement || false,
         vendorManagement: data.vendorManagement || false,
         reportsAnalytics: data.reportsAnalytics || false,
         generalUpdatesNotifications: data.generalUpdatesNotifications || false,
@@ -682,6 +688,13 @@ const CompanyDetailPage = () => {
               <Forger
                 name="evaluationsManagement"
                 label="Evaluations Management"
+                component={ModuleToggle}
+                disabled={isUpdatingPortalSettings}
+              />
+
+              <Forger
+                name="contractManagement"
+                label="Contract Management"
                 component={ModuleToggle}
                 disabled={isUpdatingPortalSettings}
               />

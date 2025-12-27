@@ -3,6 +3,7 @@ import React, { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useDashboardData } from "@/hooks/useDashboardData";
+import { useUser } from "@/store/authSlice";
 import { DashboardDataTransformer } from "@/lib/dashboardDataTransformer";
 import { ChartComponent } from "./components/ChartCard";
 import { ActivityComponent } from "./components/ActivityCard";
@@ -14,6 +15,8 @@ import { PageLoader } from "@/components/ui/PageLoader";
 // Main Role-Based Dashboard Component
 export const RoleBasedDashboard: React.FC = () => {
   const { dashboardConfig, userRole } = useUserRole();
+  const user = useUser();
+  const modules = user?.module;
   // Individual chart filters instead of global filter
   const [chartFilters, setChartFilters] = useState<Record<string, string>>({});
   const navigate = useNavigate();
@@ -618,6 +621,18 @@ export const RoleBasedDashboard: React.FC = () => {
       {/* Activities and Charts Section */}
       {enhancedDashboardConfig.rows?.map?.((item, rowIndex) => {
         if (item.type === "activity") {
+          const gatedActivities = item.properties.filter((activity) => {
+            if (activity.id === "my-actions" && modules?.myActions !== true) {
+              return false;
+            }
+            if (
+              activity.id === "general-updates" &&
+              modules?.generalUpdatesNotifications !== true
+            ) {
+              return false;
+            }
+            return true;
+          });
           return (
             <div
               key={`activity-row-${rowIndex}`}
@@ -626,7 +641,7 @@ export const RoleBasedDashboard: React.FC = () => {
                 item.className
               )}
             >
-              {item.properties.map((activity, index) => (
+              {gatedActivities.map((activity, index) => (
                 <ActivityComponent key={index} activity={activity} />
               ))}
             </div>
@@ -662,39 +677,57 @@ export const RoleBasedDashboard: React.FC = () => {
                 item.className
               )}
             >
-              {item.properties?.map?.((component, index) => {
-                // Check if component has activity-specific properties
-                if (component.items) {
-                  return (
-                    <ActivityComponent
-                      key={`activity-${index}`}
-                      activity={component}
-                    />
-                  );
-                } else {
-                  // Assume it's a chart component
-                  return (
-                    <ChartComponent
-                      key={`chart-${component.id || index}`}
-                      chart={component}
-                      selected={getChartFilter(
-                        component.id || `chart-${index}`
-                      )}
-                      onFilterChange={(filter) =>
-                        handleFilterChange(
-                          component.id || `chart-${index}`,
-                          filter
-                        )
-                      }
-                      chartData={
-                        getChartData
-                          ? getChartData(component.id || `chart-${index}`)
-                          : component.data
-                      }
-                    />
-                  );
-                }
-              })}
+              {item.properties
+                ?.filter?.((component) => {
+                  if (
+                    component.items &&
+                    component.title === "General Updates" &&
+                    modules?.generalUpdatesNotifications !== true
+                  ) {
+                    return false;
+                  }
+                  if (
+                    component.items &&
+                    component.id === "my-actions" &&
+                    modules?.myActions !== true
+                  ) {
+                    return false;
+                  }
+                  return true;
+                })
+                ?.map?.((component, index) => {
+                  // Check if component has activity-specific properties
+                  if (component.items) {
+                    return (
+                      <ActivityComponent
+                        key={`activity-${index}`}
+                        activity={component}
+                      />
+                    );
+                  } else {
+                    // Assume it's a chart component
+                    return (
+                      <ChartComponent
+                        key={`chart-${component.id || index}`}
+                        chart={component}
+                        selected={getChartFilter(
+                          component.id || `chart-${index}`
+                        )}
+                        onFilterChange={(filter) =>
+                          handleFilterChange(
+                            component.id || `chart-${index}`,
+                            filter
+                          )
+                        }
+                        chartData={
+                          getChartData
+                            ? getChartData(component.id || `chart-${index}`)
+                            : component.data
+                        }
+                      />
+                    );
+                  }
+                })}
             </div>
           );
         }

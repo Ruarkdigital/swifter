@@ -38,6 +38,10 @@ import TermsConditionsPage from "@/pages/TermsConditionsPage";
 import DisclaimerPage from "@/pages/DisclaimerPage";
 import ContactUsPage from "@/pages/ContactUsPage";
 import SubmitProponentPage from "@/pages/SolicitationManagementPage/components/ProponentSubmission";
+import ProjectManagementPage from "@/pages/ProjectManagementPage";
+import ContractManagementPage from "@/pages/ContractManagementPage";
+import ContractDetailPage from "@/pages/ContractManagementPage/ContractDetailPage";
+import MsaPage from "@/pages/MsaPage";
 // import Example from "@/pages/Example";
 
 export const routes = [
@@ -170,6 +174,38 @@ export const routes = [
         element: (
           <ProtectedRoute>
             <EditProposalPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "/dashboard/project-management",
+        element: (
+          <ProtectedRoute>
+            <ProjectManagementPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "/dashboard/contract-management",
+        element: (
+          <ProtectedRoute>
+            <ContractManagementPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "/dashboard/msa",
+        element: (
+          <ProtectedRoute>
+            <MsaPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "/dashboard/contract-management/:id",
+        element: (
+          <ProtectedRoute>
+            <ContractDetailPage />
           </ProtectedRoute>
         ),
       },

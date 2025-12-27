@@ -22,7 +22,7 @@ import { ForgerControllerProps, ForgerProps } from "../types";
 const ForgerController = <TFieldValues extends FieldValues = FieldValues>(
   props: ForgerControllerProps<TFieldValues>
 ) => {
-  const { rules, transform, methods, component, name, handler, ...rest } =
+  const { rules, transform, methods, component, name, handler,  ...rest } =
     props;
   const {
     field: { onBlur, onChange, value, ref },

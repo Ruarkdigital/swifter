@@ -1,4 +1,4 @@
-export { TextInput, TextArea, TextTagInput, TextDatePicker } from './TextInput';
+export { TextInput, TextArea, TextTagInput, TextDatePicker, TextCurrencyInput } from './TextInput';
 export { TextSelect, TextMultiSelect } from './TextSelect';
 export { TextSelectWithSearch } from './TextSelectWithSearch';
 export { TextCombo } from './TextCombo';

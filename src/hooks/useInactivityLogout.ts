@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSetReset } from '@/store/authSlice';
 import { useAuthentication } from '@/hooks/useAuthentication';
@@ -13,21 +13,16 @@ export function useInactivityLogout(timeout = 1800000) {
   const isAuthenticated = useAuthentication();
   const timerRef = useRef<NodeJS.Timeout>();
 
-  const resetTimer = () => {
-    // Clear existing timer
+  const resetTimer = useCallback(() => {
     if (timerRef.current) {
       clearTimeout(timerRef.current);
     }
 
-    // Set new timer
     timerRef.current = setTimeout(() => {
-      // Clear auth state using the store's reset function
       setReset();
-      
-      // Navigate to login page
       navigate('/');
     }, timeout);
-  };
+  }, [navigate, setReset, timeout]);
 
   useEffect(() => {
     // Only run if user is authenticated
@@ -58,7 +53,7 @@ export function useInactivityLogout(timeout = 1800000) {
         clearTimeout(timerRef.current);
       }
     };
-  }, [timeout, navigate, setReset, isAuthenticated]);
+  }, [isAuthenticated, resetTimer]);
 
   // Return a function to manually reset the timer if needed
   return { resetTimer };

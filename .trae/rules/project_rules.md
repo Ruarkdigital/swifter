@@ -8,6 +8,7 @@
 4. All backend interaction must use **existing API definitions**. Use only what’s available in the **provided API docs**.
 5. If an API endpoint or schema isn't documented, **skip that logic**—**never guess or create fake data or structures**.
 6. **Do not modify UI layout** unless explicitly instructed. Leave layout areas blank if data is unavailable.
+7. Always store media assets (images, icons, SVGs) in `/public/assets/` folder as long its used in the project.
 
 ---
 
