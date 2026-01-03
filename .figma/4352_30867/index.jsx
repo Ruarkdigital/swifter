@@ -7,23 +7,23 @@ const Component = () => {
     <div className={styles.emptyState}>
       <div className={styles.dashboard3}>
         <div className={styles.frame1618873575}>
-          <img src="../image/mjbevgx1-ztphwrh.png" className={styles.image9} />
+          <img src="../image/mjprzx63-npdvpfq.png" className={styles.image9} />
         </div>
         <div className={styles.menuItems}>
           <div className={styles.dashboard2}>
-            <img src="../image/mjbevgwk-vwi9hq9.svg" className={styles.home01} />
+            <img src="../image/mjprzx5f-4brqfqi.svg" className={styles.home01} />
             <p className={styles.dashboard}>Dashboard</p>
           </div>
           <div className={styles.mentors}>
-            <img src="../image/mjbevgwl-r55gl0d.svg" className={styles.home01} />
+            <img src="../image/mjprzx5f-a4yyr24.svg" className={styles.home01} />
             <p className={styles.contractManagement}>Contract Management</p>
           </div>
           <div className={styles.mentors2}>
-            <img src="../image/mjbevgwl-iwgcyum.svg" className={styles.home01} />
+            <img src="../image/mjprzx5f-m9mexc0.svg" className={styles.home01} />
             <p className={styles.changeManagement}>Change Management</p>
           </div>
           <div className={styles.mentors2}>
-            <img src="../image/mjbevgwl-yfk76gt.svg" className={styles.home01} />
+            <img src="../image/mjprzx5f-v6903xc.svg" className={styles.home01} />
             <p className={styles.changeManagement}>Claim Management</p>
           </div>
         </div>
@@ -32,10 +32,10 @@ const Component = () => {
         <div className={styles.header}>
           <p className={styles.dashboard4}>Contract Management</p>
           <div className={styles.menuItem}>
-            <img src="../image/mjbevgx1-b7pctyu.png" className={styles.avatar} />
+            <img src="../image/mjprzx63-5zvti34.png" className={styles.avatar} />
             <p className={styles.text}>John Smith</p>
             <img
-              src="../image/mjbevgwl-s2k8q7k.svg"
+              src="../image/mjprzx5f-aqyggy9.svg"
               className={styles.arrowDown01Round}
             />
           </div>
@@ -51,7 +51,7 @@ const Component = () => {
                 </div>
                 <div className={styles.icon}>
                   <img
-                    src="../image/mjbevgwn-cdwebdc.svg"
+                    src="../image/mjprzx5g-rdhdt7e.svg"
                     className={styles.license}
                   />
                 </div>
@@ -96,16 +96,16 @@ const Component = () => {
           <div className={styles.frame1618873528}>
             <p className={styles.text3}>Create Contract</p>
             <img
-              src="../image/mjbevgwn-4fzigik.svg"
+              src="../image/mjprzx5g-432lt1e.svg"
               className={styles.arrowDown01Round}
             />
           </div>
-          <p className={styles.text4}>Step 5 of 6: Documents</p>
+          <p className={styles.text4}>Step 6 of 8: Documents</p>
           <div className={styles.frame1618873752}>
             <p className={styles.uploadFiles}>Upload Files</p>
             <div className={styles.autoLayoutVertical}>
               <img
-                src="../image/mjbevgwn-uquddh1.svg"
+                src="../image/mjprzx5g-znab12k.svg"
                 className={styles.cloudUpload}
               />
               <div className={styles.frame1618873796}>
@@ -136,17 +136,17 @@ const Component = () => {
           <div className={styles.frame1618873528}>
             <p className={styles.text3}>Create Contract</p>
             <img
-              src="../image/mjbevgwn-4fzigik.svg"
+              src="../image/mjprzx5g-432lt1e.svg"
               className={styles.arrowDown01Round}
             />
           </div>
-          <p className={styles.text4}>Step 5 of 6: Documents</p>
+          <p className={styles.text4}>Step 6 of 8: Documents</p>
           <div className={styles.frame1618873926}>
             <div className={styles.frame1618873752}>
               <p className={styles.uploadFiles}>Upload Files</p>
               <div className={styles.autoLayoutVertical}>
                 <img
-                  src="../image/mjbevgwn-uquddh1.svg"
+                  src="../image/mjprzx5g-znab12k.svg"
                   className={styles.cloudUpload}
                 />
                 <div className={styles.frame1618873796}>
@@ -163,7 +163,7 @@ const Component = () => {
               <div className={styles.loremIpsum3}>
                 <div className={styles.frame16188737992}>
                   <img
-                    src="../image/mjbevgx2-5ckz5pi.png"
+                    src="../image/mjprzx64-ryzuct1.png"
                     className={styles.image2}
                   />
                   <div className={styles.frame1618873799}>
@@ -175,7 +175,7 @@ const Component = () => {
                     </div>
                   </div>
                   <img
-                    src="../image/mjbevgwn-4fzigik.svg"
+                    src="../image/mjprzx5g-432lt1e.svg"
                     className={styles.arrowDown01Round}
                   />
                 </div>
@@ -190,7 +190,7 @@ const Component = () => {
               <div className={styles.loremIpsum4}>
                 <div className={styles.frame16188737992}>
                   <img
-                    src="../image/mjbevgx2-zuznu36.png"
+                    src="../image/mjprzx64-7v112gz.png"
                     className={styles.image2}
                   />
                   <div className={styles.frame1618873799}>
@@ -202,7 +202,7 @@ const Component = () => {
                     </div>
                   </div>
                   <img
-                    src="../image/mjbevgwn-4fzigik.svg"
+                    src="../image/mjprzx5g-432lt1e.svg"
                     className={styles.arrowDown01Round}
                   />
                 </div>
@@ -216,7 +216,7 @@ const Component = () => {
               </div>
               <div className={styles.loremIpsum5}>
                 <img
-                  src="../image/mjbevgx2-1miovi3.png"
+                  src="../image/mjprzx64-jsa2k7n.png"
                   className={styles.image2}
                 />
                 <div className={styles.frame1618873799}>
@@ -229,14 +229,14 @@ const Component = () => {
                 </div>
                 <div className={styles.icon2}>
                   <img
-                    src="../image/mjbevgwo-a41e0db.svg"
+                    src="../image/mjprzx5g-d5rxbcz.svg"
                     className={styles.delete03}
                   />
                 </div>
               </div>
               <div className={styles.loremIpsum5}>
                 <img
-                  src="../image/mjbevgx2-jhxm4er.png"
+                  src="../image/mjprzx64-l1n2t3q.png"
                   className={styles.image2}
                 />
                 <div className={styles.frame1618873799}>
@@ -249,7 +249,7 @@ const Component = () => {
                 </div>
                 <div className={styles.icon2}>
                   <img
-                    src="../image/mjbevgwo-a41e0db.svg"
+                    src="../image/mjprzx5g-d5rxbcz.svg"
                     className={styles.delete03}
                   />
                 </div>

@@ -1,0 +1,359 @@
+* {
+  box-sizing: border-box;
+}
+
+.frame36893 {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  column-gap: 20px;
+  background: #00000033;
+  padding: 48px 100px;
+  width: 2340px;
+  height: 1126px;
+
+  .text2 {
+    flex-shrink: 0;
+    align-self: stretch;
+    line-height: 24px;
+    letter-spacing: 0;
+    color: var(--Text-Black, #0f0f0f);
+    font-family: Quicksand, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", SimHei, Arial, Helvetica, sans-serif;
+    font-size: 16px;
+    font-weight: 600;
+  }
+
+  .frame1618873528 {
+    display: flex;
+    flex-shrink: 0;
+    align-items: flex-start;
+    align-self: stretch;
+    justify-content: space-between;
+
+    .text {
+      flex-shrink: 0;
+      line-height: 30px;
+      letter-spacing: 0;
+      color: var(--Text-Black, #0f0f0f);
+      font-family: Quicksand, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", SimHei, Arial, Helvetica, sans-serif;
+      font-size: 20px;
+      font-weight: 600;
+    }
+
+    .cancel01 {
+      flex-shrink: 0;
+      width: 24px;
+      height: 24px;
+      overflow: hidden;
+    }
+  }
+
+  .frame1618873775 {
+    display: flex;
+    flex-shrink: 0;
+    align-items: flex-start;
+    align-self: stretch;
+    column-gap: 24px;
+
+    .button {
+      display: flex;
+      flex-grow: 1;
+      align-items: center;
+      justify-content: center;
+      column-gap: 8px;
+      border: 1px solid var(--Outline, #e5e7eb);
+      border-radius: 12px;
+      background: var(--Cancel, #f3f4f6);
+      padding: 14px 15px;
+      overflow: hidden;
+
+      .text6 {
+        flex-shrink: 0;
+        line-height: 24px;
+        letter-spacing: 0;
+        color: var(--Text-Black, #0f0f0f);
+        font-family: Quicksand, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", SimHei, Arial, Helvetica, sans-serif;
+        font-size: 16px;
+        font-weight: 600;
+      }
+    }
+
+    .button2 {
+      display: flex;
+      flex-grow: 1;
+      align-items: center;
+      justify-content: center;
+      column-gap: 8px;
+      border-radius: 12px;
+      background: var(--Primary-Primary, #2a4467);
+      padding: 15px 16px;
+      overflow: hidden;
+
+      .text7 {
+        flex-shrink: 0;
+        line-height: 24px;
+        letter-spacing: 0;
+        color: var(--white, #ffffff);
+        font-family: Quicksand, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", SimHei, Arial, Helvetica, sans-serif;
+        font-size: 16px;
+        font-weight: 600;
+      }
+    }
+  }
+
+  .formInput7 {
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    align-items: flex-start;
+    align-self: stretch;
+    row-gap: 12px;
+
+    .input7 {
+      display: flex;
+      flex-shrink: 0;
+      align-items: flex-start;
+      align-self: stretch;
+      column-gap: 8px;
+      border: 1px solid var(--Outline, #e5e7eb);
+      border-radius: 8px;
+      padding: 16px 15px;
+      overflow: hidden;
+
+      .text5 {
+        flex-grow: 1;
+        align-self: stretch;
+        opacity: 0.5;
+        width: 604px;
+        line-height: 22px;
+        letter-spacing: 0;
+        color: var(--Text-Grey, #6b6b6b);
+        font-family: Quicksand, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", SimHei, Arial, Helvetica, sans-serif;
+        font-size: 14px;
+      }
+    }
+  }
+
+  .formInput6 {
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    align-items: flex-start;
+    align-self: stretch;
+    row-gap: 12px;
+
+    .input6 {
+      display: flex;
+      flex-shrink: 0;
+      align-items: center;
+      align-self: stretch;
+      column-gap: 8px;
+      border: 1px solid var(--Outline, #e5e7eb);
+      border-radius: 8px;
+      padding: 16px 15px;
+      height: 48px;
+      overflow: hidden;
+    }
+  }
+
+  .formInput2 {
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    align-items: flex-start;
+    align-self: stretch;
+    row-gap: 12px;
+  }
+
+  .formInput {
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    align-items: flex-start;
+    align-self: stretch;
+    row-gap: 12px;
+
+    .input2 {
+      display: flex;
+      flex-shrink: 0;
+      align-items: center;
+      align-self: stretch;
+      column-gap: 8px;
+      border: 1px solid var(--Outline, #e5e7eb);
+      border-radius: 8px;
+      padding: 16px 15px;
+      height: 48px;
+      overflow: hidden;
+    }
+  }
+
+  .frame1618873921 {
+    display: flex;
+    flex-shrink: 0;
+    align-items: flex-start;
+    align-self: stretch;
+    column-gap: 16px;
+  }
+
+  .frame2147228521 {
+    display: flex;
+    flex-shrink: 0;
+    align-items: flex-start;
+    align-self: stretch;
+    column-gap: 16px;
+
+    .formInput4 {
+      display: flex;
+      flex-direction: column;
+      flex-grow: 1;
+      align-items: flex-start;
+      row-gap: 12px;
+
+      .input4 {
+        display: flex;
+        flex-shrink: 0;
+        align-items: center;
+        align-self: stretch;
+        justify-content: space-between;
+        border: 1px solid var(--Outline, #e5e7eb);
+        border-radius: 8px;
+        padding: 16px 15px;
+        height: 48px;
+        overflow: hidden;
+      }
+    }
+  }
+
+  .modalConfirmBooking {
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    align-items: flex-start;
+    justify-content: center;
+    border-radius: 16px;
+    background: #ffffff;
+    padding: 32px;
+    overflow: hidden;
+    row-gap: 24px;
+
+    .frame1618873795 {
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      align-items: flex-start;
+      align-self: stretch;
+      row-gap: 16px;
+
+      .arrowDown01Round {
+        flex-shrink: 0;
+        width: 20px;
+        height: 20px;
+        overflow: hidden;
+      }
+
+      .text3 {
+        flex-shrink: 0;
+        line-height: 22px;
+        letter-spacing: 0;
+        color: var(--Text-Black, #0f0f0f);
+        font-family: Quicksand, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", SimHei, Arial, Helvetica, sans-serif;
+        font-size: 14px;
+        font-weight: 600;
+      }
+
+      .text4 {
+        flex-shrink: 0;
+        opacity: 0.5;
+        line-height: 22px;
+        letter-spacing: 0;
+        color: var(--Text-Grey, #6b6b6b);
+        font-family: Quicksand, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", SimHei, Arial, Helvetica, sans-serif;
+        font-size: 14px;
+      }
+
+      .input {
+        flex-shrink: 0;
+        align-self: stretch;
+        line-height: 22px;
+        letter-spacing: 0;
+        color: var(--Text-Black, #0f0f0f);
+        font-family: Quicksand, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", SimHei, Arial, Helvetica, sans-serif;
+        font-size: 14px;
+        font-weight: 500;
+      }
+
+      .input3 {
+        display: flex;
+        flex-shrink: 0;
+        align-items: center;
+        align-self: stretch;
+        justify-content: space-between;
+        border: 1px solid var(--Outline, #e5e7eb);
+        border-radius: 8px;
+        padding: 16px 15px;
+        height: 48px;
+        overflow: hidden;
+      }
+
+      .formInput3 {
+        display: flex;
+        flex-direction: column;
+        flex-grow: 1;
+        align-items: flex-start;
+        row-gap: 12px;
+      }
+
+      .frame1618873922 {
+        display: flex;
+        flex-shrink: 0;
+        align-items: flex-start;
+        align-self: stretch;
+        column-gap: 16px;
+
+        .formInput5 {
+          display: flex;
+          flex-direction: column;
+          flex-grow: 1;
+          align-items: flex-start;
+          row-gap: 12px;
+
+          .input5 {
+            display: flex;
+            flex-shrink: 0;
+            align-items: center;
+            align-self: stretch;
+            column-gap: 8px;
+            border: 1px solid var(--Outline, #e5e7eb);
+            border-radius: 8px;
+            background: #2a44670d;
+            padding: 16px 15px;
+            height: 48px;
+            overflow: hidden;
+          }
+        }
+      }
+    }
+  }
+
+  .modalConfirmBooking2 {
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    align-items: flex-start;
+    justify-content: center;
+    border-radius: 16px;
+    background: #ffffff;
+    padding: 32px;
+    overflow: hidden;
+    row-gap: 24px;
+
+    .frame16188737952 {
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      align-items: flex-start;
+      align-self: stretch;
+      row-gap: 16px;
+    }
+  }
+}

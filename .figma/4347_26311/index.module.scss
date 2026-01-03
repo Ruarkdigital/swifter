@@ -7,6 +7,16 @@
   width: 1440px;
   height: 1126px;
 
+  .text3 {
+    flex-shrink: 0;
+    line-height: 24px;
+    letter-spacing: 0;
+    color: var(--white, #ffffff);
+    font-family: Quicksand, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", SimHei, Arial, Helvetica, sans-serif;
+    font-size: 16px;
+    font-weight: 600;
+  }
+
   .arrowDown01Round {
     flex-shrink: 0;
     width: 24px;
@@ -232,15 +242,6 @@
       overflow: hidden;
       row-gap: 32px;
 
-      .text2 {
-        line-height: 24px;
-        letter-spacing: 0;
-        color: var(--white, #ffffff);
-        font-family: Quicksand, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", SimHei, Arial, Helvetica, sans-serif;
-        font-size: 16px;
-        font-weight: 600;
-      }
-
       .frame1618873729 {
         display: flex;
         flex-direction: column;
@@ -250,19 +251,44 @@
         row-gap: 24px;
 
         .frame1618873749 {
-          display: flex;
+          display: inline-flex;
           flex-shrink: 0;
           align-items: center;
           align-self: stretch;
-          padding-left: 881px;
+          justify-content: flex-end;
+          column-gap: 16px;
 
           .input {
-            display: flex;
-            flex-grow: 1;
+            display: inline-flex;
+            flex-shrink: 0;
             align-items: center;
+            column-gap: 8px;
+            border: 1px solid var(--Outline, #e5e7eb);
+            border-radius: 12px;
+            padding: 12px 15px;
+            height: 52px;
+            overflow: hidden;
+
+            .text2 {
+              flex-shrink: 0;
+              line-height: 24px;
+              letter-spacing: 0;
+              color: var(--Text-Grey, #6b6b6b);
+              font-family: Quicksand, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", SimHei, Arial, Helvetica, sans-serif;
+              font-size: 16px;
+              font-weight: 600;
+            }
+          }
+
+          .input2 {
+            display: inline-flex;
+            flex-shrink: 0;
+            align-items: center;
+            column-gap: 8px;
             border-radius: 12px;
             background: var(--Primary-Primary, #2a4467);
-            padding: 14px 16px 14px 44px;
+            padding: 13px 16px;
+            height: 52px;
             overflow: hidden;
           }
         }
@@ -401,7 +427,7 @@
             }
           }
 
-          .input2 {
+          .input3 {
             display: flex;
             flex-shrink: 0;
             align-items: center;
@@ -412,6 +438,15 @@
             background: var(--Primary-Primary, #2a4467);
             padding: 14px 16px 14px 44px;
             overflow: hidden;
+
+            .text4 {
+              line-height: 24px;
+              letter-spacing: 0;
+              color: var(--white, #ffffff);
+              font-family: Quicksand, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", SimHei, Arial, Helvetica, sans-serif;
+              font-size: 16px;
+              font-weight: 600;
+            }
           }
         }
       }
@@ -482,13 +517,14 @@
     align-items: center;
     justify-content: center;
     column-gap: 20px;
+    border-radius: 5px;
     background: #00000033;
-    padding-top: 48px;
-    padding-bottom: 48px;
+    padding-top: 110px;
+    padding-bottom: 110px;
     width: 1440px;
     height: 1126px;
 
-    .text5 {
+    .text7 {
       flex-shrink: 0;
       opacity: 0.5;
       line-height: 22px;
@@ -517,7 +553,7 @@
         align-self: stretch;
         justify-content: space-between;
 
-        .text3 {
+        .text5 {
           flex-shrink: 0;
           line-height: 30px;
           letter-spacing: 0;
@@ -528,7 +564,7 @@
         }
       }
 
-      .text4 {
+      .text6 {
         flex-shrink: 0;
         align-self: stretch;
         line-height: 24px;
@@ -547,7 +583,7 @@
         align-self: stretch;
         row-gap: 16px;
 
-        .input3 {
+        .input4 {
           flex-shrink: 0;
           align-self: stretch;
           line-height: 22px;
@@ -559,20 +595,6 @@
         }
 
         .input6 {
-          display: flex;
-          flex-shrink: 0;
-          align-items: center;
-          align-self: stretch;
-          column-gap: 8px;
-          border: 1px solid var(--Outline, #e5e7eb);
-          border-radius: 8px;
-          background: #2a44670d;
-          padding: 16px 15px;
-          height: 48px;
-          overflow: hidden;
-        }
-
-        .input5 {
           display: flex;
           flex-shrink: 0;
           align-items: center;
@@ -593,7 +615,7 @@
           align-self: stretch;
           row-gap: 12px;
 
-          .input4 {
+          .input5 {
             display: flex;
             flex-shrink: 0;
             align-items: center;
@@ -616,7 +638,7 @@
           row-gap: 12px;
         }
 
-        .frame1618873921 {
+        .frame2147228521 {
           display: flex;
           flex-shrink: 0;
           align-items: flex-start;
@@ -645,6 +667,20 @@
             flex-grow: 1;
             align-items: flex-start;
             row-gap: 12px;
+
+            .input7 {
+              display: flex;
+              flex-shrink: 0;
+              align-items: center;
+              align-self: stretch;
+              column-gap: 8px;
+              border: 1px solid var(--Outline, #e5e7eb);
+              border-radius: 8px;
+              background: #2a44670d;
+              padding: 16px 15px;
+              height: 48px;
+              overflow: hidden;
+            }
           }
         }
 
@@ -655,17 +691,8 @@
           align-items: flex-start;
           align-self: stretch;
           row-gap: 12px;
-        }
 
-        .formInput6 {
-          display: flex;
-          flex-direction: column;
-          flex-shrink: 0;
-          align-items: flex-start;
-          align-self: stretch;
-          row-gap: 12px;
-
-          .input7 {
+          .input8 {
             display: flex;
             flex-shrink: 0;
             align-items: flex-start;
@@ -676,7 +703,7 @@
             padding: 16px 15px;
             overflow: hidden;
 
-            .text6 {
+            .text8 {
               flex-grow: 1;
               align-self: stretch;
               opacity: 0.5;
@@ -721,16 +748,6 @@
           background: var(--Primary-Primary, #2a4467);
           padding: 15px 16px;
           overflow: hidden;
-
-          .text7 {
-            flex-shrink: 0;
-            line-height: 24px;
-            letter-spacing: 0;
-            color: var(--white, #ffffff);
-            font-family: Quicksand, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", SimHei, Arial, Helvetica, sans-serif;
-            font-size: 16px;
-            font-weight: 600;
-          }
         }
       }
     }
@@ -743,7 +760,45 @@
       justify-content: center;
       row-gap: 24px;
 
-      .formInput7 {
+      .text10 {
+        flex-shrink: 0;
+        align-self: stretch;
+        padding: 17px 16px;
+        width: 508px;
+        overflow: hidden;
+        line-height: 22px;
+        letter-spacing: 0;
+        color: var(--Text-Black, #0f0f0f);
+        font-family: Quicksand, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", SimHei, Arial, Helvetica, sans-serif;
+        font-size: 14px;
+        font-weight: 500;
+      }
+
+      .contractType {
+        flex-shrink: 0;
+        width: 600px;
+        line-height: 22px;
+        letter-spacing: 0;
+        color: var(--Text-Black, #0f0f0f);
+        font-family: Quicksand, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", SimHei, Arial, Helvetica, sans-serif;
+        font-size: 14px;
+        font-weight: 500;
+      }
+
+      .input9 {
+        display: flex;
+        flex-shrink: 0;
+        align-items: center;
+        align-self: stretch;
+        justify-content: space-between;
+        border: 1px solid var(--Primary-Primary, #2a4467);
+        border-radius: 8px;
+        padding: 16px 15px;
+        height: 48px;
+        overflow: hidden;
+      }
+
+      .formInput6 {
         display: flex;
         flex-direction: column;
         flex-shrink: 0;
@@ -753,30 +808,6 @@
         padding: 24px 14px;
         width: 536px;
         row-gap: 12px;
-
-        .contractType {
-          flex-shrink: 0;
-          width: 600px;
-          line-height: 22px;
-          letter-spacing: 0;
-          color: var(--Text-Black, #0f0f0f);
-          font-family: Quicksand, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", SimHei, Arial, Helvetica, sans-serif;
-          font-size: 14px;
-          font-weight: 500;
-        }
-
-        .input8 {
-          display: flex;
-          flex-shrink: 0;
-          align-items: center;
-          align-self: stretch;
-          justify-content: space-between;
-          border: 1px solid var(--Primary-Primary, #2a4467);
-          border-radius: 8px;
-          padding: 16px 15px;
-          height: 48px;
-          overflow: hidden;
-        }
 
         .frame1618873678 {
           display: flex;
@@ -789,7 +820,7 @@
           background: var(--white, #ffffff);
           overflow: hidden;
 
-          .input9 {
+          .input10 {
             display: flex;
             flex-shrink: 0;
             align-items: center;
@@ -799,7 +830,7 @@
             padding: 17px 16px;
             overflow: hidden;
 
-            .text8 {
+            .text9 {
               flex-shrink: 0;
               line-height: 22px;
               letter-spacing: 0;
@@ -809,20 +840,30 @@
               font-weight: 500;
             }
           }
+        }
+      }
 
-          .text9 {
-            flex-shrink: 0;
-            align-self: stretch;
-            padding: 17px 16px;
-            width: 508px;
-            overflow: hidden;
-            line-height: 22px;
-            letter-spacing: 0;
-            color: var(--Text-Black, #0f0f0f);
-            font-family: Quicksand, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", SimHei, Arial, Helvetica, sans-serif;
-            font-size: 14px;
-            font-weight: 500;
-          }
+      .formInput7 {
+        display: flex;
+        flex-direction: column;
+        flex-shrink: 0;
+        align-items: flex-start;
+        border-radius: 18px;
+        background: #ffffff;
+        padding: 24px 14px;
+        width: 536px;
+        row-gap: 12px;
+
+        .frame16188736782 {
+          display: flex;
+          flex-direction: column;
+          flex-shrink: 0;
+          align-items: flex-start;
+          align-self: stretch;
+          border-radius: 12px;
+          box-shadow: -1px 2px 4px 0px #001a2b0d;
+          background: var(--white, #ffffff);
+          overflow: hidden;
         }
       }
     }

@@ -71,6 +71,14 @@ const getNavigationForRole = (
             active: currentPath.startsWith("/dashboard/solicitation"),
           }
         : undefined,
+      modules?.evaluationsManagement
+        ? {
+            icon: ClipboardList,
+            title: "Evaluation Management",
+            to: "/dashboard/evaluation",
+            active: currentPath.startsWith("/dashboard/evaluation"),
+          }
+        : undefined,
       modules?.contractManagement
         ? {
             icon: Folder,
@@ -109,14 +117,6 @@ const getNavigationForRole = (
             title: "Vendor Management",
             to: "/dashboard/vendor",
             active: currentPath.startsWith("/dashboard/vendor"),
-          }
-        : undefined,
-      modules?.evaluationsManagement
-        ? {
-            icon: ClipboardList,
-            title: "Evaluation Management",
-            to: "/dashboard/evaluation",
-            active: currentPath.startsWith("/dashboard/evaluation"),
           }
         : undefined,
       {

@@ -16,7 +16,6 @@ import VendorDetailPage from "@/pages/VendorManagementPage/VendorDetailPage";
 import EvaluationManagementPage from "@/pages/EvaluationManagementPage";
 import EvaluationDetailPage from "@/pages/EvaluationManagementPage/EvaluationDetailPage";
 import InvitationsPage from "@/pages/InvitationsPage";
-import ConfirmAlertDemo from "@/demo/ConfirmAlertDemo";
 import AssignedEvaluationDetailPage from "@/pages/EvaluationManagementPage/AssignedEvaluationDetailPage";
 import SubmittedDocumentPage from "@/pages/EvaluationManagementPage/SubmittedDocumentPage";
 import UserManagementPage from "@/pages/UserManagementPage/UserManagementPage";
@@ -43,6 +42,7 @@ import ContractManagementPage from "@/pages/ContractManagementPage";
 import ContractDetailPage from "@/pages/ContractManagementPage/ContractDetailPage";
 import MsaPage from "@/pages/MsaPage";
 // import Example from "@/pages/Example";
+import CollaborationToolPage from "@/pages/CollaborationToolPage";
 
 export const routes = [
   {
@@ -353,14 +353,15 @@ export const routes = [
           </ProtectedRoute>
         ),
       },
-      {
-        path: "/dashboard/demo",
-        element: (
-          <ProtectedRoute>
-            <ConfirmAlertDemo />
-          </ProtectedRoute>
-        ),
-      },
     ],
+  },
+  {
+    path: "/collaboration-tool",
+    element: (
+      <ProtectedRoute>
+        <CollaborationToolPage />
+      </ProtectedRoute>
+    ),
+    errorElement: <NotFound />,
   },
 ];

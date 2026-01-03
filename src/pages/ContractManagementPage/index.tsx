@@ -1,15 +1,153 @@
 import React from "react";
+import { useQuery } from "@tanstack/react-query";
 import { SEOWrapper } from "@/components/SEO";
 import { Button } from "@/components/ui/button";
 import { Share2, Plus } from "lucide-react";
 import StatsCards from "./components/StatsCards";
-import ContractsTable from "./components/ContractsTable";
+import ContractsTable, { ContractRow } from "./components/ContractsTable";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import CreateContractSheet from "./components/CreateContractSheet";
+import { getRequest } from "@/lib/axiosInstance";
+import type { ApiResponseError } from "@/types";
+import { useUserQueryKey } from "@/hooks/useUserQueryKey";
+
+type ContractApi = {
+  _id: string;
+  title: string;
+  category?: string;
+  status:
+    | "draft"
+    | "pending_approval"
+    | "active"
+    | "completed"
+    | "cancelled"
+    | "expired"
+    | "terminated";
+  currency?: string;
+  totalAmount?: number;
+  startDate?: string;
+  endDate?: string;
+  createdAt?: string;
+};
+
+type ContractStats = {
+  all: number;
+  draft: number;
+  pending_approval: number;
+  active: number;
+  completed: number;
+  suspended: number;
+  expired: number;
+  terminated: number;
+};
+
+type ContractStatsResponse = {
+  status: number;
+  message: string;
+  data: ContractStats;
+};
+
+type ContractListResponse = {
+  status: number;
+  message: string;
+  data: ContractApi[];
+};
+
+const useContractsStats = () => {
+  const queryKey = useUserQueryKey(["contracts-stats"]);
+  return useQuery<ContractStatsResponse, ApiResponseError>({
+    queryKey,
+    queryFn: async () => {
+      const res = await getRequest({ url: "/contracts/stats" });
+      return res.data as ContractStatsResponse;
+    },
+    staleTime: 60000,
+  });
+};
+
+const useAllContracts = () => {
+  const queryKey = useUserQueryKey(["contracts-all"]);
+  return useQuery<ContractListResponse, ApiResponseError>({
+    queryKey,
+    queryFn: async () => {
+      const res = await getRequest({ url: "/contracts" });
+      return res.data as ContractListResponse;
+    },
+    staleTime: 60000,
+  });
+};
+
+const useMyContracts = () => {
+  const queryKey = useUserQueryKey(["contracts-me"]);
+  return useQuery<ContractListResponse, ApiResponseError>({
+    queryKey,
+    queryFn: async () => {
+      const res = await getRequest({ url: "/contracts/me" });
+      return res.data as ContractListResponse;
+    },
+    staleTime: 60000,
+  });
+};
+
+const mapStatusToLabel = (status: ContractApi["status"]): ContractRow["status"] => {
+  if (status === "active") return "Active";
+  if (status === "draft") return "Draft";
+  if (status === "expired") return "Expired";
+  if (status === "terminated") return "Terminated";
+  if (status === "completed") return "Completed";
+  if (status === "cancelled") return "Cancelled";
+  if (status === "pending_approval") return "Pending Approval";
+  return "Suspended";
+};
+
+const mapContractsToRows = (contracts?: ContractApi[]): ContractRow[] => {
+  if (!contracts) return [];
+  return contracts.map((c) => {
+    const value =
+      typeof c.totalAmount === "number" && c.currency
+        ? `${c.currency} ${c.totalAmount.toLocaleString()}`
+        : undefined;
+
+    return {
+      id: c._id,
+      title: c.title,
+      code: c._id,
+      vendor: "-",
+      value,
+      owner: "-",
+      published: c.createdAt ? new Date(c.createdAt).toLocaleDateString() : undefined,
+      endDate: c.endDate ? new Date(c.endDate).toLocaleDateString() : undefined,
+      status: mapStatusToLabel(c.status),
+      category: c.category,
+    };
+  });
+};
 
 const ContractManagementPage: React.FC = () => {
+  const { data: statsData } = useContractsStats();
+  const { data: allContractsData, isLoading: isAllContractsLoading } =
+    useAllContracts();
+  const { data: myContractsData, isLoading: isMyContractsLoading } =
+    useMyContracts();
+
+  const stats = statsData?.data;
+  const statsCounts = stats
+    ? {
+        all: stats.all,
+        active: stats.active,
+        draft: stats.draft,
+        suspended: stats.suspended,
+        expired: stats.expired,
+        terminated: stats.terminated,
+        pending: stats.pending_approval,
+      }
+    : undefined;
+
+  const allContractsRows = mapContractsToRows(allContractsData?.data);
+  const myContractsRows = mapContractsToRows(myContractsData?.data);
+
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 pt-10">
       <SEOWrapper
         title="Contract Management - SwiftPro eProcurement Portal"
         description="Manage contracts efficiently with clear status tracking and quick actions."
@@ -36,17 +174,7 @@ const ContractManagementPage: React.FC = () => {
         </div>
       </div>
 
-      <StatsCards
-        counts={{
-          all: 52,
-          active: 11,
-          draft: 52,
-          suspended: 52,
-          expired: 52,
-          terminated: 52,
-          pending: 52,
-        }}
-      />
+      <StatsCards counts={statsCounts} />
 
       <Tabs defaultValue="all" className="w-full bg-transparent space-y-4">
         <TabsList className="h-auto rounded-none border-b border-gray-300 dark:border-gray-600 dark:bg-transparent p-0 w-full justify-start bg-transparent">
@@ -63,11 +191,20 @@ const ContractManagementPage: React.FC = () => {
             My Contracts
           </TabsTrigger>
         </TabsList>
+        
         <TabsContent value="all">
-          <ContractsTable />
+          <ContractsTable
+            rows={allContractsRows}
+            isLoading={isAllContractsLoading}
+            totalCount={allContractsRows.length}
+          />
         </TabsContent>
         <TabsContent value="mine">
-          <ContractsTable />
+          <ContractsTable
+            rows={myContractsRows}
+            isLoading={isMyContractsLoading}
+            totalCount={myContractsRows.length}
+          />
         </TabsContent>
       </Tabs>
     </div>

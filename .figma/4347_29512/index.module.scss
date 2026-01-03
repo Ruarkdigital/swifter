@@ -7,6 +7,17 @@
   width: 1440px;
   height: 1126px;
 
+  .input3 {
+    flex-shrink: 0;
+    align-self: stretch;
+    line-height: 22px;
+    letter-spacing: 0;
+    color: var(--Text-Black, #0f0f0f);
+    font-family: Quicksand, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", SimHei, Arial, Helvetica, sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+  }
+
   .text4 {
     flex-shrink: 0;
     line-height: 24px;
@@ -48,6 +59,29 @@
     flex-shrink: 0;
     width: 20px;
     height: 20px;
+    overflow: hidden;
+  }
+
+  .text8 {
+    flex-shrink: 0;
+    opacity: 0.5;
+    line-height: 22px;
+    letter-spacing: 0;
+    color: var(--Text-Grey, #6b6b6b);
+    font-family: Quicksand, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", SimHei, Arial, Helvetica, sans-serif;
+    font-size: 14px;
+  }
+
+  .input5 {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    align-self: stretch;
+    column-gap: 8px;
+    border: 1px solid var(--Outline, #e5e7eb);
+    border-radius: 8px;
+    padding: 16px 15px;
+    height: 48px;
     overflow: hidden;
   }
 
@@ -617,47 +651,34 @@
           font-weight: 500;
         }
 
-        .input3 {
-          flex-shrink: 0;
-          align-self: stretch;
-          line-height: 22px;
-          letter-spacing: 0;
-          color: var(--Text-Black, #0f0f0f);
-          font-family: Quicksand, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", SimHei, Arial, Helvetica, sans-serif;
-          font-size: 14px;
-          font-weight: 500;
-        }
-
-        .text8 {
-          flex-shrink: 0;
-          opacity: 0.5;
-          line-height: 22px;
-          letter-spacing: 0;
-          color: var(--Text-Grey, #6b6b6b);
-          font-family: Quicksand, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", SimHei, Arial, Helvetica, sans-serif;
-          font-size: 14px;
-        }
-
-        .input4 {
+        .frame1618873922 {
           display: flex;
-          flex-shrink: 0;
-          align-items: center;
-          align-self: stretch;
-          column-gap: 8px;
-          border: 1px solid var(--Outline, #e5e7eb);
-          border-radius: 8px;
-          padding: 16px 15px;
-          height: 48px;
-          overflow: hidden;
-        }
-
-        .formInput {
-          display: flex;
-          flex-direction: column;
           flex-shrink: 0;
           align-items: flex-start;
           align-self: stretch;
-          row-gap: 12px;
+          column-gap: 16px;
+
+          .formInput {
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+            align-items: flex-start;
+            row-gap: 12px;
+
+            .input4 {
+              display: flex;
+              flex-shrink: 0;
+              align-items: center;
+              align-self: stretch;
+              column-gap: 8px;
+              border: 1px solid var(--Outline, #e5e7eb);
+              border-radius: 8px;
+              background: #2a44670d;
+              padding: 16px 15px;
+              height: 48px;
+              overflow: hidden;
+            }
+          }
         }
 
         .formInput2 {
@@ -745,6 +766,28 @@
             }
           }
         }
+
+        .formInput4 {
+          display: flex;
+          flex-direction: column;
+          flex-shrink: 0;
+          align-items: flex-start;
+          align-self: stretch;
+          row-gap: 12px;
+
+          .input6 {
+            display: flex;
+            flex-shrink: 0;
+            align-items: center;
+            align-self: stretch;
+            justify-content: space-between;
+            border: 1px solid var(--Outline, #e5e7eb);
+            border-radius: 8px;
+            padding: 16px 15px;
+            height: 48px;
+            overflow: hidden;
+          }
+        }
       }
 
       .frame1618873867 {
@@ -798,6 +841,100 @@
             overflow: hidden;
           }
         }
+      }
+    }
+  }
+
+  .employeeCard {
+    display: flex;
+    position: absolute;
+    top: 504px;
+    left: 1052px;
+    flex-direction: column;
+    align-items: flex-start;
+    border: 1px solid var(--Outline, #eaecf0);
+    border-radius: 16px;
+    background: #ffffff;
+    padding: 19px;
+    width: 467px;
+    height: 258px;
+    row-gap: 16px;
+
+    .text10 {
+      flex-shrink: 0;
+      align-self: stretch;
+      line-height: 22px;
+      letter-spacing: 0;
+      color: var(--Text-Black, #0f0f0f);
+      font-family: Quicksand, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", SimHei, Arial, Helvetica, sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .frame2147228523 {
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      align-items: flex-start;
+      align-self: stretch;
+      justify-content: center;
+      row-gap: 16px;
+
+      .formInput6 {
+        display: flex;
+        flex-direction: column;
+        flex-grow: 1;
+        align-items: flex-start;
+        row-gap: 12px;
+      }
+
+      .frame2147228524 {
+        display: flex;
+        flex-shrink: 0;
+        align-items: flex-start;
+        align-self: stretch;
+        column-gap: 16px;
+
+        .formInput5 {
+          display: flex;
+          flex-direction: column;
+          flex-grow: 1;
+          align-items: flex-start;
+          row-gap: 12px;
+
+          .name {
+            flex-shrink: 0;
+            align-self: stretch;
+            line-height: 18px;
+            letter-spacing: 0;
+            color: var(--Text-Black, #0f0f0f);
+            font-family: Quicksand, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", SimHei, Arial, Helvetica, sans-serif;
+            font-size: 12px;
+            font-weight: 500;
+          }
+
+          .input7 {
+            display: flex;
+            flex-shrink: 0;
+            align-items: center;
+            align-self: stretch;
+            column-gap: 8px;
+            border: 1px solid var(--Outline, #e5e7eb);
+            border-radius: 8px;
+            background: var(--Cancel, #f3f4f6);
+            padding: 16px 15px;
+            height: 48px;
+            overflow: hidden;
+          }
+        }
+      }
+
+      .frame2147228525 {
+        display: flex;
+        flex-shrink: 0;
+        align-items: flex-start;
+        align-self: stretch;
+        column-gap: 16px;
       }
     }
   }

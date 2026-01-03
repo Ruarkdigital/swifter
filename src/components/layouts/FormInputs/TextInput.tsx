@@ -46,6 +46,8 @@ export type TextTagInputProps = {
   tags?: Tag[];
   ref?: React.Ref<HTMLInputElement>;
   helperText?: string;
+  placeholder?: string;
+  inlineTagsContainerClassName?: string;
 };
 
 export type TextDatePickerProps = {
@@ -80,7 +82,6 @@ export const TextInput = (props: TextInputProps & Partial<ForgerSlotProps>) => {
     error,
     startAdornment,
     endAdornment,
-    control,
     name,
     value,
     onChange,
@@ -138,7 +139,6 @@ export const TextArea = (props: TextAreaProps & Partial<ForgerSlotProps>) => {
     error,
     startAdornment,
     endAdornment,
-    control,
     name,
     value,
     onChange,
@@ -199,6 +199,8 @@ export const TextTagInput = (
     tags,
     ref,
     helperText,
+    placeholder,
+    inlineTagsContainerClassName,
   } = props;
   const [activeTagIndex, setActiveTagIndex] = useState<number | null>(null);
 
@@ -221,10 +223,13 @@ export const TextTagInput = (
         setTags={(newTags) => {
           onChange?.(newTags);
         }}
-        placeholder="Add a tag"
+        placeholder={placeholder ?? "Add a tag"}
         styleClasses={{
           inlineTagsContainer:
-            "border-input rounded-lg bg-background shadow-xs transition-[color,box-shadow] focus-within:border-ring outline-none focus-within:ring-[3px] focus-within:ring-ring/50 p-1 gap-1 dark:border-slate-800 dark:bg-slate-950",
+            cn(
+              "border-input rounded-lg bg-background shadow-xs transition-[color,box-shadow] focus-within:border-ring outline-none focus-within:ring-[3px] focus-within:ring-ring/50 p-1 gap-1 dark:border-slate-800 dark:bg-slate-950",
+              inlineTagsContainerClassName
+            ),
           input:
             "w-full min-w-[80px] shadow-none px-2 h-10 dark:text-slate-50 dark:placeholder:text-slate-400",
           tag: {

@@ -493,6 +493,16 @@
       padding: 16px 64px;
       overflow: hidden;
 
+      .poweredByAigProInc2 {
+        line-height: 24px;
+        letter-spacing: 0;
+        color: var(--Primary-Primary, #2a4467);
+        font-family: Quicksand, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", SimHei, Arial, Helvetica, sans-serif;
+        font-size: 16px;
+        font-weight: 600;
+        text-decoration: underline;
+      }
+
       .poweredByAigProInc3 {
         flex-shrink: 0;
         line-height: 24px;
@@ -508,34 +518,17 @@
           font-size: 16px;
           font-weight: 600;
         }
-
-        .poweredByAigProInc2 {
-          line-height: 24px;
-          letter-spacing: 0;
-          color: var(--Primary-Primary, #2a4467);
-          font-family: Quicksand, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", SimHei, Arial, Helvetica, sans-serif;
-          font-size: 16px;
-          font-weight: 600;
-          text-decoration: underline;
-        }
       }
 
       .frame1618873920 {
-        display: inline-flex;
+        display: flex;
         flex-shrink: 0;
         align-items: center;
-        column-gap: 24px;
-
-        .termsConditions {
-          flex-shrink: 0;
-          line-height: 24px;
-          letter-spacing: 0;
-          color: var(--Primary-Primary, #2a4467);
-          font-family: Quicksand, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", SimHei, Arial, Helvetica, sans-serif;
-          font-size: 16px;
-          font-weight: 600;
-          text-decoration: underline;
-        }
+        justify-content: space-between;
+        padding-left: 171px;
+        width: 489px;
+        min-width: 489px;
+        height: 24px;
       }
     }
   }
@@ -552,7 +545,7 @@
     padding-top: 48px;
     padding-bottom: 48px;
     width: 1440px;
-    height: 1126px;
+    height: 1310px;
 
     .modalConfirmBooking {
       display: flex;

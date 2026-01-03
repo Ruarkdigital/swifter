@@ -1,6 +1,7 @@
 import React from "react";
 import { DataTable } from "@/components/layouts/DataTable";
-import type { ColumnDef } from "@tanstack/react-table";
+import { DropdownFilters } from "@/components/layouts/SolicitationFilters";
+import type { ColumnDef, PaginationState } from "@tanstack/react-table";
 import { Input } from "@/components/ui/input";
 import {
   DropdownMenu,
@@ -9,7 +10,7 @@ import {
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { ChevronDown } from "lucide-react";
+import EmptyState from "./EmptyState";
 
 export type ContractRow = {
   id: string;
@@ -20,7 +21,16 @@ export type ContractRow = {
   owner: string;
   published?: string;
   endDate?: string;
-  status: "Active" | "Draft" | "Expired" | "Terminated" | "Suspended";
+  status:
+    | "Active"
+    | "Draft"
+    | "Expired"
+    | "Terminated"
+    | "Suspended"
+    | "Completed"
+    | "Cancelled"
+    | "Pending Approval";
+  category?: string;
 };
 
 const columns: ColumnDef<ContractRow>[] = [
@@ -68,15 +78,13 @@ const columns: ColumnDef<ContractRow>[] = [
     cell: ({ getValue }) => {
       const s = getValue<ContractRow["status"]>();
       const tone =
-        s === "Active"
+        s === "Active" || s === "Completed"
           ? "bg-green-100 text-green-700"
           : s === "Draft"
           ? "bg-slate-100 text-slate-700"
-          : s === "Expired"
-          ? "bg-red-100 text-red-700"
-          : s === "Terminated"
-          ? "bg-red-100 text-red-700"
-          : "bg-red-100 text-red-700"; // Suspended
+          : s === "Pending Approval"
+          ? "bg-yellow-100 text-yellow-700"
+          : "bg-red-100 text-red-700";
       return (
         <span
           data-testid="contract-status-badge"
@@ -110,98 +118,109 @@ const columns: ColumnDef<ContractRow>[] = [
   },
 ];
 
-const sampleRows: ContractRow[] = Array.from({ length: 10 }).map((_, i) => ({
-  id: String(i + 1),
-  title: "Construction Services …",
-  code: "CON-2025-10",
-  vendor: "BuildRight Contractors Inc.",
-  value: i % 2 === 0 ? "$2.50M" : undefined,
-  owner: "Olamide Oladehinde",
-  published: "2025-05-25",
-  endDate: "2025-05-25",
-  status: (i % 5 === 0
-    ? "Expired"
-    : i % 4 === 0
-    ? "Terminated"
-    : i % 3 === 0
-    ? "Suspended"
-    : i % 2 === 0
-    ? "Active"
-    : "Draft") as ContractRow["status"],
-}));
+type ContractsTableProps = {
+  rows?: ContractRow[];
+  isLoading?: boolean;
+  totalCount?: number;
+};
 
-const ContractsTable: React.FC = () => {
+const ContractsTable: React.FC<ContractsTableProps> = ({
+  rows = [],
+  isLoading,
+  totalCount,
+}) => {
   const [search, setSearch] = React.useState("");
-  return (
-    <div className="space-y-4" data-testid="contracts-table">
-      <div className="flex items-center gap-3">
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-medium text-slate-700">Contracts</span>
-          <Input
-            placeholder="Search contract"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            data-testid="search-input"
-            className="h-10 w-[260px]"
-          />
-        </div>
-        <div className="ml-auto flex items-center gap-2">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="outline"
-                className="h-10"
-                data-testid="date-filter"
-              >
-                Date <ChevronDown className="ml-2 h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem disabled>Newest</DropdownMenuItem>
-              <DropdownMenuItem disabled>Oldest</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="outline"
-                className="h-10"
-                data-testid="status-filter"
-              >
-                Status <ChevronDown className="ml-2 h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem data-testid="status-active">
-                Active
-              </DropdownMenuItem>
-              <DropdownMenuItem disabled>Draft</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="outline"
-                className="h-10"
-                data-testid="category-filter"
-              >
-                Category <ChevronDown className="ml-2 h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem data-testid="category-software">
-                Software
-              </DropdownMenuItem>
-              <DropdownMenuItem disabled>Construction</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      </div>
+  const [pagination, setPagination] = React.useState<PaginationState>({
+    pageIndex: 0,
+    pageSize: 10,
+  });
+  
+  const filteredRows = React.useMemo(() => {
+    if (!search) return rows;
+    const query = search.toLowerCase();
+    return rows.filter((row) => {
+      return (
+        row.title.toLowerCase().includes(query) ||
+        row.code.toLowerCase().includes(query)
+      );
+    });
+  }, [rows, search]);
 
+  return (
+    <div data-testid="contracts-table">
       <DataTable<ContractRow>
-        data={sampleRows}
+        header={() => (
+          <div className="flex items-center w-full justify-between border-b border-[#E9E9EB] dark:border-slate-600 p-3 pt-0">
+            <div className="flex items-center gap-3 w-full">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-slate-700">
+                  Contracts
+                </span>
+                <Input
+                  placeholder="Search contract"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  data-testid="search-input"
+                  className="h-10 w-[260px]"
+                />
+              </div>
+              <div className="ml-auto flex items-center gap-2">
+                <DropdownFilters
+                  filters={[
+                    {
+                      title: "Date",
+                      showIcon: true,
+                      options: [
+                        {
+                          hasOptions: true,
+                          value: "date",
+                          label: "Date Created",
+                          subOptions: [
+                            { title: "All", value: "all" },
+                            { title: "Today", value: "today" },
+                            { title: "Last 7 Days", value: "last7days" },
+                            { title: "Last 30 Days", value: "last30days" },
+                            { title: "Custom", value: "custom" },
+                          ],
+                        },
+                      ],
+                    },
+                    {
+                      title: "Status",
+                      showIcon: true,
+                      options: [
+                        { label: "Active", value: "active" },
+                        { label: "Draft", value: "draft" },
+                      ],
+                    },
+                    {
+                      title: "Category",
+                      options: [
+                        { label: "Software", value: "software" },
+                        { label: "Construction", value: "construction" },
+                      ],
+                    },
+                  ]}
+                />
+              </div>
+            </div>
+          </div>
+        )}
+        emptyPlaceholder={<EmptyState />}
+        classNames={{
+          container:
+            "bg-white dark:bg-slate-950 rounded-xl px-3 border border-gray-300 dark:border-slate-600",
+        }}
+        data={filteredRows}
         columns={columns}
-        options={{ disableSelection: true }}
+        options={{
+          disableSelection: true,
+          isLoading,
+          totalCounts: totalCount ?? filteredRows.length,
+          manualPagination: true,
+          pagination,
+          setPagination,
+        }}
       />
     </div>
   );

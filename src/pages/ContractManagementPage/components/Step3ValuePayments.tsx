@@ -10,9 +10,12 @@ import {
 import { useWatch, Control } from "react-hook-form";
 import { CreateContractFormData } from "./CreateContractSheet";
 
-type Props = { control: Control<CreateContractFormData> };
+type Props = { 
+  control: Control<CreateContractFormData>;
+  paymentTermOptions: Array<{ label: string; value: string }>;
+};
 
-const Step3ValuePayments: React.FC<Props> = ({ control }) => {
+const Step3ValuePayments: React.FC<Props> = ({ control, paymentTermOptions }) => {
   const paymentStructure = useWatch({ control, name: "paymentStructure" });
   const { fields, append, remove } = useFieldArray({
     control,
@@ -111,28 +114,7 @@ const Step3ValuePayments: React.FC<Props> = ({ control }) => {
         label="Payment Term"
         placeholder="Select Type"
         component={TextSelect}
-        options={[
-          {
-            label: "NET 30 - Payment 30 days after invoice submission",
-            value: "NET30",
-          },
-          {
-            label: "NET 45 - Payment 45 days after invoice submission",
-            value: "NET45",
-          },
-          {
-            label: "NET 60 - Payment 60 days after invoice submission",
-            value: "NET60",
-          },
-          {
-            label: "NET 90 - Payment 90 days after invoice submission",
-            value: "NET90",
-          },
-          {
-            label: "NET 120 - Payment 120 days after invoice submission",
-            value: "NET120",
-          },
-        ]}
+        options={paymentTermOptions}
       />
     </div>
   );

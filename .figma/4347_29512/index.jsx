@@ -7,35 +7,35 @@ const Component = () => {
     <div className={styles.emptyState}>
       <div className={styles.dashboard3}>
         <div className={styles.frame1618873575}>
-          <img src="../image/mjbeqjiu-33gfqan.png" className={styles.image9} />
+          <img src="../image/mjpbvwca-2ulmckv.png" className={styles.image9} />
         </div>
         <div className={styles.menuItems}>
           <div className={styles.dashboard2}>
-            <img src="../image/mjbeqjig-nhs4w02.svg" className={styles.home01} />
+            <img src="../image/mjpbvwbp-u2wvou3.svg" className={styles.home01} />
             <p className={styles.dashboard}>Dashboard</p>
           </div>
           <div className={styles.mentors}>
-            <img src="../image/mjbeqjig-cvx7hpd.svg" className={styles.home01} />
+            <img src="../image/mjpbvwbp-33iww4r.svg" className={styles.home01} />
             <p className={styles.contractManagement}>Contract Management</p>
           </div>
           <div className={styles.mentors2}>
-            <img src="../image/mjbeqjig-ud9np6s.svg" className={styles.home01} />
+            <img src="../image/mjpbvwbp-7zua7xb.svg" className={styles.home01} />
             <p className={styles.changeManagement}>Change Management</p>
           </div>
           <div className={styles.mentors2}>
-            <img src="../image/mjbeqjig-fbfip97.svg" className={styles.home01} />
+            <img src="../image/mjpbvwbp-5cvbml1.svg" className={styles.home01} />
             <p className={styles.changeManagement}>Claim Management</p>
           </div>
           <div className={styles.mentors2}>
-            <img src="../image/mjbeqjig-e7in053.svg" className={styles.home01} />
+            <img src="../image/mjpbvwbp-4lxz6m9.svg" className={styles.home01} />
             <p className={styles.changeManagement}>Invoice Management</p>
           </div>
           <div className={styles.mentors2}>
-            <img src="../image/mjbeqjig-tfe02pi.svg" className={styles.home01} />
+            <img src="../image/mjpbvwbp-0yz5ms4.svg" className={styles.home01} />
             <p className={styles.changeManagement}>Vendor Management</p>
           </div>
           <div className={styles.menuItem}>
-            <img src="../image/mjbeqjig-dbo8chi.svg" className={styles.home01} />
+            <img src="../image/mjpbvwbp-x3a84ri.svg" className={styles.home01} />
             <p className={styles.profile}>Profile</p>
           </div>
         </div>
@@ -44,10 +44,10 @@ const Component = () => {
         <div className={styles.header}>
           <p className={styles.dashboard4}>Contract Management</p>
           <div className={styles.menuItem2}>
-            <img src="../image/mjbeqjiu-71lrdrw.png" className={styles.avatar} />
+            <img src="../image/mjpbvwca-7bfzc84.png" className={styles.avatar} />
             <p className={styles.text}>John Smith</p>
             <img
-              src="../image/mjbeqjig-ja5xfxa.svg"
+              src="../image/mjpbvwbp-8rxlw00.svg"
               className={styles.arrowDown01Round}
             />
           </div>
@@ -59,14 +59,14 @@ const Component = () => {
               <div className={styles.frame1618873749}>
                 <div className={styles.input}>
                   <img
-                    src="../image/mjbeqjig-i70x6iu.svg"
+                    src="../image/mjpbvwbp-hu8dzli.svg"
                     className={styles.home01}
                   />
                   <p className={styles.text3}>Export</p>
                 </div>
                 <div className={styles.input2}>
                   <img
-                    src="../image/mjbeqjig-yona270.svg"
+                    src="../image/mjpbvwbp-v4tp79q.svg"
                     className={styles.home01}
                   />
                   <p className={styles.text4}>Create Contracts</p>
@@ -81,7 +81,7 @@ const Component = () => {
               <div className={styles.loremIpsum2}>
                 <div className={styles.icon}>
                   <img
-                    src="../image/mjbeqjig-y5d8qqs.svg"
+                    src="../image/mjpbvwbp-2o45x8y.svg"
                     className={styles.license}
                   />
                 </div>
@@ -93,7 +93,7 @@ const Component = () => {
                 </div>
                 <div className={styles.icon2}>
                   <img
-                    src="../image/mjbeqjig-l977xan.svg"
+                    src="../image/mjpbvwbp-junjko1.svg"
                     className={styles.license}
                   />
                 </div>
@@ -112,7 +112,7 @@ const Component = () => {
                 </div>
                 <div className={styles.aButtonBase}>
                   <img
-                    src="../image/mjbeqjig-c3ubhh0.svg"
+                    src="../image/mjpbvwbp-j213kux.svg"
                     className={styles.home01}
                   />
                   <p className={styles.changeManagement}>Status</p>
@@ -141,25 +141,33 @@ const Component = () => {
           <div className={styles.frame1618873528}>
             <p className={styles.text6}>Create Contract</p>
             <img
-              src="../image/mjbeqjig-kaahxqp.svg"
+              src="../image/mjpbvwbp-5452eyv.svg"
               className={styles.arrowDown01Round}
             />
           </div>
-          <p className={styles.text7}>Step 2 of 6: Contract Team</p>
+          <p className={styles.text7}>Step 2 of 8: Contract Team</p>
           <div className={styles.frame1618873811}>
-            <div className={styles.formInput}>
-              <p className={styles.input3}>Contract Manager</p>
-              <div className={styles.input4}>
-                <p className={styles.text8}>Enter Name</p>
+            <div className={styles.frame1618873922}>
+              <div className={styles.formInput}>
+                <p className={styles.input3}>Contract Manger</p>
+                <div className={styles.input4}>
+                  <p className={styles.text8}>Enter Title</p>
+                </div>
+              </div>
+              <div className={styles.formInput}>
+                <p className={styles.input3}>Job Title</p>
+                <div className={styles.input4}>
+                  <p className={styles.text8}>Enter Title</p>
+                </div>
               </div>
             </div>
             <div className={styles.formInput2}>
               <p className={styles.input3}>Vendor / Contractor</p>
-              <div className={styles.input4}>
+              <div className={styles.input5}>
                 <p className={styles.text8}>Enter Name</p>
               </div>
               <p className={styles.addWithEmailAddressV}>
-                Add with email address, Vendor name, domain name
+                Add with email address, Vendor name
               </p>
             </div>
             <div className={styles.formInput3}>
@@ -171,37 +179,37 @@ const Component = () => {
               </p>
               <div className={styles.frame1618873810}>
                 <div className={styles.frame1618873806}>
-                  <p className={styles.text9}>Vendor 1</p>
+                  <p className={styles.text9}>Olamide Oladehinde</p>
                   <img
-                    src="../image/mjbeqjig-cjfpwaw.svg"
+                    src="../image/mjpbvwbp-k3x7vro.svg"
                     className={styles.cancel01}
                   />
                 </div>
                 <div className={styles.frame1618873806}>
-                  <p className={styles.text9}>Vendor 2</p>
+                  <p className={styles.text9}>Deji Ade</p>
                   <img
-                    src="../image/mjbeqjig-cjfpwaw.svg"
+                    src="../image/mjpbvwbp-k3x7vro.svg"
                     className={styles.cancel01}
                   />
                 </div>
                 <div className={styles.frame1618873806}>
-                  <p className={styles.text9}>Vendor 3</p>
+                  <p className={styles.text9}>Jacob Smtih</p>
                   <img
-                    src="../image/mjbeqjig-cjfpwaw.svg"
+                    src="../image/mjpbvwbp-k3x7vro.svg"
                     className={styles.cancel01}
                   />
                 </div>
                 <div className={styles.frame1618873806}>
-                  <p className={styles.text9}>Vendor 4</p>
+                  <p className={styles.text9}>Ola Daniel</p>
                   <img
-                    src="../image/mjbeqjig-cjfpwaw.svg"
+                    src="../image/mjpbvwbp-k3x7vro.svg"
                     className={styles.cancel01}
                   />
                 </div>
                 <p className={styles.text8}>Search</p>
               </div>
               <p className={styles.addWithEmailAddressV}>
-                Add with email address, name, domain name
+                Add vendor’s/contractor’s key personnel with email address, name
               </p>
             </div>
             <div className={styles.formInput3}>
@@ -213,38 +221,48 @@ const Component = () => {
               </p>
               <div className={styles.frame1618873810}>
                 <div className={styles.frame1618873806}>
-                  <p className={styles.text9}>Approver 1</p>
+                  <p className={styles.text9}>Olamide Oladehinde</p>
                   <img
-                    src="../image/mjbeqjig-cjfpwaw.svg"
+                    src="../image/mjpbvwbp-k3x7vro.svg"
                     className={styles.cancel01}
                   />
                 </div>
                 <div className={styles.frame1618873806}>
-                  <p className={styles.text9}>Approver 2</p>
+                  <p className={styles.text9}>Deji Ade</p>
                   <img
-                    src="../image/mjbeqjig-cjfpwaw.svg"
+                    src="../image/mjpbvwbp-k3x7vro.svg"
                     className={styles.cancel01}
                   />
                 </div>
                 <div className={styles.frame1618873806}>
-                  <p className={styles.text9}>Approver 3</p>
+                  <p className={styles.text9}>Jacob Smtih</p>
                   <img
-                    src="../image/mjbeqjig-cjfpwaw.svg"
+                    src="../image/mjpbvwbp-k3x7vro.svg"
                     className={styles.cancel01}
                   />
                 </div>
                 <div className={styles.frame1618873806}>
-                  <p className={styles.text9}>Approver 4</p>
+                  <p className={styles.text9}>Ola Daniel</p>
                   <img
-                    src="../image/mjbeqjig-cjfpwaw.svg"
+                    src="../image/mjpbvwbp-k3x7vro.svg"
                     className={styles.cancel01}
                   />
                 </div>
                 <p className={styles.text8}>Search</p>
               </div>
               <p className={styles.addWithEmailAddressV}>
-                Add with email address, name, domain name
+                Add with email address, name
               </p>
+            </div>
+            <div className={styles.formInput4}>
+              <p className={styles.input3}>Visibility</p>
+              <div className={styles.input6}>
+                <p className={styles.text8}>Invites-only, Public</p>
+                <img
+                  src="../image/mjpbvwbq-9stmxih.svg"
+                  className={styles.home01}
+                />
+              </div>
             </div>
           </div>
           <div className={styles.frame1618873867}>
@@ -257,6 +275,39 @@ const Component = () => {
               </div>
               <div className={styles.button3}>
                 <p className={styles.text4}>Continue</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className={styles.employeeCard}>
+        <p className={styles.text10}>Add Key Personnel Details</p>
+        <div className={styles.frame2147228523}>
+          <div className={styles.frame2147228524}>
+            <div className={styles.formInput5}>
+              <p className={styles.name}>Name</p>
+              <div className={styles.input7}>
+                <p className={styles.text8}>Enter Name</p>
+              </div>
+            </div>
+            <div className={styles.formInput6}>
+              <p className={styles.input3}>Email</p>
+              <div className={styles.input5}>
+                <p className={styles.text8}>Enter Name</p>
+              </div>
+            </div>
+          </div>
+          <div className={styles.frame2147228525}>
+            <div className={styles.formInput6}>
+              <p className={styles.input3}>Role</p>
+              <div className={styles.input5}>
+                <p className={styles.text8}>Enter Name</p>
+              </div>
+            </div>
+            <div className={styles.formInput6}>
+              <p className={styles.input3}>Phone Number</p>
+              <div className={styles.input5}>
+                <p className={styles.text8}>Enter Name</p>
               </div>
             </div>
           </div>

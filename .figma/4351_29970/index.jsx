@@ -14,10 +14,10 @@ const Component = () => {
       <div className={styles.headerBody}>
         <div className={styles.right}>
           <div className={styles.menuItem}>
-            <img src="../image/mjberqtq-ddjkes9.png" className={styles.avatar} />
+            <img src="../image/mjprrhn6-70bz4eu.png" className={styles.avatar} />
             <p className={styles.text}>John Smith</p>
             <img
-              src="../image/mjberqt8-o3h14l8.svg"
+              src="../image/mjprrhmf-tefoim7.svg"
               className={styles.arrowDown01Round}
             />
           </div>
@@ -64,11 +64,11 @@ const Component = () => {
             <div className={styles.frame1618873528}>
               <p className={styles.text2}>Create Contract</p>
               <img
-                src="../image/mjberqt8-fcuih07.svg"
+                src="../image/mjprrhmf-pzx474h.svg"
                 className={styles.arrowDown01Round}
               />
             </div>
-            <p className={styles.text3}>Step 3 of 6: Contract Value & Payments</p>
+            <p className={styles.text3}>Step 3 of 8: Contract Value & Payments</p>
             <div className={styles.frame1618873822}>
               <div className={styles.formInput}>
                 <p className={styles.input2}>Contract Value ($)</p>
@@ -78,7 +78,9 @@ const Component = () => {
               </div>
               <div className={styles.frame1618873938}>
                 <div className={styles.formInput2}>
-                  <p className={styles.input2}>Contingency</p>
+                  <p className={styles.input2}>
+                    Contingency (only visible internally)
+                  </p>
                   <div className={styles.input3}>
                     <p className={styles.text4}>Enter Contingency</p>
                   </div>
@@ -93,9 +95,11 @@ const Component = () => {
               <div className={styles.formInput4}>
                 <p className={styles.input2}>Payment Structure</p>
                 <div className={styles.input5}>
-                  <p className={styles.text4}>Monthly / Milestone / Lump Sum</p>
+                  <p className={styles.text4}>
+                    Monthly / Milestone / Progress Draw
+                  </p>
                   <img
-                    src="../image/mjberqt8-vir0840.svg"
+                    src="../image/mjprrhmf-rzoviif.svg"
                     className={styles.arrowDown01Round2}
                   />
                 </div>
@@ -107,7 +111,7 @@ const Component = () => {
                     When vendors will be paid after invoice submersion
                   </p>
                   <img
-                    src="../image/mjberqt8-vir0840.svg"
+                    src="../image/mjprrhmf-rzoviif.svg"
                     className={styles.arrowDown01Round2}
                   />
                 </div>
@@ -132,7 +136,7 @@ const Component = () => {
             <div className={styles.input6}>
               <p className={styles.text4}>Select Type</p>
               <img
-                src="../image/mjberqt8-vir0840.svg"
+                src="../image/mjprrhmf-rzoviif.svg"
                 className={styles.arrowDown01Round2}
               />
             </div>
@@ -161,11 +165,11 @@ const Component = () => {
           <div className={styles.frame1618873528}>
             <p className={styles.text2}>Create Contract</p>
             <img
-              src="../image/mjberqt8-fcuih07.svg"
+              src="../image/mjprrhmf-pzx474h.svg"
               className={styles.arrowDown01Round}
             />
           </div>
-          <p className={styles.text3}>Step 3 of 6: Contract Value & Payments</p>
+          <p className={styles.text3}>Step 3 of 8: Contract Value & Payments</p>
           <div className={styles.frame1618873923}>
             <div className={styles.frame16188738222}>
               <div className={styles.formInput}>
@@ -176,7 +180,9 @@ const Component = () => {
               </div>
               <div className={styles.frame1618873938}>
                 <div className={styles.formInput2}>
-                  <p className={styles.input2}>Contingency</p>
+                  <p className={styles.input2}>
+                    Contingency (only visible internally)
+                  </p>
                   <div className={styles.input3}>
                     <p className={styles.text4}>Enter Contingency</p>
                   </div>
@@ -193,7 +199,7 @@ const Component = () => {
                 <div className={styles.input8}>
                   <p className={styles.text5}>Milestone</p>
                   <img
-                    src="../image/mjberqt8-vir0840.svg"
+                    src="../image/mjprrhmf-rzoviif.svg"
                     className={styles.arrowDown01Round2}
                   />
                 </div>
@@ -205,7 +211,7 @@ const Component = () => {
                   <p className={styles.text7}>Milestone Name</p>
                   <div className={styles.frame1618873840}>
                     <img
-                      src="../image/mjberqt8-72au21a.svg"
+                      src="../image/mjprrhmf-0geyznp.svg"
                       className={styles.arrowDown01Round2}
                     />
                     <p className={styles.removeMilestone}>Remove Milestone</p>
@@ -214,7 +220,7 @@ const Component = () => {
                 <div className={styles.input5}>
                   <p className={styles.text4}>Milestone 1</p>
                   <img
-                    src="../image/mjberqt8-vir0840.svg"
+                    src="../image/mjprrhmf-rzoviif.svg"
                     className={styles.arrowDown01Round2}
                   />
                 </div>
@@ -236,7 +242,7 @@ const Component = () => {
             </div>
             <div className={styles.metricItem}>
               <img
-                src="../image/mjberqt8-lfq93uk.svg"
+                src="../image/mjprrhmg-etnoynm.svg"
                 className={styles.arrowDown01Round}
               />
               <p className={styles.text9}>Add Milestone</p>
@@ -248,7 +254,7 @@ const Component = () => {
                   When vendors will be paid after invoice submersion
                 </p>
                 <img
-                  src="../image/mjberqt8-vir0840.svg"
+                  src="../image/mjprrhmf-rzoviif.svg"
                   className={styles.arrowDown01Round2}
                 />
               </div>
