@@ -1,12 +1,14 @@
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { FileText } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 type StatProps = {
   title: string;
   value: number | string;
   tone: "gray" | "green" | "red" | "yellow";
   testId: string;
+  className?: string
 };
 
 const toneClasses: Record<StatProps["tone"], { wrap: string; icon: string }> = {
@@ -16,10 +18,10 @@ const toneClasses: Record<StatProps["tone"], { wrap: string; icon: string }> = {
   yellow: { wrap: "bg-yellow-50", icon: "text-yellow-600" },
 };
 
-const StatCard: React.FC<StatProps> = ({ title, value, tone, testId }) => {
+const StatCard: React.FC<StatProps> = ({ title, value, tone, testId, className }) => {
   const c = toneClasses[tone];
   return (
-    <Card data-testid={testId} className="border-slate-200">
+    <Card data-testid={testId} className={cn("border-slate-200", className)}>
       <CardContent className="p-6 flex items-center justify-between">
         <div className="space-y-1">
           <p className="text-sm text-slate-600">{title}</p>
@@ -67,6 +69,7 @@ const StatsCards: React.FC<{ counts?: Partial<Counts> }> = ({ counts }) => {
         value={c.all}
         tone="gray"
         testId="contracts-stats-all"
+        // className="col-span-2"
       />
       <StatCard
         title="Active Contracts"

@@ -33,13 +33,14 @@ const Step3ValuePayments: React.FC<Props> = ({ control, paymentTermOptions }) =>
       />
       <Forger
         name="contingency"
-        label="Contingency"
+        label="Contingency (only visible internally)"
         placeholder="Enter Contingency"
         component={TextInput}
       />
       <Forger
         name="holdback"
         label="Holdback (Optional)"
+        placeholder="10%"
         component={TextSelect}
         options={[
           { label: "10%", value: "10%" },
@@ -50,12 +51,21 @@ const Step3ValuePayments: React.FC<Props> = ({ control, paymentTermOptions }) =>
       <Forger
         name="paymentStructure"
         label="Payment Structure"
+        placeholder="Monthly / Milestone / Progress Draw"
         component={TextSelect}
         options={[
           { label: "Monthly", value: "monthly" },
           { label: "Milestone", value: "milestone" },
-          { label: "Lump Sum", value: "lump_sum" },
+          { label: "Progress Draw", value: "lump_sum" },
         ]}
+      />
+      <Forger
+        name="selectedDeliverable"
+        label="Select Deliverable (Optional)"
+        placeholder="Select Deliverable"
+        component={TextSelect}
+        options={[]}
+        containerClass="md:col-span-2"
       />
 
       {paymentStructure === "milestone" && (
@@ -81,6 +91,7 @@ const Step3ValuePayments: React.FC<Props> = ({ control, paymentTermOptions }) =>
                 name={`milestones.${index}.dueDate`}
                 label="Due Date"
                 component={TextDatePicker}
+                placeholder="Side Visits/Conference Call"
               />
               <button
                 type="button"
@@ -112,9 +123,10 @@ const Step3ValuePayments: React.FC<Props> = ({ control, paymentTermOptions }) =>
       <Forger
         name="paymentTerm"
         label="Payment Term"
-        placeholder="Select Type"
+        placeholder="When vendors will be paid after invoice submersion"
         component={TextSelect}
         options={paymentTermOptions}
+        containerClass="md:col-span-2"
       />
     </div>
   );

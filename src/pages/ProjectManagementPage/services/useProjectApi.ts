@@ -64,7 +64,7 @@ export const useProjectsList = (params?: {
       if (params?.limit) search.append("limit", String(params.limit));
       if (params?.page) search.append("page", String(params.page));
 
-      const res = await getRequest({ url: `/contract/projects?${search.toString()}` });
+      const res = await getRequest({ url: `/contract/manager/projects?${search.toString()}` });
       return res.data;
     },
     staleTime: 60_000,
@@ -75,7 +75,7 @@ export const useProjectsStats = () => {
   return useQuery<{ status: number; message: string; data: ProjectStats }>({
     queryKey: useUserQueryKey(["projects-stats"]),
     queryFn: async () => {
-      const res = await getRequest({ url: "/contract/projects/stats" });
+      const res = await getRequest({ url: "/contract/manager/projects/stats" });
       return res.data;
     },
     staleTime: 60_000,
@@ -86,7 +86,7 @@ export const useCreateProject = () => {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (payload: CreateProjectInput) => {
-      const res = await postRequest({ url: "/contract/projects", payload });
+      const res = await postRequest({ url: "/contract/manager/projects", payload });
       return res.data as { status: number; message: string; data: ProjectApi };
     },
     onSuccess: () => {
@@ -100,7 +100,7 @@ export const useCompleteProject = () => {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (projectId: string) => {
-      const res = await patchRequest({ url: `/contract/projects/${projectId}/complete` });
+      const res = await patchRequest({ url: `/contract/manager/projects/${projectId}/complete` });
       return res.data as { status: number; message: string; data: ProjectApi };
     },
     onSuccess: () => {

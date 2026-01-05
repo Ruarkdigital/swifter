@@ -51,7 +51,7 @@ export const useProjectDetail = (projectId?: string) => {
   return useQuery<ApiResponse<Project>, ApiResponseError>({
     queryKey: useUserQueryKey(["project-detail", projectId]),
     queryFn: async () =>
-      await getRequest({ url: `/contract/projects/${projectId}` }),
+      await getRequest({ url: `/contract/manager/projects/${projectId}` }),
     enabled: !!projectId,
   });
 };
@@ -60,7 +60,7 @@ export const useProjectContracts = (projectId?: string) => {
   return useQuery<ApiResponse<Contract[]>, ApiResponseError>({
     queryKey: useUserQueryKey(["project-contracts", projectId]),
     queryFn: async () =>
-      await getRequest({ url: `/contract/projects/${projectId}/contracts` }),
+      await getRequest({ url: `/contract/manager/projects/${projectId}/contracts` }),
     enabled: !!projectId,
   });
 };
@@ -70,7 +70,7 @@ export const useCompleteProject = (projectId?: string) => {
   return useMutation<ApiResponse<Project>, ApiResponseError, void>({
     mutationFn: async () =>
       await patchRequest({
-        url: `/contract/projects/${projectId}/complete`,
+        url: `/contract/manager/projects/${projectId}/complete`,
         payload: {},
       }),
     onSuccess: () => {

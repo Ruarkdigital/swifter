@@ -75,7 +75,7 @@ const Step6Documents: React.FC = () => {
         component={TextFileUploader}
         element={<UploadElement />}
         List={FileListItem}
-        containerClass="w-full"
+        containerClass="w-full border border-dashed border-gray-900 rounded-lg"
         accept={acceptedFileTypes as any}
         dropzoneOptions={{
           multiple: true,

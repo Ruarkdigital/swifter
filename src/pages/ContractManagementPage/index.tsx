@@ -50,7 +50,7 @@ type ContractStatsResponse = {
 type ContractListResponse = {
   status: number;
   message: string;
-  data: ContractApi[];
+  data: { contracts: ContractApi[], totalContracts: 0 };
 };
 
 const useContractsStats = () => {
@@ -58,7 +58,7 @@ const useContractsStats = () => {
   return useQuery<ContractStatsResponse, ApiResponseError>({
     queryKey,
     queryFn: async () => {
-      const res = await getRequest({ url: "/contracts/stats" });
+      const res = await getRequest({ url: "/contract/manager/contracts/stats" });
       return res.data as ContractStatsResponse;
     },
     staleTime: 60000,
@@ -70,7 +70,7 @@ const useAllContracts = () => {
   return useQuery<ContractListResponse, ApiResponseError>({
     queryKey,
     queryFn: async () => {
-      const res = await getRequest({ url: "/contracts" });
+      const res = await getRequest({ url: "/contract/manager/contracts" });
       return res.data as ContractListResponse;
     },
     staleTime: 60000,
@@ -82,7 +82,7 @@ const useMyContracts = () => {
   return useQuery<ContractListResponse, ApiResponseError>({
     queryKey,
     queryFn: async () => {
-      const res = await getRequest({ url: "/contracts/me" });
+      const res = await getRequest({ url: "/contract/manager/contracts/me" });
       return res.data as ContractListResponse;
     },
     staleTime: 60000,
@@ -143,8 +143,8 @@ const ContractManagementPage: React.FC = () => {
       }
     : undefined;
 
-  const allContractsRows = mapContractsToRows(allContractsData?.data);
-  const myContractsRows = mapContractsToRows(myContractsData?.data);
+  const allContractsRows = mapContractsToRows(allContractsData?.data.contracts);
+  const myContractsRows = mapContractsToRows(myContractsData?.data.contracts);
 
   return (
     <div className="space-y-8 pt-10">

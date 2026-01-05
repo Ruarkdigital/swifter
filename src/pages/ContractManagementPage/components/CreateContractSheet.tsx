@@ -20,6 +20,7 @@ import Step5Deliverables from "./Step5Deliverables";
 import Step6Documents from "./Step5Documents";
 import Step7ApprovalLevel from "./Step7ApprovalLevel";
 import Step8ReviewPublish from "./Step6ReviewPublish";
+import Step6ComplianceSecurity from "./Step6ComplianceSecurity";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getRequest, postRequest } from "@/lib/axiosInstance";
 import { useUserQueryKey } from "@/hooks/useUserQueryKey";
@@ -81,6 +82,13 @@ const schema = yup.object({
       })
     )
     .optional(),
+  insuranceRequirement: yup.string().optional(),
+  insuranceExpiryDate: yup.date().optional(),
+  contractSecurity: yup.string().optional(),
+  securityType: yup.string().optional(),
+  securityAmount: yup.string().optional(),
+  securityDueDate: yup.date().optional(),
+  securityExpiryDate: yup.date().optional(),
 });
 
 export type CreateContractFormData = yup.InferType<typeof schema>;
@@ -120,6 +128,13 @@ const defaultValues = {
   approvalGroups: [
     { name: "", approvers: [], approvalLevel: "0" },
   ],
+  insuranceRequirement: "",
+  insuranceExpiryDate: undefined,
+  contractSecurity: "",
+  securityType: "",
+  securityAmount: "",
+  securityDueDate: undefined,
+  securityExpiryDate: undefined,
 };
 
 const CreateContractSheet: React.FC<Props> = ({ trigger }) => {
@@ -133,12 +148,13 @@ const CreateContractSheet: React.FC<Props> = ({ trigger }) => {
   const stepTitles = [
     "Step 1 of 8: Basic Information",
     "Step 2 of 8: Contract Team",
-    "Step 3 of 8: Contract Value & Payments",
-    "Step 4 of 8: Timeline",
-    "Step 5 of 8: Deliverables",
-    "Step 6 of 8: Documents",
-    "Step 7 of 8: Configure Approval Level",
-    "Step 8 of 8: Review & Publish",
+    "Step 3 of 8: Timeline",
+    "Step 4 of 8: Deliverables",
+    "Step 5 of 9: Contract Value & Payments",
+    "Step 6 of 9: Compliance & Security",
+    "Step 7 of 9: Documents",
+    "Step 8 of 9: Configure Approval Level",
+    "Step 9 of 9: Review & Publish",
   ];
   const totalSteps = stepTitles.length;
 
@@ -159,7 +175,7 @@ const CreateContractSheet: React.FC<Props> = ({ trigger }) => {
   const typesQuery = useQuery<ApiListResponse<ContractType>>({
     queryKey: useUserQueryKey(["contract-types"]),
     queryFn: async () => {
-      const res = await getRequest({ url: "/types" });
+      const res = await getRequest({ url: "/manager/types" });
       return res.data as ApiListResponse<ContractType>;
     },
     staleTime: 60_000,
@@ -168,7 +184,7 @@ const CreateContractSheet: React.FC<Props> = ({ trigger }) => {
   const paymentTermsQuery = useQuery<ApiListResponse<ContractTerm>>({
     queryKey: useUserQueryKey(["contract-payment-terms"]),
     queryFn: async () => {
-      const res = await getRequest({ url: "/payment-terms" });
+      const res = await getRequest({ url: "/manager/payment-terms" });
       return res.data as ApiListResponse<ContractTerm>;
     },
     staleTime: 60_000,
@@ -177,7 +193,7 @@ const CreateContractSheet: React.FC<Props> = ({ trigger }) => {
   const termTypesQuery = useQuery<ApiListResponse<ContractTerm>>({
     queryKey: useUserQueryKey(["contract-term-types"]),
     queryFn: async () => {
-      const res = await getRequest({ url: "/terms" });
+      const res = await getRequest({ url: "/manager/terms" });
       return res.data as ApiListResponse<ContractTerm>;
     },
     staleTime: 60_000,
@@ -186,7 +202,7 @@ const CreateContractSheet: React.FC<Props> = ({ trigger }) => {
   const personnelQuery = useQuery<ApiListResponse<Personnel>>({
     queryKey: useUserQueryKey(["contract-personnel"]),
     queryFn: async () => {
-      const res = await getRequest({ url: "/personnel" });
+      const res = await getRequest({ url: "/manager/personnel" });
       return res.data as ApiListResponse<Personnel>;
     },
     staleTime: 60_000,
@@ -195,7 +211,7 @@ const CreateContractSheet: React.FC<Props> = ({ trigger }) => {
   const awardedQuery = useQuery<ApiListResponse<AwardedVendorItem>>({
     queryKey: useUserQueryKey(["awarded-solicitations"]),
     queryFn: async () => {
-      const res = await getRequest({ url: "/awarded-solicitation" });
+      const res = await getRequest({ url: "/manager/awarded-solicitation" });
       return res.data as ApiListResponse<AwardedVendorItem>;
     },
     staleTime: 60_000,
@@ -383,7 +399,7 @@ const CreateContractSheet: React.FC<Props> = ({ trigger }) => {
       <DialogContent
         className={cn(
           "rounded-2xl p-0 max-h-[90vh] overflow-y-auto",
-          step === 7 ? "sm:max-w-5xl" : "sm:max-w-xl"
+          step === 8 ? "sm:max-w-5xl" : "sm:max-w-xl"
         )}
       >
         <div data-testid="create-contract-sheet" className="space-y-6">
@@ -413,24 +429,26 @@ const CreateContractSheet: React.FC<Props> = ({ trigger }) => {
                 <Step2ContractTeam internalStakeholderOptions={internalStakeholderOptions} />
               )}
 
-              {step === 3 && (
+              {step === 5 && (
                 <Step3ValuePayments
                   control={control}
                   paymentTermOptions={paymentTermOptions}
                 />
               )}
 
-              {step === 4 && (
+              {step === 3 && (
                 <Step4Timeline termTypeOptions={termTypeOptions} />
               )}
 
-              {step === 5 && <Step5Deliverables control={control} />}
+              {step === 4 && <Step5Deliverables control={control} />}
 
-              {step === 6 && <Step6Documents />}
+              {step === 6 && <Step6ComplianceSecurity control={control} />}
 
-              {step === 7 && <Step7ApprovalLevel control={control} />}
+              {step === 7 && <Step6Documents />}
 
-              {step === 8 && <Step8ReviewPublish control={control} />}
+              {step === 8 && <Step7ApprovalLevel control={control} />}
+
+              {step === 9 && <Step8ReviewPublish control={control} />}
 
               {step === 1 ? (
                 <div className="flex w-full gap-4 pt-4">
