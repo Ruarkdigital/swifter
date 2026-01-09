@@ -85,7 +85,7 @@ const Step1BasicInfo: React.FC<Props> = ({
 					data-testid="contract-category-select"
 				/>
 			</div>
-			<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+			{/* <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 				<Forger
 					name="manager"
 					label="Contract Manger"
@@ -100,7 +100,7 @@ const Step1BasicInfo: React.FC<Props> = ({
 					component={TextInput}
 					data-testid="job-title-input"
 				/>
-			</div>
+			</div> */}
 			<Forger
 				name="contractId"
 				label="Contract ID/Number (Optional)"

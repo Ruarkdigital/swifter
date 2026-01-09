@@ -38,13 +38,35 @@ const schema = yup.object({
   awardedSolicitation: yup.string().optional(),
   type: yup.string().required("Contract type is required"),
   category: yup.string().required("Category is required"),
-  manager: yup.string().optional(),
-  jobTitle: yup.string().optional(),
+  // manager: yup.string().optional(),
+  // jobTitle: yup.string().optional(),
   contractId: yup.string().optional(),
   description: yup.string().required("Description is required"),
   vendor: yup.string().optional(),
   vendorKeyPersonnel: yup.array().optional(),
   internalStakeholders: yup.array().optional(),
+  vendorKeyPersonnelMeta: yup
+    .array(
+      yup.object({
+        id: yup.string().optional(),
+        name: yup.string().optional(),
+        email: yup.string().optional(),
+        role: yup.string().optional(),
+        phone: yup.string().optional(),
+      })
+    )
+    .optional(),
+  internalStakeholdersMeta: yup
+    .array(
+      yup.object({
+        id: yup.string().optional(),
+        name: yup.string().optional(),
+        email: yup.string().optional(),
+        role: yup.string().optional(),
+        phone: yup.string().optional(),
+      })
+    )
+    .optional(),
   visibility: yup.string().optional(),
   contractValue: yup.mixed().optional(),
   contingency: yup.string().optional(),
@@ -100,13 +122,15 @@ const defaultValues = {
   awardedSolicitation: "",
   type: "",
   category: "",
-  manager: "",
-  jobTitle: "",
+  // manager: "",
+  // jobTitle: "",
   contractId: "",
   description: "",
   vendor: "",
   vendorKeyPersonnel: [],
   internalStakeholders: [],
+  vendorKeyPersonnelMeta: [],
+  internalStakeholdersMeta: [],
   visibility: "",
   contractValue: "",
   contingency: "",
@@ -175,7 +199,7 @@ const CreateContractSheet: React.FC<Props> = ({ trigger }) => {
   const typesQuery = useQuery<ApiListResponse<ContractType>>({
     queryKey: useUserQueryKey(["contract-types"]),
     queryFn: async () => {
-      const res = await getRequest({ url: "/manager/types" });
+      const res = await getRequest({ url: "/contract/manager/types" });
       return res.data as ApiListResponse<ContractType>;
     },
     staleTime: 60_000,
@@ -184,7 +208,7 @@ const CreateContractSheet: React.FC<Props> = ({ trigger }) => {
   const paymentTermsQuery = useQuery<ApiListResponse<ContractTerm>>({
     queryKey: useUserQueryKey(["contract-payment-terms"]),
     queryFn: async () => {
-      const res = await getRequest({ url: "/manager/payment-terms" });
+      const res = await getRequest({ url: "/contract/manager/payment-terms" });
       return res.data as ApiListResponse<ContractTerm>;
     },
     staleTime: 60_000,
@@ -193,7 +217,7 @@ const CreateContractSheet: React.FC<Props> = ({ trigger }) => {
   const termTypesQuery = useQuery<ApiListResponse<ContractTerm>>({
     queryKey: useUserQueryKey(["contract-term-types"]),
     queryFn: async () => {
-      const res = await getRequest({ url: "/manager/terms" });
+      const res = await getRequest({ url: "/contract/manager/terms" });
       return res.data as ApiListResponse<ContractTerm>;
     },
     staleTime: 60_000,
@@ -202,7 +226,7 @@ const CreateContractSheet: React.FC<Props> = ({ trigger }) => {
   const personnelQuery = useQuery<ApiListResponse<Personnel>>({
     queryKey: useUserQueryKey(["contract-personnel"]),
     queryFn: async () => {
-      const res = await getRequest({ url: "/manager/personnel" });
+      const res = await getRequest({ url: "/contract/manager/personnel" });
       return res.data as ApiListResponse<Personnel>;
     },
     staleTime: 60_000,
@@ -211,7 +235,7 @@ const CreateContractSheet: React.FC<Props> = ({ trigger }) => {
   const awardedQuery = useQuery<ApiListResponse<AwardedVendorItem>>({
     queryKey: useUserQueryKey(["awarded-solicitations"]),
     queryFn: async () => {
-      const res = await getRequest({ url: "/manager/awarded-solicitation" });
+      const res = await getRequest({ url: "/contract/manager/awarded-solicitation" });
       return res.data as ApiListResponse<AwardedVendorItem>;
     },
     staleTime: 60_000,
@@ -342,16 +366,30 @@ const CreateContractSheet: React.FC<Props> = ({ trigger }) => {
       msaContractId: relationship === "msa_project" ? data.project || undefined : undefined,
       solicitationId: data.awardedSolicitation || undefined,
       contractId: data.contractId || undefined,
-      jobTitle: data.jobTitle || undefined,
+      // jobTitle: data.jobTitle || undefined,
       vendor: (data.vendor || awardedMatch?.vendor?.email) || undefined,
       personnel:
-        (data.vendorKeyPersonnel ?? []).map((t: any) => {
-          const val = t?.value ?? t;
-          const isEmail = typeof val === "string" && val.includes("@");
-          return isEmail ? { email: val } : { name: val };
-        }) ?? undefined,
+        (data.vendorKeyPersonnelMeta && data.vendorKeyPersonnelMeta.length > 0
+          ? (data.vendorKeyPersonnelMeta ?? []).map((p: any) => ({
+              name: p?.name || undefined,
+              email: p?.email || undefined,
+              ...(p?.role ? { role: p.role } : {}),
+              ...(p?.phone ? { phone: p.phone } : {}),
+            }))
+          : (data.vendorKeyPersonnel ?? []).map((t: any) => {
+              const val = t?.value ?? t;
+              const isEmail = typeof val === "string" && val.includes("@");
+              return isEmail ? { email: val } : { name: val };
+            })) ?? undefined,
       internalTeam:
-        (data.internalStakeholders ?? []).map((t: any) => t?.value ?? t) ??
+        (data.internalStakeholdersMeta && data.internalStakeholdersMeta.length > 0
+          ? (data.internalStakeholdersMeta ?? []).map((p: any) => ({
+              name: p?.name || undefined,
+              email: p?.email || undefined,
+              ...(p?.role ? { role: p.role } : {}),
+              ...(p?.phone ? { phone: p.phone } : {}),
+            }))
+          : (data.internalStakeholders ?? []).map((t: any) => t?.value ?? t)) ??
         undefined,
       visibility:
         data.visibility === "invites_only" ? "private" : data.visibility || "private",

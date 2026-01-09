@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -15,6 +16,10 @@ import { format } from "date-fns";
 import { CalendarIcon, ClockIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import CurrencyInput from "react-currency-input-field";
+
+export type CustomTag = Tag & {
+  meta: Record<string, any>;
+};
 
 export type TextInputProps = React.InputHTMLAttributes<HTMLInputElement> & {
   label?: string | JSX.Element;
@@ -42,12 +47,13 @@ export type TextTagInputProps = {
   containerClass?: string;
   error?: string;
   name?: string;
-  value?: Tag[];
-  tags?: Tag[];
+  value?: CustomTag[];
+  tags?: CustomTag[];
   ref?: React.Ref<HTMLInputElement>;
   helperText?: string;
   placeholder?: string;
   inlineTagsContainerClassName?: string;
+  enableDetailsPopover?: boolean;
 };
 
 export type TextDatePickerProps = {
@@ -187,7 +193,7 @@ export const TextArea = (props: TextAreaProps & Partial<ForgerSlotProps>) => {
 };
 
 export const TextTagInput = (
-  props: TextTagInputProps & Partial<ForgerSlotProps>
+  props: TextTagInputProps & Partial<Omit<ForgerSlotProps, "value">>
 ) => {
   const {
     label,
@@ -201,8 +207,97 @@ export const TextTagInput = (
     helperText,
     placeholder,
     inlineTagsContainerClassName,
+    enableDetailsPopover,
   } = props;
   const [activeTagIndex, setActiveTagIndex] = useState<number | null>(null);
+  const [open, setOpen] = useState(false);
+
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    role: "",
+    phone: "",
+  });
+  const [errorText, setErrorText] = useState<string | null>(null);
+  const isEditing = activeTagIndex !== null;
+
+  // console.log({ value, activeTagIndex });
+
+  const prefillFromIndex = (idx: number) => {
+    const tagsArr = value ?? [];
+    const currentTag = tagsArr[idx];
+
+    if (!currentTag) return;
+
+    setFormData({
+      name: currentTag?.text ?? "",
+      email: currentTag?.id ?? "",
+      role: currentTag?.meta?.role ?? "",
+      phone: currentTag?.meta?.phone ?? "",
+    });
+    setErrorText(null);
+  };
+
+  useEffect(() => {
+    if (activeTagIndex !== null) {
+      prefillFromIndex(activeTagIndex);
+      if (enableDetailsPopover) setOpen(true);
+    }
+  }, [activeTagIndex]);
+
+  const handleTagSubInputChange = () => {
+    const nameVal = formData.name.trim();
+    const emailVal = formData.email.trim();
+    const roleVal = formData.role.trim();
+    const phoneVal = formData.phone.trim();
+
+    if (!nameVal || !emailVal) {
+      setErrorText("Name and Email are required");
+      return;
+    }
+
+    const exists = (value ?? []).some((t, idx) => {
+      if (activeTagIndex !== null && idx === activeTagIndex) return false;
+      return (
+        t.text?.toLowerCase() === nameVal.toLowerCase() ||
+        t.id?.toLowerCase() === emailVal.toLowerCase()
+      );
+    });
+
+    if (exists) {
+      setErrorText("Duplicate entry");
+      return;
+    }
+
+    const newTag: CustomTag = {
+      id: emailVal,
+      text: nameVal,
+      meta: {
+        role: roleVal || undefined,
+        phone: phoneVal || undefined,
+      },
+    };
+
+    let newTags = [...(value ?? [])];
+
+    if (activeTagIndex !== null) {
+      newTags[activeTagIndex] = newTag;
+    } else {
+      newTags = [...newTags, newTag];
+    }
+
+    onChange?.(newTags);
+    
+    setErrorText(null);
+    setOpen(false);
+    setActiveTagIndex(null);
+    setFormData({
+      name: "",
+      email: "",
+      role: "",
+      phone: "",
+    });
+  };
 
   return (
     <div
@@ -215,33 +310,168 @@ export const TextTagInput = (
           {label}
         </Label>
       )}
-      <TagInput
-        name={name}
-        value={value}
-        ref={ref}
-        tags={tags ?? value}
-        setTags={(newTags) => {
-          onChange?.(newTags);
-        }}
-        placeholder={placeholder ?? "Add a tag"}
-        styleClasses={{
-          inlineTagsContainer:
-            cn(
+
+      {enableDetailsPopover ? (
+        <Popover modal open={open} onOpenChange={setOpen}>
+          <PopoverTrigger asChild>
+            <div
+              onClick={() => {
+                if (activeTagIndex !== null) {
+                  prefillFromIndex(activeTagIndex);
+                } else {
+                  setActiveTagIndex(null);
+                  setFormData({
+                    name: "",
+                    email: "",
+                    role: "",
+                    phone: "",
+                  });
+                }
+                setOpen(true);
+              }}
+              className="cursor-pointer"
+            >
+              <TagInput
+                name={name}
+                value={value}
+                ref={ref}
+                tags={tags ?? value}
+                setTags={(newTags) => {
+                  onChange?.(newTags);
+                }}
+                placeholder={placeholder ?? "Add a tag"}
+                styleClasses={{
+                  inlineTagsContainer: cn(
+                    "border-input rounded-lg bg-background shadow-xs transition-[color,box-shadow] focus-within:border-ring outline-none focus-within:ring-[3px] focus-within:ring-ring/50 p-1 gap-1 dark:border-slate-800 dark:bg-slate-950",
+                    inlineTagsContainerClassName
+                  ),
+                  input:
+                    "w-full min-w-[80px] shadow-none px-2 h-10 dark:text-slate-50 dark:placeholder:text-slate-400",
+                  tag: {
+                    body: "h-7 relative bg-background border border-input hover:bg-background !rounded-lg font-medium text-xs ps-3 pe-7 dark:bg-slate-800 dark:border-slate-700 dark:hover:bg-slate-700 dark:text-slate-50",
+                    closeButton:
+                      "absolute -inset-y-px -end-px p-0 rounded-e-md flex size-7 transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] text-muted-foreground/80 hover:text-foreground dark:text-slate-400 dark:hover:text-slate-50 dark:focus-visible:border-slate-300 dark:focus-visible:ring-slate-300/50",
+                  },
+                }}
+                activeTagIndex={activeTagIndex}
+                setActiveTagIndex={setActiveTagIndex}
+                
+                onTagClick={(clicked) => {
+                  const list = value ?? []; 
+                  const idx = list.findIndex(
+                    (t) =>
+                      (t.id ?? "").toLowerCase() ===
+                        (clicked.id ?? "").toLowerCase() &&
+                      (t.text ?? "").toLowerCase() ===
+                        (clicked.text ?? "").toLowerCase()
+                  );
+
+                  if (idx >= 0) {
+                    // setActiveTagIndex(idx);
+                    prefillFromIndex(idx);
+                    setOpen(true);
+                  }
+                }}
+              />
+            </div>
+          </PopoverTrigger>
+          <PopoverContent
+            className="z-[60] w-[360px] lg:w-[420px] p-4 bg-white border shadow-xl"
+            align="start"
+          >
+            <div className="space-y-3">
+              <p className="text-sm font-medium text-slate-700">
+                Add Key Personnel Details
+              </p>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label className="text-xs">Name</Label>
+                  <Input
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    placeholder="Enter Name"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Email</Label>
+                  <Input
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    placeholder="Enter Email"
+                    type="email"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Role</Label>
+                  <Input
+                    value={formData.role}
+                    onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                    placeholder="Enter Role"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Phone Number</Label>
+                  <Input
+                    value={formData.phone}  
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    placeholder="Enter Phone Number"
+                  />
+                </div>
+              </div>
+
+              {errorText && (
+                <span className="text-xs text-red-500">{errorText}</span>
+              )}
+
+              <div className="flex justify-end gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setOpen(false);
+                    setActiveTagIndex(null);
+                  }}
+                >
+                  Cancel
+                </Button>
+
+                <Button onClick={() => handleTagSubInputChange()}>
+                  {isEditing ? "Save" : "Add"}
+                </Button>
+              </div>
+            </div>
+          </PopoverContent>
+        </Popover>
+      ) : (
+        <TagInput
+          name={name}
+          value={value}
+          ref={ref}
+          tags={tags ?? value}
+          setTags={(newTags) => {
+            onChange?.(newTags);
+          }}
+          placeholder={placeholder ?? "Add a tag"}
+          styleClasses={{
+            inlineTagsContainer: cn(
               "border-input rounded-lg bg-background shadow-xs transition-[color,box-shadow] focus-within:border-ring outline-none focus-within:ring-[3px] focus-within:ring-ring/50 p-1 gap-1 dark:border-slate-800 dark:bg-slate-950",
               inlineTagsContainerClassName
             ),
-          input:
-            "w-full min-w-[80px] shadow-none px-2 h-10 dark:text-slate-50 dark:placeholder:text-slate-400",
-          tag: {
-            body: "h-7 relative bg-background border border-input hover:bg-background !rounded-lg font-medium text-xs ps-3 pe-7 dark:bg-slate-800 dark:border-slate-700 dark:hover:bg-slate-700 dark:text-slate-50",
-            closeButton:
-              "absolute -inset-y-px -end-px p-0 rounded-e-md flex size-7 transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] text-muted-foreground/80 hover:text-foreground dark:text-slate-400 dark:hover:text-slate-50 dark:focus-visible:border-slate-300 dark:focus-visible:ring-slate-300/50",
-          },
-        }}
-        activeTagIndex={activeTagIndex}
-        setActiveTagIndex={setActiveTagIndex}
-      />
+            input:
+              "w-full min-w-[80px] shadow-none px-2 h-10 dark:text-slate-50 dark:placeholder:text-slate-400",
+            tag: {
+              body: "h-7 relative bg-background border border-input hover:bg-background !rounded-lg font-medium text-xs ps-3 pe-7 dark:bg-slate-800 dark:border-slate-700 dark:hover:bg-slate-700 dark:text-slate-50",
+              closeButton:
+                "absolute -inset-y-px -end-px p-0 rounded-e-md flex size-7 transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] text-muted-foreground/80 hover:text-foreground dark:text-slate-400 dark:hover:text-slate-50 dark:focus-visible:border-slate-300 dark:focus-visible:ring-slate-300/50",
+            },
+          }}
+          activeTagIndex={activeTagIndex}
+          setActiveTagIndex={setActiveTagIndex}
+        />
+      )}
+
       {error && <span className="text-xs text-red-500 mt-1">{error}</span>}
+
       {!error && helperText && (
         <span className="text-xs text-gray-500 mt-1">{helperText}</span>
       )}
