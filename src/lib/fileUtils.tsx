@@ -2,6 +2,9 @@ import { DocSVG } from "@/assets/icons/Doc";
 import { PdfSVG } from "@/assets/icons/Pdf";
 import PowerPointSVG from "@/assets/icons/PowerPoint";
 import { ExcelSVG } from "@/assets/icons/Excel";
+import * as XLSX from "xlsx";
+import mammoth from "mammoth";
+import { pdfjs } from "react-pdf";
 
 /**
  * Helper function to get file extension from name or type
@@ -222,3 +225,262 @@ export const isViewableFile = (fileName: string, fileType?: string): boolean => 
     isSpreadsheetFile(extension)
   );
 };
+
+export async function convertDocxToHtml(
+  arrayBuffer: ArrayBuffer
+): Promise<string> {
+  const result = await mammoth.convertToHtml(
+    { arrayBuffer },
+    {
+      convertImage: mammoth.images.imgElement((element) =>
+        element.read("base64").then((base64) => ({
+          src: `data:${element.contentType};base64,${base64}`,
+        }))
+      ),
+    }
+  );
+  return result.value || "";
+}
+
+// Helper function for converting PDF to HTMl
+export async function convertPdfToHtml(
+  arrayBuffer: ArrayBuffer
+): Promise<string> {
+  const result = await pdfjs.getDocument({ data: arrayBuffer }).promise;
+  const numPages = result.numPages;
+  const htmlPages: string[] = [];
+
+  for (let i = 1; i <= numPages; i++) {
+    const page = await result.getPage(i);
+    const textContent = await page.getTextContent();
+    const lines = groupPdfLines(textContent.items as any[]);
+    htmlPages.push(formatLinesToHtml(lines));
+  }
+
+  return htmlPages.join("<hr>");
+}
+
+function groupPdfLines(items: any[]): string[] {
+  const lines: string[] = [];
+  let currentLine: string[] = [];
+  let lastY: number | null = null;
+  for (const item of items) {
+    const y = item.transform?.[5] ?? item.transform?.[4] ?? 0;
+    const text = item.str ?? "";
+    if (lastY === null) {
+      currentLine.push(text);
+      lastY = y;
+      continue;
+    }
+    const sameLine = Math.abs(y - lastY) < 2;
+    if (sameLine) {
+      currentLine.push(text);
+    } else {
+      lines.push(currentLine.join(" "));
+      currentLine = [text];
+      lastY = y;
+    }
+  }
+  if (currentLine.length) lines.push(currentLine.join(" "));
+  return lines;
+}
+
+function formatLinesToHtml(lines: string[]): string {
+  const escapeHtml = (s: string) =>
+    s
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+
+  const linkify = (s: string) =>
+    s.replace(
+      /\b((?:https?:\/\/|www\.)[^\s<]+)\b/gi,
+      (m) =>
+        `<a href="${m.startsWith("www.") ? `https://${m}` : m}" target="_blank" rel="noopener noreferrer">${m}</a>`
+    );
+
+  const inlineFormat = (s: string) => {
+    let x = escapeHtml(s);
+    x = x.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+    x = x.replace(/__(.+?)__/g, "<strong>$1</strong>");
+    x = x.replace(/\*(?!\s)([^*]+)\*/g, "<em>$1</em>");
+    x = x.replace(/_(?!\s)([^_]+)_/g, "<em>$1</em>");
+    x = x.replace(/`([^`]+)`/g, "<code>$1</code>");
+    x = linkify(x);
+    return x;
+  };
+
+  const out: string[] = [];
+  let listType: "ul" | "ol" | null = null;
+  let inCode = false;
+  let inBlockQuote = false;
+
+  const closeList = () => {
+    if (listType) {
+      out.push(`</${listType}>`);
+      listType = null;
+    }
+  };
+  const closeBlockQuote = () => {
+    if (inBlockQuote) {
+      out.push("</blockquote>");
+      inBlockQuote = false;
+    }
+  };
+  const closeCode = () => {
+    if (inCode) {
+      out.push("</code></pre>");
+      inCode = false;
+    }
+  };
+
+  for (const raw of lines) {
+    const t = raw.trim();
+    if (/^```/.test(t)) {
+      closeList();
+      closeBlockQuote();
+      if (inCode) {
+        closeCode();
+      } else {
+        out.push("<pre><code>");
+        inCode = true;
+      }
+      continue;
+    }
+    if (inCode) {
+      out.push(escapeHtml(raw));
+      continue;
+    }
+    if (!t) {
+      closeList();
+      closeBlockQuote();
+      continue;
+    }
+    if (/^[-*_]{3,}$/.test(t)) {
+      closeList();
+      closeBlockQuote();
+      out.push("<hr>");
+      continue;
+    }
+    if (/^>\s?/.test(t)) {
+      closeList();
+      if (!inBlockQuote) {
+        out.push("<blockquote>");
+        inBlockQuote = true;
+      }
+      out.push(`<p>${inlineFormat(t.replace(/^>\s?/, ""))}</p>`);
+      continue;
+    } else if (inBlockQuote) {
+      closeBlockQuote();
+    }
+
+    const taskItem = /^(?:[-*]|(?:\d+|[A-Za-z])[.)])\s+\[(\s|x|X)\]\s+(.+)$/.exec(t);
+    if (taskItem) {
+      const checked = /x/i.test(taskItem[1]);
+      if (listType !== "ul") {
+        closeList();
+        out.push("<ul>");
+        listType = "ul";
+      }
+      out.push(
+        `<li><input type="checkbox" disabled ${checked ? "checked" : ""}> ${inlineFormat(taskItem[2])}</li>`
+      );
+      continue;
+    }
+
+    if (/^([•·\-*–—●▪○]\s+)/.test(t)) {
+      if (listType !== "ul") {
+        closeList();
+        out.push("<ul>");
+        listType = "ul";
+      }
+      out.push(`<li>${inlineFormat(t.replace(/^([•·\-*–—●▪○]\s+)/, ""))}</li>`);
+      continue;
+    }
+
+    if (/^((?:\d+|[A-Za-z])[.)]\s+)/.test(t)) {
+      if (listType !== "ol") {
+        closeList();
+        out.push("<ol>");
+        listType = "ol";
+      }
+      out.push(`<li>${inlineFormat(t.replace(/^((?:\d+|[A-Za-z])[.)]\s+)/, ""))}</li>`);
+      continue;
+    }
+
+    closeList();
+
+    const letters = t.replace(/[^A-Za-z]/g, "").length;
+    const upper = t.replace(/[^A-Z]/g, "").length;
+    const upperRatio = letters ? upper / letters : 0;
+    if ((t.length <= 30 && upperRatio >= 0.85) || /^#{1}\s+/.test(t)) {
+      out.push(`<h1>${inlineFormat(t.replace(/^#\s+/, "").replace(/:$/, ""))}</h1>`);
+      continue;
+    }
+    if ((t.length <= 50 && upperRatio >= 0.8) || /^#{2}\s+/.test(t)) {
+      out.push(`<h2>${inlineFormat(t.replace(/^##\s+/, "").replace(/:$/, ""))}</h2>`);
+      continue;
+    }
+    if ((t.length < 60 && /^[A-Z0-9 -]+$/.test(t)) || (t.length < 80 && /:$/.test(t)) || /^#{3}\s+/.test(t)) {
+      out.push(`<h3>${inlineFormat(t.replace(/^###\s+/, "").replace(/:$/, ""))}</h3>`);
+      continue;
+    }
+
+    out.push(`<p>${inlineFormat(t)}</p>`);
+  }
+
+  closeList();
+  closeBlockQuote();
+  closeCode();
+  return out.join("");
+}
+
+// Helper function for converting Spreadsheet to HTMl
+export async function convertSpreadsheetToHtml(
+  arrayBuffer: ArrayBuffer
+): Promise<string> {
+  const escapeHtml = (s: string) =>
+    String(s)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+
+  const wb = XLSX.read(arrayBuffer, { type: "array" });
+  const parts: string[] = [];
+
+  for (const sheetName of wb.SheetNames) {
+    const ws = wb.Sheets[sheetName];
+    const rows: any[][] = XLSX.utils.sheet_to_json(ws, { header: 1 });
+    parts.push(`<h2>${escapeHtml(sheetName)}</h2>`);
+
+    if (!rows || rows.length === 0) {
+      parts.push("<p></p>");
+      continue;
+    }
+
+    const colCount = Math.max(...rows.map((r) => (r ? r.length : 0)));
+    const fmtCell = (v: any) => (v === null || v === undefined ? "" : escapeHtml(v));
+
+    parts.push(`<table><thead>`);
+    const header = rows[0] as any[];
+    parts.push(
+      `<tr>${Array.from({ length: colCount }, (_, i) => `<th>${fmtCell(header?.[i])}</th>`).join("")}</tr>`
+    );
+    parts.push(`</thead><tbody>`);
+    for (let i = 1; i < rows.length; i++) {
+      const row = rows[i] as any[];
+      parts.push(
+        `<tr>${Array.from({ length: colCount }, (_, j) => `<td>${fmtCell(row?.[j])}</td>`).join("")}</tr>`
+      );
+    }
+    parts.push(`</tbody></table>`);
+  }
+
+  return parts.join("");
+}
+
+

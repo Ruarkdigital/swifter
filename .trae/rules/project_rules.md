@@ -8,6 +8,8 @@
 4. All backend interaction must use **existing API definitions**. Use only what’s available in the **provided API docs**.
 5. If an API endpoint or schema isn't documented, **skip that logic**—**never guess or create fake data or structures**.
 6. **Do not modify UI layout** unless explicitly instructed. Leave layout areas blank if data is unavailable.
+7. Always store media assets (images, icons, SVGs) in `/public/assets/` folder as long its used in the project.
+8. Always use the terminal to install dependencies, and use pnpm to install dependencies.
 
 ---
 
@@ -29,84 +31,7 @@
   * `/components/`
   * `/components/ui/`
 * Use `/components/layouts/DataTable` for all table implementations.
-* Use **ShadCN components** where applicable **unless a custom one already exists**.
-
----
-
-### 🔌 API Integration
-
-1. Never call `axiosInstance` directly.
-2. Use the abstraction methods from the `/api` layer:
-
-   * `getRequest`
-   * `postRequest`
-   * `putRequest`
-   * `deleteRequest`
-3. **Follow exact request/response schemas.**
-
-   * Do not reshape data unless explicitly instructed.
-   * Don’t send extra fields or ignore required ones.
-
----
-
-### 🔍 SEO Implementation
-
-#### ✅ Required Tools
-
-* Use `<SEOWrapper />` from `/components/SEO` for static meta.
-* Use `useSEO()` from `/hooks/useSEO` for dynamic metadata.
-
-#### 🔹 Title Format
-
-* Format: `"Page Name - SwiftPro eProcurement Portal"`
-* Length: 50–60 characters
-* Must be **unique per route**
-
-#### 🔹 Meta Description
-
-* Length: 150–160 characters
-* Include natural keywords and a clear call-to-action
-
-#### 🔹 Robots
-
-* Public pages: `"index, follow"`
-* Private/dashboard pages: `"noindex, nofollow"`
-
-#### 🔹 Open Graph (OG) Metadata
-
-* Images from `/public/assets/` or CDN
-* Required image size: `1200x630px`
-* Must include descriptive alt text
-
-#### 🔹 Canonical URLs
-
-* Use absolute paths (e.g. `"/dashboard"`)
-* Limit to 100 characters
-* Match real route path
-
----
-
-### 🧩 Structured Data Guidelines
-
-#### When to Add
-
-* `Organization`: Homepage or company info pages
-* `BreadcrumbList`: Detail views with navigation
-* `FAQPage`: Help or support content
-* `SoftwareApplication`: App landing or meta content
-
-#### Example Usage
-
-```tsx
-<SEOWrapper
-  structuredData={{
-    "@context": "https://schema.org",
-    "@type": "SoftwareApplication",
-    "name": "SwiftPro eProcurement Portal"
-  }}
-/>
-```
-
+* Use **ShadCN components** where applicable **unless
 ---
 
 ### 🧱 Foldering Conventions (React/Vite Edition)
@@ -131,7 +56,9 @@
 ✅ Use existing UI components whenever possible
 ✅ Match design exactly
 ✅ Keep folder structure consistent
+✅ Use the terminal to install dependencies
 ❌ Never fabricate backend logic
 ❌ Never alter layout without instruction
 ❌ Never send undeclared fields to the API
 ❌ Never create one-off component hacks
+❌ Never modify the package.json on dependencies

@@ -1,0 +1,4762 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "SwiftPro REST API Docs",
+    "version": "2.3.0",
+    "description": "SwiftPro REST API docs for dev server - This docs is mainly for itegration and testing"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:10001/api/v1/contract",
+      "desription": "Local server testing"
+    },
+    {
+      "url": "https://dev.swiftpro.tech/api/v1/dev/contract",
+      "description": "Development server for testing and integration"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "schemas": {
+      "CreateContractInput": {
+        "type": "object",
+        "required": [
+          "title",
+          "description",
+          "category",
+          "timezone",
+          "contractType",
+          "contractRelationship"
+        ],
+        "properties": {
+          "projectId": {
+            "type": "string",
+            "description": "Project ID when contractRelationship is 'project'"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "publish"
+            ],
+            "description": "Contract status on creation (default publish)"
+          },
+          "msaContractId": {
+            "type": "string",
+            "description": "MSA Contract ID when contractRelationship is 'msa_project'"
+          },
+          "solicitationId": {
+            "type": "string",
+            "description": "Link to an awarded solicitation"
+          },
+          "contractType": {
+            "type": "string",
+            "description": "Contract type ID"
+          },
+          "timezone": {
+            "type": "string"
+          },
+          "contractPaymentTerm": {
+            "type": "string",
+            "description": "Contract payment term ID"
+          },
+          "contractTermType": {
+            "type": "string",
+            "description": "Contract term type ID"
+          },
+          "title": {
+            "type": "string"
+          },
+          "contractRelationship": {
+            "type": "string",
+            "enum": [
+              "standalone",
+              "project",
+              "msa_project"
+            ]
+          },
+          "category": {
+            "type": "string"
+          },
+          "contractId": {
+            "type": "string",
+            "description": "Optional external ID"
+          },
+          "description": {
+            "type": "string"
+          },
+          "jobTitle": {
+            "type": "string"
+          },
+          "vendor": {
+            "type": "string",
+            "description": "Vendor ObjectId or email"
+          },
+          "personnel": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "role": {
+                  "type": "string"
+                },
+                "email": {
+                  "type": "string",
+                  "format": "email"
+                },
+                "phone": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "internalTeam": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "List of internal user IDs"
+          },
+          "visibility": {
+            "type": "string",
+            "enum": [
+              "public",
+              "private"
+            ],
+            "default": "private"
+          },
+          "contractAmount": {
+            "type": "number"
+          },
+          "contigency": {
+            "type": "string"
+          },
+          "holdBack": {
+            "type": "number"
+          },
+          "paymentTerm": {
+            "type": "string"
+          },
+          "paymentStructure": {
+            "type": "string",
+            "enum": [
+              "Monthly",
+              "Milestone",
+              "Progress Draw"
+            ],
+            "description": "Payment arrangement for the contract"
+          },
+          "startDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "endDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "duration": {
+            "type": "number"
+          },
+          "termType": {
+            "type": "string"
+          },
+          "deliverables": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "dueDate": {
+                  "type": "string",
+                  "format": "date"
+                }
+              }
+            }
+          },
+          "milestone": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "amount": {
+                  "type": "number"
+                },
+                "dueDate": {
+                  "type": "string",
+                  "format": "date"
+                },
+                "name": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "files": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "url": {
+                  "type": "string",
+                  "format": "uri"
+                },
+                "type": {
+                  "type": "string"
+                },
+                "size": {
+                  "type": "number"
+                }
+              }
+            }
+          },
+          "approvals": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "user": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "groupName": {
+                  "type": "string"
+                },
+                "levelName": {
+                  "type": "number",
+                  "minimum": 1,
+                  "maximum": 5
+                }
+              }
+            }
+          }
+        }
+      },
+      "Contract": {
+        "type": "object",
+        "properties": {
+          "_id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string"
+          },
+          "contractRelationship": {
+            "type": "string",
+            "enum": [
+              "standalone",
+              "project",
+              "msa_project"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "pending_approval",
+              "active",
+              "completed",
+              "cancelled",
+              "expired",
+              "terminated"
+            ]
+          },
+          "deliverables": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "dueDate": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              }
+            }
+          },
+          "files": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "url": {
+                  "type": "string"
+                },
+                "type": {
+                  "type": "string"
+                },
+                "size": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "approvals": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "company": {
+            "type": "string"
+          },
+          "project": {
+            "type": "string"
+          },
+          "vendor": {
+            "type": "string"
+          },
+          "creator": {
+            "type": "string"
+          },
+          "contractType": {
+            "type": "string",
+            "enum": [
+              "hourly",
+              "fixed",
+              "milestone"
+            ]
+          },
+          "currency": {
+            "type": "string",
+            "example": "USD"
+          },
+          "ratePerHour": {
+            "type": "number"
+          },
+          "totalAmount": {
+            "type": "number"
+          },
+          "startDate": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "endDate": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ApiResponseContract": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "integer",
+            "example": 201
+          },
+          "message": {
+            "type": "string",
+            "example": "Contract created successfully"
+          },
+          "data": {
+            "$ref": "#/components/schemas/Contract"
+          }
+        }
+      },
+      "ApiResponseContractList": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "number",
+            "example": 200
+          },
+          "message": {
+            "type": "string",
+            "example": "Project contracts fetched successfully"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Contract"
+            }
+          }
+        }
+      },
+      "ApiResponseContractStats": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "integer",
+            "example": 200
+          },
+          "message": {
+            "type": "string",
+            "example": "Contract stats fetched successfully"
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "all": {
+                "type": "integer"
+              },
+              "draft": {
+                "type": "integer"
+              },
+              "pending_approval": {
+                "type": "integer"
+              },
+              "active": {
+                "type": "integer"
+              },
+              "completed": {
+                "type": "integer"
+              },
+              "suspended": {
+                "type": "integer"
+              },
+              "expired": {
+                "type": "integer"
+              },
+              "terminated": {
+                "type": "integer"
+              }
+            }
+          }
+        }
+      },
+      "ApiResponseMessage": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "integer",
+            "example": 200
+          },
+          "message": {
+            "type": "string",
+            "example": "You are now a manager of this contract"
+          }
+        }
+      },
+      "UpdateContractStatusInput": {
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "completed",
+              "suspended",
+              "terminated"
+            ]
+          }
+        }
+      },
+      "ContractChange": {
+        "type": "object",
+        "properties": {
+          "_id": {
+            "type": "string"
+          },
+          "changeId": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "request",
+              "directive",
+              "proposal"
+            ]
+          },
+          "files": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "url": {
+                  "type": "string",
+                  "format": "uri"
+                },
+                "type": {
+                  "type": "string"
+                },
+                "size": {
+                  "type": "number"
+                }
+              }
+            }
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ApiResponseContractChangeList": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "integer",
+            "example": 200
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "changes": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/ContractChange"
+                }
+              },
+              "total": {
+                "type": "integer"
+              }
+            }
+          }
+        }
+      },
+      "ContractClaim": {
+        "type": "object",
+        "properties": {
+          "_id": {
+            "type": "string"
+          },
+          "claimId": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "impact": {
+            "type": "string"
+          },
+          "descrption": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "under review",
+              "approved",
+              "rejected"
+            ]
+          },
+          "files": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "url": {
+                  "type": "string",
+                  "format": "uri"
+                },
+                "type": {
+                  "type": "string"
+                },
+                "size": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ApiResponseContractClaimList": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "integer",
+            "example": 200
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "changes": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/ContractClaim"
+                }
+              },
+              "total": {
+                "type": "integer"
+              }
+            }
+          }
+        }
+      },
+      "ApiResponseContractChange": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "integer",
+            "example": 200
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/ContractChange"
+          }
+        }
+      },
+      "ApiResponseContractClaim": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "integer",
+            "example": 200
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/ContractClaim"
+          }
+        }
+      },
+      "Invoice": {
+        "type": "object",
+        "properties": {
+          "_id": {
+            "type": "string"
+          },
+          "invoiceId": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "number"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "approved",
+              "rejected"
+            ]
+          },
+          "bill": {
+            "type": "string"
+          },
+          "milestone": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string"
+          },
+          "files": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "url": {
+                  "type": "string",
+                  "format": "uri"
+                },
+                "type": {
+                  "type": "string"
+                },
+                "size": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ApiResponseInvoiceList": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "integer",
+            "example": 200
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "invoices": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Invoice"
+                }
+              },
+              "total": {
+                "type": "integer"
+              }
+            }
+          }
+        }
+      },
+      "ApiResponseInvoice": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "integer",
+            "example": 200
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/Invoice"
+          }
+        }
+      },
+      "Rfi": {
+        "type": "object",
+        "properties": {
+          "_id": {
+            "type": "string"
+          },
+          "rfiId": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "deadline": {
+            "type": "string",
+            "format": "date"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "closed",
+              "open",
+              "issues",
+              "resolved",
+              "rejected"
+            ]
+          },
+          "submittedBy": {
+            "type": "object",
+            "properties": {
+              "_id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "email": {
+                "type": "string"
+              }
+            }
+          },
+          "files": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "url": {
+                  "type": "string",
+                  "format": "uri"
+                },
+                "type": {
+                  "type": "string"
+                },
+                "size": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ApiResponseRfiList": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "integer",
+            "example": 200
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "contractRfis": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Rfi"
+                }
+              },
+              "total": {
+                "type": "integer"
+              }
+            }
+          }
+        }
+      },
+      "CreateRfiInput": {
+        "type": "object",
+        "required": [
+          "title",
+          "description",
+          "deadline"
+        ],
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "deadline": {
+            "type": "string",
+            "format": "date"
+          },
+          "files": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "url": {
+                  "type": "string",
+                  "format": "uri"
+                },
+                "type": {
+                  "type": "string"
+                },
+                "size": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "ApiResponseRfi": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "integer",
+            "example": 200
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/Rfi"
+          }
+        }
+      },
+      "RfiResponseInput": {
+        "type": "object",
+        "required": [
+          "description"
+        ],
+        "properties": {
+          "description": {
+            "type": "string"
+          },
+          "files": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "url": {
+                  "type": "string",
+                  "format": "uri"
+                },
+                "type": {
+                  "type": "string"
+                },
+                "size": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "RequestContractChangeInput": {
+        "type": "object",
+        "required": [
+          "title",
+          "description",
+          "type"
+        ],
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "request",
+              "directive",
+              "proposal"
+            ]
+          },
+          "proposalCategory": {
+            "type": "string"
+          },
+          "urgency": {
+            "type": "string",
+            "enum": [
+              "low",
+              "medium",
+              "high"
+            ]
+          },
+          "files": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "url": {
+                  "type": "string",
+                  "format": "uri"
+                },
+                "type": {
+                  "type": "string"
+                },
+                "size": {
+                  "type": "number"
+                }
+              }
+            }
+          }
+        }
+      },
+      "AddCommentInput": {
+        "type": "object",
+        "required": [
+          "content"
+        ],
+        "properties": {
+          "content": {
+            "type": "string"
+          },
+          "files": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "url": {
+                  "type": "string",
+                  "format": "uri"
+                },
+                "type": {
+                  "type": "string"
+                },
+                "size": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "ReplyCommentInput": {
+        "type": "object",
+        "required": [
+          "parentCommentId",
+          "content"
+        ],
+        "properties": {
+          "parentCommentId": {
+            "type": "string"
+          },
+          "content": {
+            "type": "string"
+          },
+          "files": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "url": {
+                  "type": "string",
+                  "format": "uri"
+                },
+                "type": {
+                  "type": "string"
+                },
+                "size": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "CreateProjectInput": {
+        "type": "object",
+        "required": [
+          "name",
+          "category",
+          "description",
+          "budget",
+          "allowMultiple"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Project name",
+            "example": "School Renovation"
+          },
+          "category": {
+            "type": "string",
+            "description": "Project category or domain",
+            "example": "Education"
+          },
+          "description": {
+            "type": "string",
+            "description": "Detailed explanation of the project scope",
+            "example": "Renovation of central school blocks"
+          },
+          "startDate": {
+            "type": "string",
+            "format": "date",
+            "description": "Optional start date (ISO 8601)",
+            "example": "2026-01-15"
+          },
+          "endDate": {
+            "type": "string",
+            "format": "date",
+            "description": "Optional end date (ISO 8601)",
+            "example": "2026-09-30"
+          },
+          "budget": {
+            "type": "number",
+            "description": "Allocated budget for the project",
+            "example": 1200000
+          },
+          "allowMultiple": {
+            "type": "boolean",
+            "description": "Whether multiple contracts are allowed under this project",
+            "example": true
+          },
+          "files": {
+            "type": "array",
+            "description": "Optional list of associated file metadata",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "url": {
+                  "type": "string",
+                  "format": "uri"
+                },
+                "type": {
+                  "type": "string"
+                },
+                "size": {
+                  "type": "number"
+                }
+              }
+            }
+          }
+        }
+      },
+      "Project": {
+        "type": "object",
+        "properties": {
+          "_id": {
+            "type": "string"
+          },
+          "company": {
+            "type": "string"
+          },
+          "creator": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "startDate": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "endDate": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "budget": {
+            "type": "number"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "completed",
+              "cancelled"
+            ]
+          },
+          "allowMultiple": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ApiResponseProject": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "number",
+            "example": 201
+          },
+          "message": {
+            "type": "string",
+            "example": "Project created successfully"
+          },
+          "data": {
+            "$ref": "#/components/schemas/Project"
+          }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "example": "error"
+          },
+          "message": {
+            "type": "string",
+            "example": "Something went wrong"
+          }
+        }
+      },
+      "ApiResponseProjectList": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "number",
+            "example": 200
+          },
+          "message": {
+            "type": "string",
+            "example": "Projects fetched successfully"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Project"
+            }
+          }
+        }
+      },
+      "ProjectStats": {
+        "type": "object",
+        "properties": {
+          "all": {
+            "type": "number"
+          },
+          "active": {
+            "type": "number"
+          },
+          "completed": {
+            "type": "number"
+          },
+          "cancelled": {
+            "type": "number"
+          }
+        }
+      },
+      "ApiResponseProjectStats": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "number",
+            "example": 200
+          },
+          "message": {
+            "type": "string",
+            "example": "Project stats fetched successfully"
+          },
+          "data": {
+            "$ref": "#/components/schemas/ProjectStats"
+          }
+        }
+      },
+      "AuthenticatedError": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "number",
+            "example": 401
+          },
+          "message": {
+            "type": "string",
+            "example": "User not authenticated"
+          }
+        }
+      },
+      "NotFoundError": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "number",
+            "example": 404
+          },
+          "message": {
+            "type": "string",
+            "example": "Not Found"
+          }
+        }
+      },
+      "DuplicateError": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "number",
+            "example": 409
+          },
+          "message": {
+            "type": "string",
+            "example": "Duplicate entry"
+          }
+        }
+      },
+      "ValidationError": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "number",
+            "example": 422
+          },
+          "message": {
+            "type": "string",
+            "example": "Validation failed"
+          }
+        }
+      },
+      "ServerError": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "number",
+            "example": 500
+          },
+          "message": {
+            "type": "string",
+            "example": "Internal server error"
+          }
+        }
+      },
+      "AuthorizeError": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "number",
+            "example": 403
+          },
+          "message": {
+            "type": "string",
+            "example": "Unauthorized"
+          }
+        }
+      },
+      "BadRequest": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "number",
+            "example": 400
+          },
+          "message": {
+            "type": "string",
+            "example": "Bad request"
+          }
+        }
+      },
+      "ContractType": {
+        "type": "object",
+        "properties": {
+          "_id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          }
+        }
+      },
+      "ContractPaymentTerm": {
+        "type": "object",
+        "properties": {
+          "_id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          }
+        }
+      },
+      "ContractTermType": {
+        "type": "object",
+        "properties": {
+          "_id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          }
+        }
+      },
+      "AwardedVendorItem": {
+        "type": "object",
+        "properties": {
+          "solicitationId": {
+            "type": "string"
+          },
+          "solicitationName": {
+            "type": "string"
+          },
+          "vendor": {
+            "type": "object",
+            "properties": {
+              "_id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "email": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
+      "UserBasic": {
+        "type": "object",
+        "properties": {
+          "_id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          }
+        }
+      },
+      "ApiResponseContractTypeList": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "number",
+            "example": 200
+          },
+          "message": {
+            "type": "string",
+            "example": "Contract types fetched successfully"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ContractType"
+            }
+          }
+        }
+      },
+      "ApiResponseContractPaymentTermList": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "number",
+            "example": 200
+          },
+          "message": {
+            "type": "string",
+            "example": "Contract payment terms fetched successfully"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ContractPaymentTerm"
+            }
+          }
+        }
+      },
+      "ApiResponseContractTermTypeList": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "number",
+            "example": 200
+          },
+          "message": {
+            "type": "string",
+            "example": "Contract terms fetched successfully"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ContractTermType"
+            }
+          }
+        }
+      },
+      "ApiResponseAwardedVendorList": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "number",
+            "example": 200
+          },
+          "message": {
+            "type": "string",
+            "example": "Awarded solicitation vendors fetched successfully"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AwardedVendorItem"
+            }
+          }
+        }
+      },
+      "ApiResponseUserList": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "number",
+            "example": 200
+          },
+          "message": {
+            "type": "string",
+            "example": "Contract personnel fetched successfully"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UserBasic"
+            }
+          }
+        }
+      }
+    }
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "paths": {
+    "/manager/projects": {
+      "get": {
+        "summary": "List projects",
+        "description": "Returns projects belonging to the authenticated user's company. Supports filtering and pagination.",
+        "tags": [
+          "Project"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-roles": [
+          "view_only",
+          "approvals",
+          "company_admin",
+          "contract_manager",
+          "procurement"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "name",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "draft",
+                "pending_approval",
+                "active",
+                "completed",
+                "suspended",
+                "expired",
+                "terminated"
+              ]
+            },
+            "description": "Case-insensitive partial match by project name"
+          },
+          {
+            "in": "query",
+            "name": "date",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            },
+            "description": "Return projects having `startDate \u003E= date` (ISO 8601)"
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "enum": [
+                "active",
+                "completed",
+                "cancelled"
+              ]
+            },
+            "description": "Filter by project status"
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 10
+            },
+            "description": "Page size"
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            },
+            "description": "Page number"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Projects fetched successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseProjectList"
+                },
+                "examples": {
+                  "list": {
+                    "value": {
+                      "status": 200,
+                      "message": "Projects fetched successfully",
+                      "data": [
+                        {
+                          "_id": "671c2f0d9f4e2b0012345678",
+                          "company": "66fb1c7a8d2eaa0012345678",
+                          "creator": "66fb1c7a8d2eaa0098765432",
+                          "name": "School Renovation",
+                          "category": "Education",
+                          "description": "Renovation of central school blocks",
+                          "startDate": "2026-01-15T00:00:00.000Z",
+                          "endDate": "2026-09-30T00:00:00.000Z",
+                          "budget": 1200000,
+                          "status": "active",
+                          "allowMultiple": true,
+                          "createdAt": "2026-01-01T10:30:22.000Z",
+                          "updatedAt": "2026-01-01T10:30:22.000Z"
+                        },
+                        {
+                          "_id": "671c2f0d9f4e2b0099999999",
+                          "company": "66fb1c7a8d2eaa0012345678",
+                          "creator": "66fb1c7a8d2eaa0098765432",
+                          "name": "New Municipality Road",
+                          "category": "Infrastructure",
+                          "description": "Road construction in district A",
+                          "startDate": "2026-02-01T00:00:00.000Z",
+                          "budget": 2500000,
+                          "status": "active",
+                          "allowMultiple": false,
+                          "createdAt": "2026-02-01T09:10:00.000Z",
+                          "updatedAt": "2026-02-01T09:10:00.000Z"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated user",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden – user lacks required role",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizeError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Create a new project",
+        "description": "Creates a project within the authenticated user's company. Only `procurement` and `contract_manager` roles are allowed.",
+        "tags": [
+          "Project"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-roles": [
+          "procurement",
+          "contract_manager"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateProjectInput"
+              },
+              "examples": {
+                "basic": {
+                  "summary": "Minimal valid project",
+                  "value": {
+                    "name": "New Municipality Road",
+                    "category": "Infrastructure",
+                    "description": "Road construction in district A",
+                    "budget": 2500000,
+                    "allowMultiple": false
+                  }
+                },
+                "withDates": {
+                  "summary": "Project with start and end dates",
+                  "value": {
+                    "name": "School Renovation",
+                    "category": "Education",
+                    "description": "Renovation of central school blocks",
+                    "startDate": "2026-01-15",
+                    "endDate": "2026-09-30",
+                    "budget": 1200000,
+                    "allowMultiple": true
+                  }
+                },
+                "withFiles": {
+                  "summary": "Project payload including files metadata",
+                  "value": {
+                    "name": "Bridge Maintenance",
+                    "category": "Infrastructure",
+                    "description": "Routine maintenance and inspection",
+                    "budget": 500000,
+                    "allowMultiple": false,
+                    "files": [
+                      {
+                        "name": "specifications.pdf",
+                        "url": "https://example.com/files/specifications.pdf",
+                        "type": "application/pdf",
+                        "size": 1048576
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Project created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseProject"
+                },
+                "examples": {
+                  "created": {
+                    "value": {
+                      "status": 201,
+                      "message": "Project created successfully",
+                      "data": {
+                        "_id": "671c2f0d9f4e2b0012345678",
+                        "company": "66fb1c7a8d2eaa0012345678",
+                        "creator": "66fb1c7a8d2eaa0098765432",
+                        "name": "School Renovation",
+                        "category": "Education",
+                        "description": "Renovation of central school blocks",
+                        "startDate": "2026-01-15T00:00:00.000Z",
+                        "endDate": "2026-09-30T00:00:00.000Z",
+                        "budget": 1200000,
+                        "status": "active",
+                        "allowMultiple": true,
+                        "createdAt": "2026-01-01T10:30:22.000Z",
+                        "updatedAt": "2026-01-01T10:30:22.000Z"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated user",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedError"
+                },
+                "examples": {
+                  "unauthenticated": {
+                    "value": {
+                      "status": "error",
+                      "message": "Unauthenticated user"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden – user lacks required role",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizeError"
+                },
+                "examples": {
+                  "forbidden": {
+                    "value": {
+                      "status": "error",
+                      "message": "Access denied"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Duplicate entry detected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DuplicateError"
+                },
+                "examples": {
+                  "duplicate": {
+                    "value": {
+                      "status": "error",
+                      "message": "Duplicate entry: name with value \"School Renovation\" already exists"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation error (zod/mongoose)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                },
+                "examples": {
+                  "zod": {
+                    "value": {
+                      "status": "error",
+                      "message": "Validation Error - name - Required. budget - Expected number."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/manager/types": {
+      "get": {
+        "summary": "List contract types",
+        "description": "Returns all contract types available.",
+        "tags": [
+          "ContractManager - Contract"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-roles": [
+          "view_only",
+          "approvals",
+          "company_admin",
+          "contract_manager",
+          "procurement"
+        ],
+        "responses": {
+          "200": {
+            "description": "Contract types fetched successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseContractTypeList"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated user",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden – user lacks required role",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizeError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/manager/payment-terms": {
+      "get": {
+        "summary": "List contract payment terms",
+        "description": "Returns all supported contract payment terms.",
+        "tags": [
+          "ContractManager - Contract"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-roles": [
+          "view_only",
+          "approvals",
+          "company_admin",
+          "contract_manager",
+          "procurement"
+        ],
+        "responses": {
+          "200": {
+            "description": "Contract payment terms fetched successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseContractPaymentTermList"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated user",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden – user lacks required role",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizeError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/manager/terms": {
+      "get": {
+        "summary": "List contract term types",
+        "description": "Returns all contract term types.",
+        "tags": [
+          "ContractManager - Contract"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-roles": [
+          "view_only",
+          "approvals",
+          "company_admin",
+          "contract_manager",
+          "procurement"
+        ],
+        "responses": {
+          "200": {
+            "description": "Contract terms fetched successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseContractTermTypeList"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated user",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden – user lacks required role",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizeError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/manager/awarded-solicitation": {
+      "get": {
+        "summary": "List awarded vendors without contracts",
+        "description": "Returns awarded vendors for solicitations in the company that have not been linked to any contract.",
+        "tags": [
+          "ContractManager - Contract"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-roles": [
+          "procurement",
+          "contract_manager"
+        ],
+        "responses": {
+          "200": {
+            "description": "Awarded solicitation vendors fetched successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseAwardedVendorList"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated user",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden – user lacks required role",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizeError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/manager/personnel": {
+      "get": {
+        "summary": "List contract personnel",
+        "description": "Returns users in the company eligible for contract-related roles.",
+        "tags": [
+          "ContractManager - Contract"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-roles": [
+          "procurement",
+          "contract_manager"
+        ],
+        "responses": {
+          "200": {
+            "description": "Contract personnel fetched successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseUserList"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated user",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden – user lacks required role",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizeError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/manager/contracts": {
+      "post": {
+        "summary": "Create a new contract",
+        "description": "Creates a contract within the authenticated user's company. Only `procurement` and `contract_manager` roles are allowed.",
+        "tags": [
+          "ContractManager - Contract"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-roles": [
+          "procurement",
+          "contract_manager"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateContractInput"
+              },
+              "examples": {
+                "basic": {
+                  "summary": "Minimal valid contract",
+                  "value": {
+                    "title": "Janitorial Services",
+                    "description": "Routine office cleaning services",
+                    "category": "Facilities",
+                    "timezone": "America/New_York",
+                    "status": "publish",
+                    "paymentStructure": "Monthly",
+                    "contractType": "671c2f0d9f4e2b0012345678",
+                    "contractRelationship": "standalone"
+                  }
+                },
+                "withProject": {
+                  "summary": "Contract under a project",
+                  "value": {
+                    "title": "School Renovation Works",
+                    "description": "Interior and exterior renovation",
+                    "category": "Construction",
+                    "timezone": "America/Chicago",
+                    "status": "draft",
+                    "paymentStructure": "Progress Draw",
+                    "contractType": "671c2f0d9f4e2b0012345678",
+                    "contractRelationship": "project",
+                    "projectId": "66fb1c7a8d2eaa0012345678",
+                    "allowMultiple": true
+                  }
+                },
+                "withVendorAndFiles": {
+                  "summary": "Contract with vendor, deliverables, files",
+                  "value": {
+                    "title": "Bridge Inspection",
+                    "description": "Routine inspection of municipal bridges",
+                    "category": "Infrastructure",
+                    "timezone": "America/Los_Angeles",
+                    "status": "publish",
+                    "paymentStructure": "Monthly",
+                    "contractType": "671c2f0d9f4e2b0012345678",
+                    "paymentTerm": "671c2f0d9f4e2b0099999999",
+                    "contractRelationship": "standalone",
+                    "vendor": "vendor@example.com",
+                    "personnel": [
+                      {
+                        "name": "Jane Doe",
+                        "role": "Supervisor",
+                        "email": "jane.doe@example.com",
+                        "phone": "+1-555-0101"
+                      }
+                    ],
+                    "deliverables": [
+                      {
+                        "name": "Initial Report",
+                        "dueDate": "2026-02-15"
+                      }
+                    ],
+                    "files": [
+                      {
+                        "name": "scope.pdf",
+                        "url": "https://example.com/scope.pdf",
+                        "type": "application/pdf",
+                        "size": 123456
+                      }
+                    ]
+                  }
+                },
+                "withMilestone": {
+                  "summary": "Contract with milestones (amount, due date, name)",
+                  "value": {
+                    "title": "Road Repair",
+                    "description": "Patching and resurfacing",
+                    "category": "Infrastructure",
+                    "timezone": "America/New_York",
+                    "status": "publish",
+                    "contractType": "671c2f0d9f4e2b0012345678",
+                    "paymentStructure": "Milestone",
+                    "contractRelationship": "standalone",
+                    "milestone": [
+                      {
+                        "amount": 250000,
+                        "dueDate": "2026-03-01",
+                        "name": "Phase 1 Completion"
+                      },
+                      {
+                        "amount": 150000,
+                        "dueDate": "2026-05-15",
+                        "name": "Final Delivery"
+                      }
+                    ]
+                  }
+                },
+                "withApprovals": {
+                  "summary": "Contract with approvals (levels 1-5)",
+                  "value": {
+                    "title": "IT Equipment Supply",
+                    "description": "Supply of laptops and accessories",
+                    "category": "IT",
+                    "timezone": "UTC",
+                    "status": "draft",
+                    "contractType": "671c2f0d9f4e2b0012345678",
+                    "contractRelationship": "standalone",
+                    "approvals": [
+                      {
+                        "user": [
+                          "approver1@example.com"
+                        ],
+                        "groupName": "Group 1",
+                        "levelName": 1
+                      },
+                      {
+                        "user": [
+                          "approver2@example.com",
+                          "approver3@example.com"
+                        ],
+                        "groupName": "Group 2",
+                        "levelName": 2
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Contract created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseContract"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated user",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden – user lacks required role",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizeError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation error (zod/mongoose)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "summary": "List contracts",
+        "description": "Returns contracts belonging to the authenticated user's company.",
+        "tags": [
+          "ContractManager - Contract"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-roles": [
+          "view_only",
+          "approvals",
+          "company_admin",
+          "contract_manager",
+          "procurement"
+        ],
+        "responses": {
+          "200": {
+            "description": "Contracts fetched successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseContractList"
+                },
+                "examples": {
+                  "list": {
+                    "value": {
+                      "status": 200,
+                      "message": "Contracts fetched successfully",
+                      "data": [
+                        {
+                          "_id": "671c2f0d9f4e2b0012345678",
+                          "title": "Bridge Inspection",
+                          "description": "Routine inspection of municipal bridges",
+                          "category": "Infrastructure",
+                          "contractRelationship": "standalone",
+                          "status": "active",
+                          "deliverables": [
+                            {
+                              "name": "Initial Report",
+                              "dueDate": "2026-02-15T00:00:00.000Z"
+                            }
+                          ],
+                          "files": [
+                            {
+                              "name": "scope.pdf",
+                              "url": "https://example.com/scope.pdf",
+                              "type": "application/pdf",
+                              "size": "123456"
+                            }
+                          ],
+                          "createdAt": "2026-01-01T10:30:22.000Z",
+                          "updatedAt": "2026-01-01T10:30:22.000Z"
+                        },
+                        {
+                          "_id": "671c2f0d9f4e2b0099999999",
+                          "title": "IT Equipment Supply",
+                          "description": "Supply of laptops and accessories",
+                          "category": "IT",
+                          "contractRelationship": "standalone",
+                          "status": "pending_approval",
+                          "createdAt": "2026-02-01T09:10:00.000Z",
+                          "updatedAt": "2026-02-01T09:10:00.000Z"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated user",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden – user lacks required role",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizeError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/manager/contracts/me": {
+      "get": {
+        "summary": "List my contracts",
+        "description": "Returns contracts created by the authenticated user in their company.",
+        "tags": [
+          "ContractManager - Contract"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-roles": [
+          "view_only",
+          "approvals",
+          "company_admin",
+          "contract_manager",
+          "procurement"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "status",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "draft",
+                "pending_approval",
+                "active",
+                "completed",
+                "suspended",
+                "expired",
+                "terminated"
+              ]
+            },
+            "description": "Filter by contract status"
+          },
+          {
+            "in": "query",
+            "name": "category",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filter by contract category"
+          },
+          {
+            "in": "query",
+            "name": "date",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            },
+            "description": "Return contracts having startDate \u003E= date (ISO 8601)"
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 10
+            },
+            "description": "Page size"
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            },
+            "description": "Page number"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Contracts fetched successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseContractList"
+                },
+                "examples": {
+                  "list": {
+                    "value": {
+                      "status": 200,
+                      "message": "Contracts fetched successfully",
+                      "data": [
+                        {
+                          "_id": "671c2f0d9f4e2b0012345678",
+                          "title": "Bridge Inspection",
+                          "description": "Routine inspection of municipal bridges",
+                          "category": "Infrastructure",
+                          "contractRelationship": "standalone",
+                          "status": "active",
+                          "deliverables": [
+                            {
+                              "name": "Initial Report",
+                              "dueDate": "2026-02-15T00:00:00.000Z"
+                            }
+                          ],
+                          "files": [
+                            {
+                              "name": "scope.pdf",
+                              "url": "https://example.com/scope.pdf",
+                              "type": "application/pdf",
+                              "size": "123456"
+                            }
+                          ],
+                          "createdAt": "2026-01-01T10:30:22.000Z",
+                          "updatedAt": "2026-01-01T10:30:22.000Z"
+                        },
+                        {
+                          "_id": "671c2f0d9f4e2b0099999999",
+                          "title": "IT Equipment Supply",
+                          "description": "Supply of laptops and accessories",
+                          "category": "IT",
+                          "contractRelationship": "standalone",
+                          "status": "pending_approval",
+                          "createdAt": "2026-02-01T09:10:00.000Z",
+                          "updatedAt": "2026-02-01T09:10:00.000Z"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated user",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden – user lacks required role",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizeError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/manager/contracts/{contractId}": {
+      "get": {
+        "summary": "Get a contract by ID",
+        "description": "Returns a single contract by its ID within the authenticated user's company.",
+        "tags": [
+          "ContractManager - Contract"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-roles": [
+          "view_only",
+          "approvals",
+          "company_admin",
+          "contract_manager",
+          "procurement"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "contractId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Contract ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Contract fetched successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseContract"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated user",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden – user lacks required role",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizeError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/manager/contracts/stats": {
+      "get": {
+        "summary": "Get contract statistics",
+        "description": "Returns aggregate counts of contracts for the authenticated user's company.",
+        "tags": [
+          "ContractManager - Contract"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-roles": [
+          "view_only",
+          "approvals",
+          "company_admin",
+          "contract_manager",
+          "procurement"
+        ],
+        "responses": {
+          "200": {
+            "description": "Contract stats fetched successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseContractStats"
+                },
+                "examples": {
+                  "stats": {
+                    "value": {
+                      "status": 200,
+                      "message": "Contract stats fetched successfully",
+                      "data": {
+                        "all": 42,
+                        "draft": 8,
+                        "pending_approval": 6,
+                        "active": 18,
+                        "completed": 6,
+                        "suspended": 2,
+                        "expired": 1,
+                        "terminated": 1
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated user",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden – user lacks required role",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizeError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/manager/contracts/{contractId}/manage": {
+      "post": {
+        "summary": "Become a contract manager",
+        "description": "Adds the authenticated user as a manager of the contract if not already a manager or the creator.",
+        "tags": [
+          "ContractManager - Contract"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-roles": [
+          "company_admin",
+          "contract_manager",
+          "procurement"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "contractId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Contract ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Manager assignment processed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseMessage"
+                },
+                "examples": {
+                  "alreadyManager": {
+                    "value": {
+                      "status": 200,
+                      "message": "You are already a manager of this contract"
+                    }
+                  },
+                  "creator": {
+                    "value": {
+                      "status": 200,
+                      "message": "You are the creator of this contract"
+                    }
+                  },
+                  "assigned": {
+                    "value": {
+                      "status": 200,
+                      "message": "You are now a manager of this contract"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated user",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden – user lacks required role",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizeError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Contract or User not found"
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/manager/contracts/{contractId}/status": {
+      "put": {
+        "summary": "Update contract status",
+        "description": "Updates the status of a contract. Allowed statuses are completed, suspended, or terminated.",
+        "tags": [
+          "ContractManager - Contract"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-roles": [
+          "company_admin",
+          "contract_manager",
+          "procurement"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "contractId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Contract ID"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateContractStatusInput"
+              },
+              "examples": {
+                "suspend": {
+                  "value": {
+                    "status": "suspended"
+                  }
+                },
+                "complete": {
+                  "value": {
+                    "status": "completed"
+                  }
+                },
+                "terminate": {
+                  "value": {
+                    "status": "terminated"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Contract status updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseMessage"
+                },
+                "examples": {
+                  "ok": {
+                    "value": {
+                      "status": 200,
+                      "message": "Contract status updated"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated user",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden – user lacks required role",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizeError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Contract not found"
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/manager/contracts/{contractId}/changes/stats": {
+      "get": {
+        "summary": "Get contract change statistics",
+        "description": "Returns aggregate counts of change requests for the specified contract.",
+        "tags": [
+          "ContractManager - Contract"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-roles": [
+          "view_only",
+          "approvals",
+          "company_admin",
+          "contract_manager",
+          "procurement"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "contractId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Contract ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Contract change stats fetched successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseContractChangeStats"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated user"
+          },
+          "403": {
+            "description": "Forbidden – user lacks required role"
+          },
+          "404": {
+            "description": "Contract not found"
+          },
+          "500": {
+            "description": "Server error"
+          }
+        }
+      }
+    },
+    "/manager/contracts/{contractId}/claims/stats": {
+      "get": {
+        "summary": "Get contract claim statistics",
+        "description": "Returns aggregate counts of claims for the specified contract.",
+        "tags": [
+          "ContractManager - Contract"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-roles": [
+          "view_only",
+          "approvals",
+          "company_admin",
+          "contract_manager",
+          "procurement"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "contractId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Contract ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Contract claim stats fetched successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseContractClaimStats"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated user"
+          },
+          "403": {
+            "description": "Forbidden – user lacks required role"
+          },
+          "404": {
+            "description": "Contract not found"
+          },
+          "500": {
+            "description": "Server error"
+          }
+        }
+      }
+    },
+    "/manager/contracts/{contractId}/changes": {
+      "get": {
+        "summary": "List contract changes",
+        "description": "Returns changes linked to the specified contract.",
+        "tags": [
+          "ContractManager - Contract"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-roles": [
+          "view_only",
+          "approvals",
+          "company_admin",
+          "contract_manager",
+          "procurement"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "contractId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Contract ID"
+          },
+          {
+            "in": "query",
+            "name": "title",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filter by change title (substring match)"
+          },
+          {
+            "in": "query",
+            "name": "type",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "request",
+                "directive",
+                "proposal"
+              ]
+            },
+            "description": "Filter by change type"
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 10
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Contract changes fetched successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseContractChangeList"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated user"
+          },
+          "403": {
+            "description": "Forbidden – user lacks required role"
+          },
+          "404": {
+            "description": "Contract not found"
+          },
+          "500": {
+            "description": "Server error"
+          }
+        }
+      },
+      "post": {
+        "summary": "Request a contract change",
+        "description": "Creates a new change request for the specified contract.",
+        "tags": [
+          "ContractManager - Contract"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-roles": [
+          "contract_manager",
+          "procurement"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "contractId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Contract ID"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RequestContractChangeInput"
+              },
+              "examples": {
+                "request": {
+                  "value": {
+                    "title": "Extend completion date",
+                    "description": "Weather delays require extension",
+                    "type": "request"
+                  }
+                },
+                "directive": {
+                  "value": {
+                    "title": "Change material specification",
+                    "description": "Use alternate grade",
+                    "type": "directive"
+                  }
+                },
+                "proposal": {
+                  "value": {
+                    "title": "Add optional scope",
+                    "description": "Propose additional maintenance visits",
+                    "type": "proposal"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Contract change requested successfully"
+          },
+          "401": {
+            "description": "Unauthenticated user"
+          },
+          "403": {
+            "description": "Forbidden – user lacks required role"
+          },
+          "404": {
+            "description": "Contract not found"
+          },
+          "422": {
+            "description": "Validation error (zod/mongoose)"
+          },
+          "500": {
+            "description": "Server error"
+          }
+        }
+      }
+    },
+    "/manager/contracts/{contractId}/claims": {
+      "get": {
+        "summary": "List contract claims",
+        "description": "Returns claims linked to the specified contract.",
+        "tags": [
+          "ContractManager - Contract"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-roles": [
+          "view_only",
+          "approvals",
+          "company_admin",
+          "contract_manager",
+          "procurement"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "contractId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Contract ID"
+          },
+          {
+            "in": "query",
+            "name": "title",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filter by claim title (substring match)"
+          },
+          {
+            "in": "query",
+            "name": "type",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filter by claim type"
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 10
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Contract claims fetched successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseContractClaimList"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated user"
+          },
+          "403": {
+            "description": "Forbidden – user lacks required role"
+          },
+          "404": {
+            "description": "Contract not found"
+          },
+          "500": {
+            "description": "Server error"
+          }
+        }
+      }
+    },
+    "/manager/changes/{changeId}": {
+      "get": {
+        "summary": "Get a contract change",
+        "description": "Returns a single contract change by its ID.",
+        "tags": [
+          "ContractManager - Contract"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-roles": [
+          "view_only",
+          "approvals",
+          "company_admin",
+          "contract_manager",
+          "procurement"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "changeId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Contract change ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Contract change fetched successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseContractChange"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated user"
+          },
+          "403": {
+            "description": "Forbidden – user lacks required role"
+          },
+          "404": {
+            "description": "Change not found"
+          },
+          "500": {
+            "description": "Server error"
+          }
+        }
+      }
+    },
+    "/manager/claims/{claimId}": {
+      "get": {
+        "summary": "Get a contract claim",
+        "description": "Returns a single contract claim by its ID.",
+        "tags": [
+          "ContractManager - Contract"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-roles": [
+          "view_only",
+          "approvals",
+          "company_admin",
+          "contract_manager",
+          "procurement"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "claimId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Contract claim ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Contract claim fetched successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseContractClaim"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated user"
+          },
+          "403": {
+            "description": "Forbidden – user lacks required role"
+          },
+          "404": {
+            "description": "Claim not found"
+          },
+          "500": {
+            "description": "Server error"
+          }
+        }
+      }
+    },
+    "/manager/claims/{claimId}/comments": {
+      "get": {
+        "summary": "List comments on a contract claim",
+        "description": "Returns threaded comments for the specified contract claim.",
+        "tags": [
+          "ContractManager - Contract"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-roles": [
+          "view_only",
+          "approvals",
+          "company_admin",
+          "contract_manager",
+          "procurement"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "claimId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Contract claim ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Contract claim comments fetched successfully"
+          },
+          "401": {
+            "description": "Unauthenticated user"
+          },
+          "403": {
+            "description": "Forbidden – user lacks required role"
+          },
+          "404": {
+            "description": "Claim not found"
+          },
+          "500": {
+            "description": "Server error"
+          }
+        }
+      },
+      "post": {
+        "summary": "Add a comment to a contract claim",
+        "description": "Adds a comment to the specified contract claim.",
+        "tags": [
+          "ContractManager - Contract"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-roles": [
+          "contract_manager",
+          "procurement",
+          "approvals"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "claimId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Contract claim ID"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddCommentInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Contract claim comment added successfully"
+          },
+          "401": {
+            "description": "Unauthenticated user"
+          },
+          "403": {
+            "description": "Forbidden – user lacks required role"
+          },
+          "404": {
+            "description": "Claim not found"
+          },
+          "422": {
+            "description": "Validation error"
+          },
+          "500": {
+            "description": "Server error"
+          }
+        }
+      }
+    },
+    "/manager/claims/{claimId}/comments/{commentId}/reply": {
+      "post": {
+        "summary": "Reply to a contract claim comment",
+        "description": "Adds a threaded reply to an existing comment on the specified contract claim.",
+        "tags": [
+          "ContractManager - Contract"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-roles": [
+          "contract_manager",
+          "procurement",
+          "approvals"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "claimId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Contract claim ID"
+          },
+          {
+            "in": "path",
+            "name": "commentId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Comment ID"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReplyCommentInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Contract claim reply added successfully"
+          },
+          "401": {
+            "description": "Unauthenticated user"
+          },
+          "403": {
+            "description": "Forbidden – user lacks required role"
+          },
+          "404": {
+            "description": "Claim or Comment not found"
+          },
+          "422": {
+            "description": "Validation error"
+          },
+          "500": {
+            "description": "Server error"
+          }
+        }
+      }
+    },
+    "/manager/contracts/{contractId}/invoices": {
+      "get": {
+        "summary": "List contract invoices",
+        "description": "Returns invoices linked to the specified contract.",
+        "tags": [
+          "ContractManager - Contract"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-roles": [
+          "view_only",
+          "approvals",
+          "company_admin",
+          "contract_manager",
+          "procurement"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "contractId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Contract ID"
+          },
+          {
+            "in": "query",
+            "name": "invoiceId",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filter by invoice ID"
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 10
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Invoices fetched successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseInvoiceList"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated user"
+          },
+          "403": {
+            "description": "Forbidden – user lacks required role"
+          },
+          "404": {
+            "description": "Contract not found"
+          },
+          "500": {
+            "description": "Server error"
+          }
+        }
+      }
+    },
+    "/manager/invoices/{invoiceId}": {
+      "get": {
+        "summary": "Get a contract invoice",
+        "description": "Returns a single contract invoice by its ID.",
+        "tags": [
+          "ContractManager - Contract"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-roles": [
+          "view_only",
+          "approvals",
+          "company_admin",
+          "contract_manager",
+          "procurement"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "invoiceId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Contract invoice ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Invoice fetched successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseInvoice"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated user"
+          },
+          "403": {
+            "description": "Forbidden – user lacks required role"
+          },
+          "404": {
+            "description": "Invoice not found"
+          },
+          "500": {
+            "description": "Server error"
+          }
+        }
+      }
+    },
+    "/manager/invoices/{invoiceId}/files/{fileId}": {
+      "get": {
+        "summary": "Read a contract invoice file",
+        "description": "Returns the parsed content of an invoice file.",
+        "tags": [
+          "ContractManager - Contract"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-roles": [
+          "view_only",
+          "approvals",
+          "company_admin",
+          "contract_manager",
+          "procurement"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "invoiceId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Contract invoice ID"
+          },
+          {
+            "in": "path",
+            "name": "fileId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Invoice file ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Invoice file fetched and parsed successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated user"
+          },
+          "403": {
+            "description": "Forbidden – user lacks required role"
+          },
+          "404": {
+            "description": "Invoice or Document not found"
+          },
+          "500": {
+            "description": "Server error"
+          }
+        }
+      }
+    },
+    "/manager/contracts/{contractId}/rfis": {
+      "get": {
+        "summary": "List contract RFIs",
+        "description": "Returns RFIs linked to the specified contract.",
+        "tags": [
+          "ContractManager - Contract"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-roles": [
+          "view_only",
+          "approvals",
+          "company_admin",
+          "contract_manager",
+          "procurement"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "contractId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Contract ID"
+          },
+          {
+            "in": "query",
+            "name": "title",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filter by RFI title (substring match)"
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "open",
+                "issues",
+                "resolved",
+                "rejected",
+                "closed"
+              ]
+            },
+            "description": "Filter by RFI status"
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 10
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Contract RFIs fetched successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseRfiList"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated user"
+          },
+          "403": {
+            "description": "Forbidden – user lacks required role"
+          },
+          "404": {
+            "description": "Contract not found"
+          },
+          "500": {
+            "description": "Server error"
+          }
+        }
+      },
+      "post": {
+        "summary": "Create a new RFI",
+        "description": "Creates an RFI under the specified contract.",
+        "tags": [
+          "ContractManager - Contract"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-roles": [
+          "contract_manager",
+          "procurement"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "contractId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Contract ID"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateRfiInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Contract RFI created successfully"
+          },
+          "401": {
+            "description": "Unauthenticated user"
+          },
+          "403": {
+            "description": "Forbidden – user lacks required role"
+          },
+          "404": {
+            "description": "Contract not found"
+          },
+          "422": {
+            "description": "Validation error"
+          },
+          "500": {
+            "description": "Server error"
+          }
+        }
+      }
+    },
+    "/manager/rfis/{rfiId}": {
+      "get": {
+        "summary": "Get a contract RFI",
+        "description": "Returns a single contract RFI by its ID.",
+        "tags": [
+          "ContractManager - Contract"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-roles": [
+          "view_only",
+          "approvals",
+          "company_admin",
+          "contract_manager",
+          "procurement"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "rfiId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Contract RFI ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Contract RFI fetched successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseRfi"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated user"
+          },
+          "403": {
+            "description": "Forbidden – user lacks required role"
+          },
+          "404": {
+            "description": "RFI not found"
+          },
+          "500": {
+            "description": "Server error"
+          }
+        }
+      }
+    },
+    "/manager/rfis/{rfiId}/responses": {
+      "post": {
+        "summary": "Add a response to a contract RFI",
+        "description": "Adds a response to the specified RFI.",
+        "tags": [
+          "ContractManager - Contract"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-roles": [
+          "contract_manager",
+          "procurement",
+          "approvals"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "rfiId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Contract RFI ID"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RfiResponseInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Contract RFI response added successfully"
+          },
+          "401": {
+            "description": "Unauthenticated user"
+          },
+          "403": {
+            "description": "Forbidden – user lacks required role"
+          },
+          "404": {
+            "description": "RFI not found"
+          },
+          "422": {
+            "description": "Validation error"
+          },
+          "500": {
+            "description": "Server error"
+          }
+        }
+      }
+    },
+    "/manager/rfis/{rfiId}/responses/me": {
+      "get": {
+        "summary": "Get current user's RFI response",
+        "description": "Returns the response submitted by the current user for the specified RFI.",
+        "tags": [
+          "ContractManager - Contract"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-roles": [
+          "view_only",
+          "approvals",
+          "company_admin",
+          "contract_manager",
+          "procurement"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "rfiId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Contract RFI ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Contract RFI response fetched successfully"
+          },
+          "401": {
+            "description": "Unauthenticated user"
+          },
+          "403": {
+            "description": "Forbidden – user lacks required role"
+          },
+          "404": {
+            "description": "RFI or Response not found"
+          },
+          "500": {
+            "description": "Server error"
+          }
+        }
+      }
+    },
+    "/manager/changes/{changeId}/comments": {
+      "get": {
+        "summary": "List comments on a contract change",
+        "description": "Returns threaded comments for the specified contract change.",
+        "tags": [
+          "ContractManager - Contract"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-roles": [
+          "view_only",
+          "approvals",
+          "company_admin",
+          "contract_manager",
+          "procurement"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "changeId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Contract change ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Contract change comments fetched successfully"
+          },
+          "401": {
+            "description": "Unauthenticated user"
+          },
+          "403": {
+            "description": "Forbidden – user lacks required role"
+          },
+          "404": {
+            "description": "Change not found"
+          },
+          "500": {
+            "description": "Server error"
+          }
+        }
+      },
+      "post": {
+        "summary": "Add a comment to a contract change",
+        "description": "Adds a comment to the specified contract change.",
+        "tags": [
+          "ContractManager - Contract"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-roles": [
+          "contract_manager",
+          "procurement",
+          "approvals"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "changeId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Contract change ID"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddCommentInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Contract change comment added successfully"
+          },
+          "401": {
+            "description": "Unauthenticated user"
+          },
+          "403": {
+            "description": "Forbidden – user lacks required role"
+          },
+          "404": {
+            "description": "Change not found"
+          },
+          "422": {
+            "description": "Validation error"
+          },
+          "500": {
+            "description": "Server error"
+          }
+        }
+      }
+    },
+    "/manager/changes/{changeId}/comments/{commentId}/reply": {
+      "post": {
+        "summary": "Reply to a contract change comment",
+        "description": "Adds a threaded reply to an existing comment on the specified contract change.",
+        "tags": [
+          "ContractManager - Contract"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-roles": [
+          "contract_manager",
+          "procurement",
+          "approvals"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "changeId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Contract change ID"
+          },
+          {
+            "in": "path",
+            "name": "commentId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Comment ID"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReplyCommentInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Contract change reply added successfully"
+          },
+          "401": {
+            "description": "Unauthenticated user"
+          },
+          "403": {
+            "description": "Forbidden – user lacks required role"
+          },
+          "404": {
+            "description": "Change or Comment not found"
+          },
+          "422": {
+            "description": "Validation error"
+          },
+          "500": {
+            "description": "Server error"
+          }
+        }
+      }
+    },
+    "/manager/projects/stats": {
+      "get": {
+        "summary": "Get project statistics",
+        "description": "Returns aggregate counts of projects for the authenticated user's company.",
+        "tags": [
+          "Project"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-roles": [
+          "view_only",
+          "approvals",
+          "company_admin",
+          "contract_manager",
+          "procurement"
+        ],
+        "responses": {
+          "200": {
+            "description": "Project stats fetched successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseProjectStats"
+                },
+                "examples": {
+                  "stats": {
+                    "value": {
+                      "status": 200,
+                      "message": "Project stats fetched successfully",
+                      "data": {
+                        "all": 42,
+                        "active": 18,
+                        "completed": 20,
+                        "cancelled": 4
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated user",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden – user lacks required role",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizeError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/manager/projects/{projectId}": {
+      "get": {
+        "summary": "Get a project by ID",
+        "description": "Returns a single project belonging to the authenticated user's company.",
+        "tags": [
+          "Project"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-roles": [
+          "view_only",
+          "approvals",
+          "company_admin",
+          "contract_manager",
+          "procurement"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "projectId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "The project ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Project fetched successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseProject"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated user",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden – user lacks required role",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizeError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Project not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/manager/projects/{projectId}/contracts": {
+      "get": {
+        "summary": "List contracts linked to a project",
+        "description": "Returns contracts linked to the specified project within the authenticated user's company.",
+        "tags": [
+          "Project"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-roles": [
+          "view_only",
+          "approvals",
+          "company_admin",
+          "contract_manager",
+          "procurement"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "projectId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "The project ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Project contracts fetched successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseContractList"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated user",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden – user lacks required role",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizeError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Project not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/manager/projects/{projectId}/complete": {
+      "patch": {
+        "summary": "Mark project as complete",
+        "description": "Updates project status to `completed`.",
+        "tags": [
+          "Project"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-roles": [
+          "procurement",
+          "contract_manager"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "projectId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "The project ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Project marked as complete successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseProject"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated user",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden – user lacks required role",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizeError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Project not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Project",
+      "description": "API endpoint for managing project"
+    },
+    {
+      "name": "ContractManager - Contract",
+      "description": "API endpoint for managing contract"
+    }
+  ]
+}

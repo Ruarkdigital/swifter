@@ -5,13 +5,32 @@ export type UserRole =
   | "vendor"
   | "company_admin"
   | "super_admin"
-  | "procurement";
+  | "procurement"
+  | "contract_manager";
 
 export type Role = {
   _id: string;
   name: UserRole;
   __v: number;
 };
+
+export interface Modules {
+  contractManagement:          boolean;
+  _id:                         string;
+  companyId:                   string;
+  solicitationManagement:      boolean;
+  evaluationsManagement:       boolean;
+  vendorManagement:            boolean;
+  reportsAnalytics:            boolean;
+  vendorsQA:                   boolean;
+  generalUpdatesNotifications: boolean;
+  addendumManagement:          boolean;
+  myActions:                   boolean;
+  createdAt:                   Date;
+  updatedAt:                   Date;
+  __v:                         number;
+}
+
 
 export type User = {
   _id: string;
@@ -21,6 +40,7 @@ export type User = {
   name: string;
   role: Role;
   status: string;
+  module: Modules
   updatedAt: string;
   avatar?: string;
   phone?: string;
@@ -31,6 +51,8 @@ export type User = {
   website?: string;
   logo?: string
   isAi: boolean
+  isDeleted: boolean
+  contactEmail: string
 };
 
 export type ApiError = {

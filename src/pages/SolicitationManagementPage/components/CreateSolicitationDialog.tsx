@@ -212,6 +212,9 @@ const CreateSolicitationDialog = () => {
     defaultValues: {
       // Step 3 fields
       event: [{ event: "", location: "", date: "", time: "", note: "" }],
+      // Step 5 fields
+      vendor: [],
+      message: "",
     },
     // Add mode for validation
     mode: "onChange",
@@ -605,7 +608,7 @@ const CreateSolicitationDialog = () => {
         </div>
 
         {/* Form Content */}
-        <Forge control={forge.control} onSubmit={onSubmit}>
+        <Forge control={forge.control} onSubmit={onSubmit} >
           {currentStep === 1 && (
             <Step1Form
               solicitationTypes={solicitationTypes}

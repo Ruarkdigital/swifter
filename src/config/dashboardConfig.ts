@@ -3,12 +3,17 @@ import { UserRole } from "../types";
 
 // Dashboard configuration for different roles
 export interface DashboardConfig {
+  primaryTabs?: string[];
+  secondaryTabs?: string[];
+  showExport?: boolean;
   stats: {
     title: string;
     value: number;
     icon: string;
     color: string;
     bgColor: string;
+    filterOptions?: string[];
+    filterValue?: string;
   }[];
   rows: {
     type: "chart" | "activity" | "mixed";
@@ -499,6 +504,8 @@ const superAdminConfig: DashboardConfig = {
 
 // Procurement Dashboard Configuration
 const procurementConfig: DashboardConfig = {
+  primaryTabs: ["Overview", "Analytics"],
+  secondaryTabs: ["Total Contracts", "YTD Contracts"],
   stats: [
     {
       title: "All Solicitations",
@@ -631,6 +638,118 @@ const procurementConfig: DashboardConfig = {
   ],
 };
 
+// Contract Manager Dashboard Configuration (Empty State)
+const contractManagerConfig: DashboardConfig = {
+  primaryTabs: ["Overview", "Analytics"],
+  secondaryTabs: ["Total Contracts", "YTD Contracts"],
+  showExport: true,
+  stats: [
+    {
+      title: "All Contracts",
+      value: 0,
+      icon: "file",
+      color: "text-gray-600",
+      bgColor: "bg-gray-500/10",
+    },
+    {
+      title: "Active Contracts",
+      value: 0,
+      icon: "check-circle",
+      color: "text-green-600",
+      bgColor: "bg-green-500/10",
+    },
+    {
+      title: "Draft Contracts",
+      value: 0,
+      icon: "file",
+      color: "text-gray-600",
+      bgColor: "bg-gray-500/10",
+    },
+    {
+      title: "Suspended",
+      value: 0,
+      icon: "x-circle",
+      color: "text-red-600",
+      bgColor: "bg-red-500/10",
+    },
+    {
+      title: "Expired",
+      value: 0,
+      icon: "x-circle",
+      color: "text-red-600",
+      bgColor: "bg-red-500/10",
+    },
+    {
+      title: "Terminated",
+      value: 0,
+      icon: "x-circle",
+      color: "text-red-600",
+      bgColor: "bg-red-500/10",
+    },
+    {
+      title: "Total Contract Value",
+      value: 0,
+      icon: "creditCard",
+      color: "text-gray-700",
+      bgColor: "bg-gray-500/10",
+    },
+    {
+      title: "Committed vs Actual Value",
+      value: 0,
+      icon: "creditCard",
+      color: "text-green-700",
+      bgColor: "bg-green-500/10",
+    },
+    {
+      title: "Savings Realized",
+      value: 0,
+      icon: "creditCard",
+      color: "text-green-700",
+      bgColor: "bg-green-500/10",
+    },
+    {
+      title: "Upcoming Renewals",
+      value: 0,
+      icon: "clock",
+      color: "text-gray-700",
+      bgColor: "bg-gray-500/10",
+      filterOptions: ["30 day", "60 day", "90 day"],
+      filterValue: "30 day",
+    },
+    {
+      title: "High Risk Contracts",
+      value: 0,
+      icon: "x-circle",
+      color: "text-red-600",
+      bgColor: "bg-red-500/10",
+    },
+    {
+      title: "Holdbacks",
+      value: 0,
+      icon: "creditCard",
+      color: "text-gray-700",
+      bgColor: "bg-gray-500/10",
+    },
+  ],
+  rows: [
+    {
+      type: "activity",
+      properties: [
+        {
+          id: "my-actions",
+          title: "My Actions",
+          items: [],
+        },
+        {
+          id: "general-updates",
+          title: "General Updates",
+          items: [],
+        },
+      ],
+    },
+  ],
+};
+
 // Export dashboard configurations
 export const dashboardConfigs: Record<UserRole, DashboardConfig> = {
   evaluator: evaluatorConfig,
@@ -638,6 +757,7 @@ export const dashboardConfigs: Record<UserRole, DashboardConfig> = {
   company_admin: companyAdminConfig,
   super_admin: superAdminConfig,
   procurement: procurementConfig,
+  contract_manager: contractManagerConfig,
 };
 
 // Helper function to get dashboard config by role

@@ -12,7 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { useSetUser, useUser } from '@/store/authSlice';
 import { UserRole } from '@/types';
 import { getUser } from '@/demo';
-import { ChevronDown, User, Shield, Building, Crown, Briefcase } from 'lucide-react';
+import { ChevronDown, User, Shield, Building, Crown, Briefcase, FileText } from 'lucide-react';
 
 const roleConfig: Record<UserRole, { label: string; icon: React.ComponentType<{ className?: string }>; color: string }> = {
   evaluator: {
@@ -24,6 +24,11 @@ const roleConfig: Record<UserRole, { label: string; icon: React.ComponentType<{ 
     label: 'Vendor',
     icon: Briefcase,
     color: 'bg-green-100 text-green-800'
+  },
+  contract_manager: {
+    label: 'Contract Manager',
+    icon: FileText,
+    color: 'bg-slate-100 text-slate-800'
   },
   "company_admin": {
     label: 'Company Admin',

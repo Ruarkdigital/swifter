@@ -151,12 +151,13 @@ type DashboardStatsResponse = {
   closed: number;
   draft: number;
   all: number;
+  completed: number;
 };
 
 type SolicitationQueryParams = {
   page?: number;
   limit?: number;
-  status?: "draft" | "active" | "closed" | "awarded" | "evaluating";
+  status?: "draft" | "active" | "closed" | "awarded" | "evaluating" | "completed";
   categoryId?: string;
   date?: string;
   startDate?: string;
@@ -771,6 +772,7 @@ export const SolicitationManagementPage = () => {
         awarded: 0,
         closed: 0,
         all: 0,
+        completed: 0
       };
     }
     return dashboardStatsData.data.data;
@@ -1346,7 +1348,7 @@ export const SolicitationManagementPage = () => {
       </div>
 
       {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <StatCard
           title="All Solicitations"
           value={dashboardStats.total || dashboardStats.all || 0}
@@ -1446,6 +1448,19 @@ export const SolicitationManagementPage = () => {
             iconBgColor="bg-red-100"
             onClick={() => {
               setFilters((prev) => ({ ...prev, status: "closed", page: 1 }));
+              setPagination({ pageIndex: 0, pageSize: 10 });
+            }}
+          />
+        )}
+        {isProcurement && (
+          <StatCard
+            title="Completed Evaluations"
+            value={dashboardStats.completed}
+            icon={IconMap["folder-open"] as any}
+            iconColor="text-red-600"
+            iconBgColor="bg-red-100"
+            onClick={() => {
+              setFilters((prev) => ({ ...prev, status: "completed", page: 1 }));
               setPagination({ pageIndex: 0, pageSize: 10 });
             }}
           />

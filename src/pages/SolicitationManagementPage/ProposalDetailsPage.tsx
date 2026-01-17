@@ -601,18 +601,36 @@ const ProposalDetailsPage: React.FC = () => {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 {isDocFile ? (
-                  <DropdownMenuItem
-                    onClick={() => {
-                      handleViewDocument({
-                        url: document.url,
-                        name: document.name,
-                        type: document.type
-                      });
-                    }}
-                  >
-                    <Eye className="mr-2 h-4 w-4" />
-                    View
-                  </DropdownMenuItem>
+                  <>
+                    <DropdownMenuItem
+                      onClick={() => {
+                        handleViewDocument({
+                          url: document.url,
+                          name: document.name,
+                          type: document.type,
+                        });
+                      }}
+                    >
+                      <Eye className="mr-2 h-4 w-4" />
+                      View
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => {
+                        navigate(
+                          `/collaboration-tool?sourceUrl=${encodeURIComponent(
+                            document.url
+                          )}&fileName=${encodeURIComponent(
+                            document.name
+                          )}&fileType=${encodeURIComponent(
+                            document.type || ""
+                          )}`
+                        );
+                      }}
+                    >
+                      <Edit className="mr-2 h-4 w-4" />
+                      Edit in Collaboration Tool
+                    </DropdownMenuItem>
+                  </>
                 ) : (
                   <>
                     <DropdownMenuItem
@@ -767,8 +785,12 @@ const ProposalDetailsPage: React.FC = () => {
       cell: ({ row }) => {
         if (!isOwner) return null;
         const amendment = row.original;
-        
-        const handleViewDocument = (file: { name: string; url: string; type: string }) => {
+
+        const handleViewDocument = (file: {
+          name: string;
+          url: string;
+          type: string;
+        }) => {
           setSelectedDocument({
             url: file.url,
             name: file.name,
@@ -777,8 +799,11 @@ const ProposalDetailsPage: React.FC = () => {
           setViewerOpen(true);
         };
 
-        const handleDownloadDocument = (file: { name: string; url: string }) => {
-          const link = document.createElement('a');
+        const handleDownloadDocument = (file: {
+          name: string;
+          url: string;
+        }) => {
+          const link = document.createElement("a");
           link.href = file.url;
           link.download = file.name;
           document.body.appendChild(link);
@@ -790,11 +815,7 @@ const ProposalDetailsPage: React.FC = () => {
           <div className="flex items-center gap-2">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 w-8 p-0"
-                >
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
                   <MoreHorizontal className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
@@ -808,7 +829,9 @@ const ProposalDetailsPage: React.FC = () => {
                       View New Document
                     </DropdownMenuItem>
                     <DropdownMenuItem
-                      onClick={() => handleDownloadDocument(amendment.newFiles[0])}
+                      onClick={() =>
+                        handleDownloadDocument(amendment.newFiles[0])
+                      }
                     >
                       <Download className="mr-2 h-4 w-4" />
                       Download New Document
@@ -824,7 +847,9 @@ const ProposalDetailsPage: React.FC = () => {
                       View Original Document
                     </DropdownMenuItem>
                     <DropdownMenuItem
-                      onClick={() => handleDownloadDocument(amendment.oldFiles[0])}
+                      onClick={() =>
+                        handleDownloadDocument(amendment.oldFiles[0])
+                      }
                     >
                       <Download className="mr-2 h-4 w-4" />
                       Download Original Document
@@ -890,7 +915,10 @@ const ProposalDetailsPage: React.FC = () => {
           {isOwner && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="flex items-center space-x-2">
+                <Button
+                  variant="outline"
+                  className="flex items-center space-x-2"
+                >
                   <Share2 className="h-4 w-4" />
                   <span>Export</span>
                   <ChevronDown className="h-4 w-4" />
@@ -1040,9 +1068,9 @@ const ProposalDetailsPage: React.FC = () => {
                       } catch {
                         return true;
                       }
-                    })())
-                || solicitation?.status === "closed"
-                || solicitation?.status === "awarded"
+                    })()) ||
+                solicitation?.status === "closed" ||
+                solicitation?.status === "awarded"
               }
             >
               Submit for Vendor
@@ -1052,9 +1080,9 @@ const ProposalDetailsPage: React.FC = () => {
                 onClick={handleAwardVendor}
                 className="bg-blue-600 hover:bg-blue-700 text-white"
                 disabled={
-                  proposal?.proposalDetails?.status !== "submit"
-                  || solicitation?.status === "closed"
-                  || solicitation?.status === "awarded"
+                  proposal?.proposalDetails?.status !== "submit" ||
+                  solicitation?.status === "closed" ||
+                  solicitation?.status === "awarded"
                 }
               >
                 Award Vendor
@@ -1311,7 +1339,8 @@ const ProposalDetailsPage: React.FC = () => {
                         "text-left font-medium text-gray-700 dark:text-gray-300 py-3 px-4",
                       tRow: "bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg",
                       tCell: "py-4 px-4 text-sm",
-                      expandedRow: "bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg",
+                      expandedRow:
+                        "bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg",
                       expandedCell: "p-0",
                     }}
                   />
@@ -1428,7 +1457,7 @@ const ProposalDetailsPage: React.FC = () => {
           open={showAmendDialog}
           onOpenChange={setShowAmendDialog}
           documentName={selectedDocumentForAmend.name}
-          proposalId={proposal?.proposalDetails?.id!}
+          proposalId={proposal?.proposalDetails?.id ?? ""}
           requirementDocId={selectedDocumentForAmend.requiredDocId}
           fileId={selectedDocumentForAmend._id}
           onAmendSuccess={() => {
@@ -1446,14 +1475,14 @@ const ProposalDetailsPage: React.FC = () => {
       <ReadOnlyProposalDialog
         open={showReadOnlyProposalDialog}
         onOpenChange={setShowReadOnlyProposalDialog}
-        proposalId={proposal?.proposalDetails?.id!}
+        proposalId={proposal?.proposalDetails?.id ?? ""}
       />
 
       {/* Amend Proposal Dialog */}
       <AmendProposalDialog
         open={showAmendProposalDialog}
         onOpenChange={setShowAmendProposalDialog}
-        proposalId={proposal?.proposalDetails?.id!}
+        proposalId={proposal?.proposalDetails?.id ?? ""}
       />
 
       {/* Document Viewer Modal */}

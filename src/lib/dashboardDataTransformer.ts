@@ -1316,8 +1316,7 @@ export class DashboardDataTransformer {
               break;
             default:
               // Handle any other dataset names by converting to camelCase
-              const key = dataset.name.toLowerCase().replace(/\s+/g, "");
-              result[key] = value;
+              result[dataset.name.toLowerCase().replace(/\s+/g, "")] = value;
           }
         });
 
@@ -1899,7 +1898,7 @@ export class DashboardDataTransformer {
     if (!data || !Array.isArray(data)) {
       return [];
     }
-
+    
     return data.map((update: any, index: number) => ({
       id: update?.evaluation?._id || `update-${index}`,
       title: update?.evaluation?.solicitation?.name ?? "Unknown",
@@ -1918,9 +1917,8 @@ export class DashboardDataTransformer {
       date: update.createdAt
         ? formatDateTZ(
             update.date || update.updatedAt || update.createdAt,
-            "MMM d, yyyy h:mm a 'GMT'xxx",
-            update.solicitation?.timezone || ""
-          )
+            "MMM d, yyyy h:mm a "
+          ) +" " + update.evaluation?.timezone || ""
         : undefined,
     }));
   }

@@ -84,7 +84,7 @@ const MultipleSelector = React.forwardRef<
 
   const handleUnselect = React.useCallback(
     (option: Option) => {
-      const newSelectedValues = selectedValues.filter(
+      const newSelectedValues = selectedValues?.filter(
         (s) => s.value !== option.value
       )
       setSelectedValues(newSelectedValues)
@@ -104,13 +104,13 @@ const MultipleSelector = React.forwardRef<
       }
       
       const newOption: Option = {
-        label: inputValue.trim(),
-        value: inputValue.trim()
+        label: inputValue?.trim?.(),
+        value: inputValue?.trim?.()
       }
       
       // Check if option already exists
-      const exists = [...options, ...selectedValues].some(
-        option => option.value.toLowerCase() === newOption.value.toLowerCase()
+      const exists = [...options, ...selectedValues]?.some(
+        option => option.value?.toLowerCase?.() === newOption?.value?.toLowerCase?.()
       )
       
       if (!exists) {
@@ -126,7 +126,7 @@ const MultipleSelector = React.forwardRef<
   const handleKeyDown = React.useCallback(
     (e: React.KeyboardEvent<HTMLDivElement>) => {
       const input = e.target as HTMLInputElement
-      if (e.key === "Enter" && creatable && input.value.trim()) {
+      if (e.key === "Enter" && creatable && input.value?.trim?.()) {
         e.preventDefault()
         createOption(input.value)
         return
@@ -148,11 +148,11 @@ const MultipleSelector = React.forwardRef<
 
   const toggleOption = React.useCallback(
     (option: Option) => {
-      const newSelectedValues = selectedValues.some(
-        (selectedValue) => selectedValue.value === option.value
+      const newSelectedValues = selectedValues?.some(
+        (selectedValue) => selectedValue?.value === option?.value
       )
-        ? selectedValues.filter(
-            (selectedValue) => selectedValue.value !== option.value
+        ? selectedValues?.filter(
+            (selectedValue) => selectedValue?.value !== option?.value
           )
         : [...selectedValues, option]
       setSelectedValues(newSelectedValues)
@@ -171,7 +171,7 @@ const MultipleSelector = React.forwardRef<
   }, [])
 
   const clearExtraOptions = React.useCallback(() => {
-    const newSelectedValues = selectedValues.slice(0, maxCount)
+    const newSelectedValues = selectedValues?.slice?.(0, maxCount)
     setSelectedValues(newSelectedValues)
     onValueChange(newSelectedValues)
   }, [selectedValues, maxCount, onValueChange])
@@ -219,7 +219,7 @@ const MultipleSelector = React.forwardRef<
           {selectedValues.length > 0 ? (
             <div className="flex justify-between items-center w-full">
               <div className="flex flex-wrap items-center">
-                {selectedValues.slice(0, maxCount).map((option) => {
+                {selectedValues?.slice?.(0, maxCount)?.map?.((option) => {
                   const animationStyle = isAnimating
                     ? { animationDuration: `${animation}ms` }
                     : {}
@@ -335,7 +335,7 @@ const MultipleSelector = React.forwardRef<
                 /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(inputValue.trim()) &&
                 !options.some(option => 
                   option.value.toLowerCase() === inputValue.trim().toLowerCase()
-                ) && !selectedValues.some(option => 
+                ) && !selectedValues?.some?.(option => 
                   option.value.toLowerCase() === inputValue.trim().toLowerCase()
                 ) && (
                 <CommandItem
@@ -346,7 +346,7 @@ const MultipleSelector = React.forwardRef<
                 </CommandItem>
               )}
               {options.map((option) => {
-                const isSelected = selectedValues.some(
+                const isSelected = selectedValues?.some?.(
                   (selectedValue) => selectedValue.value === option.value
                 )
                 return (

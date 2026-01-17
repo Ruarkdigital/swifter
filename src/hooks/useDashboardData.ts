@@ -585,40 +585,28 @@ export const useDashboardData = (
         return DashboardDataTransformer.transformSubDistribution(
           subDistribution?.data?.data
         );
-      case "company-status":
-        // API now returns direct array structure: [{ label: "Jul", total: 8, active: 8, expiring: 0, suspended: 0 }]
+      case "company-status": {
         const companyStatusData = companyStatus?.data?.data;
-        let transformedCompanyStatus;
         if (Array.isArray(companyStatusData) && companyStatusData.length > 0) {
-          // Handle both old nested structure and new direct array structure
           if (companyStatusData[0]?.timeStats) {
-            // Old structure: Extract timeStats from the first element
-            transformedCompanyStatus =
-              DashboardDataTransformer.transformCompanyStatus(
-                companyStatusData[0]
-              );
-          } else {
-            // New structure: Pass the array directly
-            transformedCompanyStatus =
-              DashboardDataTransformer.transformCompanyStatus(
-                companyStatusData
-              );
+            return DashboardDataTransformer.transformCompanyStatus(
+              companyStatusData[0]
+            );
           }
-        } else {
-          transformedCompanyStatus =
-            DashboardDataTransformer.transformCompanyStatus(undefined);
+          return DashboardDataTransformer.transformCompanyStatus(companyStatusData);
         }
-        return transformedCompanyStatus;
-      case "module-usage":
-        // API returns ModuleUsage object directly
+        return DashboardDataTransformer.transformCompanyStatus(undefined);
+      }
+      case "module-usage": {
         const moduleUsageData = moduleUsage?.data?.data;
         return DashboardDataTransformer.transformModuleUsage(moduleUsageData);
-      case "solicitation-status":
+      }
+      case "solicitation-status": {
         const solicitationStatusData = solicitationStatus?.data?.data;
-        const res = DashboardDataTransformer.transformSolicitationStatusChart(
+        return DashboardDataTransformer.transformSolicitationStatusChart(
           solicitationStatusData
         );
-        return res;
+      }
       case "vendors-bid-intent-status":
         return DashboardDataTransformer.transformBidIntentChart(
           bidIntent?.data?.data
@@ -665,26 +653,20 @@ export const useDashboardData = (
           proposalSubmission?.data?.data,
           "line"
         );
-      case "weekly-activities":
-        return DashboardDataTransformer.transformChartData(
-          "weekly-activities",
-          procurementWeeklyActivities?.data?.data,
-          "area"
-        );
       case "solicitation-activities":
         return DashboardDataTransformer.transformChartData(
           "solicitation-activities",
           procurementWeeklyActivities?.data?.data,
           "area"
         );
-      case "total-evaluation":
+      case "total-evaluation": {
         const resp = procurementTotalEvaluations?.data?.data;
-
         return DashboardDataTransformer.transformChartData(
           "total-evaluation",
           resp,
           "bar"
         );
+      }
       default:
         return [];
     }

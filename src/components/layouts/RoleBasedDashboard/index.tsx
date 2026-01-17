@@ -1,8 +1,10 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import React, { useState, useMemo } from "react";
-// import { ExportReportSheet } from "@/components/layouts/ExportReportSheet";
+import { ExportReportSheet } from "@/components/layouts/ExportReportSheet";
 import { useNavigate } from "react-router-dom";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useDashboardData } from "@/hooks/useDashboardData";
+import { useUser } from "@/store/authSlice";
 import { DashboardDataTransformer } from "@/lib/dashboardDataTransformer";
 import { ChartComponent } from "./components/ChartCard";
 import { ActivityComponent } from "./components/ActivityCard";
@@ -14,6 +16,8 @@ import { PageLoader } from "@/components/ui/PageLoader";
 // Main Role-Based Dashboard Component
 export const RoleBasedDashboard: React.FC = () => {
   const { dashboardConfig, userRole } = useUserRole();
+  const user = useUser();
+  const modules = user?.module;
   // Individual chart filters instead of global filter
   const [chartFilters, setChartFilters] = useState<Record<string, string>>({});
   const navigate = useNavigate();
@@ -449,6 +453,16 @@ export const RoleBasedDashboard: React.FC = () => {
     vendorGeneralUpdates,
   ]);
 
+  const primaryTabs = enhancedDashboardConfig.primaryTabs || [];
+  const secondaryTabs = enhancedDashboardConfig.secondaryTabs || [];
+
+  const [activePrimaryTab, setActivePrimaryTab] = useState(
+    primaryTabs[0] || "Overview"
+  );
+  const [activeSecondaryTab, setActiveSecondaryTab] = useState(
+    secondaryTabs[0] || "Total Contracts"
+  );
+
   // Handle individual chart filter changes
   const handleFilterChange = (chartId?: string, filter?: string) => {
     if (!chartId || !filter) return;
@@ -587,13 +601,63 @@ export const RoleBasedDashboard: React.FC = () => {
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-medium text-gray-900 dark:text-gray-100">
-            Dashboard
-          </h1>
+      <div className="flex flex-col gap-4">
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-2xl font-medium text-gray-900 dark:text-gray-100">
+              Dashboard
+            </h1>
+          </div>
+          {enhancedDashboardConfig.showExport && (
+            <ExportReportSheet>
+              <button className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50">
+                <span>Export</span>
+              </button>
+            </ExportReportSheet>
+          )}
         </div>
-        {/* <ExportReportSheet /> */}
+
+        {primaryTabs.length > 0 && (
+          <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 pb-2">
+            <div className="flex gap-2 rounded-full bg-slate-100 p-1 text-sm">
+              {primaryTabs.map((tab) => (
+                <button
+                  key={tab}
+                  type="button"
+                  className={cn(
+                    "rounded-full px-4 py-1.5 text-sm font-medium text-slate-500",
+                    activePrimaryTab === tab &&
+                      "bg-white text-slate-900 shadow-sm"
+                  )}
+                  onClick={() => setActivePrimaryTab(tab)}
+                >
+                  {tab}
+                </button>
+              ))}
+            </div>
+
+            {secondaryTabs.length > 0 && (
+              <div className="flex gap-2 text-xs">
+                {secondaryTabs.map((tab) => (
+                  <button
+                    key={tab}
+                    type="button"
+                    className={cn(
+                      "rounded-full px-3 py-1 font-medium",
+                      activeSecondaryTab === tab
+                        ? "bg-slate-900 text-white"
+                        : "text-slate-500 border border-slate-200 bg-white"
+                    )}
+                    onClick={() => setActiveSecondaryTab(tab)}
+                  >
+                    {tab}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
       </div>
 
       {/* Stats Cards */}
@@ -618,6 +682,18 @@ export const RoleBasedDashboard: React.FC = () => {
       {/* Activities and Charts Section */}
       {enhancedDashboardConfig.rows?.map?.((item, rowIndex) => {
         if (item.type === "activity") {
+          const gatedActivities = item.properties.filter((activity) => {
+            if (activity.id === "my-actions" && modules?.myActions !== true) {
+              return false;
+            }
+            if (
+              activity.id === "general-updates" &&
+              modules?.generalUpdatesNotifications !== true
+            ) {
+              return false;
+            }
+            return true;
+          });
           return (
             <div
               key={`activity-row-${rowIndex}`}
@@ -626,7 +702,7 @@ export const RoleBasedDashboard: React.FC = () => {
                 item.className
               )}
             >
-              {item.properties.map((activity, index) => (
+              {gatedActivities.map((activity, index) => (
                 <ActivityComponent key={index} activity={activity} />
               ))}
             </div>
@@ -662,39 +738,57 @@ export const RoleBasedDashboard: React.FC = () => {
                 item.className
               )}
             >
-              {item.properties?.map?.((component, index) => {
-                // Check if component has activity-specific properties
-                if (component.items) {
-                  return (
-                    <ActivityComponent
-                      key={`activity-${index}`}
-                      activity={component}
-                    />
-                  );
-                } else {
-                  // Assume it's a chart component
-                  return (
-                    <ChartComponent
-                      key={`chart-${component.id || index}`}
-                      chart={component}
-                      selected={getChartFilter(
-                        component.id || `chart-${index}`
-                      )}
-                      onFilterChange={(filter) =>
-                        handleFilterChange(
-                          component.id || `chart-${index}`,
-                          filter
-                        )
-                      }
-                      chartData={
-                        getChartData
-                          ? getChartData(component.id || `chart-${index}`)
-                          : component.data
-                      }
-                    />
-                  );
-                }
-              })}
+              {item.properties
+                ?.filter?.((component) => {
+                  if (
+                    component.items &&
+                    component.title === "General Updates" &&
+                    modules?.generalUpdatesNotifications !== true
+                  ) {
+                    return false;
+                  }
+                  if (
+                    component.items &&
+                    component.id === "my-actions" &&
+                    modules?.myActions !== true
+                  ) {
+                    return false;
+                  }
+                  return true;
+                })
+                ?.map?.((component, index) => {
+                  // Check if component has activity-specific properties
+                  if (component.items) {
+                    return (
+                      <ActivityComponent
+                        key={`activity-${index}`}
+                        activity={component}
+                      />
+                    );
+                  } else {
+                    // Assume it's a chart component
+                    return (
+                      <ChartComponent
+                        key={`chart-${component.id || index}`}
+                        chart={component}
+                        selected={getChartFilter(
+                          component.id || `chart-${index}`
+                        )}
+                        onFilterChange={(filter) =>
+                          handleFilterChange(
+                            component.id || `chart-${index}`,
+                            filter
+                          )
+                        }
+                        chartData={
+                          getChartData
+                            ? getChartData(component.id || `chart-${index}`)
+                            : component.data
+                        }
+                      />
+                    );
+                  }
+                })}
             </div>
           );
         }

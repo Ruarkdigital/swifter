@@ -159,6 +159,9 @@ const CreateUserDialog = () => {
     { value: "company_admin", label: "Company Admin" },
     { value: "procurement", label: "Procurement Lead" },
     { value: "evaluator", label: "Evaluator" },
+    { value: "contract_manager", label: "Contract Manager" },
+    { value: "view_only", label: "View Only" },
+    { value: "approver", label: "Approver" },
   ];
 
   return (
