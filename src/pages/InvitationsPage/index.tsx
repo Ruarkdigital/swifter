@@ -78,7 +78,7 @@ const mapApiStatusToUIStatus = (apiStatus: string): Invitation["status"] => {
 
 // Transform API data to UI format
 const transformSolicitationToInvitation = (
-  solicitation: VendorSolicitation
+  solicitation: VendorSolicitation,
 ): Invitation => {
   return {
     id: solicitation._id,
@@ -89,12 +89,12 @@ const transformSolicitationToInvitation = (
     invitedDate: formatDateTZ(
       solicitation?.vendor?.invitedAt ?? solicitation.createdAt,
       "MMM d, yyyy hh:mm a",
-      solicitation?.timezone
+      solicitation?.timezone,
     ),
     deadline: formatDateTZ(
       solicitation.submissionDeadline as any,
       "MMM d, yyyy hh:mm a",
-      solicitation?.timezone
+      solicitation?.timezone,
     ),
     timezone: solicitation?.timezone || "UTC",
     status: mapApiStatusToUIStatus(solicitation.vendor.status),
@@ -244,7 +244,7 @@ const InvitationsPage = () => {
   const transformedData = useMemo(() => {
     if (!invitationsData?.data?.data?.data) return [];
     return invitationsData.data?.data?.data?.map?.(
-      transformSolicitationToInvitation
+      transformSolicitationToInvitation,
     );
   }, [invitationsData]);
 
@@ -345,7 +345,7 @@ const InvitationsPage = () => {
       cell: ({ row }) => {
         // Find the original VendorSolicitation data for this row
         const originalSolicitation = invitationsData?.data?.data?.data?.find(
-          (sol: VendorSolicitation) => sol._id === row.original.id
+          (sol: VendorSolicitation) => sol._id === row.original.id,
         );
         // console.log({ originalSolicitation, row: row.original });
 
@@ -523,6 +523,9 @@ const InvitationsPage = () => {
       <SolicitationDetailsSheet
         open={isSheetOpen}
         disableButton
+        originalData={
+          selectedInvitation as unknown as any
+        }
         onOpenChange={(open) => {
           setIsSheetOpen(open);
           if (!open) {

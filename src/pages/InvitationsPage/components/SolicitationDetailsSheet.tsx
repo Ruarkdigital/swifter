@@ -53,10 +53,7 @@ type SolicitationFile = {
 type SolicitationVendor = {
   email: string;
   status: "invited" | "confirmed" | "declined";
-  id: {
-    _id: string;
-    name: string;
-  };
+  id: string;
   responseStatus: string;
 };
 
@@ -112,6 +109,7 @@ const SolicitationDetailsSheet: React.FC<SolicitationDetailsSheetProps> = ({
   disableButton,
   originalData,
 }) => {
+
   const queryClient = useQueryClient();
   const toastHandlers = useToastHandler();
   const user = useUser();
@@ -161,7 +159,8 @@ const SolicitationDetailsSheet: React.FC<SolicitationDetailsSheetProps> = ({
     onSuccess: (result) => {
       toastHandlers.success(
         "Interest Confirmed",
-        result.data.message || "Successfully confirmed interest in solicitation"
+        result.data.message ||
+          "Successfully confirmed interest in solicitation",
       );
       // Invalidate and refetch related queries
       queryClient.invalidateQueries({
@@ -179,7 +178,7 @@ const SolicitationDetailsSheet: React.FC<SolicitationDetailsSheetProps> = ({
     onError: (error) => {
       toastHandlers.error(
         "Confirmation Failed",
-        error.message || "Failed to confirm interest in solicitation"
+        error.message || "Failed to confirm interest in solicitation",
       );
     },
   });
@@ -195,7 +194,7 @@ const SolicitationDetailsSheet: React.FC<SolicitationDetailsSheetProps> = ({
     onSuccess: (result) => {
       toastHandlers.success(
         "Invitation Declined",
-        result.data.message || "Successfully declined solicitation invitation"
+        result.data.message || "Successfully declined solicitation invitation",
       );
       // Invalidate and refetch related queries
       queryClient.invalidateQueries({
@@ -213,7 +212,7 @@ const SolicitationDetailsSheet: React.FC<SolicitationDetailsSheetProps> = ({
     onError: (error) => {
       toastHandlers.error(
         "Decline Failed",
-        error.message || "Failed to decline solicitation invitation"
+        error.message || "Failed to decline solicitation invitation",
       );
     },
   });
@@ -250,7 +249,7 @@ const SolicitationDetailsSheet: React.FC<SolicitationDetailsSheetProps> = ({
     const status =
       originalData?.vendor?.status ||
       solicitationData?.data?.data?.details.vendors.find(
-        (item) => item.id._id === user?._id
+        (item) => item.id === user?.vendorId,
       )?.status;
     // const bidIntentDeadline =
     //   originalData?.bidIntentDeadline ||
@@ -260,8 +259,8 @@ const SolicitationDetailsSheet: React.FC<SolicitationDetailsSheetProps> = ({
     //   solicitationData?.data?.data?.details?.submissionDeadline;
 
     // Only show buttons if status is "invited"
-    if (status !== "invited") {
-      return false;
+    if (status === "invited") {
+      return true;
     }
 
     // If bid intent deadline is provided, check if it has passed
@@ -275,7 +274,7 @@ const SolicitationDetailsSheet: React.FC<SolicitationDetailsSheetProps> = ({
     // }
 
     // Default to showing buttons if no deadlines are available
-    return true;
+    return false;
   };
 
   // Helper function to format date
@@ -341,6 +340,7 @@ const SolicitationDetailsSheet: React.FC<SolicitationDetailsSheetProps> = ({
           </h6>
         </SheetTrigger>
       )}
+
       <SheetContent
         side="right"
         className="w-full sm:max-w-2xl p-0 overflow-auto"
@@ -579,7 +579,7 @@ const SolicitationDetailsSheet: React.FC<SolicitationDetailsSheetProps> = ({
                               <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
                                 <span className="text-blue-600 dark:text-blue-400 font-semibold text-xs">
                                   {getFileIcon(
-                                    getFileExtension(doc.name, doc.type)
+                                    getFileExtension(doc.name, doc.type),
                                   )}
                                 </span>
                               </div>
@@ -716,7 +716,7 @@ const SolicitationDetailsSheet: React.FC<SolicitationDetailsSheetProps> = ({
           fileName={selectedDocument.name}
           fileType={getFileExtension(
             selectedDocument.name,
-            selectedDocument.type
+            selectedDocument.type,
           )}
         />
       )}
