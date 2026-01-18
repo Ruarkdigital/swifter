@@ -28,6 +28,8 @@ import RfiStatsCards from "./components/RfiStatsCards";
 import RfiTable from "./components/RfiTable";
 import DocumentsStatsCard from "./components/DocumentsStatsCard";
 import DocumentsList from "./components/DocumentsList";
+import ComplianceSecurityTab from "./components/ComplianceSecurityTab";
+import AnalyticsTab from "./components/AnalyticsTab";
 
 const ContractDetailPage: React.FC = () => {
   return (
@@ -235,6 +237,14 @@ const ContractDetailPage: React.FC = () => {
               </div>
             </div>
           </div>
+        </TabsContent>
+
+        <TabsContent value="analytics" className="space-y-6">
+          <AnalyticsTab />
+        </TabsContent>
+
+        <TabsContent value="compliance" className="space-y-6">
+          <ComplianceSecurityTab />
         </TabsContent>
 
         <TabsContent value="change" className="space-y-6">

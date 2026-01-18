@@ -3,17 +3,12 @@ import { UserRole } from "../types";
 
 // Dashboard configuration for different roles
 export interface DashboardConfig {
-  primaryTabs?: string[];
-  secondaryTabs?: string[];
-  showExport?: boolean;
   stats: {
     title: string;
     value: number;
     icon: string;
     color: string;
     bgColor: string;
-    filterOptions?: string[];
-    filterValue?: string;
   }[];
   rows: {
     type: "chart" | "activity" | "mixed";
@@ -24,7 +19,7 @@ export interface DashboardConfig {
       id?: string;
       title?: string;
       selectors?: string[]
-      type?: "pie" | "line" | "bar" | "donut" | "area";
+      type?: "pie" | "line" | "bar" | "donut" | "area" | "radar";
       data?: any[];
       visible?: boolean;
       filters?: string[];
@@ -44,6 +39,8 @@ export interface DashboardConfig {
         value: string | number;
         label: string;
       };
+      headerNote?: string;
+      sidePanel?: { items: { label: string; value?: string | number; desc?: string; color?: string }[] };
       // Dynamic styling properties
       colors?: { [key: string]: string }; // Custom colors for data keys
       fillColors?: { [key: string]: string }; // Custom fill colors for area charts
@@ -504,8 +501,6 @@ const superAdminConfig: DashboardConfig = {
 
 // Procurement Dashboard Configuration
 const procurementConfig: DashboardConfig = {
-  primaryTabs: ["Overview", "Analytics"],
-  secondaryTabs: ["Total Contracts", "YTD Contracts"],
   stats: [
     {
       title: "All Solicitations",
@@ -640,15 +635,12 @@ const procurementConfig: DashboardConfig = {
 
 // Contract Manager Dashboard Configuration (Empty State)
 const contractManagerConfig: DashboardConfig = {
-  primaryTabs: ["Overview", "Analytics"],
-  secondaryTabs: ["Total Contracts", "YTD Contracts"],
-  showExport: true,
   stats: [
     {
       title: "All Contracts",
       value: 0,
       icon: "file",
-      color: "text-gray-600",
+      color: "text-gray-700",
       bgColor: "bg-gray-500/10",
     },
     {
@@ -661,9 +653,9 @@ const contractManagerConfig: DashboardConfig = {
     {
       title: "Draft Contracts",
       value: 0,
-      icon: "file",
-      color: "text-gray-600",
-      bgColor: "bg-gray-500/10",
+      icon: "folder-open",
+      color: "text-yellow-600",
+      bgColor: "bg-yellow-500/10",
     },
     {
       title: "Suspended",
@@ -690,21 +682,21 @@ const contractManagerConfig: DashboardConfig = {
       title: "Total Contract Value",
       value: 0,
       icon: "creditCard",
-      color: "text-gray-700",
-      bgColor: "bg-gray-500/10",
+      color: "text-blue-600",
+      bgColor: "bg-blue-500/10",
     },
     {
       title: "Committed vs Actual Value",
       value: 0,
       icon: "creditCard",
-      color: "text-green-700",
-      bgColor: "bg-green-500/10",
+      color: "text-blue-600",
+      bgColor: "bg-blue-500/10",
     },
     {
       title: "Savings Realized",
       value: 0,
-      icon: "creditCard",
-      color: "text-green-700",
+      icon: "award",
+      color: "text-green-600",
       bgColor: "bg-green-500/10",
     },
     {
@@ -713,13 +705,11 @@ const contractManagerConfig: DashboardConfig = {
       icon: "clock",
       color: "text-gray-700",
       bgColor: "bg-gray-500/10",
-      filterOptions: ["30 day", "60 day", "90 day"],
-      filterValue: "30 day",
     },
     {
       title: "High Risk Contracts",
       value: 0,
-      icon: "x-circle",
+      icon: "file",
       color: "text-red-600",
       bgColor: "bg-red-500/10",
     },

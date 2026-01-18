@@ -1454,11 +1454,11 @@ export const SolicitationManagementPage = () => {
         )}
         {isProcurement && (
           <StatCard
-            title="Completed Evaluations"
+            title="Completed Solicitations"
             value={dashboardStats.completed}
             icon={IconMap["folder-open"] as any}
-            iconColor="text-red-600"
-            iconBgColor="bg-red-100"
+            iconColor="text-green-600"
+            iconBgColor="bg-green-100"
             onClick={() => {
               setFilters((prev) => ({ ...prev, status: "completed", page: 1 }));
               setPagination({ pageIndex: 0, pageSize: 10 });

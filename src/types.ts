@@ -50,6 +50,7 @@ export type User = {
   secondaryEmail?: string[];
   website?: string;
   logo?: string
+  vendorId?: string;
   isAi: boolean
   isDeleted: boolean
   contactEmail: string

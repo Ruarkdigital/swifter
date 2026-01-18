@@ -25,8 +25,8 @@ export type TextFileProps = {
   control?: any,
   dropzoneOptions?: Record<string, any>
 };
+
 // Create a modified version of the FileUploader with fixed types
-// @ts-ignore - Ignore any type errors in this file
 function SafeFileUploader(props: any) {
   return <FileUploader {...props} />;
 }
@@ -77,7 +77,7 @@ export const TextFileUploader = ({
       <SafeFileUploader
         {...props}
         value={value}
-        // @ts-ignore - Bypassing the type check issue
+        // @ts-expect-error - Bypassing the type check issue
         onValueChange={typedValueChange}
         dropzoneOptions={dropZoneConfig}
         // reSelect={true}

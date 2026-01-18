@@ -42,7 +42,7 @@ export const ActivityComponent: React.FC<ActivityComponentProps> = ({
 
   return (
     <>
-      <Card className="bg-white dark:bg-slate-950">
+      <Card className={("bg-white dark:bg-slate-950 " + (activity?.className || "")).trim()}>
         <CardHeader className="pb-3">
           <CardTitle className="text-lg font-medium text-gray-800 dark:text-gray-200">
             {activity.title}
@@ -133,7 +133,6 @@ export const ActivityComponent: React.FC<ActivityComponentProps> = ({
             {/* Banner Image */}
             {activeCampaign?.bannerUrl ? (
               <div className="mt-4 rounded-b-lg">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={activeCampaign.bannerUrl}
                   alt="Campaign banner"

@@ -20,8 +20,13 @@ import {
   Legend,
   Line,
   LineChart,
+  PolarAngleAxis,
+  PolarGrid,
+  PolarRadiusAxis,
   Pie,
   PieChart,
+  Radar,
+  RadarChart,
   ResponsiveContainer,
   XAxis,
   YAxis,
@@ -565,6 +570,39 @@ export const ChartComponent: React.FC<ChartComponentProps> = ({
           </ChartContainer>
         );
 
+      case "radar":
+        return (
+          <ChartContainer className="h-full w-full" config={chartConfig}>
+            <ResponsiveContainer width="100%" height="100%" minHeight={320}>
+              <RadarChart data={data}>
+                <PolarGrid className="stroke-gray-200 dark:stroke-gray-700" />
+                <PolarAngleAxis
+                  dataKey={(data && data[0] && Object.keys(data[0])[0]) || "label"}
+                  tick={{ fill: "currentColor", fontSize: 12 }}
+                />
+                <PolarRadiusAxis
+                  angle={30}
+                  domain={[0, Math.max(10, ...data.map((d: any) => d.value || 0))]}
+                  tick={{ fill: "currentColor" }}
+                />
+                <Radar
+                  name="Score"
+                  dataKey="value"
+                  stroke="#3b82f6"
+                  fill="rgba(59, 130, 246, 0.2)"
+                  fillOpacity={0.6}
+                />
+                <Legend
+                  verticalAlign="bottom"
+                  align="center"
+                  iconType="circle"
+                  iconSize={10}
+                />
+              </RadarChart>
+            </ResponsiveContainer>
+          </ChartContainer>
+        );
+
       default:
         return <div>Unsupported chart type</div>;
     }
@@ -594,7 +632,71 @@ export const ChartComponent: React.FC<ChartComponentProps> = ({
         )}
       </CardHeader>
       <CardContent className="p-0">
-        <div className="h-[26rem] w-full">{renderChart()}</div>
+        {chart.id === "committed-vs-actual-spend" ? (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 p-4">
+            <div className="h-[22rem] w-full">{renderChart()}</div>
+            <div className="h-[22rem] w-full">
+              <div className="space-y-3">
+                {chart?.sidePanel?.items?.map((it, idx) => (
+                  <div key={idx} className="flex items-start justify-between">
+                    <div className="space-y-1">
+                      <p className="text-sm font-medium text-gray-800">{it.label}</p>
+                      {it.desc && (
+                        <p className="text-xs text-gray-500">{it.desc}</p>
+                      )}
+                    </div>
+                    <p
+                      className={cn(
+                        "text-lg font-semibold",
+                        it.color || "text-[#2A4467]"
+                      )}
+                    >
+                      {typeof it.value !== "undefined" ? it.value : "$0.0M"}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        ) : chart.id === "contract-value-by-project" ? (
+          <div className="p-4 space-y-4">
+            {(chartData && chartData.length ? chartData : [
+              { name: "Project 1", value: 0 },
+              { name: "Project 2", value: 0 },
+              { name: "Project 3", value: 0 },
+              { name: "Project 4", value: 0 },
+            ]).map((row: any, idx: number) => {
+              const pct = Math.min(100, Math.max(0, Number(row.value || 0)));
+              return (
+                <div key={idx} className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm text-gray-700">{row.name}</p>
+                    <p className="text-sm font-semibold text-gray-700">
+                      ${Number(row.value || 0).toLocaleString()}M
+                    </p>
+                  </div>
+                  <div className="w-full h-2.5 bg-gray-200 rounded-full">
+                    <div
+                      className="h-2.5 bg-green-500 rounded-full"
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : chart.id === "avg-cycle-time" ? (
+          <div className="p-4">
+            <div className="h-[20rem] w-full">{renderChart()}</div>
+            {chart.headerNote && (
+              <div className="mt-4 rounded-md border border-yellow-300 bg-yellow-50 p-3">
+                <p className="text-xs text-yellow-800">{chart.headerNote}</p>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="h-[26rem] w-full">{renderChart()}</div>
+        )}
       </CardContent>
     </Card>
   );

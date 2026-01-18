@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
@@ -10,8 +11,6 @@ interface CardStatsProps {
   color: string;
   bgColor: string;
   onClick?: () => void;
-  filterOptions?: string[];
-  filterValue?: string;
 }
 
 type IconMapKey =
@@ -410,17 +409,14 @@ export const CardStats: React.FC<CardStatsProps> = ({
   color,
   bgColor,
   onClick,
-  filterOptions,
-  filterValue,
 }) => {
   const IconComponent = IconMap[icon as IconMapKey] || IconMap.folder;
 
   return (
-    <Card
+    <Card 
       className={cn(
         "bg-white dark:bg-slate-950",
-        onClick &&
-          "cursor-pointer transition-all duration-200 hover:shadow-md hover:scale-[1.02]"
+        onClick && "cursor-pointer transition-all duration-200 hover:shadow-md hover:scale-[1.02]"
       )}
       onClick={onClick}
     >
@@ -436,13 +432,6 @@ export const CardStats: React.FC<CardStatsProps> = ({
             <IconComponent className={cn(`h-8 w-8 `, color)} />
           </div>
         </div>
-        {filterOptions && filterOptions.length > 0 && (
-          <div className="mt-4 flex justify-end">
-            <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-3 py-1 text-xs text-slate-600">
-              <span>{filterValue}</span>
-            </div>
-          </div>
-        )}
       </CardContent>
     </Card>
   );

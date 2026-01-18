@@ -17,6 +17,7 @@ type Props = {
 
 const Step3ValuePayments: React.FC<Props> = ({ control, paymentTermOptions }) => {
   const paymentStructure = useWatch({ control, name: "paymentStructure" });
+  
   const { fields, append, remove } = useFieldArray({
     control,
     name: "milestones",
@@ -30,6 +31,8 @@ const Step3ValuePayments: React.FC<Props> = ({ control, paymentTermOptions }) =>
         label="Contract Value ($)"
         placeholder="Enter Amount"
         component={TextCurrencyInput}
+        containerClass="md:col-span-2"
+        helperText="Contract Higher than $5m = High Risk Contract"
       />
       <Forger
         name="contingency"
@@ -41,18 +44,14 @@ const Step3ValuePayments: React.FC<Props> = ({ control, paymentTermOptions }) =>
         name="holdback"
         label="Holdback (Optional)"
         placeholder="10%"
-        component={TextSelect}
-        options={[
-          { label: "10%", value: "10%" },
-          { label: "5%", value: "5%" },
-          { label: "0%", value: "0%" },
-        ]}
+        component={TextInput}
       />
       <Forger
         name="paymentStructure"
         label="Payment Structure"
         placeholder="Monthly / Milestone / Progress Draw"
         component={TextSelect}
+        containerClass="md:col-span-2"
         options={[
           { label: "Monthly", value: "monthly" },
           { label: "Milestone", value: "milestone" },
@@ -71,16 +70,24 @@ const Step3ValuePayments: React.FC<Props> = ({ control, paymentTermOptions }) =>
       {paymentStructure === "milestone" && (
         <div className="col-span-2 space-y-3">
           {fields.map((field, index) => (
-            <div
-              key={field.id}
-              className="grid grid-cols-1 md:grid-cols-3 gap-3 items-end"
-            >
-              <Forger
-                name={`milestones.${index}.name`}
-                label="Milestone Name"
-                placeholder={`Milestone ${index + 1}`}
-                component={TextInput}
-              />
+            <div key={field.id} className="space-y-2">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-medium text-slate-700">Milestone Name</p>
+                <button
+                  type="button"
+                  className="text-xs text-red-600"
+                  onClick={() => remove(index)}
+                >
+                  Remove Milestone
+                </button>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 items-end">
+                <Forger
+                  name={`milestones.${index}.name`}
+                  placeholder={`Milestone ${index + 1}`}
+                  containerClass="md:col-span-2"
+                  component={TextInput}
+                />
               <Forger
                 name={`milestones.${index}.amount`}
                 label="Amount ($)"
@@ -93,15 +100,10 @@ const Step3ValuePayments: React.FC<Props> = ({ control, paymentTermOptions }) =>
                 component={TextDatePicker}
                 placeholder="Side Visits/Conference Call"
               />
-              <button
-                type="button"
-                className="text-xs text-red-600"
-                onClick={() => remove(index)}
-              >
-                Remove Milestone
-              </button>
+              </div>
             </div>
           ))}
+
           <div className="flex justify-end">
             <Button
               type="button"

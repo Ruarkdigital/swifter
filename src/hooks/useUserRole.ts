@@ -35,7 +35,6 @@ export const useUserRole = () => {
   const isCompanyAdmin = userRole === "company_admin";
   const isSuperAdmin = userRole === "super_admin";
   const isProcurement = userRole === "procurement";
-  const isContractManager = userRole === "contract_manager";
 
   const isAdmin = hasAnyRole(["company_admin", "super_admin"]);
   const canManageUsers = hasAnyRole(["company_admin", "super_admin"]);
@@ -59,7 +58,6 @@ export const useUserRole = () => {
     isCompanyAdmin,
     isSuperAdmin,
     isProcurement,
-    isContractManager,
     isAdmin,
     canManageUsers,
     canManageCompanies,
