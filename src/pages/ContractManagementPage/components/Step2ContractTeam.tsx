@@ -34,17 +34,17 @@ const Step2ContractTeam: React.FC<Props> = ({
         label="Vendor / Contractor"
         placeholder="Enter Name"
         component={TextInput}
-        helperText="Add with email address, Vendor name"
+        // helperText="Add with email address, Vendor name"
       />
       <Forger
-        name="vendorKeyPersonnel"
+        name="personnel"
         label="Vendor/Contractor Key Personnel. (Multi-Select)"
         component={TextTagInput}
         enableDetailsPopover
         helperText="Add vendor’s/contractor’s key personnel with email address, name"
       />
       <Forger
-        name="internalStakeholders"
+        name="internalTeam"
         label="Internal Team/Stakeholders (Multi-Select)"
         component={TextTagInput}
         enableDetailsPopover
@@ -54,10 +54,10 @@ const Step2ContractTeam: React.FC<Props> = ({
       <Forger
         name="visibility"
         label="Visibility"
-        placeholder="Invites-only, Public"
+        placeholder="Private, Public"
         component={TextSelect}
         options={[
-          { label: "Invites-only", value: "invites_only" },
+          { label: "Private", value: "private" },
           { label: "Public", value: "public" },
         ]}
       />

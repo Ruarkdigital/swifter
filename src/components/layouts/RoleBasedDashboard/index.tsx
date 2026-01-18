@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import React, { useState, useMemo } from "react";
-import { ExportReportSheet } from "@/components/layouts/ExportReportSheet";
+// import { ExportReportSheet } from "@/components/layouts/ExportReportSheet";
 import { useNavigate } from "react-router-dom";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useDashboardData } from "@/hooks/useDashboardData";
@@ -12,6 +12,22 @@ import { CardStats } from "./components/StatsCard";
 import { cn } from "@/lib/utils";
 import { DashboardConfig } from "@/config/dashboardConfig";
 import { PageLoader } from "@/components/ui/PageLoader";
+import { CycleTimeCard } from "./analytics/CycleTimeCard";
+import { InvoiceStatusCard } from "./analytics/InvoiceStatusCard";
+import { SpendCard } from "./analytics/SpendCard";
+import { VendorsValueCard } from "./analytics/VendorsValueCard";
+import { ProjectValueCard } from "./analytics/ProjectValueCard";
+import { RiskDistributionCard } from "./analytics/RiskDistributionCard";
+import { ChangeOrdersImpactCard } from "./analytics/ChangeOrdersImpactCard";
+import { CategoryValueCard } from "./analytics/CategoryValueCard";
+import { ComplianceStatusCard } from "./analytics/ComplianceStatusCard";
+import { ClauseIntelligenceCard } from "./analytics/ClauseIntelligenceCard";
+import { ContractStatusCard } from "./analytics/ContractStatusCard";
+import { VendorPerformanceSummaryCard } from "./analytics/VendorPerformanceSummaryCard";
+import { RenewalsTimelineCard } from "./analytics/RenewalsTimelineCard";
+import { AiInsightsAlerts } from "./analytics/AiInsightsAlerts";
+import { Card, CardContent } from "@/components/ui/card";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 // Main Role-Based Dashboard Component
 export const RoleBasedDashboard: React.FC = () => {
@@ -20,7 +36,81 @@ export const RoleBasedDashboard: React.FC = () => {
   const modules = user?.module;
   // Individual chart filters instead of global filter
   const [chartFilters, setChartFilters] = useState<Record<string, string>>({});
+  const [cmTopTab, setCmTopTab] = useState<"overview" | "analytics">("overview");
+  const [cmSubTab, setCmSubTab] = useState<"total-contracts" | "ytd-contracts">(
+    "total-contracts"
+  );
   const navigate = useNavigate();
+
+  // Contract Manager YTD Contracts empty-state cards
+  const cmYtdStats = useMemo(
+    () => [
+      {
+        title: "All Contracts",
+        value: 0,
+        icon: "file",
+        color: "text-gray-700",
+        bgColor: "bg-gray-500/10",
+      },
+      {
+        title: "Active Contracts",
+        value: 0,
+        icon: "check-circle",
+        color: "text-green-600",
+        bgColor: "bg-green-500/10",
+      },
+      {
+        title: "Suspended",
+        value: 0,
+        icon: "x-circle",
+        color: "text-red-600",
+        bgColor: "bg-red-500/10",
+      },
+      {
+        title: "Expired",
+        value: 0,
+        icon: "x-circle",
+        color: "text-red-600",
+        bgColor: "bg-red-500/10",
+      },
+      {
+        title: "Terminated",
+        value: 0,
+        icon: "x-circle",
+        color: "text-red-600",
+        bgColor: "bg-red-500/10",
+      },
+      {
+        title: "Total Contract Value",
+        value: 0,
+        icon: "creditCard",
+        color: "text-blue-600",
+        bgColor: "bg-blue-500/10",
+      },
+      {
+        title: "Committed vs Actual",
+        value: 0,
+        icon: "creditCard",
+        color: "text-blue-600",
+        bgColor: "bg-blue-500/10",
+      },
+      {
+        title: "Savings Realized",
+        value: 0,
+        icon: "award",
+        color: "text-green-600",
+        bgColor: "bg-green-500/10",
+      },
+      {
+        title: "High Risk Contracts",
+        value: 0,
+        icon: "file",
+        color: "text-red-600",
+        bgColor: "bg-red-500/10",
+      },
+    ],
+    []
+  );
 
   // Fetch dashboard data based on user role (without global filter)
   const {
@@ -453,16 +543,6 @@ export const RoleBasedDashboard: React.FC = () => {
     vendorGeneralUpdates,
   ]);
 
-  const primaryTabs = enhancedDashboardConfig.primaryTabs || [];
-  const secondaryTabs = enhancedDashboardConfig.secondaryTabs || [];
-
-  const [activePrimaryTab, setActivePrimaryTab] = useState(
-    primaryTabs[0] || "Overview"
-  );
-  const [activeSecondaryTab, setActiveSecondaryTab] = useState(
-    secondaryTabs[0] || "Total Contracts"
-  );
-
   // Handle individual chart filter changes
   const handleFilterChange = (chartId?: string, filter?: string) => {
     if (!chartId || !filter) return;
@@ -601,86 +681,179 @@ export const RoleBasedDashboard: React.FC = () => {
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
-      <div className="flex flex-col gap-4">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-2xl font-medium text-gray-900 dark:text-gray-100">
-              Dashboard
-            </h1>
-          </div>
-          {enhancedDashboardConfig.showExport && (
-            <ExportReportSheet>
-              <button className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50">
-                <span>Export</span>
-              </button>
-            </ExportReportSheet>
-          )}
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-medium text-gray-900 dark:text-gray-100">
+            Dashboard
+          </h1>
         </div>
-
-        {primaryTabs.length > 0 && (
-          <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 pb-2">
-            <div className="flex gap-2 rounded-full bg-slate-100 p-1 text-sm">
-              {primaryTabs.map((tab) => (
-                <button
-                  key={tab}
-                  type="button"
-                  className={cn(
-                    "rounded-full px-4 py-1.5 text-sm font-medium text-slate-500",
-                    activePrimaryTab === tab &&
-                      "bg-white text-slate-900 shadow-sm"
-                  )}
-                  onClick={() => setActivePrimaryTab(tab)}
-                >
-                  {tab}
-                </button>
-              ))}
-            </div>
-
-            {secondaryTabs.length > 0 && (
-              <div className="flex gap-2 text-xs">
-                {secondaryTabs.map((tab) => (
-                  <button
-                    key={tab}
-                    type="button"
-                    className={cn(
-                      "rounded-full px-3 py-1 font-medium",
-                      activeSecondaryTab === tab
-                        ? "bg-slate-900 text-white"
-                        : "text-slate-500 border border-slate-200 bg-white"
-                    )}
-                    onClick={() => setActiveSecondaryTab(tab)}
-                  >
-                    {tab}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
+        {/* <ExportReportSheet /> */}
       </div>
+
+      {userRole === "contract_manager" && (
+        <div className="space-y-4">
+          <Tabs
+            value={cmTopTab}
+            onValueChange={(v) =>
+              setCmTopTab((v as "overview" | "analytics") ?? "overview")
+            }
+            className="w-full"
+          >
+            <TabsList className="bg-slate-100 rounded-full p-1.5 gap-3 mb-3 h-12">
+              <TabsTrigger
+                value="overview"
+                className={cn(
+                  "rounded-full px-4 py-2 text-sm",
+                  "data-[state=active]:bg-[#2A4467] data-[state=active]:text-white",
+                  "text-gray-600"
+                )}
+              >
+                Overview
+              </TabsTrigger>
+              <TabsTrigger
+                value="analytics"
+                className={cn(
+                  "rounded-full px-4 py-2 text-sm",
+                  "text-gray-600",
+                  "data-[state=active]:bg-[#2A4467] data-[state=active]:text-white"
+                )}
+              >
+                Analytics
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="overview" className="space-y-4">
+              <Tabs
+                value={cmSubTab}
+                onValueChange={(v) =>
+                  setCmSubTab(
+                    (v as "total-contracts" | "ytd-contracts") ??
+                      "total-contracts"
+                  )
+                }
+                className="w-full"
+              >
+                <TabsList className="h-auto rounded-none border-b border-gray-300 dark:border-gray-600 dark:bg-transparent p-0 w-full justify-start bg-transparent">
+                  <TabsTrigger
+                    value="total-contracts"
+                    className={cn(
+                      "data-[state=active]:border-[#2A4467] data-[state=active]:dark:bg-transparent data-[state=active]:dark:text-slate-100 relative rounded-none py-2 after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 border-0 border-b-2 data-[state=active]:bg-transparent data-[state=active]:shadow-none flex-none px-3",
+                    )}
+                  >
+                    Total Contracts
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="ytd-contracts"
+                    className={cn(
+                      "data-[state=active]:border-[#2A4467] data-[state=active]:dark:bg-transparent data-[state=active]:dark:text-slate-100 relative rounded-none py-2 after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 border-0 border-b-2 data-[state=active]:bg-transparent data-[state=active]:shadow-none flex-none px-3",
+                    )}
+                  >
+                    YTD Contracts
+                  </TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="total-contracts" />
+                
+                <TabsContent value="ytd-contracts">
+                 
+                </TabsContent>
+              </Tabs>
+            </TabsContent>
+
+            <TabsContent value="analytics">
+              <Card>
+                <CardContent className="p-6">
+                  <p className="text-sm text-gray-600">
+                    Placeholder: Analytics content will display here when designs
+                    are provided.
+                  </p>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
+        </div>
+      )}
 
       {/* Stats Cards */}
-      <div
-        className={cn(`grid grid-cols-1 md:grid-cols-2 gap-6`, {
-          "lg:grid-cols-2": enhancedDashboardConfig.stats.length === 8,
-          "lg:grid-cols-3": enhancedDashboardConfig.stats.length === 6,
-          "lg:grid-cols-4":
-            enhancedDashboardConfig.stats.length === 4 ||
-            enhancedDashboardConfig.stats.length > 8,
-        })}
-      >
-        {enhancedDashboardConfig.stats?.map?.((stat, index) => (
-          <CardStats
-            key={index}
-            {...stat}
-            onClick={() => handleStatCardClick(stat.title)}
-          />
-        ))}
-      </div>
+      {(userRole !== "contract_manager" ||
+        (userRole === "contract_manager" &&
+          cmTopTab === "overview" &&
+          cmSubTab === "total-contracts")) && (
+        <div
+          className={cn(`grid grid-cols-1 md:grid-cols-2 gap-6`, {
+            "lg:grid-cols-2": enhancedDashboardConfig.stats.length === 8,
+            "lg:grid-cols-3": enhancedDashboardConfig.stats.length === 6,
+            "lg:grid-cols-4":
+              enhancedDashboardConfig.stats.length === 4 ||
+              enhancedDashboardConfig.stats.length > 8,
+          })}
+        >
+          {enhancedDashboardConfig.stats?.map?.((stat, index) => (
+            <CardStats
+              key={index}
+              {...stat}
+              onClick={() => handleStatCardClick(stat.title)}
+            />
+          ))}
+        </div>
+      )}
+      {userRole === "contract_manager" &&
+        cmTopTab === "overview" &&
+        cmSubTab === "ytd-contracts" && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {cmYtdStats.map((stat, index) => (
+              <CardStats
+                key={`cm-ytd-${index}`}
+                {...stat}
+                onClick={() => handleStatCardClick(stat.title)}
+              />
+            ))}
+          </div>
+        )}
+      {userRole === "contract_manager" && cmTopTab === "analytics" && (
+        <>
+          {/* First row exact cards */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <CycleTimeCard />
+            <InvoiceStatusCard />
+            <SpendCard />
+          </div>
+
+          {/* Second row exact cards */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <VendorsValueCard />
+            <ProjectValueCard />
+          </div>
+
+          {/* Third row exact cards */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <RiskDistributionCard />
+            <ChangeOrdersImpactCard />
+            <CategoryValueCard />
+          </div>
+          {/* Fourth row exact cards */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <ComplianceStatusCard />
+            <ClauseIntelligenceCard />
+            <ContractStatusCard />
+          </div>
+          
+          {/* Fifth row exact cards */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <VendorPerformanceSummaryCard />
+            <RenewalsTimelineCard />
+          </div>
+          
+          {/* Last row exact gradient block */}
+          <AiInsightsAlerts />
+        </>
+      )}
 
       {/* Activities and Charts Section */}
       {enhancedDashboardConfig.rows?.map?.((item, rowIndex) => {
+        if (userRole === "contract_manager" && cmTopTab === "analytics") {
+          return null;
+        }
         if (item.type === "activity") {
           const gatedActivities = item.properties.filter((activity) => {
             if (activity.id === "my-actions" && modules?.myActions !== true) {

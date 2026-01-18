@@ -22,8 +22,9 @@ import {
   TextFileUploader,
 } from "@/components/layouts/FormInputs";
 import { CloudUpload, FileText, X } from "lucide-react";
-import { format } from "date-fns";
+import { format, startOfDay } from "date-fns";
 import { useMutation } from "@tanstack/react-query";
+import { truncate } from "lodash";
 
 type UploadedFile = {
   name: string;
@@ -169,6 +170,7 @@ const CreateProjectDialog: React.FC<Props> = ({
 
   const allowMultiple = watch("allowMultipleContracts");
   const files = watch("files");
+  const startDate = watch("startDate");
 
   React.useEffect(() => {
     if (!open || !initialValues) return;
@@ -231,14 +233,14 @@ const CreateProjectDialog: React.FC<Props> = ({
       uploadState?.status === "error";
 
     return (
-      <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3">
+      <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3 max-w-xl">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-50">
             <FileText className="h-5 w-5 text-slate-600" />
           </div>
           <div className="min-w-0">
-            <p className="truncate text-sm font-medium text-slate-900">
-              {file.name}
+            <p className="truncate text-sm font-medium text-slate-900 ">
+              {truncate(file.name, { length: 40 })}
             </p>
             <p className="text-xs text-slate-500">{file.type || "File"}</p>
             {showProgress ? (
@@ -418,6 +420,7 @@ const CreateProjectDialog: React.FC<Props> = ({
                 placeholder="Select Date"
                 component={TextDatePicker}
                 data-testid="project-start-date-input"
+                minDate={startOfDay(new Date())}
               />
 
               <Forger
@@ -426,6 +429,7 @@ const CreateProjectDialog: React.FC<Props> = ({
                 placeholder="Select Date"
                 component={TextDatePicker}
                 data-testid="project-end-date-input"
+                minDate={startDate || startOfDay(new Date())}
               />
             </div>
 

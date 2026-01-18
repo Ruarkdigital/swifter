@@ -43,9 +43,9 @@ const schema = yup.object({
   contractId: yup.string().optional(),
   description: yup.string().required("Description is required"),
   vendor: yup.string().optional(),
-  vendorKeyPersonnel: yup.array().optional(),
-  internalStakeholders: yup.array().optional(),
-  vendorKeyPersonnelMeta: yup
+  personnel: yup.array().optional(),
+  internalTeam: yup.array().optional(),
+  personnelMeta: yup
     .array(
       yup.object({
         id: yup.string().optional(),
@@ -56,7 +56,7 @@ const schema = yup.object({
       })
     )
     .optional(),
-  internalStakeholdersMeta: yup
+  internalTeamMeta: yup
     .array(
       yup.object({
         id: yup.string().optional(),
@@ -82,8 +82,23 @@ const schema = yup.object({
       })
     )
     .optional(),
-  effectiveDate: yup.date().optional(),
-  endDate: yup.date().optional(),
+  effectiveDate: yup
+    .date()
+    .typeError("Invalid date")
+    .required("Effective date is required"),
+  endDate: yup
+    .date()
+    .typeError("Invalid date")
+    .required("End date is required")
+    .test(
+      "end-after-start",
+      "End date must be on or after the effective date",
+      function (value) {
+        const { effectiveDate } = this.parent as { effectiveDate?: Date };
+        if (!value || !effectiveDate) return true;
+        return value >= effectiveDate;
+      }
+    ),
   duration: yup.string().optional(),
   termType: yup.string().optional(),
   documents: yup.array().optional(),
@@ -95,6 +110,14 @@ const schema = yup.object({
       })
     )
     .optional(),
+  draftStartDate: yup.date().optional(),
+  draftEndDate: yup.date().optional(),
+  reviewStartDate: yup.date().optional(),
+  reviewEndDate: yup.date().optional(),
+  approvalStartDate: yup.date().optional(),
+  approvalEndDate: yup.date().optional(),
+  executionStartDate: yup.date().optional(),
+  executionEndDate: yup.date().optional(),
   approvalGroups: yup
     .array(
       yup.object({
@@ -104,13 +127,29 @@ const schema = yup.object({
       })
     )
     .optional(),
-  insuranceRequirement: yup.string().optional(),
   insuranceExpiryDate: yup.date().optional(),
   contractSecurity: yup.string().optional(),
   securityType: yup.string().optional(),
   securityAmount: yup.string().optional(),
   securityDueDate: yup.date().optional(),
   securityExpiryDate: yup.date().optional(),
+  insurancePolicies: yup
+    .array(
+      yup.object({
+        name: yup.string().optional(),
+        limit: yup.string().optional(),
+      })
+    )
+    .optional(),
+  securities: yup
+    .array(
+      yup.object({
+        type: yup.string().optional(),
+        amount: yup.mixed().optional(),
+        dueDate: yup.date().optional(),
+      })
+    )
+    .optional(),
 });
 
 export type CreateContractFormData = yup.InferType<typeof schema>;
@@ -127,10 +166,10 @@ const defaultValues = {
   contractId: "",
   description: "",
   vendor: "",
-  vendorKeyPersonnel: [],
-  internalStakeholders: [],
-  vendorKeyPersonnelMeta: [],
-  internalStakeholdersMeta: [],
+  personnel: [],
+  internalTeam: [],
+  personnelMeta: [],
+  internalTeamMeta: [],
   visibility: "",
   contractValue: "",
   contingency: "",
@@ -149,20 +188,38 @@ const defaultValues = {
       dueDate: undefined,
     },
   ],
-  approvalGroups: [
-    { name: "", approvers: [], approvalLevel: "0" },
-  ],
-  insuranceRequirement: "",
+  draftStartDate: undefined,
+  draftEndDate: undefined,
+  reviewStartDate: undefined,
+  reviewEndDate: undefined,
+  approvalStartDate: undefined,
+  approvalEndDate: undefined,
+  executionStartDate: undefined,
+  executionEndDate: undefined,
+  approvalGroups: [{ name: "", approvers: [], approvalLevel: "0" }],
   insuranceExpiryDate: undefined,
   contractSecurity: "",
   securityType: "",
   securityAmount: "",
   securityDueDate: undefined,
   securityExpiryDate: undefined,
+  insurancePolicies: [{ name: "", limit: "" }],
+  securities: [],
+};
+
+// Contract metadata: types, payment terms, term types, personnel, awarded solicitation
+type ApiListResponse<T> = { status: number; message: string; data: T[] };
+type ContractType = { _id: string; name: string; description?: string };
+type ContractTerm = { _id: string; name: string; description?: string };
+type Personnel = { _id: string; name: string; email: string };
+type AwardedVendorItem = {
+  _id: string;
+  name: string;
+  vendor: { _id: string; name: string; email: string };
 };
 
 const CreateContractSheet: React.FC<Props> = ({ trigger }) => {
-  const { control, getValues, reset } = useForge({
+  const { control, getValues, reset } = useForge<CreateContractFormData>({
     resolver: yupResolver(schema),
     defaultValues,
     mode: "onChange",
@@ -184,17 +241,6 @@ const CreateContractSheet: React.FC<Props> = ({ trigger }) => {
 
   const { success, error } = useToastHandler();
   const qc = useQueryClient();
-
-  // Contract metadata: types, payment terms, term types, personnel, awarded solicitation
-  type ApiListResponse<T> = { status: number; message: string; data: T[] };
-  type ContractType = { _id: string; name: string; description?: string };
-  type ContractTerm = { _id: string; name: string; description?: string };
-  type Personnel = { _id: string; name: string; email: string };
-  type AwardedVendorItem = {
-    solicitationId: string;
-    solicitationName: string;
-    vendor: { _id: string; name: string; email: string };
-  };
 
   const typesQuery = useQuery<ApiListResponse<ContractType>>({
     queryKey: useUserQueryKey(["contract-types"]),
@@ -235,7 +281,9 @@ const CreateContractSheet: React.FC<Props> = ({ trigger }) => {
   const awardedQuery = useQuery<ApiListResponse<AwardedVendorItem>>({
     queryKey: useUserQueryKey(["awarded-solicitations"]),
     queryFn: async () => {
-      const res = await getRequest({ url: "/contract/manager/awarded-solicitation" });
+      const res = await getRequest({
+        url: "/contract/manager/awarded-solicitation",
+      });
       return res.data as ApiListResponse<AwardedVendorItem>;
     },
     staleTime: 60_000,
@@ -247,10 +295,13 @@ const CreateContractSheet: React.FC<Props> = ({ trigger }) => {
   const typeOptions =
     typesQuery.data?.data?.map((t) => ({ label: t.name, value: t._id })) ?? [];
   const paymentTermOptions =
-    paymentTermsQuery.data?.data?.map((t) => ({ label: t.name, value: t._id })) ??
-    [];
+    paymentTermsQuery.data?.data?.map((t) => ({
+      label: t.name,
+      value: t._id,
+    })) ?? [];
   const termTypeOptions =
-    termTypesQuery.data?.data?.map((t) => ({ label: t.name, value: t._id })) ?? [];
+    termTypesQuery.data?.data?.map((t) => ({ label: t.name, value: t._id })) ??
+    [];
   const internalStakeholderOptions =
     personnelQuery.data?.data?.map((p) => ({
       label: p.email || p.name,
@@ -258,10 +309,11 @@ const CreateContractSheet: React.FC<Props> = ({ trigger }) => {
     })) ?? [];
   const projectOptions =
     projectsData?.data?.map((p) => ({ label: p.name, value: p._id })) ?? [];
+
   const awardedOptions =
     awardedQuery.data?.data?.map((a) => ({
-      label: `${a.solicitationName} — ${a.vendor.name}`,
-      value: a.solicitationId,
+      label: `${a.name} — ${a.vendor.name}`,
+      value: a._id,
       // carry vendor info for mapping
       vendorEmail: a.vendor.email,
       vendorId: a.vendor._id,
@@ -290,8 +342,7 @@ const CreateContractSheet: React.FC<Props> = ({ trigger }) => {
   });
 
   const buildPayload = (data: CreateContractFormData) => {
-    const tz =
-      Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
 
     const relationship =
       data.relationship === "msa"
@@ -319,21 +370,18 @@ const CreateContractSheet: React.FC<Props> = ({ trigger }) => {
         }));
       }) ?? [];
 
-    const milestone =
-      paymentStructureIsMilestone
-        ? (data.milestones ?? []).map((m) => ({
-            amount:
-              typeof m.amount === "string"
-                ? parseFloat(m.amount)
-                : Number(m.amount ?? 0),
-            dueDate: m.dueDate
-              ? new Date(m.dueDate as unknown as Date)
-                  .toISOString()
-                  .slice(0, 10)
-              : undefined,
-            name: m.name,
-          }))
-        : undefined;
+    const milestone = paymentStructureIsMilestone
+      ? (data.milestones ?? []).map((m) => ({
+          amount:
+            typeof m.amount === "string"
+              ? parseFloat(m.amount)
+              : Number(m.amount ?? 0),
+          dueDate: m.dueDate
+            ? new Date(m.dueDate as unknown as Date).toISOString().slice(0, 10)
+            : undefined,
+          name: m.name,
+        }))
+      : undefined;
 
     const deliverables =
       (data.deliverables ?? []).map((d) => ({
@@ -352,7 +400,7 @@ const CreateContractSheet: React.FC<Props> = ({ trigger }) => {
       })) ?? [];
 
     const awardedMatch = awardedQuery.data?.data?.find(
-      (a) => a.solicitationId === data.awardedSolicitation
+      (a) => a._id === data.awardedSolicitation
     );
 
     const payload = {
@@ -362,37 +410,39 @@ const CreateContractSheet: React.FC<Props> = ({ trigger }) => {
       timezone: tz,
       contractType: data.type,
       contractRelationship: relationship,
-      projectId: relationship === "project" ? data.project || undefined : undefined,
-      msaContractId: relationship === "msa_project" ? data.project || undefined : undefined,
+      projectId:
+        relationship === "project" ? data.project || undefined : undefined,
+      msaContractId:
+        relationship === "msa_project" ? data.project || undefined : undefined,
       solicitationId: data.awardedSolicitation || undefined,
       contractId: data.contractId || undefined,
       // jobTitle: data.jobTitle || undefined,
-      vendor: (data.vendor || awardedMatch?.vendor?.email) || undefined,
+      vendor: data.vendor || awardedMatch?.vendor?.email || undefined,
       personnel:
-        (data.vendorKeyPersonnelMeta && data.vendorKeyPersonnelMeta.length > 0
-          ? (data.vendorKeyPersonnelMeta ?? []).map((p: any) => ({
+        (data.personnelMeta && data.personnelMeta.length > 0
+          ? (data.personnelMeta ?? []).map((p: any) => ({
               name: p?.name || undefined,
               email: p?.email || undefined,
               ...(p?.role ? { role: p.role } : {}),
               ...(p?.phone ? { phone: p.phone } : {}),
             }))
-          : (data.vendorKeyPersonnel ?? []).map((t: any) => {
+          : (data.personnel ?? []).map((t: any) => {
               const val = t?.value ?? t;
               const isEmail = typeof val === "string" && val.includes("@");
               return isEmail ? { email: val } : { name: val };
             })) ?? undefined,
       internalTeam:
-        (data.internalStakeholdersMeta && data.internalStakeholdersMeta.length > 0
-          ? (data.internalStakeholdersMeta ?? []).map((p: any) => ({
+        (data.internalTeamMeta &&
+        data.internalTeamMeta.length > 0
+          ? (data.internalTeamMeta ?? []).map((p: any) => ({
               name: p?.name || undefined,
               email: p?.email || undefined,
               ...(p?.role ? { role: p.role } : {}),
               ...(p?.phone ? { phone: p.phone } : {}),
             }))
-          : (data.internalStakeholders ?? []).map((t: any) => t?.value ?? t)) ??
+          : (data.internalTeam ?? []).map((t: any) => t?.value ?? t)) ??
         undefined,
-      visibility:
-        data.visibility === "invites_only" ? "private" : data.visibility || "private",
+      visibility: data.visibility || "private",
       contractAmount:
         typeof data.contractValue === "string"
           ? parseFloat(data.contractValue)
@@ -403,7 +453,9 @@ const CreateContractSheet: React.FC<Props> = ({ trigger }) => {
       holdBack,
       paymentTerm: data.paymentTerm || undefined,
       startDate: data.effectiveDate
-        ? new Date(data.effectiveDate as unknown as Date).toISOString().slice(0, 10)
+        ? new Date(data.effectiveDate as unknown as Date)
+            .toISOString()
+            .slice(0, 10)
         : undefined,
       endDate: data.endDate
         ? new Date(data.endDate as unknown as Date).toISOString().slice(0, 10)
@@ -464,7 +516,9 @@ const CreateContractSheet: React.FC<Props> = ({ trigger }) => {
               )}
 
               {step === 2 && (
-                <Step2ContractTeam internalStakeholderOptions={internalStakeholderOptions} />
+                <Step2ContractTeam
+                  internalStakeholderOptions={internalStakeholderOptions}
+                />
               )}
 
               {step === 5 && (
@@ -475,7 +529,10 @@ const CreateContractSheet: React.FC<Props> = ({ trigger }) => {
               )}
 
               {step === 3 && (
-                <Step4Timeline termTypeOptions={termTypeOptions} />
+                <Step4Timeline
+                  control={control}
+                  termTypeOptions={termTypeOptions}
+                />
               )}
 
               {step === 4 && <Step5Deliverables control={control} />}
