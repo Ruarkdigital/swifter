@@ -13,8 +13,7 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  ResponsiveContainer,
-  Legend
+  ResponsiveContainer
 } from "recharts";
 import { cn } from "@/lib/utils";
 
