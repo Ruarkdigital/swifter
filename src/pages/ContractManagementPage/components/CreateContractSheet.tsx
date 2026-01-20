@@ -341,7 +341,10 @@ const CreateContractSheet: React.FC<Props> = ({ trigger }) => {
     },
   });
 
-  const buildPayload = (data: CreateContractFormData) => {
+  const buildPayload = (
+    data: CreateContractFormData,
+    status: "draft" | "publish"
+  ) => {
     const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
 
     const relationship =
@@ -360,14 +363,23 @@ const CreateContractSheet: React.FC<Props> = ({ trigger }) => {
 
     const paymentStructureIsMilestone = data.paymentStructure === "milestone";
 
-    const approvals =
+    // Map internal payment structure to API enum
+    let paymentStructureEnum = undefined;
+    if (data.paymentStructure === "monthly") paymentStructureEnum = "Monthly";
+    if (data.paymentStructure === "milestone") paymentStructureEnum = "Milestone";
+    if (data.paymentStructure === "lump_sum") paymentStructureEnum = "Progress Draw";
+
+    const approvaers =
       (data.approvalGroups ?? []).flatMap((g) => {
         const lvl = g.approvalLevel ? Number(g.approvalLevel) : undefined;
-        return (g.approvers ?? []).map((u: any) => ({
-          user: u?.value ?? u,
+        // API expects user as array of strings
+        const userIds = (g.approvers ?? []).map((u: any) => u?.value ?? u);
+        return {
+          user: userIds,
           groupName: g.name,
           levelName: lvl,
-        }));
+          amount: 0, // Defaulting as required by schema structure implied
+        };
       }) ?? [];
 
     const milestone = paymentStructureIsMilestone
@@ -402,6 +414,66 @@ const CreateContractSheet: React.FC<Props> = ({ trigger }) => {
     const awardedMatch = awardedQuery.data?.data?.find(
       (a) => a._id === data.awardedSolicitation
     );
+
+    // Insurance Construction
+    const mainSecurity = data.securityType
+      ? [
+          {
+            securityType: data.securityType,
+            amount: Number(data.securityAmount ?? 0),
+            dueDate: data.securityDueDate
+              ? new Date(data.securityDueDate as unknown as Date)
+                  .toISOString()
+                  .slice(0, 10)
+              : undefined,
+          },
+        ]
+      : [];
+    const extraSecurities = (data.securities || []).map((s) => ({
+      securityType: s.type,
+      amount: Number(s.amount ?? 0),
+      dueDate: s.dueDate
+        ? new Date(s.dueDate as unknown as Date).toISOString().slice(0, 10)
+        : undefined,
+    }));
+
+    const insurancePayload = {
+      insurance: data.contractSecurity === "yes" ? "Yes" : "No",
+      contractSecurity: data.contractSecurity === "yes",
+      expiryDate: data.insuranceExpiryDate
+        ? new Date(data.insuranceExpiryDate as unknown as Date)
+            .toISOString()
+            .slice(0, 10)
+        : undefined,
+      contractSecurityType: [...mainSecurity, ...extraSecurities],
+      policy: (data.insurancePolicies || []).map((p) => ({
+        policyName: p.name,
+        limit: p.limit,
+      })),
+    };
+
+    // Dates Construction
+    const formatDate = (d: any) =>
+      d ? new Date(d as unknown as Date).toISOString().slice(0, 10) : undefined;
+
+    const contractFormationStage = {
+      draft: {
+        startDate: formatDate(data.draftStartDate),
+        endDate: formatDate(data.draftEndDate),
+      },
+      review: {
+        startDate: formatDate(data.reviewStartDate),
+        endDate: formatDate(data.reviewEndDate),
+      },
+      approval: {
+        startDate: formatDate(data.approvalStartDate),
+        endDate: formatDate(data.approvalEndDate),
+      },
+      execution: {
+        startDate: formatDate(data.executionStartDate),
+        endDate: formatDate(data.executionEndDate),
+      },
+    };
 
     const payload = {
       title: data.name,
@@ -451,21 +523,20 @@ const CreateContractSheet: React.FC<Props> = ({ trigger }) => {
           : undefined,
       contigency: data.contingency || undefined,
       holdBack,
-      paymentTerm: data.paymentTerm || undefined,
-      startDate: data.effectiveDate
-        ? new Date(data.effectiveDate as unknown as Date)
-            .toISOString()
-            .slice(0, 10)
-        : undefined,
-      endDate: data.endDate
-        ? new Date(data.endDate as unknown as Date).toISOString().slice(0, 10)
-        : undefined,
+      contractPaymentTerm: data.paymentTerm || undefined,
+      paymentStructure: paymentStructureEnum,
+      startDate: formatDate(data.effectiveDate),
+      endDate: formatDate(data.endDate),
       duration: data.duration ? Number(data.duration) : undefined,
-      termType: data.termType || undefined,
+      contractTermType: data.termType || undefined,
       deliverables,
       milestone,
       files,
-      approvals,
+      approvaers,
+      insurance: insurancePayload,
+      contractFormationStage,
+      // rating: data.rating || 5,
+      status: status,
     };
 
     // Remove undefined fields to avoid sending undeclared values
@@ -478,8 +549,11 @@ const CreateContractSheet: React.FC<Props> = ({ trigger }) => {
     return payload;
   };
 
-  const submit = (formData: CreateContractFormData) => {
-    const payload = buildPayload(formData);
+  const submit = (
+    formData: CreateContractFormData,
+    status: "draft" | "publish" = "publish"
+  ) => {
+    const payload = buildPayload(formData, status);
     mutation.mutate(payload);
   };
 
@@ -597,7 +671,10 @@ const CreateContractSheet: React.FC<Props> = ({ trigger }) => {
                       </Button>
                     ) : (
                       <Button
-                        type="submit"
+                        onClick={() => {
+                          const vals = getValues();
+                          submit(vals as CreateContractFormData, "publish");
+                        }}
                         className="w-32 h-12 rounded-xl"
                         disabled={mutation.isPending}
                       >

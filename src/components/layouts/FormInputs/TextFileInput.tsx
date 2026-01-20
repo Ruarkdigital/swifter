@@ -77,7 +77,6 @@ export const TextFileUploader = ({
       <SafeFileUploader
         {...props}
         value={value}
-        // @ts-expect-error - Bypassing the type check issue
         onValueChange={typedValueChange}
         dropzoneOptions={dropZoneConfig}
         // reSelect={true}
