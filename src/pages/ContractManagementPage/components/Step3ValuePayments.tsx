@@ -17,6 +17,15 @@ type Props = {
 
 const Step3ValuePayments: React.FC<Props> = ({ control, paymentTermOptions }) => {
   const paymentStructure = useWatch({ control, name: "paymentStructure" });
+  const deliverables = useWatch({ control, name: "deliverables" }) as Array<{
+    name?: string;
+  }>;
+
+  const deliverableOptions =
+    deliverables?.map((d) => ({
+      label: d.name || "Untitled Deliverable",
+      value: d.name || "",
+    })) || [];
   
   const { fields, append, remove } = useFieldArray({
     control,

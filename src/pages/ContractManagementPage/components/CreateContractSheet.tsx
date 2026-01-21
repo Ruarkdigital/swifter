@@ -133,6 +133,7 @@ const schema = yup.object({
   securityAmount: yup.string().optional(),
   securityDueDate: yup.date().optional(),
   securityExpiryDate: yup.date().optional(),
+  rating: yup.number().min(1).max(5).optional(),
   insurancePolicies: yup
     .array(
       yup.object({
@@ -176,7 +177,7 @@ const defaultValues = {
   holdback: "",
   paymentStructure: "",
   paymentTerm: "",
-  milestones: [{ name: "", amount: "", dueDate: undefined }],
+  milestones: [{ name: "", amount: "", dueDate: undefined, deliverable: "" }],
   effectiveDate: undefined,
   endDate: undefined,
   duration: "",
@@ -535,7 +536,7 @@ const CreateContractSheet: React.FC<Props> = ({ trigger }) => {
       approvaers,
       insurance: insurancePayload,
       contractFormationStage,
-      // rating: data.rating || 5,
+      rating: data.rating || 5,
       status: status,
     };
 

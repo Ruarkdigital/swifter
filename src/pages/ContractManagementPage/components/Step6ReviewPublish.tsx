@@ -15,6 +15,7 @@ const Step8ReviewPublish: React.FC<Props> = ({ control }) => {
   const type = useWatch({ control, name: "type" });
   const category = useWatch({ control, name: "category" });
   const description = useWatch({ control, name: "description" });
+  const rating = useWatch({ control, name: "rating" });
 
   const manager = useWatch({ control, name: "manager" });
   const vendor = useWatch({ control, name: "vendor" });
@@ -91,6 +92,10 @@ const Step8ReviewPublish: React.FC<Props> = ({ control }) => {
                   <p className="text-slate-800">
                     {category || "Not specified"}
                   </p>
+                </div>
+                <div>
+                  <p className="text-slate-500">Complexity Rating</p>
+                  <p className="text-slate-800">{rating || "Not specified"}</p>
                 </div>
               </div>
               <div>

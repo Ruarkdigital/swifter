@@ -13,8 +13,8 @@ import { ReactNode, useState, useId, useEffect } from "react";
 import { ForgerSlotProps } from "@/lib/forge/types";
 import { Tag, TagInput } from "emblor";
 import { format } from "date-fns";
-import { CalendarIcon, ClockIcon } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { CalendarIcon } from "lucide-react";
+import { cn, formatDateTZ } from "@/lib/utils";
 import CurrencyInput from "react-currency-input-field";
 
 export type CustomTag = Tag & {
@@ -193,7 +193,7 @@ export const TextArea = (props: TextAreaProps & Partial<ForgerSlotProps>) => {
 };
 
 export const TextTagInput = (
-  props: TextTagInputProps & Partial<Omit<ForgerSlotProps, "value">>
+  props: TextTagInputProps & Partial<Omit<ForgerSlotProps, "value">>,
 ) => {
   const {
     label,
@@ -220,8 +220,6 @@ export const TextTagInput = (
   });
   const [errorText, setErrorText] = useState<string | null>(null);
   const isEditing = activeTagIndex !== null;
-
-  // console.log({ value, activeTagIndex });
 
   const prefillFromIndex = (idx: number) => {
     const tagsArr = value ?? [];
@@ -287,7 +285,7 @@ export const TextTagInput = (
     }
 
     onChange?.(newTags);
-    
+
     setErrorText(null);
     setOpen(false);
     setActiveTagIndex(null);
@@ -343,7 +341,7 @@ export const TextTagInput = (
                 styleClasses={{
                   inlineTagsContainer: cn(
                     "border-input rounded-lg bg-background shadow-xs transition-[color,box-shadow] focus-within:border-ring outline-none focus-within:ring-[3px] focus-within:ring-ring/50 p-1 gap-1 dark:border-slate-800 dark:bg-slate-950",
-                    inlineTagsContainerClassName
+                    inlineTagsContainerClassName,
                   ),
                   input:
                     "w-full min-w-[80px] shadow-none px-2 h-10 dark:text-slate-50 dark:placeholder:text-slate-400",
@@ -355,15 +353,14 @@ export const TextTagInput = (
                 }}
                 activeTagIndex={activeTagIndex}
                 setActiveTagIndex={setActiveTagIndex}
-                
                 onTagClick={(clicked) => {
-                  const list = value ?? []; 
+                  const list = value ?? [];
                   const idx = list.findIndex(
                     (t) =>
                       (t.id ?? "").toLowerCase() ===
                         (clicked.id ?? "").toLowerCase() &&
                       (t.text ?? "").toLowerCase() ===
-                        (clicked.text ?? "").toLowerCase()
+                        (clicked.text ?? "").toLowerCase(),
                   );
 
                   if (idx >= 0) {
@@ -389,7 +386,9 @@ export const TextTagInput = (
                   <Label className="text-xs">Name</Label>
                   <Input
                     value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, name: e.target.value })
+                    }
                     placeholder="Enter Name"
                   />
                 </div>
@@ -397,7 +396,9 @@ export const TextTagInput = (
                   <Label className="text-xs">Email</Label>
                   <Input
                     value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, email: e.target.value })
+                    }
                     placeholder="Enter Email"
                     type="email"
                   />
@@ -406,15 +407,19 @@ export const TextTagInput = (
                   <Label className="text-xs">Role</Label>
                   <Input
                     value={formData.role}
-                    onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, role: e.target.value })
+                    }
                     placeholder="Enter Role"
                   />
                 </div>
                 <div className="space-y-1">
                   <Label className="text-xs">Phone Number</Label>
                   <Input
-                    value={formData.phone}  
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    value={formData.phone}
+                    onChange={(e) =>
+                      setFormData({ ...formData, phone: e.target.value })
+                    }
                     placeholder="Enter Phone Number"
                   />
                 </div>
@@ -455,7 +460,7 @@ export const TextTagInput = (
           styleClasses={{
             inlineTagsContainer: cn(
               "border-input rounded-lg bg-background shadow-xs transition-[color,box-shadow] focus-within:border-ring outline-none focus-within:ring-[3px] focus-within:ring-ring/50 p-1 gap-1 dark:border-slate-800 dark:bg-slate-950",
-              inlineTagsContainerClassName
+              inlineTagsContainerClassName,
             ),
             input:
               "w-full min-w-[80px] shadow-none px-2 h-10 dark:text-slate-50 dark:placeholder:text-slate-400",
@@ -481,7 +486,7 @@ export const TextTagInput = (
 
 // Forge-compatible TextDatePicker component
 export const TextDatePicker = (
-  props: TextDatePickerProps & Partial<ForgerSlotProps>
+  props: TextDatePickerProps & Partial<ForgerSlotProps>,
 ) => {
   const {
     label,
@@ -496,13 +501,18 @@ export const TextDatePicker = (
     helperText,
   } = props;
   const id = useId();
-  const [timeValue, setTimeValue] = useState<string>(
-    value ? format(value, "HH:mm") : ""
-  );
+  const [timeValue, setTimeValue] = useState<string>("");
 
   useEffect(() => {
     if (value) {
-      setTimeValue(format(value, "HH:mm"));
+      const val =
+      typeof value === "string"
+      ? value?.includes("T")
+      ? value?.split("T")?.[1]?.split?.('.')?.[0]
+      : ""
+      : format(value, "HH:mm");
+
+      setTimeValue(val);
     } else {
       setTimeValue("");
     }
@@ -520,7 +530,7 @@ export const TextDatePicker = (
       isNaN(hours) ? 0 : hours,
       isNaN(minutes) ? 0 : minutes,
       0,
-      0
+      0,
     );
   };
 
@@ -548,7 +558,9 @@ export const TextDatePicker = (
             }`}
           >
             <span className={cn("truncate", !value && "text-muted-foreground")}>
-              {value ? format(value, showTime ? "PPP p" : "PPP") : placeholder}
+              {value
+                ? formatDateTZ(value, showTime ? "MMM d, yyyy hh:mm a" : "PPP")
+                : placeholder}
             </span>
             <CalendarIcon
               size={16}
@@ -601,7 +613,7 @@ export const TextDatePicker = (
 
 // Forge-compatible TextTimeInput component
 export const TextTimeInput = (
-  props: TextTimeInputProps & Partial<ForgerSlotProps>
+  props: TextTimeInputProps & Partial<ForgerSlotProps>,
 ) => {
   const {
     label,
@@ -620,7 +632,7 @@ export const TextTimeInput = (
 
   return (
     <div
-      className={`flex flex-col font-medium w-full relative ${
+      className={`flex flex-col font-medium w-full relative bg-pink-600 ${
         containerClass ?? ""
       }`}
     >
@@ -632,7 +644,7 @@ export const TextTimeInput = (
           {label}
         </Label>
       )}
-      <div className="relative">
+      <div className="relative w-full">
         <Input
           {...inputProps}
           id={id}
@@ -646,9 +658,9 @@ export const TextTimeInput = (
             error ? "border-red-500" : ""
           } ${className}`}
         />
-        <div className="text-muted-foreground/80 pointer-events-none absolute inset-y-0 end-0 z-10 flex items-center justify-center pe-3">
+        {/* <div className="text-muted-foreground/80 pointer-events-none absolute inset-y-0 end-0 z-10 flex items-center justify-center pe-3">
           <ClockIcon size={16} aria-hidden="true" />
-        </div>
+        </div> */}
       </div>
       {error && <span className="text-xs text-red-500 mt-1">{error}</span>}
       {!error && helperText && (

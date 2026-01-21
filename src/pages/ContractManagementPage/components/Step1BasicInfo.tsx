@@ -1,16 +1,87 @@
 import React from "react";
 import { Forger } from "@/lib/forge";
 import {
-	TextInput,
-	TextSelect,
-	TextArea,
-}	from "@/components/layouts/FormInputs";
+  TextInput,
+  TextSelect,
+  TextArea,
+} from "@/components/layouts/FormInputs";
 import { useWatch } from "react-hook-form";
+import { cn } from "@/lib/utils";
+import { Info } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 type Props = {
   typeOptions: Array<{ label: string; value: string }>;
   projectOptions: Array<{ label: string; value: string }>;
-  awardedOptions: Array<{ label: string; value: string; vendorEmail?: string; vendorId?: string }>;
+  awardedOptions: Array<{
+    label: string;
+    value: string;
+    vendorEmail?: string;
+    vendorId?: string;
+  }>;
+};
+
+const ComplexityRating = ({
+  value,
+  onChange,
+}: {
+  value: number;
+  onChange: (val: number) => void;
+}) => {
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center gap-2">
+        <label className="text-sm font-medium text-slate-700">
+          Complexity Rating (1-10)
+        </label>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger>
+              <Info className="h-4 w-4 text-slate-400" />
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Rate the complexity of the contract from 1 (Low) to 10 (High)</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      </div>
+      <div className="flex items-center gap-4">
+        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
+          <div
+            key={num}
+            className="flex flex-col items-center gap-2 cursor-pointer group"
+            onClick={() => onChange(num)}
+          >
+            <div
+              className={cn(
+                "w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all",
+                value === num
+                  ? "border-[#2A4467] bg-blue-50"
+                  : "border-slate-200 group-hover:border-slate-300"
+              )}
+            >
+              {value === num && (
+                <div className="w-2.5 h-2.5 rounded-full bg-[#2A4467]" />
+              )}
+            </div>
+            <span
+              className={cn(
+                "text-xs font-medium",
+                value === num ? "text-[#2A4467]" : "text-slate-500"
+              )}
+            >
+              {num}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 };
 
 const Step1BasicInfo: React.FC<Props> = ({
@@ -108,6 +179,12 @@ const Step1BasicInfo: React.FC<Props> = ({
 				component={TextInput}
 				data-testid="contract-id-input"
 			/>
+			
+			<Forger
+				name="rating"
+				component={ComplexityRating}
+			/>
+
 			<Forger
 				name="description"
 				label="Description"
