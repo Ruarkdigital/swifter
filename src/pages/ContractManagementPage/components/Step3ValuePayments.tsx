@@ -93,22 +93,31 @@ const Step3ValuePayments: React.FC<Props> = ({ control, paymentTermOptions }) =>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 items-end">
                 <Forger
                   name={`milestones.${index}.name`}
+                  label="Milestone Name"
                   placeholder={`Milestone ${index + 1}`}
                   containerClass="md:col-span-2"
                   component={TextInput}
                 />
-              <Forger
-                name={`milestones.${index}.amount`}
-                label="Amount ($)"
-                placeholder="Enter Amount"
-                component={TextCurrencyInput}
-              />
-              <Forger
-                name={`milestones.${index}.dueDate`}
-                label="Due Date"
-                component={TextDatePicker}
-                placeholder="Side Visits/Conference Call"
-              />
+                <Forger
+                  name={`milestones.${index}.amount`}
+                  label="Amount ($)"
+                  placeholder="Enter Amount"
+                  component={TextCurrencyInput}
+                />
+                <Forger
+                  name={`milestones.${index}.dueDate`}
+                  label="Due Date"
+                  component={TextDatePicker}
+                  placeholder="Side Visits/Conference Call"
+                />
+                <Forger
+                  name={`milestones.${index}.deliverable`}
+                  label="Select Deliverable (Optional)"
+                  placeholder="Select Deliverable"
+                  component={TextSelect}
+                  options={deliverableOptions}
+                  containerClass="md:col-span-2"
+                />
               </div>
             </div>
           ))}
@@ -122,6 +131,7 @@ const Step3ValuePayments: React.FC<Props> = ({ control, paymentTermOptions }) =>
                   name: `Milestone ${fields.length + 1}`,
                   amount: "",
                   dueDate: undefined,
+                  deliverable: "",
                 })
               }
             >

@@ -79,6 +79,7 @@ const schema = yup.object({
         name: yup.string().optional(),
         amount: yup.mixed().optional(),
         dueDate: yup.date().optional(),
+        deliverable: yup.string().optional(),
       })
     )
     .optional(),
