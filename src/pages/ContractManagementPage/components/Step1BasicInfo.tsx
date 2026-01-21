@@ -89,110 +89,175 @@ const Step1BasicInfo: React.FC<Props> = ({
   projectOptions,
   awardedOptions,
 }) => {
-	const relationship = useWatch({ name: "relationship" });
-
-	const projectOrMsaLabel =
-		relationship === "msa" ? "Select MSA" : "Select Project";
-	const projectOrMsaPlaceholder =
-		relationship === "msa" ? "Select MSA" : "Select Project";
+  const relationship = useWatch({ name: "relationship" });
 
   return (
-		<div className="mt-4 space-y-4">
-			<Forger
-				name="name"
-				label="Contract Name"
-				placeholder="Enter Title"
-				component={TextInput}
-				data-testid="contract-name-input"
-			/>
-			<Forger
-				name="relationship"
-				label="Contract Relationship"
-				placeholder="Enter Title"
-				component={TextSelect}
-				options={[
-					{ label: "Stand-Alone Contract", value: "standalone" },
-					{ label: "Link to MSA", value: "msa" },
-					{ label: "Link to Project", value: "project" },
-				]}
-				data-testid="contract-relationship-select"
-			/>
-			<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-				<Forger
-					name="project"
-					label={projectOrMsaLabel}
-					placeholder={projectOrMsaPlaceholder}
-					component={TextSelect}
-					options={projectOptions}
-					data-testid="select-project-select"
-				/>
-				<Forger
-					name="awardedSolicitation"
-					label="Select Awarded Solicitation (Optional)"
-					placeholder="Select Solicititaion"
-					component={TextSelect}
-					options={awardedOptions}
-				/>
-			</div>
-			<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-				<Forger
-					name="type"
-					label="Contract Type"
-					placeholder="Select Type"
-					component={TextSelect}
-					options={typeOptions}
-					data-testid="contract-type-select"
-				/>
-				<Forger
-					name="category"
-					label="Category"
-					placeholder="Legal/IT Operations/Office Supplies"
-					component={TextSelect}
-					options={[
-						{ label: "Legal", value: "legal" },
-						{ label: "IT Operations", value: "it_ops" },
-						{ label: "Office Supplies", value: "office_supplies" },
-					]}
-					data-testid="contract-category-select"
-				/>
-			</div>
-			{/* <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-				<Forger
-					name="manager"
-					label="Contract Manger"
-					placeholder="Enter Title"
-					component={TextInput}
-					data-testid="contract-manager-input"
-				/>
-				<Forger
-					name="jobTitle"
-					label="Job Title"
-					placeholder="Enter Title"
-					component={TextInput}
-					data-testid="job-title-input"
-				/>
-			</div> */}
-			<Forger
-				name="contractId"
-				label="Contract ID/Number (Optional)"
-				placeholder="Enter Title"
-				component={TextInput}
-				data-testid="contract-id-input"
-			/>
-			
-			<Forger
-				name="rating"
-				component={ComplexityRating}
-			/>
+    <div className="mt-4 space-y-4">
+      <Forger
+        name="name"
+        label="Contract Name"
+        placeholder="Enter Title"
+        component={TextInput}
+        data-testid="contract-name-input"
+      />
+      <Forger
+        name="relationship"
+        label="Contract Relationship"
+        placeholder="Enter Title"
+        component={TextSelect}
+        options={[
+          { label: "Stand-Alone Contract", value: "standalone" },
+          { label: "Link to Project", value: "project" },
+          { label: "Link to MSA", value: "msa" },
+          { label: "Link to Project & MSA", value: "msa_project" },
+        ]}
+        data-testid="contract-relationship-select"
+      />
 
-			<Forger
-				name="description"
-				label="Description"
-				placeholder="Enter Detail"
-				component={TextArea}
-				data-testid="description-input"
-			/>
-		</div>
+      {/* Dynamic Fields based on Relationship */}
+      {relationship === "project" && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Forger
+            name="project"
+            label="Select Project"
+            placeholder="Construction Services ..."
+            component={TextSelect}
+            options={projectOptions}
+            data-testid="select-project-select"
+          />
+          <Forger
+            name="awardedSolicitation"
+            label="Select Awarded Solicitation (Optional)"
+            placeholder="Select Solicitation"
+            component={TextSelect}
+            options={awardedOptions}
+          />
+        </div>
+      )}
+
+      {relationship === "msa" && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Forger
+            name="msaCategory"
+            label="Select MSA Category"
+            placeholder="Construction Services ..."
+            component={TextSelect}
+            options={[
+              { label: "Construction Services", value: "construction" },
+              { label: "IT Services", value: "it" },
+            ]}
+          />
+          <Forger
+            name="project" // Using project field for MSA ID based on existing logic, or need a new field? existing logic uses 'project' for MSA ID in buildPayload
+            label="Select MSA"
+            placeholder="Select Solicitation"
+            component={TextSelect}
+            options={projectOptions} // Assuming MSA options are passed here or need separate props
+          />
+        </div>
+      )}
+
+      {relationship === "msa_project" && (
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Forger
+              name="msaCategory"
+              label="Select MSA Category"
+              placeholder="Construction Services ..."
+              component={TextSelect}
+              options={[
+                { label: "Construction Services", value: "construction" },
+                { label: "IT Services", value: "it" },
+              ]}
+            />
+            <Forger
+              name="msaId" // Separate field for MSA when both are present
+              label="Select MSA"
+              placeholder="Select Solicitation"
+              component={TextSelect}
+              options={projectOptions}
+            />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Forger
+              name="project"
+              label="Select Project"
+              placeholder="Select Solicitation"
+              component={TextSelect}
+              options={projectOptions}
+            />
+            <Forger
+              name="awardedSolicitation"
+              label="Select Awarded Solicitation (Optional)"
+              placeholder="Select Solicitation"
+              component={TextSelect}
+              options={awardedOptions}
+            />
+          </div>
+        </>
+      )}
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Forger
+          name="type"
+          label="Contract Type"
+          placeholder="Fixed Price/Lump Sum"
+          component={TextSelect}
+          options={typeOptions}
+          data-testid="contract-type-select"
+        />
+        <Forger
+          name="category"
+          label="Category"
+          placeholder="Legal"
+          component={TextSelect}
+          options={[
+            { label: "Legal", value: "legal" },
+            { label: "IT Operations", value: "it_ops" },
+            { label: "Office Supplies", value: "office_supplies" },
+          ]}
+          data-testid="contract-category-select"
+        />
+      </div>
+
+      {/* <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Forger
+          name="manager"
+          label="Contract Manger"
+          placeholder="Enter Title"
+          component={TextInput}
+          data-testid="contract-manager-input"
+        />
+        <Forger
+          name="jobTitle"
+          label="Job Title"
+          placeholder="Enter Title"
+          component={TextInput}
+          data-testid="job-title-input"
+        />
+      </div> */}
+      
+      <Forger
+        name="contractId"
+        label="Contract ID/Number (Optional)"
+        placeholder="Enter Title"
+        component={TextInput}
+        data-testid="contract-id-input"
+      />
+
+      <Forger
+        name="rating"
+        component={ComplexityRating}
+      />
+
+      <Forger
+        name="description"
+        label="Description"
+        placeholder="Enter Detail"
+        component={TextArea}
+        data-testid="description-input"
+      />
+    </div>
   );
 };
 

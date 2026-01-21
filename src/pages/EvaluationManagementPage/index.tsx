@@ -153,6 +153,7 @@ const transformAssignedEvaluationData = (
   if (!apiData || !Array.isArray(apiData)) {
     return [];
   }
+
   return apiData.map((item) => {
     // Determine status based on progress
     let status: "Active" | "Pending" | "Completed" = "Active";
@@ -175,6 +176,7 @@ const transformAssignedEvaluationData = (
         "MMM dd, yyyy KK:mm a",
         "N/A"
       ),
+      timezone: item.timezone,
       deadline: safeFormatDate(item.endDate, "MMM dd, yyyy KK:mm a", "N/A"),
       progress: Math.round(item.averageProgress || 0),
       status,
@@ -819,6 +821,10 @@ export const EvaluationManagementPage = () => {
           </span>
         </div>
       ),
+    },
+     {
+      accessorKey: "timezone",
+      header: "Timezone",
     },
     {
       accessorKey: "progress",

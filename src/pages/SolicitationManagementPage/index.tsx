@@ -848,6 +848,10 @@ export const SolicitationManagementPage = () => {
           ),
         },
         {
+          accessorKey: "timezone",
+          header: "Timezone",
+        },
+        {
           accessorKey: "submissionStatus",
           header: "Submission Status",
           cell: ({ row }) => {
@@ -1243,6 +1247,10 @@ export const SolicitationManagementPage = () => {
               </span>
             </>
           ),
+        },
+        {
+          accessorKey: "timezone",
+          header: "Timezone",
         },
         {
           accessorKey: "status",
