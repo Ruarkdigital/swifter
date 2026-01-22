@@ -103,7 +103,7 @@ const Step1BasicInfo: React.FC<Props> = ({
       <Forger
         name="relationship"
         label="Contract Relationship"
-        placeholder="Enter Title"
+        placeholder="Enter Contract Relationship"
         component={TextSelect}
         options={[
           { label: "Stand-Alone Contract", value: "standalone" },
@@ -149,7 +149,7 @@ const Step1BasicInfo: React.FC<Props> = ({
           />
           <Forger
             name="project" // Using project field for MSA ID based on existing logic, or need a new field? existing logic uses 'project' for MSA ID in buildPayload
-            label="Select MSA"
+            label="Select project"
             placeholder="Select Solicitation"
             component={TextSelect}
             options={projectOptions} // Assuming MSA options are passed here or need separate props
@@ -173,16 +173,16 @@ const Step1BasicInfo: React.FC<Props> = ({
             <Forger
               name="msaId" // Separate field for MSA when both are present
               label="Select MSA"
-              placeholder="Select Solicitation"
+              placeholder="Select MSA"
               component={TextSelect}
-              options={projectOptions}
+              options={[]}
             />
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Forger
               name="project"
               label="Select Project"
-              placeholder="Select Solicitation"
+              placeholder="Select Project"
               component={TextSelect}
               options={projectOptions}
             />
