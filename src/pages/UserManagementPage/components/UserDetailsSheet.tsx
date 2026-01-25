@@ -166,7 +166,6 @@ const UserDetailsSheet: React.FC<UserDetailsSheetProps> = ({
     },
   });
 
-
   // Show loading state
   if (isLoadingUserDetails) {
     return (
@@ -247,7 +246,7 @@ const UserDetailsSheet: React.FC<UserDetailsSheetProps> = ({
 
   const handleStatusUpdate = (status: "active" | "inactive") => {
     if (userData) {
-      statusMutation.mutate({ userId: userData.user_id, status });
+      statusMutation.mutate({ userId: userData._id, status });
     }
   };
 
@@ -490,6 +489,7 @@ const UserDetailsSheet: React.FC<UserDetailsSheetProps> = ({
           userData?.status === "active" ? "suspend" : "activate"
         } ${userData?.name}? This action can be reversed later.`}
         type={userData?.status === "active" ? "warning" : "success"}
+        isLoading={statusMutation.isPending}
         primaryButtonText={
           userData?.status === "active" ? "Suspend" : "Activate"
         }
@@ -509,6 +509,7 @@ const UserDetailsSheet: React.FC<UserDetailsSheetProps> = ({
         title="Delete User"
         text={`Are you sure you want to delete ${userData?.name}? This action cannot be undone and will permanently remove all user data.`}
         type="delete"
+        isLoading={deleteMutation.isPending}
         primaryButtonText="Delete"
         onPrimaryAction={handleDeleteUser}
       />

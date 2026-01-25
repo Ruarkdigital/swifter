@@ -41,8 +41,8 @@ const columns: ColumnDef<ChangeRow>[] = [
         s === "Approved"
           ? "bg-green-100 text-green-700"
           : s === "Pending"
-          ? "bg-yellow-100 text-yellow-700"
-          : "bg-red-100 text-red-700";
+            ? "bg-yellow-100 text-yellow-700"
+            : "bg-red-100 text-red-700";
       return (
         <span className={`px-2 py-1 rounded-full text-xs font-medium ${tone}`}>
           {s}
@@ -63,7 +63,11 @@ const columns: ColumnDef<ChangeRow>[] = [
         <DropdownMenuContent align="end">
           <DropdownMenuItem asChild>
             <ChangeDetailsSheet
-              trigger={<a href="#" data-testid="view-change-detail">View Details</a>}
+              trigger={
+                <a href="#" data-testid="view-change-detail p-4">
+                  View Details
+                </a>
+              }
             />
           </DropdownMenuItem>
         </DropdownMenuContent>
@@ -135,22 +139,30 @@ const ChangeTable: React.FC = () => {
   const [search, setSearch] = React.useState("");
 
   return (
-    <div className="space-y-4" data-testid="changes-table">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-medium text-slate-700">Changes</span>
-          <Input
-            placeholder="Search changes"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="h-10 w-[260px]"
-            data-testid="search-changes-input"
-          />
-        </div>
-      </div>
-
+    <div className="space-y-4" data-testid="changes-table ">
       <DataTable<ChangeRow>
+        header={() => (
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-slate-700">
+                Changes
+              </span>
+              <Input
+                placeholder="Search changes"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="h-10 w-[260px]"
+                data-testid="search-changes-input"
+              />
+            </div>
+          </div>
+        )}
         data={sampleRows}
+        classNames={{
+          container:
+            "bg-white dark:bg-slate-950 rounded-xl px-3 border border-gray-300 dark:border-slate-600",
+          expandedCell: "px-5",
+        }}
         columns={columns}
         options={{ disableSelection: true }}
       />

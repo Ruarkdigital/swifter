@@ -72,7 +72,7 @@ const Step3ValuePayments: React.FC<Props> = ({ control, paymentTermOptions }) =>
         label="Select Deliverable (Optional)"
         placeholder="Select Deliverable"
         component={TextSelect}
-        options={[]}
+        options={deliverableOptions}
         containerClass="md:col-span-2"
       />
 

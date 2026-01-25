@@ -143,8 +143,27 @@ const ContractManagementPage: React.FC = () => {
       }
     : undefined;
 
-  const allContractsRows = mapContractsToRows(allContractsData?.data.contracts);
-  const myContractsRows = mapContractsToRows(myContractsData?.data.contracts);
+  const demoContracts: ContractApi[] = [
+    {
+      _id: "demo-1",
+      title: "Demo Contract 1",
+      status: "draft",
+      totalAmount: 5000,
+      currency: "$",
+      createdAt: new Date().toISOString(),
+    },
+    {
+      _id: "demo-2",
+      title: "Demo Contract 2",
+      status: "active",
+      totalAmount: 12000,
+      currency: "$",
+      createdAt: new Date().toISOString(),
+    },
+  ];
+
+  const allContractsRows = mapContractsToRows(allContractsData?.data.contracts ?? demoContracts);
+  const myContractsRows = mapContractsToRows(myContractsData?.data.contracts ?? demoContracts);
 
   return (
     <div className="space-y-8 pt-10">

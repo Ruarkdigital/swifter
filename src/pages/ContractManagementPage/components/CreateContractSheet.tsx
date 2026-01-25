@@ -26,6 +26,9 @@ import { getRequest, postRequest } from "@/lib/axiosInstance";
 import { useUserQueryKey } from "@/hooks/useUserQueryKey";
 import { useProjectsList } from "@/pages/ProjectManagementPage/services/useProjectApi";
 import { useToastHandler } from "@/hooks/useToaster";
+import { useWatch } from "react-hook-form";
+import { Checkbox } from "@/components/ui/checkbox";
+import { ChevronDown, X } from "lucide-react";
 
 type Props = {
   trigger: React.ReactNode;
@@ -125,6 +128,7 @@ const schema = yup.object({
         name: yup.string().optional(),
         approvers: yup.array().optional(),
         approvalLevel: yup.string().optional(),
+        amount: yup.mixed().optional(),
       })
     )
     .optional(),
@@ -198,7 +202,7 @@ const defaultValues = {
   approvalEndDate: undefined,
   executionStartDate: undefined,
   executionEndDate: undefined,
-  approvalGroups: [{ name: "", approvers: [], approvalLevel: "0" }],
+  approvalGroups: [{ name: "", approvers: [], approvalLevel: "0", amount: "" }],
   insuranceExpiryDate: undefined,
   contractSecurity: "",
   securityType: "",
@@ -228,6 +232,11 @@ const CreateContractSheet: React.FC<Props> = ({ trigger }) => {
   });
 
   const [step, setStep] = React.useState(1);
+  const [isApprovalDialogOpen, setIsApprovalDialogOpen] = React.useState(false);
+  const [selectedApprovalGroup, setSelectedApprovalGroup] = React.useState("");
+  const [assignedApproverIds, setAssignedApproverIds] = React.useState<string[]>(
+    []
+  );
   const stepTitles = [
     "Step 1 of 8: Basic Information",
     "Step 2 of 8: Contract Team",
@@ -243,6 +252,52 @@ const CreateContractSheet: React.FC<Props> = ({ trigger }) => {
 
   const { success, error } = useToastHandler();
   const qc = useQueryClient();
+  const approvalGroups = useWatch({ control, name: "approvalGroups" }) as
+    | {
+        name?: string | null;
+        approvers?: any[];
+        approvalLevel?: string;
+        amount?: unknown;
+      }[]
+    | undefined;
+
+  const approvalGroupOptions = React.useMemo(
+    () =>
+      (approvalGroups ?? []).map((group, index) => ({
+        label: `${group?.name || `Group ${index + 1}`} - Approval Level ${
+          group?.approvalLevel || "-"
+        }`,
+        value: String(index),
+      })),
+    [approvalGroups]
+  );
+
+  const selectedGroupIndex = selectedApprovalGroup
+    ? Number(selectedApprovalGroup)
+    : 0;
+  const selectedGroup = approvalGroupOptions.length
+    ? approvalGroups?.[selectedGroupIndex]
+    : undefined;
+  const selectedApprovers = (selectedGroup?.approvers ?? []) as any[];
+
+  React.useEffect(() => {
+    if (!selectedApprovalGroup && approvalGroupOptions.length > 0) {
+      setSelectedApprovalGroup(approvalGroupOptions[0].value);
+    }
+  }, [approvalGroupOptions, selectedApprovalGroup]);
+
+  React.useEffect(() => {
+    const ids = selectedApprovers.map((approver, index) => {
+      return (
+        approver?.id ||
+        approver?.email ||
+        approver?.value ||
+        approver?.text ||
+        String(index)
+      );
+    });
+    setAssignedApproverIds(ids);
+  }, [selectedApprovers]);
 
   const typesQuery = useQuery<ApiListResponse<ContractType>>({
     queryKey: useUserQueryKey(["contract-types"]),
@@ -374,13 +429,17 @@ const CreateContractSheet: React.FC<Props> = ({ trigger }) => {
     const approvaers =
       (data.approvalGroups ?? []).flatMap((g) => {
         const lvl = g.approvalLevel ? Number(g.approvalLevel) : undefined;
+        const amountValue =
+          typeof g.amount === "string"
+            ? parseFloat(g.amount)
+            : Number(g.amount ?? 0);
         // API expects user as array of strings
         const userIds = (g.approvers ?? []).map((u: any) => u?.value ?? u);
         return {
           user: userIds,
           groupName: g.name,
           levelName: lvl,
-          amount: 0, // Defaulting as required by schema structure implied
+          amount: amountValue,
         };
       }) ?? [];
 
@@ -559,6 +618,23 @@ const CreateContractSheet: React.FC<Props> = ({ trigger }) => {
     mutation.mutate(payload);
   };
 
+  const getApproverKey = (approver: any, index: number) =>
+    approver?.id ||
+    approver?.email ||
+    approver?.value ||
+    approver?.text ||
+    String(index);
+
+  const assignedApprovers = selectedApprovers.filter((approver, index) =>
+    assignedApproverIds.includes(getApproverKey(approver, index))
+  );
+
+  const toggleApprover = (approverId: string, checked: boolean) => {
+    setAssignedApproverIds((prev) =>
+      checked ? [...prev, approverId] : prev.filter((id) => id !== approverId)
+    );
+  };
+
   return (
     <Dialog>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
@@ -667,7 +743,13 @@ const CreateContractSheet: React.FC<Props> = ({ trigger }) => {
                       <Button
                         type="button"
                         className="w-32 h-12 rounded-xl"
-                        onClick={() => setStep(Math.min(totalSteps, step + 1))}
+                        onClick={() => {
+                          if (step === 8) {
+                            setIsApprovalDialogOpen(true);
+                            return;
+                          }
+                          setStep(Math.min(totalSteps, step + 1));
+                        }}
                       >
                         Continue
                       </Button>
@@ -687,6 +769,176 @@ const CreateContractSheet: React.FC<Props> = ({ trigger }) => {
                 </div>
               )}
             </Forge>
+
+            <Dialog
+              open={isApprovalDialogOpen}
+              onOpenChange={setIsApprovalDialogOpen}
+            >
+              <DialogContent className="sm:max-w-xl p-0">
+                <div className="p-8 space-y-6">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xl font-semibold text-slate-900">
+                      Send for Approval
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setIsApprovalDialogOpen(false)}
+                      className="text-slate-500 hover:text-slate-700"
+                    >
+                      <X className="h-5 w-5" />
+                    </button>
+                  </div>
+
+                  <div className="space-y-3">
+                    <p className="text-sm font-medium text-slate-900">
+                      Select Approvers For Contract Execution
+                    </p>
+                    <div className="relative">
+                      <select
+                        className="w-full h-12 border border-gray-300 rounded-lg px-4 pr-10 text-sm text-slate-700 focus:border-[#2A4467] focus:ring-[#2A4467]"
+                        value={
+                          approvalGroupOptions.length
+                            ? String(selectedGroupIndex)
+                            : ""
+                        }
+                        onChange={(event) =>
+                          setSelectedApprovalGroup(event.target.value)
+                        }
+                      >
+                        {approvalGroupOptions.length === 0 && (
+                          <option value="">Select Group</option>
+                        )}
+                        {approvalGroupOptions.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                      <ChevronDown className="absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                    </div>
+                  </div>
+
+                  <div className="border border-gray-200 rounded-xl overflow-hidden">
+                    <div className="grid grid-cols-[1fr_160px_140px] bg-slate-50 px-6 py-2 text-sm font-semibold text-[#2A4467]">
+                      <p>Group</p>
+                      <p className="text-center">Role</p>
+                      <p className="text-center">Action</p>
+                    </div>
+                    <div className="divide-y">
+                      {selectedApprovers.length === 0 && (
+                        <div className="px-6 py-6 text-sm text-slate-500">
+                          No approvers added for this group
+                        </div>
+                      )}
+                      {selectedApprovers.map((approver, index) => {
+                        const approverId = getApproverKey(approver, index);
+                        const name =
+                          approver?.text ||
+                          approver?.name ||
+                          approver?.label ||
+                          "Unnamed";
+                        const email = approver?.id || approver?.email || "";
+                        const role = approver?.meta?.role
+                          ? approver.meta.role
+                          : selectedGroup?.approvalLevel
+                          ? `Approval Level ${selectedGroup.approvalLevel}`
+                          : "Approval";
+                        return (
+                          <div
+                            key={approverId}
+                            className="grid grid-cols-[1fr_160px_140px] items-center px-6 py-4"
+                          >
+                            <div className="space-y-1">
+                              <p className="text-sm font-semibold text-slate-700">
+                                {name}
+                              </p>
+                              {email && (
+                                <p className="text-xs text-blue-600 underline">
+                                  {email}
+                                </p>
+                              )}
+                            </div>
+                            <p className="text-sm text-slate-600 text-center">
+                              {role}
+                            </p>
+                            <div className="flex items-center justify-center gap-2">
+                              <Checkbox
+                                checked={assignedApproverIds.includes(
+                                  approverId
+                                )}
+                                onCheckedChange={(checked) =>
+                                  toggleApprover(approverId, Boolean(checked))
+                                }
+                              />
+                              <span className="text-sm text-slate-700">
+                                Assign
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <p className="text-sm font-medium text-slate-900">
+                      Assigned Approvers
+                    </p>
+                    <div className="flex flex-wrap gap-2 rounded-lg border border-gray-200 bg-slate-50 px-4 py-4">
+                      {assignedApprovers.length === 0 && (
+                        <p className="text-sm text-slate-500">Search</p>
+                      )}
+                      {assignedApprovers.map((approver, index) => {
+                        const approverId = getApproverKey(approver, index);
+                        const name =
+                          approver?.text ||
+                          approver?.name ||
+                          approver?.label ||
+                          "Unnamed";
+                        return (
+                          <div
+                            key={approverId}
+                            className="flex items-center gap-2 rounded-md bg-[#2A44671A] px-2 py-1 text-xs font-semibold text-[#2A4467]"
+                          >
+                            <span>{name}</span>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                toggleApprover(approverId, false)
+                              }
+                              className="text-[#2A4467]"
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-6 justify-end">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="h-12 px-8 rounded-xl"
+                      onClick={() => setIsApprovalDialogOpen(false)}
+                    >
+                      Back
+                    </Button>
+                    <Button
+                      type="button"
+                      className="h-12 px-8 rounded-xl bg-[#2A4467] hover:bg-[#1e3252] text-white"
+                      onClick={() => {
+                        setIsApprovalDialogOpen(false);
+                        setStep(9);
+                      }}
+                    >
+                      Send for Approval
+                    </Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
           </div>
         </div>
       </DialogContent>

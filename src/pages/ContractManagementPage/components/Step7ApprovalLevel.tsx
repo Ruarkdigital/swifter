@@ -1,6 +1,10 @@
 import React from "react";
 import { Forger, useFieldArray } from "@/lib/forge";
-import { TextInput, TextTagInput } from "@/components/layouts/FormInputs";
+import {
+  TextCurrencyInput,
+  TextInput,
+  TextTagInput,
+} from "@/components/layouts/FormInputs";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import {
@@ -28,9 +32,10 @@ const Step7ApprovalLevel: React.FC<Props> = ({ control }) => {
         Add with email address, name, domain name
       </p>
 
-      <div className="hidden md:grid grid-cols-[200px_minmax(0,1fr)_260px] gap-8 text-sm font-medium text-slate-700 border-b pb-3">
+      <div className="hidden md:grid grid-cols-[200px_300px_220px_140px] gap-8 text-sm font-medium text-slate-700 border-b pb-3">
         <div>Group Name</div>
         <div>Approvers</div>
+        <div>Amount Threshold</div>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1">
             <span>Approval Level</span>
@@ -62,7 +67,7 @@ const Step7ApprovalLevel: React.FC<Props> = ({ control }) => {
         {fields.map((field, index) => (
           <div
             key={field.id}
-            className="grid grid-cols-1 md:grid-cols-[200px_minmax(0,1fr)_260px] gap-4 md:gap-8 items-start border-b pb-4"
+            className="grid grid-cols-1 md:grid-cols-[180px_320px_180px_180px] gap-4 md:gap-8 items-start border-b pb-4"
           >
             <Forger
               name={`approvalGroups.${index}.name`}
@@ -76,6 +81,13 @@ const Step7ApprovalLevel: React.FC<Props> = ({ control }) => {
               placeholder="Add Approvers"
               containerClass="min-h-[7rem] border rounded-lg cursor-pointer"
               inlineTagsContainerClassName="border-0 outline-0 hover:border-0 focus:border-0 focus-within:ring-0"
+            />
+
+            <Forger
+              name={`approvalGroups.${index}.amount`}
+              component={TextCurrencyInput}
+              containerClass="!w-40"
+              placeholder="$0.00"
             />
 
             <div className="flex flex-col gap-2">

@@ -74,7 +74,7 @@ const ChangeDetailsSheet: React.FC<Props> = ({ trigger }) => {
     <Sheet>
       <SheetTrigger asChild>{trigger}</SheetTrigger>
       <SheetContent
-        className="sm:max-w-2xl lg:max-w-3xl rounded-2xl"
+        className="sm:max-w-2xl lg:max-w-3xl rounded-2xl overflow-y-auto"
         side="right"
       >
         <div className="space-y-6" data-testid="change-details-sheet">

@@ -1,0 +1,38 @@
+import React from "react";
+import { TabsContent } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import { Share2 } from "lucide-react";
+import ClaimsStatsCards from "../components/ClaimsStatsCards";
+import ClaimsTable from "../components/ClaimsTable";
+import RequestClaimDialog from "../components/RequestClaimDialog";
+
+const ClaimsTabContent: React.FC = () => {
+  return (
+    <TabsContent value="claims" className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-semibold text-[#1F2937]">Claims</h3>
+        <div className="flex items-center gap-3">
+          <Button
+            variant="outline"
+            className="h-10 rounded-xl border-[#E5E7EB] bg-white px-4 text-sm font-medium text-[#111827] hover:bg-[#F9FAFB]"
+          >
+            <Share2 className="mr-2 h-4 w-4" /> Export Report
+          </Button>
+          <RequestClaimDialog
+            trigger={
+              <Button className="h-10 rounded-xl bg-[#2A4467] px-4 text-sm font-medium text-white hover:bg-[#1f3552]">
+                Request Claim
+              </Button>
+            }
+          />
+        </div>
+      </div>
+
+      <ClaimsStatsCards />
+
+      <ClaimsTable />
+    </TabsContent>
+  );
+};
+
+export default ClaimsTabContent;
