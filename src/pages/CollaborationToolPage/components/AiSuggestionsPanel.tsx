@@ -3,10 +3,15 @@ import { Sparkles, X, Check, RotateCw, Play, ChevronDown, ChevronUp } from "luci
 import { cn } from "@/lib/utils";
 import type { RedlineSpan } from "../collab/redlineScan";
 import {
+  acceptanceActor,
+  deriveProgressCounts,
+  dualApprovalPhase,
+  redlineHolderLabel,
   redlineStageLabel,
   type AiRedlineSuggestion,
   type AiAlternativeLanguage,
   type AiRiskLevel,
+  type RedlineAcceptance,
   type RedlineResolvedHolder,
   type SuggestionProgress,
 } from "../collab/useAiRedlineSuggestions";
@@ -21,6 +26,21 @@ type Item = {
   state: "pending" | "approved" | "dismissed";
   /** #87 — who resolved it: "vendor" → "Resolved", else "Addressed". */
   resolvedByHolder?: RedlineResolvedHolder;
+  /** Per-redline bilateral acceptance driving the dual-approval UI. */
+  accepted?: RedlineAcceptance;
+};
+
+/** Compact "12 Sep, 3:04pm" for the who/when line; empty when unparseable. */
+const formatAcceptedAt = (iso?: string): string => {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toLocaleString(undefined, {
+    day: "numeric",
+    month: "short",
+    hour: "numeric",
+    minute: "2-digit",
+  });
 };
 
 interface AiSuggestionsPanelProps {
@@ -53,6 +73,10 @@ interface AiSuggestionsPanelProps {
    *  disabled (not hidden) with a tooltip — the viewer must wait for their
    *  turn. Defaults to true so callers without turn state are unaffected. */
   isMyTurn?: boolean;
+  /** This viewer's negotiating side — drives the dual-approval card states.
+   *  A redline is applied only once BOTH sides approve; until then the other
+   *  side sees an approve/reject request. */
+  mySide?: RedlineResolvedHolder | null;
   /** Server-side progress counts from GET .../ai/redline-suggestions. */
   progress?: SuggestionProgress;
 }
@@ -127,6 +151,7 @@ type SuggestionCardProps = {
   onUndo?: (item: Item) => void;
   onFocus?: (item: Item) => void;
   isMyTurn: boolean;
+  mySide?: RedlineResolvedHolder | null;
 };
 
 const SuggestionCard: React.FC<SuggestionCardProps> = ({
@@ -136,8 +161,16 @@ const SuggestionCard: React.FC<SuggestionCardProps> = ({
   onUndo,
   onFocus,
   isMyTurn,
+  mySide,
 }) => {
   const { suggestion } = item;
+  // Dual-approval state (present once at least one side has approved). A
+  // dismissed card keeps the legacy "dismissed" display; otherwise, when
+  // bilateral data exists we drive the card by the approval phase.
+  const isDismissed = item.state === "dismissed";
+  const showBilateral = Boolean(item.accepted) && !isDismissed;
+  const phase = dualApprovalPhase(item.accepted, mySide ?? undefined);
+  const actor = acceptanceActor(item.accepted);
   const isPending = item.state === "pending";
   const [tier, setTier] = useState<AlternativeTier>(() =>
     pickDefaultTier(suggestion?.alternativeLanguage),
@@ -189,7 +222,53 @@ const SuggestionCard: React.FC<SuggestionCardProps> = ({
             {formatVerdict(suggestion.acceptability)}
           </span>
         )}
-        {!isPending && (
+        {showBilateral && (
+          <div className="ml-auto flex items-center gap-2">
+            <span
+              className={cn(
+                "text-xs font-semibold",
+                phase === "both"
+                  ? "text-emerald-600 dark:text-emerald-400"
+                  : phase === "awaiting-me"
+                    ? "text-indigo-600 dark:text-indigo-400"
+                    : "text-amber-600 dark:text-amber-400",
+              )}
+              title={
+                phase === "both"
+                  ? "Approved by both sides — applied to the document"
+                  : phase === "awaiting-me"
+                    ? "The other side approved — your approval is needed"
+                    : "You approved — awaiting the other side"
+              }
+            >
+              {phase === "both"
+                ? "Resolved"
+                : phase === "awaiting-me"
+                  ? "Needs your approval"
+                  : "Awaiting other side"}
+            </span>
+            {onUndo && phase === "awaiting-other" && (
+              <button
+                type="button"
+                disabled={!isMyTurn}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onUndo(item);
+                }}
+                title={isMyTurn ? "Withdraw your approval" : "Waiting for your turn"}
+                className={cn(
+                  "rounded-md border px-2 py-0.5 text-[11px] font-semibold",
+                  isMyTurn
+                    ? "border-slate-300 text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+                    : "cursor-not-allowed border-slate-200 text-slate-400 dark:border-slate-800 dark:text-slate-500",
+                )}
+              >
+                Undo
+              </button>
+            )}
+          </div>
+        )}
+        {!isPending && !showBilateral && (
           <div className="ml-auto flex items-center gap-2">
             {/* #87 — stage first: "Resolved" only once the Vendor PM accepts;
                 a manager-side accept/dismiss reads "Addressed". The action
@@ -363,7 +442,69 @@ const SuggestionCard: React.FC<SuggestionCardProps> = ({
             </div>
           )}
 
-          {isPending && (
+          {/* Cross-side request: the other side approved — this viewer must
+              approve (which applies the change to the document) or reject. */}
+          {showBilateral && phase === "awaiting-me" && (
+            <div className="mt-3 rounded-md border border-indigo-200 bg-indigo-50 p-2 dark:border-indigo-900 dark:bg-indigo-950/40">
+              <div className="text-[11px] text-indigo-800 dark:text-indigo-200">
+                <span className="font-semibold">
+                  {actor ? redlineHolderLabel(actor.holder) : "The other side"}
+                  {actor?.name ? ` (${actor.name})` : ""}
+                </span>{" "}
+                approved this recommendation
+                {actor?.at && formatAcceptedAt(actor.at)
+                  ? ` · ${formatAcceptedAt(actor.at)}`
+                  : ""}
+                . Approve to apply it to the document, or reject.
+              </div>
+              <div className="mt-2 flex justify-end gap-2">
+                <button
+                  type="button"
+                  disabled={!isMyTurn}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDismiss(item);
+                  }}
+                  title={isMyTurn ? "Reject this recommendation" : "Waiting for your turn"}
+                  className={cn(
+                    "rounded-md border px-3 py-1 text-xs font-semibold",
+                    isMyTurn
+                      ? "border-slate-300 text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+                      : "cursor-not-allowed border-slate-200 text-slate-400 dark:border-slate-800 dark:text-slate-500",
+                  )}
+                >
+                  Reject
+                </button>
+                <button
+                  type="button"
+                  disabled={!hasReplacement || !isMyTurn}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onApprove(item, tier);
+                  }}
+                  title={
+                    !isMyTurn
+                      ? "Waiting for your turn"
+                      : hasReplacement
+                        ? `Approve and apply the ${TIER_LABEL[tier].toLowerCase()} replacement`
+                        : "No alternative text available"
+                  }
+                  className={cn(
+                    "inline-flex items-center gap-1 rounded-md px-3 py-1 text-xs font-semibold text-white",
+                    hasReplacement && isMyTurn
+                      ? "bg-indigo-600 hover:bg-indigo-700"
+                      : "cursor-not-allowed bg-slate-300 dark:bg-slate-700",
+                  )}
+                >
+                  <Check className="h-3 w-3" /> Approve &amp; apply
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Open (nobody has approved yet): approving records this side's
+              approval; the document is written only once both sides approve. */}
+          {isPending && !showBilateral && (
             <div className="mt-3 flex justify-end gap-2">
               <button
                 type="button"
@@ -393,7 +534,7 @@ const SuggestionCard: React.FC<SuggestionCardProps> = ({
                   !isMyTurn
                     ? "Waiting for your turn"
                     : hasReplacement
-                      ? `Apply ${TIER_LABEL[tier].toLowerCase()} replacement`
+                      ? `Approve the ${TIER_LABEL[tier].toLowerCase()} replacement (applied once both sides approve)`
                       : "No alternative text available"
                 }
                 className={cn(
@@ -403,7 +544,7 @@ const SuggestionCard: React.FC<SuggestionCardProps> = ({
                     : "cursor-not-allowed bg-slate-300 dark:bg-slate-700",
                 )}
               >
-                <Check className="h-3 w-3" /> Apply {TIER_LABEL[tier].toLowerCase()}
+                <Check className="h-3 w-3" /> Approve {TIER_LABEL[tier].toLowerCase()}
               </button>
             </div>
           )}
@@ -431,22 +572,21 @@ const AiSuggestionsPanel: React.FC<AiSuggestionsPanelProps> = ({
   onResolveAll,
   variant = "overlay",
   isMyTurn = true,
+  mySide,
   progress,
 }) => {
   const [bulkTier, setBulkTier] = useState<AlternativeTier>("medium");
   if (!open) return null;
 
   const remaining = items.filter((i) => i.state === "pending").length;
-  const resolved = progress?.resolvedCount;
-  // "Resolved" = accepted by both sides; "Addressed" = accepted by exactly one.
-  // The BE's `addressedCount` counts every suggestion with a persisted action
-  // (both-accepted included), so subtract the resolved (both-accepted) ones to
-  // show one-sided progress.
-  const addressed =
-    typeof progress?.addressedCount === "number"
-      ? Math.max(0, progress.addressedCount - (resolved ?? 0))
-      : undefined;
-  const hasProgress = typeof addressed === "number" || typeof resolved === "number";
+  // Per-side "addressed" — who has accepted a recommendation, shown for the
+  // contract manager (CM) and the vendor PM independently — plus the
+  // both-accepted "resolved" total. All three come from the BE progress.
+  const { cmAddressed, pmAddressed, resolved } = deriveProgressCounts(progress);
+  const hasProgress =
+    typeof cmAddressed === "number" ||
+    typeof pmAddressed === "number" ||
+    typeof resolved === "number";
   const isInline = variant === "inline";
 
   return (
@@ -481,14 +621,28 @@ const AiSuggestionsPanel: React.FC<AiSuggestionsPanelProps> = ({
                       : "Professional rephrases for your redlines"}
             </div>
             {status === "ready" && hasProgress && (
-              <div className="mt-0.5 flex gap-3 text-[11px]">
-                {typeof addressed === "number" && (
-                  <span className="text-amber-600 dark:text-amber-400">
-                    {addressed} addressed
+              <div className="mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5 text-[11px]">
+                {typeof cmAddressed === "number" && (
+                  <span
+                    className="text-amber-600 dark:text-amber-400"
+                    title="Recommendations addressed by the contract manager"
+                  >
+                    CM addressed: {cmAddressed}
+                  </span>
+                )}
+                {typeof pmAddressed === "number" && (
+                  <span
+                    className="text-amber-600 dark:text-amber-400"
+                    title="Recommendations addressed by the vendor PM"
+                  >
+                    PM addressed: {pmAddressed}
                   </span>
                 )}
                 {typeof resolved === "number" && (
-                  <span className="text-emerald-600 dark:text-emerald-400">
+                  <span
+                    className="text-emerald-600 dark:text-emerald-400"
+                    title="Accepted by both the contract manager and the vendor PM"
+                  >
                     {resolved} resolved
                   </span>
                 )}
@@ -664,6 +818,7 @@ const AiSuggestionsPanel: React.FC<AiSuggestionsPanelProps> = ({
               onUndo={onUndo}
               onFocus={onFocus}
               isMyTurn={isMyTurn}
+              mySide={mySide}
             />
           ))}
       </div>

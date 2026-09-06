@@ -292,6 +292,8 @@ export type PersistedResolution = {
 
 export type PersistedSuggestion = AiRedlineSuggestion & {
   resolution?: PersistedResolution;
+  /** Per-redline bilateral acceptance (dual-approval). */
+  accepted?: RedlineAcceptance;
 };
 
 /** Normalize `resolution.resolvedBy` (object or legacy string) to the holder. */
@@ -315,6 +317,107 @@ export const redlineStageLabel = (
   holder?: RedlineResolvedHolder,
 ): "Resolved" | "Addressed" => (holder === "vendor" ? "Resolved" : "Addressed");
 
+// ── Bilateral (dual-approval) acceptance ─────────────────────────────
+// The BE tracks, per redline, whether each side has accepted. A redline is
+// applied to the document only once BOTH the contract manager (CM) and the
+// vendor PM accept it; until then the other side sees a request to approve or
+// reject. Swagger schema: RedlineAcceptanceStatus (on each suggestion's
+// `accepted`).
+
+export type RedlineAcceptedByUser = { id?: string; name?: string };
+
+/** `pending` = nobody accepted; `cm_accepted`/`vendor_accepted` = one side
+ *  accepted, awaiting the other; `both_accepted` = apply. */
+export type RedlineAcceptanceState =
+  | "both_accepted"
+  | "cm_accepted"
+  | "vendor_accepted"
+  | "pending";
+
+export type RedlineAcceptance = {
+  redlineId?: string;
+  cmAccepted?: boolean;
+  vendorAccepted?: boolean;
+  cmAcceptedAt?: string | null;
+  vendorAcceptedAt?: string | null;
+  cmAcceptedBy?: RedlineAcceptedByUser | null;
+  vendorAcceptedBy?: RedlineAcceptedByUser | null;
+  status?: RedlineAcceptanceState;
+  /** True when both parties accepted — the client applies the replacement and
+   *  removes the redline from the document. */
+  shouldRemove?: boolean;
+};
+
+/**
+ * Which dual-approval step this viewer is on for a redline:
+ * - `open`: nobody has accepted — the normal pending suggestion.
+ * - `awaiting-me`: the other side accepted — show an approve/reject request.
+ * - `awaiting-other`: this viewer accepted — waiting on the other side.
+ * - `both`: both accepted — applied / resolved.
+ */
+export type DualApprovalPhase = "open" | "awaiting-me" | "awaiting-other" | "both";
+
+/** Map a bilateral-acceptance status onto the viewer's step. Observers (no
+ *  side) never get an actionable request, so a one-sided accept reads
+ *  `awaiting-other` for them. */
+export const dualApprovalPhase = (
+  accepted: RedlineAcceptance | undefined,
+  mySide: RedlineResolvedHolder | undefined,
+): DualApprovalPhase => {
+  const status = accepted?.status ?? "pending";
+  if (status === "both_accepted") return "both";
+  if (status === "pending") return "open";
+  const acceptedSide: RedlineResolvedHolder =
+    status === "cm_accepted" ? "manager" : "vendor";
+  if (!mySide) return "awaiting-other";
+  return acceptedSide === mySide ? "awaiting-other" : "awaiting-me";
+};
+
+/** The side that has already accepted (with who/when), for the one-sided
+ *  states. Returns null when zero or both sides have accepted. */
+export const acceptanceActor = (
+  accepted: RedlineAcceptance | undefined,
+): { holder: RedlineResolvedHolder; name?: string; at?: string } | null => {
+  if (accepted?.status === "cm_accepted") {
+    return {
+      holder: "manager",
+      name: accepted.cmAcceptedBy?.name ?? undefined,
+      at: accepted.cmAcceptedAt ?? undefined,
+    };
+  }
+  if (accepted?.status === "vendor_accepted") {
+    return {
+      holder: "vendor",
+      name: accepted.vendorAcceptedBy?.name ?? undefined,
+      at: accepted.vendorAcceptedAt ?? undefined,
+    };
+  }
+  return null;
+};
+
+/** Human label for a negotiating side. */
+export const redlineHolderLabel = (holder: RedlineResolvedHolder): string =>
+  holder === "vendor" ? "Vendor PM" : "Contract manager";
+
+/** Optimistically fold this viewer's acceptance into the bilateral state so the
+ *  card flips immediately, before the GET refetch confirms it. */
+export const withLocalAcceptance = (
+  accepted: RedlineAcceptance | undefined,
+  mySide: RedlineResolvedHolder,
+): RedlineAcceptance => {
+  const next: RedlineAcceptance = { ...accepted };
+  if (mySide === "manager") next.cmAccepted = true;
+  else next.vendorAccepted = true;
+  const both = Boolean(next.cmAccepted) && Boolean(next.vendorAccepted);
+  next.status = both
+    ? "both_accepted"
+    : next.cmAccepted
+      ? "cm_accepted"
+      : "vendor_accepted";
+  next.shouldRemove = both;
+  return next;
+};
+
 export type SuggestionProgress = {
   total?: number;
   pending?: number;
@@ -322,7 +425,40 @@ export type SuggestionProgress = {
   resolvedCount?: number;
   resolvedByManager?: number;
   resolvedByVendor?: number;
+  /** Suggestions accepted by the contract manager (company side). */
+  cm_accept?: number;
+  /** Suggestions accepted by the vendor PM. */
+  pm_accept?: number;
+  /** Both-accepted total. The GET also sends `resolvedCount`; either works. */
+  resolved?: number;
 };
+
+/**
+ * Per-side counts for the AI Polish header. Each side's "addressed" total is
+ * shown independently — who has accepted a recommendation — and "resolved" is
+ * the both-accepted total. All three are computed by the backend
+ * (`cm_accept` / `pm_accept` / `resolved`); we only surface them.
+ */
+export type ProgressCounts = {
+  cmAddressed?: number;
+  pmAddressed?: number;
+  resolved?: number;
+};
+
+export const deriveProgressCounts = (
+  progress?: SuggestionProgress,
+): ProgressCounts => ({
+  cmAddressed:
+    typeof progress?.cm_accept === "number" ? progress.cm_accept : undefined,
+  pmAddressed:
+    typeof progress?.pm_accept === "number" ? progress.pm_accept : undefined,
+  resolved:
+    typeof progress?.resolvedCount === "number"
+      ? progress.resolvedCount
+      : typeof progress?.resolved === "number"
+        ? progress.resolved
+        : undefined,
+});
 
 export type PersistedSuggestionsResponse = {
   suggestions: PersistedSuggestion[];
@@ -356,6 +492,7 @@ const parsePersistedBody = (body: PersistedApiBody): PersistedSuggestionsRespons
           riskLevel: (s.riskLevel as AiRiskLevel) ?? "medium",
           replacementText: typeof s.replacementText === "string" ? s.replacementText : undefined,
           resolution: s.resolution as PersistedResolution | undefined,
+          accepted: (s.accepted as RedlineAcceptance | null) ?? undefined,
         }))
     : [];
   return { suggestions, progress: data.progress ?? {} };
