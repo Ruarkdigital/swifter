@@ -7,7 +7,12 @@ import type { CommentsFeedItem } from "./CommentsTab";
 import type { Mentionable } from "../collab/useContractMentionables";
 import type { Version } from "./VersionHistoryModal";
 import type { RedlineSpan } from "../collab/redlineScan";
-import type { AiRedlineSuggestion, SuggestionProgress } from "../collab/useAiRedlineSuggestions";
+import type {
+  AiRedlineSuggestion,
+  RedlineAcceptance,
+  RedlineResolvedHolder,
+  SuggestionProgress,
+} from "../collab/useAiRedlineSuggestions";
 
 const CommentsTab = lazyWithRetry(() => import("./CommentsTab"));
 const VersionsTab = lazyWithRetry(() => import("./VersionsTab"));
@@ -33,6 +38,8 @@ type AiItem = {
   redline: RedlineSpan;
   suggestion?: AiRedlineSuggestion;
   state: "pending" | "approved" | "dismissed";
+  resolvedByHolder?: RedlineResolvedHolder;
+  accepted?: RedlineAcceptance;
 };
 
 interface SidebarPanelProps {
@@ -71,6 +78,8 @@ interface SidebarPanelProps {
   ) => void;
   /** Turn-based negotiation gate — disables Apply/Dismiss when false. */
   isMyTurn?: boolean;
+  /** This viewer's negotiating side — drives the dual-approval card states. */
+  aiMySide?: RedlineResolvedHolder | null;
   /** Server-side progress counts (addressedCount, resolvedCount). */
   aiProgress?: SuggestionProgress;
   /** Rendered above the suggestions on the Redline tab (turn status + Send /
@@ -122,6 +131,7 @@ const SidebarPanel: React.FC<SidebarPanelProps> = ({
   onAiRetry,
   onAiResolveAll,
   isMyTurn = true,
+  aiMySide,
   aiProgress,
   redlineTurnBanner,
 }) => {
@@ -221,6 +231,7 @@ const SidebarPanel: React.FC<SidebarPanelProps> = ({
                 onRetry={onAiRetry}
                 onResolveAll={onAiResolveAll}
                 isMyTurn={isMyTurn}
+                mySide={aiMySide}
                 progress={aiProgress}
               />
             </Suspense>

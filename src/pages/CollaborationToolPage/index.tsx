@@ -33,8 +33,11 @@ import {
   useAiRedlineSuggestions,
   usePersistedSuggestions,
   getRedlineResolvedHolder,
+  dualApprovalPhase,
+  withLocalAcceptance,
   type AiRedlineSuggestion,
   type RedlineResolvedHolder,
+  type RedlineAcceptance,
   type SuggestionProgress,
 } from "./collab/useAiRedlineSuggestions";
 import {
@@ -54,6 +57,8 @@ type AiItem = {
   state: "pending" | "approved" | "dismissed";
   /** #87 — which side resolved it: "manager" → Addressed, "vendor" → Resolved. */
   resolvedByHolder?: RedlineResolvedHolder;
+  /** Per-redline bilateral acceptance driving the dual-approval UI. */
+  accepted?: RedlineAcceptance;
 };
 
 type SidebarAttachment = {
@@ -580,6 +585,7 @@ const CollaborationToolPage: React.FC = () => {
           suggestion: s,
           state: resolutionToState(s.resolution?.action),
           resolvedByHolder: getRedlineResolvedHolder(s.resolution),
+          accepted: s.accepted,
         })),
       );
       setAiProgress(persisted.progress);
@@ -617,6 +623,14 @@ const CollaborationToolPage: React.FC = () => {
         );
         return;
       }
+      // Dual approval: a redline is written into the shared document only once
+      // BOTH sides have approved. This click records the current side's
+      // acceptance; it applies the replacement to the doc only when it is the
+      // *finalizing* (second) approval — i.e. the other side already accepted.
+      const mySide = redlineTurn.mySide;
+      const finalizing =
+        dualApprovalPhase(item.accepted, mySide ?? undefined) === "awaiting-me";
+
       // Pick the user's chosen alternative-language tier (or fall back
       // through the others, then to the legacy `replacementText` field
       // for older BE deployments).
@@ -627,42 +641,61 @@ const CollaborationToolPage: React.FC = () => {
         alt?.low ??
         alt?.high ??
         item.suggestion.replacementText;
-      if (typeof replacement === "string" && replacement.length > 0) {
-        adapter.replaceRedline(item.redline.redlineId, replacement);
-        // Auto-snapshot so the user can revert the AI-applied change.
-        saveVersionSnapshot(`Applied AI suggestion (${tier})`, "ai-apply");
-        // Audit-only; does not mutate the doc. Fire-and-forget (errors are
-        // handled below — a 409 surfaces a toast instead of vanishing).
-        redlineTurn.resolve.mutate(
-          {
-            redlineId: item.redline.redlineId,
-            action: "modified",
-            tier,
-            docName,
-            baseVersionId: fileVersionsQuery.data?.activeVersionId ?? null,
-          },
-          {
-            onError: (error) => {
-              if (isVersionConflict(error)) {
-                toastHandler.error(
-                  "Redline",
-                  "This document changed since you loaded it. Reload the latest version, then try again.",
-                );
-              }
-            },
-          },
-        );
-      } else if (import.meta.env.DEV) {
-        // eslint-disable-next-line no-console
-        console.warn(
-          "[ai-redline] apply clicked but no alternativeLanguage / replacementText available; doc not mutated.",
-          item.redline.redlineId,
-        );
+
+      if (finalizing) {
+        if (typeof replacement === "string" && replacement.length > 0) {
+          // Both sides have now approved — apply the approved content to the
+          // shared SuperDoc immediately (propagates to both peers via Yjs).
+          adapter.replaceRedline(item.redline.redlineId, replacement);
+          // Auto-snapshot so the change can be reverted.
+          saveVersionSnapshot(`Applied AI suggestion (${tier})`, "ai-apply");
+        } else if (import.meta.env.DEV) {
+          // eslint-disable-next-line no-console
+          console.warn(
+            "[ai-redline] both sides approved but no alternativeLanguage / replacementText available; doc not mutated.",
+            item.redline.redlineId,
+          );
+        }
       }
+
+      // Record this side's acceptance. The BE derives the bilateral state and
+      // returns it (with progress) on the next GET.
+      redlineTurn.resolve.mutate(
+        {
+          redlineId: item.redline.redlineId,
+          action: "modified",
+          tier,
+          docName,
+          baseVersionId: fileVersionsQuery.data?.activeVersionId ?? null,
+        },
+        {
+          onSuccess: () => {
+            persistedQuery.refetch();
+          },
+          onError: (error) => {
+            if (isVersionConflict(error)) {
+              toastHandler.error(
+                "Redline",
+                "This document changed since you loaded it. Reload the latest version, then try again.",
+              );
+            }
+          },
+        },
+      );
+
+      // Optimistically flip the card: "awaiting other side", or resolved when
+      // this was the finalizing approval.
       setAiItems((prev) =>
         prev.map((p) =>
           p.redline.redlineId === item.redline.redlineId
-            ? { ...p, state: "approved", resolvedByHolder: redlineTurn.mySide ?? undefined }
+            ? {
+                ...p,
+                state: "approved",
+                resolvedByHolder: mySide ?? undefined,
+                accepted: mySide
+                  ? withLocalAcceptance(p.accepted, mySide)
+                  : p.accepted,
+              }
             : p,
         ),
       );
@@ -673,6 +706,7 @@ const CollaborationToolPage: React.FC = () => {
       toastHandler,
       docName,
       fileVersionsQuery.data?.activeVersionId,
+      persistedQuery,
     ],
   );
 
@@ -695,6 +729,9 @@ const CollaborationToolPage: React.FC = () => {
           baseVersionId: fileVersionsQuery.data?.activeVersionId ?? null,
         },
         {
+          onSuccess: () => {
+            persistedQuery.refetch();
+          },
           onError: (error) => {
             if (isVersionConflict(error)) {
               toastHandler.error(
@@ -706,7 +743,13 @@ const CollaborationToolPage: React.FC = () => {
         },
       );
     },
-    [redlineTurn, docName, fileVersionsQuery.data?.activeVersionId, toastHandler],
+    [
+      redlineTurn,
+      docName,
+      fileVersionsQuery.data?.activeVersionId,
+      toastHandler,
+      persistedQuery,
+    ],
   );
 
   const handleUndoAi = useCallback(
@@ -764,7 +807,14 @@ const CollaborationToolPage: React.FC = () => {
 
       const resolutions: RedlineBatchItem[] = [];
       if (action === "modified") {
+        // Dual approval: record this side's approval for every pending redline,
+        // but only write the document for those the OTHER side has already
+        // approved (this click finalizes them). The rest wait for the other side.
+        let appliedCount = 0;
         for (const item of pending) {
+          const finalizing =
+            dualApprovalPhase(item.accepted, redlineTurn.mySide ?? undefined) ===
+            "awaiting-me";
           const alt = item.suggestion?.alternativeLanguage;
           const replacement =
             alt?.[tier] ??
@@ -772,18 +822,24 @@ const CollaborationToolPage: React.FC = () => {
             alt?.low ??
             alt?.high ??
             item.suggestion?.replacementText;
-          if (adapter && typeof replacement === "string" && replacement.length > 0) {
+          if (
+            finalizing &&
+            adapter &&
+            typeof replacement === "string" &&
+            replacement.length > 0
+          ) {
             adapter.replaceRedline(item.redline.redlineId, replacement);
-            resolutions.push({
-              redlineId: item.redline.redlineId,
-              action: "modified",
-              tier,
-            });
+            appliedCount += 1;
           }
+          resolutions.push({
+            redlineId: item.redline.redlineId,
+            action: "modified",
+            tier,
+          });
         }
-        if (resolutions.length > 0) {
+        if (appliedCount > 0) {
           saveVersionSnapshot(
-            `Applied ${resolutions.length} AI suggestions (${tier})`,
+            `Applied ${appliedCount} AI suggestion${appliedCount === 1 ? "" : "s"} (${tier})`,
             "ai-apply",
           );
         }
@@ -808,7 +864,15 @@ const CollaborationToolPage: React.FC = () => {
             setAiItems((prev) =>
               prev.map((p) =>
                 resolvedIds.has(p.redline.redlineId)
-                  ? { ...p, state: nextState, resolvedByHolder: redlineTurn.mySide ?? undefined }
+                  ? {
+                      ...p,
+                      state: nextState,
+                      resolvedByHolder: redlineTurn.mySide ?? undefined,
+                      accepted:
+                        action === "modified" && redlineTurn.mySide
+                          ? withLocalAcceptance(p.accepted, redlineTurn.mySide)
+                          : p.accepted,
+                    }
                   : p,
               ),
             );
@@ -1075,6 +1139,7 @@ const CollaborationToolPage: React.FC = () => {
           onAiFocus={handleFocusAi}
           onAiRetry={runAiSuggestions}
           isMyTurn={redlineTurn.canAct}
+          aiMySide={redlineTurn.mySide}
           redlineTurnBanner={
             <TurnBanner
               mySide={redlineTurn.mySide}
