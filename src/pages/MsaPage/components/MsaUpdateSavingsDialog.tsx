@@ -283,7 +283,7 @@ const MsaUpdateSavingsDialog: React.FC<{
               <Forger
                 name="description"
                 label="Description"
-                placeholder="Enter Amount"
+                placeholder="Enter Description"
                 component={TextArea}
                 rows={5}
               />
