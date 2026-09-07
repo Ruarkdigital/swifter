@@ -373,6 +373,29 @@ export const dualApprovalPhase = (
   return acceptedSide === mySide ? "awaiting-other" : "awaiting-me";
 };
 
+/**
+ * The dual-approval phase for a viewer, preferring the bilateral `accepted`
+ * state but falling back to the single-sided resolution (holder + status) when
+ * the BE payload hasn't populated `accepted`. This fallback is what keeps the
+ * OTHER side's approve/reject request visible on a one-sided resolution — a
+ * redline actioned by one side must never read as "done" to the other.
+ */
+export const effectiveApprovalPhase = (input: {
+  accepted?: RedlineAcceptance;
+  resolvedByHolder?: RedlineResolvedHolder;
+  resolvedStatus?: "pending" | "resolved";
+  mySide: RedlineResolvedHolder | undefined;
+}): DualApprovalPhase => {
+  if (input.accepted) return dualApprovalPhase(input.accepted, input.mySide);
+  if (input.resolvedStatus === "resolved") return "both";
+  if (input.resolvedByHolder) {
+    return input.resolvedByHolder === input.mySide
+      ? "awaiting-other"
+      : "awaiting-me";
+  }
+  return "open";
+};
+
 /** The side that has already accepted (with who/when), for the one-sided
  *  states. Returns null when zero or both sides have accepted. */
 export const acceptanceActor = (
