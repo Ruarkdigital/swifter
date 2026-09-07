@@ -606,6 +606,15 @@ const CollaborationToolPage: React.FC = () => {
     void runAiSuggestions();
   }, [activeTab, aiHasRun, runAiSuggestions, redlineTurn.canAct, persistedQuery.isLoading, persistedQuery.data]);
 
+  // Keep the header progress counts (CM/PM addressed, resolved) live. The
+  // rehydrate above seeds them once; this syncs them on every subsequent
+  // persisted refetch — e.g. after a side approves/rejects — so "PM addressed"
+  // updates without a full reload.
+  useEffect(() => {
+    const progress = persistedQuery.data?.progress;
+    if (progress) setAiProgress(progress);
+  }, [persistedQuery.data?.progress]);
+
   // Push the current turn's edit permission into the SuperDoc iframe. The init
   // payload sets "editing" once; here we correct it — "suggesting" on your turn,
   // "viewing" while you wait. Runs after the editor mounts and on every flip.
