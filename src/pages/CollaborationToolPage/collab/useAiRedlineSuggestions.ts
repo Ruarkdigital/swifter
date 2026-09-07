@@ -458,9 +458,15 @@ export type SuggestionProgress = {
 
 /**
  * Per-side counts for the AI Polish header. Each side's "addressed" total is
- * shown independently — who has accepted a recommendation — and "resolved" is
- * the both-accepted total. All three are computed by the backend
- * (`cm_accept` / `pm_accept` / `resolved`); we only surface them.
+ * shown independently — who has acted on a recommendation — and "resolved" is
+ * the resolved/both-accepted total. All are computed by the backend; we only
+ * surface them.
+ *
+ * The per-side count comes from `resolvedByManager` / `resolvedByVendor`, which
+ * the live GET populates (a redline resolved by that side). `cm_accept` /
+ * `pm_accept` are the newer bilateral-accept counters and are used only as a
+ * fallback — the current backend leaves them at 0, so reading them made the
+ * header stick at "CM addressed: 0 / PM addressed: 0" even after a side acted.
  */
 export type ProgressCounts = {
   cmAddressed?: number;
@@ -468,19 +474,15 @@ export type ProgressCounts = {
   resolved?: number;
 };
 
+const firstNumber = (...values: Array<number | undefined>): number | undefined =>
+  values.find((v) => typeof v === "number");
+
 export const deriveProgressCounts = (
   progress?: SuggestionProgress,
 ): ProgressCounts => ({
-  cmAddressed:
-    typeof progress?.cm_accept === "number" ? progress.cm_accept : undefined,
-  pmAddressed:
-    typeof progress?.pm_accept === "number" ? progress.pm_accept : undefined,
-  resolved:
-    typeof progress?.resolvedCount === "number"
-      ? progress.resolvedCount
-      : typeof progress?.resolved === "number"
-        ? progress.resolved
-        : undefined,
+  cmAddressed: firstNumber(progress?.resolvedByManager, progress?.cm_accept),
+  pmAddressed: firstNumber(progress?.resolvedByVendor, progress?.pm_accept),
+  resolved: firstNumber(progress?.resolvedCount, progress?.resolved),
 });
 
 export type PersistedSuggestionsResponse = {
