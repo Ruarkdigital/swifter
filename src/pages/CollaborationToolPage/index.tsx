@@ -557,7 +557,6 @@ const CollaborationToolPage: React.FC = () => {
   useEffect(() => {
     if (activeTab !== "redline") return;
     if (aiHasRun) return;
-    if (!redlineTurn.canAct) return;
     if (persistedQuery.isLoading) return;
 
     const persisted = persistedQuery.data;
@@ -603,8 +602,23 @@ const CollaborationToolPage: React.FC = () => {
       return;
     }
 
-    void runAiSuggestions();
+    // Nothing persisted yet. Only the side whose turn it is generates (POST) —
+    // the waiting side (and observers) load whatever the other side has already
+    // generated above and view it read-only, rather than being shown an empty
+    // "Generate suggestions" prompt.
+    if (redlineTurn.canAct) {
+      void runAiSuggestions();
+    }
   }, [activeTab, aiHasRun, runAiSuggestions, redlineTurn.canAct, persistedQuery.isLoading, persistedQuery.data]);
+
+  // Keep the header progress counts (CM/PM addressed, resolved) live. The
+  // rehydrate above seeds them once; this syncs them on every subsequent
+  // persisted refetch — e.g. after a side approves/rejects — so "PM addressed"
+  // updates without a full reload.
+  useEffect(() => {
+    const progress = persistedQuery.data?.progress;
+    if (progress) setAiProgress(progress);
+  }, [persistedQuery.data?.progress]);
 
   // Push the current turn's edit permission into the SuperDoc iframe. The init
   // payload sets "editing" once; here we correct it — "suggesting" on your turn,
