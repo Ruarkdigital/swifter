@@ -557,7 +557,6 @@ const CollaborationToolPage: React.FC = () => {
   useEffect(() => {
     if (activeTab !== "redline") return;
     if (aiHasRun) return;
-    if (!redlineTurn.canAct) return;
     if (persistedQuery.isLoading) return;
 
     const persisted = persistedQuery.data;
@@ -603,7 +602,13 @@ const CollaborationToolPage: React.FC = () => {
       return;
     }
 
-    void runAiSuggestions();
+    // Nothing persisted yet. Only the side whose turn it is generates (POST) —
+    // the waiting side (and observers) load whatever the other side has already
+    // generated above and view it read-only, rather than being shown an empty
+    // "Generate suggestions" prompt.
+    if (redlineTurn.canAct) {
+      void runAiSuggestions();
+    }
   }, [activeTab, aiHasRun, runAiSuggestions, redlineTurn.canAct, persistedQuery.isLoading, persistedQuery.data]);
 
   // Keep the header progress counts (CM/PM addressed, resolved) live. The
