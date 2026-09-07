@@ -39,6 +39,7 @@ type AiItem = {
   suggestion?: AiRedlineSuggestion;
   state: "pending" | "approved" | "dismissed";
   resolvedByHolder?: RedlineResolvedHolder;
+  resolvedStatus?: "pending" | "resolved";
   accepted?: RedlineAcceptance;
 };
 

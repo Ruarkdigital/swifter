@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   acceptanceActor,
   dualApprovalPhase,
+  effectiveApprovalPhase,
   redlineHolderLabel,
   withLocalAcceptance,
 } from "./useAiRedlineSuggestions";
@@ -63,6 +64,52 @@ describe("acceptanceActor", () => {
     expect(acceptanceActor(undefined)).toBeNull();
     expect(acceptanceActor({ status: "pending" })).toBeNull();
     expect(acceptanceActor({ status: "both_accepted" })).toBeNull();
+  });
+});
+
+describe("effectiveApprovalPhase (single-sided fallback)", () => {
+  it("prefers the bilateral accepted state when present", () => {
+    expect(
+      effectiveApprovalPhase({
+        accepted: { status: "cm_accepted" },
+        mySide: "vendor",
+      }),
+    ).toBe("awaiting-me");
+  });
+
+  it("shows the other side an approve/reject request from a one-sided resolution", () => {
+    // CM accepted (no bilateral object) → the vendor must still see a request.
+    expect(
+      effectiveApprovalPhase({
+        resolvedByHolder: "manager",
+        resolvedStatus: "pending",
+        mySide: "vendor",
+      }),
+    ).toBe("awaiting-me");
+  });
+
+  it("tells the acting side it is awaiting the other, from a one-sided resolution", () => {
+    expect(
+      effectiveApprovalPhase({
+        resolvedByHolder: "manager",
+        resolvedStatus: "pending",
+        mySide: "manager",
+      }),
+    ).toBe("awaiting-other");
+  });
+
+  it("treats a resolved status as both-accepted", () => {
+    expect(
+      effectiveApprovalPhase({
+        resolvedByHolder: "vendor",
+        resolvedStatus: "resolved",
+        mySide: "manager",
+      }),
+    ).toBe("both");
+  });
+
+  it("is 'open' when nothing has been actioned", () => {
+    expect(effectiveApprovalPhase({ mySide: "manager" })).toBe("open");
   });
 });
 

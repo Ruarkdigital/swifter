@@ -57,6 +57,10 @@ type AiItem = {
   state: "pending" | "approved" | "dismissed";
   /** #87 — which side resolved it: "manager" → Addressed, "vendor" → Resolved. */
   resolvedByHolder?: RedlineResolvedHolder;
+  /** Persisted resolution status — lets the card tell a one-sided accept
+   *  (awaiting the other side) apart from a fully-resolved redline when the
+   *  bilateral `accepted` object isn't present. */
+  resolvedStatus?: "pending" | "resolved";
   /** Per-redline bilateral acceptance driving the dual-approval UI. */
   accepted?: RedlineAcceptance;
 };
@@ -585,6 +589,12 @@ const CollaborationToolPage: React.FC = () => {
           suggestion: s,
           state: resolutionToState(s.resolution?.action),
           resolvedByHolder: getRedlineResolvedHolder(s.resolution),
+          resolvedStatus:
+            s.resolution?.status === "resolved"
+              ? "resolved"
+              : s.resolution?.status === "pending"
+                ? "pending"
+                : undefined,
           accepted: s.accepted,
         })),
       );
