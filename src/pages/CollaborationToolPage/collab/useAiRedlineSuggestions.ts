@@ -528,7 +528,14 @@ const parsePersistedBody = (body: PersistedApiBody): PersistedSuggestionsRespons
  * suggestions with their resolution state and aggregate progress counts.
  * When no suggestions have been generated yet, returns an empty array.
  */
-export function usePersistedSuggestions({ documentId, isMsa }: AiRedlineScope) {
+/** How often the waiting side re-fetches persisted suggestions (ms). */
+const WAITING_POLL_MS = 10000;
+
+export function usePersistedSuggestions({
+  documentId,
+  isMsa,
+  pollWhileWaiting = false,
+}: AiRedlineScope & { pollWhileWaiting?: boolean }) {
   const role = useUserRole();
   const url = documentId
     ? buildEndpoint({
@@ -548,5 +555,9 @@ export function usePersistedSuggestions({ documentId, isMsa }: AiRedlineScope) {
       return parsePersistedBody(res.data as PersistedApiBody);
     },
     staleTime: 30000,
+    // Poll only while waiting on the other side, and only when the tab is
+    // focused (refetchIntervalInBackground defaults false), so the other
+    // side's edits/approvals surface without a manual refresh.
+    refetchInterval: pollWhileWaiting ? WAITING_POLL_MS : false,
   });
 }

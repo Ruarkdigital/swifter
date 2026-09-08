@@ -1,5 +1,6 @@
 import React, { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { lazyWithRetry } from "@/lib/lazyWithRetry";
+import { cn } from "@/lib/utils";
 import { resolveEnvFileUrl } from "@/config";
 import { SEOWrapper } from "@/components/SEO";
 import SidebarPanel from "./components/SidebarPanel";
@@ -195,14 +196,24 @@ const CollaborationToolPage: React.FC = () => {
     documentId: msaContractIdParam || contractIdParam,
     isMsa: Boolean(msaContractIdParam),
   });
-  const persistedQuery = usePersistedSuggestions({
-    documentId: msaContractIdParam || contractIdParam,
-    isMsa: Boolean(msaContractIdParam),
-  });
   // Turn-based redline negotiation (company side ⇄ vendor side).
   const redlineTurn = useRedlineTurn({
     documentId: msaContractIdParam || contractIdParam,
     isMsa: Boolean(msaContractIdParam),
+  });
+  // While it's the other side's turn, this viewer can't act — poll the persisted
+  // suggestions so the other side's edits/approvals appear without a manual
+  // refresh. `useRedlineTurn` polls its own endpoint on the same condition, so
+  // the turn flipping back is picked up too.
+  const isWaitingForOtherSide =
+    redlineTurn.isParticipant &&
+    redlineTurn.turnGateReady &&
+    !redlineTurn.isMyTurn &&
+    !redlineTurn.isFinalized;
+  const persistedQuery = usePersistedSuggestions({
+    documentId: msaContractIdParam || contractIdParam,
+    isMsa: Boolean(msaContractIdParam),
+    pollWhileWaiting: isWaitingForOtherSide,
   });
   const [aiItems, setAiItems] = useState<AiItem[]>([]);
   const [aiHasRun, setAiHasRun] = useState(false);
@@ -238,6 +249,10 @@ const CollaborationToolPage: React.FC = () => {
   // Room peers (self excluded by the iframe relay) — rendered as avatars in the
   // header beside the Download button. Empty until collaboration connects.
   const [presenceUsers, setPresenceUsers] = useState<PresenceUser[]>([]);
+  // Mobile layout: the editor and the sidebar can't sit side-by-side on a phone
+  // (the 420px sidebar overflows), so on small screens we show one at a time and
+  // toggle between them. On md+ both render side-by-side as before.
+  const [mobileView, setMobileView] = useState<"document" | "panel">("document");
 
   const { data: mentionables = [] } = useContractMentionables(contractId);
 
@@ -1070,8 +1085,8 @@ const CollaborationToolPage: React.FC = () => {
             aria-label="Close editor and return to contract"
             className="inline-flex items-center gap-1.5 rounded-md px-2 py-1.5 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
           >
-            <ArrowLeft className="h-4 w-4" />
-            Back to contract
+            <ArrowLeft className="h-4 w-4 shrink-0" />
+            <span className="hidden sm:inline">Back to contract</span>
           </button>
           <div className="h-5 w-px bg-slate-200 dark:bg-slate-800" />
           <h1 className="truncate text-sm font-semibold text-slate-900 dark:text-white">
@@ -1095,13 +1110,53 @@ const CollaborationToolPage: React.FC = () => {
                 ) : (
                   <Download className="h-3.5 w-3.5" />
                 )}
-                {downloadLatestMutation.isPending ? "Downloading…" : "Download"}
+                <span className="hidden sm:inline">
+                  {downloadLatestMutation.isPending ? "Downloading…" : "Download"}
+                </span>
               </button>
             )}
           </div>
         </header>
+        {/* Mobile-only switch: the editor and the activity panel each take the
+            full width on a phone, so toggle between them. Hidden on md+ where
+            they sit side-by-side. */}
+        <div className="flex shrink-0 gap-1 border-b border-slate-200 p-1.5 md:hidden dark:border-slate-800">
+          <button
+            type="button"
+            onClick={() => setMobileView("document")}
+            aria-pressed={mobileView === "document"}
+            className={cn(
+              "flex-1 rounded-md px-3 py-1.5 text-sm font-semibold transition-colors",
+              mobileView === "document"
+                ? "bg-[#2a4467] text-white"
+                : "text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800",
+            )}
+          >
+            Document
+          </button>
+          <button
+            type="button"
+            onClick={() => setMobileView("panel")}
+            aria-pressed={mobileView === "panel"}
+            className={cn(
+              "flex-1 rounded-md px-3 py-1.5 text-sm font-semibold transition-colors",
+              mobileView === "panel"
+                ? "bg-[#2a4467] text-white"
+                : "text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800",
+            )}
+          >
+            Activity
+          </button>
+        </div>
         <div className="flex min-h-0 flex-1">
-          <div className="flex-1 max-w-7xl overflow-auto">
+          <div
+            className={cn(
+              "flex-1 max-w-7xl overflow-auto",
+              // On mobile, only show the editor in "document" view; always show
+              // it on md+ (side-by-side layout).
+              mobileView === "panel" ? "hidden md:block" : "block",
+            )}
+          >
             <Suspense fallback={<div className="ct-editor-panel" />}>
             {(() => {
               // SuperDoc is the default editor. TipTap/Yoopta stay reachable as
@@ -1146,6 +1201,7 @@ const CollaborationToolPage: React.FC = () => {
           </Suspense>
         </div>
         <SidebarPanel
+          className={cn(mobileView === "document" && "hidden md:flex")}
           comments={commentsFeed}
           activeTab={activeTab}
           onTabChange={handleTabChange}
