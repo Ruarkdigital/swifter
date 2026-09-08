@@ -352,20 +352,16 @@ export function useRedlineTurn({ documentId, isMsa }: RedlineTurnScope) {
     : false;
   const isLocked = !canAct;
 
-  // [redline-debug] Authoritative turn state as resolved for this viewer.
-  console.log("[redline-debug] useRedlineTurn state", {
-    mySide,
-    isParticipant,
-    querySuccess: query.isSuccess,
-    queryStatus: query.status,
-    turn,
-    turnHolder: turn?.holder,
-    turnStatus: turn?.status,
-    turnGateReady,
-    isMyTurn,
-    isFinalized,
-    canAct,
-  });
+  // [redline-debug] Authoritative turn state — flattened into the message so the
+  // decisive values are readable without expanding a nested object. targetMode
+  // is what the host's mode effect will send to the iframe.
+  const targetMode = turnGateReady ? (isMyTurn ? "suggesting" : "viewing") : "skip";
+  console.log(
+    `[redline-debug] SUMMARY mySide=${mySide} participant=${isParticipant} ` +
+      `holder=${turn?.holder} status=${turn?.status} gateReady=${turnGateReady} ` +
+      `isMyTurn=${isMyTurn} finalized=${isFinalized} canAct=${canAct} ` +
+      `initMode=${canAct ? "suggesting" : "viewing"} effectMode=${targetMode}`,
+  );
 
   return {
     turn,
