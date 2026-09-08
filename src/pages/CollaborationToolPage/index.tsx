@@ -1129,6 +1129,15 @@ const CollaborationToolPage: React.FC = () => {
                 <IframeEditorPane
                   importMeta={importMeta}
                   collabMeta={collabMeta}
+                  // Seed the *initial* edit permission so redlining works the
+                  // moment the editor opens — the iframe honors this at
+                  // construction. Without it the editor starts in "editing"
+                  // (changes untracked, so the insertion/deletion redline
+                  // controls stay inactive) and only the live `setMode` effect
+                  // below could fix it. `canAct` is the same turn gate the
+                  // sidebar uses: "suggesting" for the side whose turn it is,
+                  // "viewing" for the waiting side / non-participants.
+                  documentMode={redlineTurn.canAct ? "suggesting" : "viewing"}
                   onEditorReady={handleEditorReady}
                   onPresenceChange={setPresenceUsers}
                 />

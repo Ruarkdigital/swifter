@@ -73,6 +73,30 @@ describe("IframeEditorPane", () => {
     expect(adapter?.kind).toBe("superdoc");
   });
 
+  it("forwards the documentMode prop into the init payload (seeds redline editability)", async () => {
+    render(
+      <IframeEditorPane
+        importMeta={importMeta}
+        collabMeta={collabMeta}
+        documentMode="suggesting"
+        onEditorReady={vi.fn()}
+      />,
+    );
+    const iframe = screen.getByTitle("SuperDoc editor") as HTMLIFrameElement;
+    const postMessage = vi.fn();
+    Object.defineProperty(iframe, "contentWindow", {
+      configurable: true,
+      value: { postMessage },
+    });
+
+    await act(async () => {
+      window.dispatchEvent(readyEvent());
+    });
+
+    await waitFor(() => expect(postMessage).toHaveBeenCalledTimes(1));
+    expect(postMessage.mock.calls[0][0].payload.documentMode).toBe("suggesting");
+  });
+
   it("ignores messages from an untrusted origin", async () => {
     render(
       <IframeEditorPane importMeta={importMeta} collabMeta={collabMeta} onEditorReady={vi.fn()} />,
