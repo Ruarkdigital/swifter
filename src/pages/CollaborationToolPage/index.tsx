@@ -195,14 +195,24 @@ const CollaborationToolPage: React.FC = () => {
     documentId: msaContractIdParam || contractIdParam,
     isMsa: Boolean(msaContractIdParam),
   });
-  const persistedQuery = usePersistedSuggestions({
-    documentId: msaContractIdParam || contractIdParam,
-    isMsa: Boolean(msaContractIdParam),
-  });
   // Turn-based redline negotiation (company side ⇄ vendor side).
   const redlineTurn = useRedlineTurn({
     documentId: msaContractIdParam || contractIdParam,
     isMsa: Boolean(msaContractIdParam),
+  });
+  // While it's the other side's turn, this viewer can't act — poll the persisted
+  // suggestions so the other side's edits/approvals appear without a manual
+  // refresh. `useRedlineTurn` polls its own endpoint on the same condition, so
+  // the turn flipping back is picked up too.
+  const isWaitingForOtherSide =
+    redlineTurn.isParticipant &&
+    redlineTurn.turnGateReady &&
+    !redlineTurn.isMyTurn &&
+    !redlineTurn.isFinalized;
+  const persistedQuery = usePersistedSuggestions({
+    documentId: msaContractIdParam || contractIdParam,
+    isMsa: Boolean(msaContractIdParam),
+    pollWhileWaiting: isWaitingForOtherSide,
   });
   const [aiItems, setAiItems] = useState<AiItem[]>([]);
   const [aiHasRun, setAiHasRun] = useState(false);
