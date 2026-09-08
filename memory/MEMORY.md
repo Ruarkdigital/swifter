@@ -13,6 +13,7 @@
 
 - [API Documentation Phase 2 — route map](reference_api_doc_phase2.md) — full path index for all 4 role prefixes (manager/vendor/approver/user); source file at docs/API_DOCUMENTATION_PHASE_2.md
 - [API docs sync 2026-05-22](project_api_doc_sync_260522.md) — swagger.json replaced with docs.json; 9 path changes including invoice fix, 5 new personnel endpoints, Contract Export section, File Utilities section
+- [API docs sync 2026-09-08](project_api_doc_sync_260908.md) — swagger.json + docs/swagger-phase-2.json synced to upstream docs.json (v2.3.0, 484→696 paths, +42 schemas); full AI-redline suggestion/turn/resolution contract now in spec; no `redline-accept` endpoint (accept = resolve with action:"accepted"); redline-suggestions GET dropped for approver/user roles
 - [Contract role guard pattern (PM = Vendor)](project_contract_role_guards.md) — isContractVendorLike pattern, which files use it, which were fixed 2026-04-26
 - [Swifter codebase overview](project_codebase_overview.md) — UserRole types, role hook, contract API modules, auth state
 - [Always pair PM with vendor in contract guards](feedback_role_guards.md)
