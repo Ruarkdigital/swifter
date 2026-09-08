@@ -63,6 +63,14 @@
     width: 100%;
     min-width: 0;
   }
+  /* The mobile Document/Activity toggle hides the panel with Tailwind's
+     `hidden` in "document" view. `.ct-sidebar-panel { display: flex }` ties it
+     on specificity and wins on source order, so the panel never hid and the
+     document stayed off-screen. Scoping the combined selector to mobile lets
+     `hidden` win here without touching the desktop `md:flex` side-by-side. */
+  .ct-sidebar-panel.hidden {
+    display: none;
+  }
   .ct-segment {
     margin: 12px 16px 0 16px;
   }
