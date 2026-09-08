@@ -52,6 +52,39 @@
   min-height: 0;
   overflow: hidden;
 }
+/* ---- Mobile (< md) -------------------------------------------------------
+ * The page toggles between the editor and this panel on small screens (see
+ * CollaborationToolPage index.tsx), so the panel fills the width instead of the
+ * fixed 420px column that would overflow a phone and squeeze the editor. Also
+ * trims the generous desktop paddings so content isn't cramped on narrow
+ * screens. */
+@media (max-width: 767px) {
+  .ct-sidebar-panel {
+    width: 100%;
+    min-width: 0;
+  }
+  .ct-segment {
+    margin: 12px 16px 0 16px;
+  }
+  .ct-section-header,
+  .ct-log-view .ct-log-title {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+  .ct-write-comment-wrap {
+    margin-left: 16px;
+    margin-right: 16px;
+  }
+  .ct-feed {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+  /* Let messages use the full panel width instead of the desktop 322px cap. */
+  .ct-feed-message {
+    max-width: none;
+  }
+}
+
 .ct-topbar {
   display: flex;
   align-items: center;
