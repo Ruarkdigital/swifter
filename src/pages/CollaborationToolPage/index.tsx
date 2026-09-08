@@ -627,31 +627,9 @@ const CollaborationToolPage: React.FC = () => {
   // keep the editor's default mode (pre-existing behavior).
   useEffect(() => {
     const adapter = editorAdapterRef.current;
-    // [redline-debug] Trace why the redline toolbar is/ isn't editable.
-    console.log("[redline-debug] mode effect run", {
-      editorReady,
-      hasAdapter: Boolean(adapter),
-      hasSetMode: Boolean(adapter?.setMode),
-      mySide: redlineTurn.mySide,
-      isParticipant: redlineTurn.isParticipant,
-      turnGateReady: redlineTurn.turnGateReady,
-      isMyTurn: redlineTurn.isMyTurn,
-      isFinalized: redlineTurn.isFinalized,
-      canAct: redlineTurn.canAct,
-      turnHolder: redlineTurn.turn?.holder,
-      turnStatus: redlineTurn.turn?.status,
-    });
-    if (!adapter?.setMode) {
-      console.log("[redline-debug] mode effect: no adapter/setMode — skipping");
-      return;
-    }
-    if (!redlineTurn.turnGateReady) {
-      console.log("[redline-debug] mode effect: turn gate not ready — skipping");
-      return;
-    }
-    const mode = redlineTurn.isMyTurn ? "suggesting" : "viewing";
-    console.log("[redline-debug] mode effect: sending setMode ->", mode);
-    adapter.setMode(mode);
+    if (!adapter?.setMode) return;
+    if (!redlineTurn.turnGateReady) return;
+    adapter.setMode(redlineTurn.isMyTurn ? "suggesting" : "viewing");
   }, [editorReady, redlineTurn.turnGateReady, redlineTurn.isMyTurn]);
 
   const handleApproveAi = useCallback(

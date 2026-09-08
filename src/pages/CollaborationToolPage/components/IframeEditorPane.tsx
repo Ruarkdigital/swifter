@@ -153,10 +153,7 @@ const IframeEditorPane: React.FC<Props> = ({
     extractRedlines: () => redlinesRef.current,
     replaceRedline: (redlineId, replacement) =>
       postCommand(buildApplyRedline(redlineId, replacement)),
-    setMode: (mode) => {
-      console.log("[redline-debug] pane: posting superdoc:set-mode ->", mode);
-      postCommand(buildSetMode(mode));
-    },
+    setMode: (mode) => postCommand(buildSetMode(mode)),
     anchorComment: (text) =>
       new Promise<string | null>((resolve) => {
         const requestId = crypto.randomUUID();
@@ -211,7 +208,6 @@ const IframeEditorPane: React.FC<Props> = ({
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const docBytes = await res.arrayBuffer();
         setPhase("rendering");
-        console.log("[redline-debug] pane: posting superdoc:init with documentMode ->", documentMode);
         const msg = buildInitPayload({
           docBytes,
           fileName: importMeta.fileName,
