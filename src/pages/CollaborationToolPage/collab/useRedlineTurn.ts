@@ -183,6 +183,9 @@ export function useRedlineTurn({ documentId, isMsa }: RedlineTurnScope) {
   const role = useUserRole();
   const qc = useQueryClient();
   const mySide = redlineSideFromRole(role);
+  // [redline-debug] The viewer's role → negotiating side. If mySide is null the
+  // viewer is a non-participant and the editor stays read-only ("viewing").
+  console.log("[redline-debug] useRedlineTurn role/side", { role, mySide, documentId, isMsa });
   const resource = isMsa ? "msa-contracts" : "contracts";
   // axios baseURL is /api/v1/dev — swagger paths live under /contract. Only the
   // two negotiating sides have turn endpoints; others get no base → read-only.
@@ -348,6 +351,21 @@ export function useRedlineTurn({ documentId, isMsa }: RedlineTurnScope) {
       : true
     : false;
   const isLocked = !canAct;
+
+  // [redline-debug] Authoritative turn state as resolved for this viewer.
+  console.log("[redline-debug] useRedlineTurn state", {
+    mySide,
+    isParticipant,
+    querySuccess: query.isSuccess,
+    queryStatus: query.status,
+    turn,
+    turnHolder: turn?.holder,
+    turnStatus: turn?.status,
+    turnGateReady,
+    isMyTurn,
+    isFinalized,
+    canAct,
+  });
 
   return {
     turn,
