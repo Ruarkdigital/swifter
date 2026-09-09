@@ -367,8 +367,11 @@ function VendorReportsTabContent({
   const getBasePath = () => {
     if (isContractVendorLike) return `/contract/vendor/contracts/${contractId}`;
     if (isApprover) return `/contract/approver/contracts/${contractId}`;
-    if (isManager) return `/contract/manager/contracts/${contractId}`;
-    if (isAdmin || isViewOnly) return `/contract/user/contracts/${contractId}`;
+    // QA #298: company/super admins read via the manager (org-scoped) endpoint,
+    // like the main contract fetch. The /contract/user endpoint is
+    // participant-scoped and returns empty for admins.
+    if (isManager || isAdmin) return `/contract/manager/contracts/${contractId}`;
+    if (isViewOnly) return `/contract/user/contracts/${contractId}`;
     return `/contract/user/contracts/${contractId}`; // Default fallback
   };
 

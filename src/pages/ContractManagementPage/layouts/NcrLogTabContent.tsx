@@ -31,8 +31,11 @@ const NcrLogTabContent: React.FC<Props> = ({ contractId, contract, isActive, act
   const getBasePath = () => {
     if (isContractVendorLike) return `/contract/vendor/contracts/${contractId}/ncrs`;
     if (isApprover) return `/contract/approver/contracts/${contractId}/ncrs`;
-    if (isManager) return `/contract/manager/contracts/${contractId}/ncrs`;
-    if (isAdmin || isViewOnly) return `/contract/user/contracts/${contractId}/ncrs`;
+    // QA #298: company/super admins read via the manager (org-scoped) endpoint,
+    // like the main contract fetch. The /contract/user endpoint is
+    // participant-scoped and returns empty for admins.
+    if (isManager || isAdmin) return `/contract/manager/contracts/${contractId}/ncrs`;
+    if (isViewOnly) return `/contract/user/contracts/${contractId}/ncrs`;
     return `/contract/user/contracts/${contractId}/ncrs`; // Default fallback
   };
 

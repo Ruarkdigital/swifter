@@ -36,9 +36,12 @@ const ComplianceTabContent: React.FC<Props> = ({
       return `/contract/vendor/contracts/${contractId}/compliance`;
     if (isApprover)
       return `/contract/approver/contracts/${contractId}/compliance`;
-    if (isManager)
+    // QA #298: company/super admins read via the manager (org-scoped) endpoint,
+    // like the main contract fetch. The /contract/user endpoint is
+    // participant-scoped and returns empty for admins.
+    if (isManager || isAdmin)
       return `/contract/manager/contracts/${contractId}/compliance`;
-    if (isAdmin || isViewOnly)
+    if (isViewOnly)
       return `/contract/user/contracts/${contractId}/compliance`;
     return `/contract/user/contracts/${contractId}/compliance`;
   };

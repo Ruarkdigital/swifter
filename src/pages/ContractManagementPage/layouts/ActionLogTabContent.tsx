@@ -40,7 +40,7 @@ const ActionLogTabContent: React.FC<Props> = () => {
     pageIndex: 0,
     pageSize: 20,
   });
-  const { isManager, isProcurement } = useUserRole()
+  const { isManager, isProcurement, isAdmin } = useUserRole()
 
   const listQuery = React.useMemo(() => {
     const query = searchQuery.trim();
@@ -58,7 +58,9 @@ const ActionLogTabContent: React.FC<Props> = () => {
   const { data: logsData, isLoading } = useQuery({
     queryKey: ["contractLogs", contractId, listQuery],
     queryFn: () => contractManagerApi.listLogs(contractId!, listQuery),
-    enabled: !!contractId && (isManager || isProcurement),
+    // QA #298: company/super admins are manager-equivalent readers, so they
+    // must fetch the (manager) action log too — otherwise the tab is empty.
+    enabled: !!contractId && (isManager || isProcurement || isAdmin),
   });
 
   const rows = useMemo(() => {
