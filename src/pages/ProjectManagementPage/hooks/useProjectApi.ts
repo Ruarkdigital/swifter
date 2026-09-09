@@ -1,7 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getRequest, patchRequest } from "@/lib/axiosInstance";
+import { getRequest, patchRequest, postRequest } from "@/lib/axiosInstance";
 import { useUserQueryKey } from "@/hooks/useUserQueryKey";
 import { ApiResponse, ApiResponseError } from "@/types";
+
+export type ProjectExportType = "pdf" | "docx";
 
 type ProjectFile = {
   name: string;
@@ -124,6 +126,25 @@ export const useUpdateProjectEac = (projectId?: string) => {
       queryClient.invalidateQueries({ queryKey: ["project-detail", projectId] });
       queryClient.invalidateQueries({ queryKey: ["projects-list"] });
       queryClient.invalidateQueries({ queryKey: ["projects-stats"] });
+    },
+  });
+};
+
+/**
+ * QA #294 — export a single project as a PDF or Word document. The BE endpoint
+ * `POST /manager/projects/{projectId}/export` streams a binary file
+ * (PDF / DOCX) containing the project details and a linked-contracts summary.
+ * Returns the raw Blob so the caller can name and trigger the download.
+ */
+export const useExportProject = (projectId?: string) => {
+  return useMutation<Blob, ApiResponseError, ProjectExportType>({
+    mutationFn: async (exportType) => {
+      const res = await postRequest({
+        url: `/contract/manager/projects/${projectId}/export`,
+        payload: { exportType },
+        config: { responseType: "blob" },
+      });
+      return res.data as Blob;
     },
   });
 };
