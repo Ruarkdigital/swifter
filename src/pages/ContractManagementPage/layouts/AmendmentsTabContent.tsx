@@ -870,9 +870,13 @@ const AmendmentsTabContent: React.FC<Props> = ({
     if (isContractVendorLike) return `/contract/vendor/contracts/${contractId}/amendment`;
     if (isApprover)
       return `/contract/approver/contracts/${contractId}/amendment`;
-    if (isManager)
+    // QA #298: company/super admins read via the manager (org-scoped) endpoint,
+    // like the main contract fetch. The /contract/user endpoint is
+    // participant-scoped and returns empty for admins. (Amendment WRITES for an
+    // expired contract are gated separately — see amendmentActionsDisabled.)
+    if (isManager || isAdmin)
       return `/contract/manager/contracts/${contractId}/amendments`;
-    if (isAdmin || isViewOnly)
+    if (isViewOnly)
       return `/contract/user/contracts/${contractId}/amendment`;
     return `/contract/user/contracts/${contractId}/amendment`; // Default fallback
   };

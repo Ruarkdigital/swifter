@@ -31,8 +31,11 @@ const LemTabContent: React.FC<Props> = ({ contractId, currency, isActive, action
   const getBasePath = () => {
     if (isContractVendorLike) return `/contract/vendor/contracts/${contractId}/lems`;
     if (isApprover) return `/contract/approver/contracts/${contractId}/lems`;
-    if (isManager) return `/contract/manager/contracts/${contractId}/lems`;
-    if (isAdmin || isViewOnly) return `/contract/user/contracts/${contractId}/lems`;
+    // QA #298: company/super admins read via the manager (org-scoped) endpoint,
+    // like the main contract fetch. The /contract/user endpoint is
+    // participant-scoped and returns empty for admins.
+    if (isManager || isAdmin) return `/contract/manager/contracts/${contractId}/lems`;
+    if (isViewOnly) return `/contract/user/contracts/${contractId}/lems`;
     return `/contract/user/contracts/${contractId}/lems`; // Default fallback
   };
 

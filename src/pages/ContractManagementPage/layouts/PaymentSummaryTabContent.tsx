@@ -576,7 +576,7 @@ const PaymentSummaryTabContent: React.FC<Props> = ({
   contract,
   isActive,
 }) => {
-  const { isVendor, isProjectManager, isManager, isApprover, isViewOnly } =
+  const { isVendor, isProjectManager, isManager, isApprover, isViewOnly, isAdmin } =
     useUserRole();
   const isContractVendorLike = isVendor || isProjectManager;
   const isPendingApproval = contract?.status === "pending_approval";
@@ -616,7 +616,10 @@ const PaymentSummaryTabContent: React.FC<Props> = ({
   } = useQuery({
     queryKey: holdbacksQueryKey,
     queryFn: async () => {
-      if (isManager) {
+      // QA #298: company/super admins are manager-equivalent readers (same as
+      // the main contract fetch), so they read holdbacks from the manager
+      // endpoint too — otherwise the tab is empty for them.
+      if (isManager || isAdmin) {
         return contractManagerApi.listPaymentHoldbacks(contractId);
       }
       if (isApprover) {
@@ -636,7 +639,7 @@ const PaymentSummaryTabContent: React.FC<Props> = ({
     enabled:
       Boolean(contractId) &&
       !!isActive &&
-      (isManager || isApprover || isContractVendorLike),
+      (isManager || isAdmin || isApprover || isContractVendorLike),
     staleTime: 60000,
     retry: false,
   });
@@ -648,7 +651,9 @@ const PaymentSummaryTabContent: React.FC<Props> = ({
   } = useQuery({
     queryKey: savingsQueryKey,
     queryFn: async () => {
-      if (isManager) {
+      // QA #298: company/super admins read savings from the manager endpoint,
+      // like managers — otherwise the tab is empty for them.
+      if (isManager || isAdmin) {
         return contractManagerApi.listPaymentSavings(contractId);
       }
       if (isApprover) {
@@ -662,7 +667,7 @@ const PaymentSummaryTabContent: React.FC<Props> = ({
       return { data: [] as any[] };
     },
     enabled:
-      Boolean(contractId) && !!isActive && (isManager || isApprover),
+      Boolean(contractId) && !!isActive && (isManager || isAdmin || isApprover),
     staleTime: 60000,
     retry: false,
   });
@@ -694,7 +699,7 @@ const PaymentSummaryTabContent: React.FC<Props> = ({
   // them. (Reviewer also flagged the Current Balance VALUE needs a BE fix —
   // that is server-side, tracked separately.)
   const showBilledAndBalance =
-    isManager || isApprover || isContractVendorLike || isViewOnly;
+    isManager || isAdmin || isApprover || isContractVendorLike || isViewOnly;
 
   const currency = resolveCurrency(contract?.currency, useUser()?.currency);
   const formatMoney = React.useCallback(

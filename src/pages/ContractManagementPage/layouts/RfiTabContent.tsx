@@ -514,9 +514,13 @@ const RfiTabContent: React.FC<Props> = ({
   const getBasePath = () => {
     if (isContractVendorLike) return `/contract/vendor/contracts/${contractId}/rfi`;
     if (isApprover) return `/contract/approver/contracts/${contractId}/rfi`;
-    if (isManager) return `/contract/manager/contracts/${contractId}/rfis`;
-    if (isAdmin || isViewOnly)
-      return `/contract/user/contracts/${contractId}/rfi`;
+    // Company/super admins are manager-equivalent readers (same as the main
+    // contract fetch via companyAdminApi → /contract/manager/...). The generic
+    // /contract/user endpoint is participant-scoped, so admins — who aren't
+    // contract participants — get an empty list from it (QA #298).
+    if (isManager || isAdmin)
+      return `/contract/manager/contracts/${contractId}/rfis`;
+    if (isViewOnly) return `/contract/user/contracts/${contractId}/rfi`;
     return `/contract/user/contracts/${contractId}/rfi`; // Default fallback
   };
 
