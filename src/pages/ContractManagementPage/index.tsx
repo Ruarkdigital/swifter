@@ -320,7 +320,7 @@ const mapContractsToRows = (contracts?: ContractApi[], profileCurrency?: string)
   return contracts.map((c) => {
     const value =
       typeof c.contractValue === "number"
-        ? new Intl.NumberFormat(undefined, {
+        ? new Intl.NumberFormat("en-US", {
             style: "currency",
             currency: resolveCurrency(c.currency, profileCurrency),
             maximumFractionDigits: 0,
@@ -376,7 +376,7 @@ const mapVendorContractsToRows = (
   return contracts.map((c) => {
     const value =
       typeof c.contractValue === "number"
-        ? new Intl.NumberFormat(undefined, {
+        ? new Intl.NumberFormat("en-US", {
             style: "currency",
             currency: resolveCurrency(c.currency, profileCurrency),
             maximumFractionDigits: 0,

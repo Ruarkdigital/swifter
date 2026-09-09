@@ -15,13 +15,31 @@ export function cn(...inputs: ClassValue[]) {
  */
 export function formatCurrency(
   amount: number,
-  locale: Intl.LocaleOptions["region"],
-  currency: Intl.NumberFormatOptions["currency"]
+  locale?: Intl.LocaleOptions["region"],
+  currency?: Intl.NumberFormatOptions["currency"]
 ) {
+  // Currency display MUST be deterministic across users: `Intl.NumberFormat`
+  // renders the same currency differently per locale (USD is "$" in en-US but
+  // "US$" in en-CA; CAD is "CA$" vs "$"), so an omitted/undefined locale falls
+  // back to the viewer's own locale and the same contract value looks different
+  // for different logged-in users (QA #299). Always render in a fixed locale.
+  let resolvedLocale = locale;
+  let resolvedCurrency = currency;
+  // Tolerate the common two-arg misuse `formatCurrency(amount, currencyCode)`:
+  // when no currency is given but the locale slot holds an ISO 4217 code
+  // (three letters), treat it as the currency.
+  if (
+    resolvedCurrency == null &&
+    typeof resolvedLocale === "string" &&
+    /^[A-Za-z]{3}$/.test(resolvedLocale)
+  ) {
+    resolvedCurrency = resolvedLocale as Intl.NumberFormatOptions["currency"];
+    resolvedLocale = undefined;
+  }
   try {
-    return new Intl.NumberFormat(locale, {
+    return new Intl.NumberFormat(resolvedLocale || "en-US", {
       style: "currency",
-      currency: currency,
+      currency: resolvedCurrency,
     }).format(amount);
   } catch (error) {
     console.error("Error formatting currency:", error);
