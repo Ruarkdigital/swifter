@@ -1,4 +1,5 @@
 import React from "react";
+import * as XLSX from "xlsx";
 import { SEOWrapper } from "@/components/SEO";
 import { Button } from "@/components/ui/button";
 import { Share2, Plus } from "lucide-react";
@@ -64,6 +65,27 @@ const ProjectManagementPage: React.FC = () => {
     status: p.status,
   }));
 
+  // QA #293: the Export button had no handler. Export the loaded projects to an
+  // .xlsx workbook client-side (mirrors the Action Log tab's export). Values
+  // reuse the same formatting shown in the table.
+  const handleExport = () => {
+    if (!rows.length) return;
+    const exportRows = rows.map((r) => ({
+      "Project Name": r.name ?? "",
+      Budget: r.budget ?? "",
+      "Total Spend": r.totalSpend ?? "",
+      EAC: r.eac ?? "",
+      "Start Date": r.startDate ?? "",
+      "End Date": r.endDate ?? "",
+      Status: r.status ?? "",
+    }));
+    const worksheet = XLSX.utils.json_to_sheet(exportRows);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Projects");
+    const today = new Date().toISOString().slice(0, 10);
+    XLSX.writeFile(workbook, `projects-${today}.xlsx`);
+  };
+
   return (
     <div className="space-y-8 pt-10">
       <SEOWrapper
@@ -81,6 +103,8 @@ const ProjectManagementPage: React.FC = () => {
             variant="outline"
             aria-label="Export projects"
             className="rounded-xl"
+            onClick={handleExport}
+            disabled={rows.length === 0}
           >
             <Share2 className="mr-2 h-4 w-4" /> Export
           </Button>
