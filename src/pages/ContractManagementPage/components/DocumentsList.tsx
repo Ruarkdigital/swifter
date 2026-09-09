@@ -3,6 +3,7 @@ import type { File as ContractDocument } from "@/types";
 import { formatFileSize, getFileExtension, getFileIcon } from "@/lib/fileUtils";
 import { DocumentViewer } from "@/components/ui/DocumentViewer";
 import { useNavigate } from "react-router-dom";
+import { useUserRole } from "@/hooks/useUserRole";
 import { DocumentItem } from "./DocumentItem";
 
 type Doc = {
@@ -42,18 +43,25 @@ const DocumentsList: React.FC<Props> = ({
   onNavigateToClauseLibrary,
 }) => {
   const navigate = useNavigate();
+  const { isManager, isProjectManager } = useUserRole();
   const [viewerOpen, setViewerOpen] = React.useState(false);
   const [selectedDoc, setSelectedDoc] = React.useState<Doc | null>(null);
+
+  // "Edit in Collaboration Tool" is limited to Contract Managers, Procurement
+  // (both `isManager`) and Project Managers. Every other role — company admin,
+  // approver, vendor, view-only — can preview/download but not edit.
+  const canCollaborate = isManager || isProjectManager;
 
   // Documents are mutable while the contract is still being worked on —
   // `draft` or awaiting approval (`pending_approval`). Anything else —
   // including the most common case `publish` — is read-only. If status is
   // undefined (e.g., a stale caller hasn't passed it yet) we keep the
-  // previous lenient default.
+  // previous lenient default. The role gate above applies on top of this.
   const canEdit = React.useMemo(() => {
+    if (!canCollaborate) return false;
     if (status === undefined) return true;
     return status === "draft" || status === "pending_approval";
-  }, [status]);
+  }, [status, canCollaborate]);
 
   const docs = React.useMemo<Doc[]>(() => {
     if (!files?.length) return [];
