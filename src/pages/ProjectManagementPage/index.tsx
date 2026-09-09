@@ -87,7 +87,7 @@ const ProjectManagementPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-8 pt-10">
+    <div className="space-y-6 sm:space-y-8 pt-6 sm:pt-10">
       <SEOWrapper
         title="Project Management - SwiftPro eProcurement Portal"
         description="Manage projects efficiently. Create, track active work, and review completed tasks."
@@ -95,14 +95,14 @@ const ProjectManagementPage: React.FC = () => {
         robots="noindex, nofollow"
       />
 
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100">Projects</h2>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 sm:gap-4">
           <Button
             data-testid="export-button"
             variant="outline"
             aria-label="Export projects"
-            className="rounded-xl"
+            className="flex-1 sm:flex-none rounded-xl"
             onClick={handleExport}
             disabled={rows.length === 0}
           >
@@ -111,7 +111,7 @@ const ProjectManagementPage: React.FC = () => {
           <Button
             data-testid="create-project-button"
             aria-label="Create Project"
-            className="rounded-xl"
+            className="flex-1 sm:flex-none rounded-xl"
             onClick={handleCreateClick}
           >
             <Plus className="mr-2 h-4 w-4" /> Create Project

@@ -23,8 +23,8 @@ const ProjectsHeader: React.FC<HeaderProps> = ({
 }) => {
   return (
     <div className="flex items-center w-full justify-between border-b border-[#E9E9EB] dark:border-slate-600 p-3 pt-0">
-      <div className="flex items-center justify-between w-full">
-        <div className="flex items-center gap-6">
+      <div className="flex flex-col gap-3 w-full min-w-0 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-2 w-full min-w-0 sm:w-auto sm:flex-row sm:items-center sm:gap-6">
           <div className="flex items-center gap-2">
             <h2 className="text-base font-semibold text-gray-600 dark:text-gray-400" style={{ fontFamily: "Quicksand" }}>
               {title}
