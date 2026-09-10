@@ -15,6 +15,7 @@ import {
   buildAddComment,
   buildFocusComment,
   buildSetMode,
+  buildGetDocumentState,
   type PresenceUser,
   type DocumentMode,
 } from "../collab/superdocBridge";
@@ -145,6 +146,22 @@ const IframeEditorPane: React.FC<Props> = ({
     entry.resolve(commentId);
   }, []);
 
+  // In-flight getDocumentState requests, keyed by requestId. Resolved by the
+  // iframe's `superdoc:document-state` reply, or with null on timeout/unmount so
+  // awaiting callers never hang (the redline still resolves, just without a
+  // persisted snapshot).
+  const DOCSTATE_TIMEOUT_MS = 5000;
+  const pendingDocStateRef = useRef(
+    new Map<string, { resolve: (state: string | null) => void; timer: number }>(),
+  );
+  const settleDocState = useCallback((requestId: string, state: string | null) => {
+    const entry = pendingDocStateRef.current.get(requestId);
+    if (!entry) return;
+    pendingDocStateRef.current.delete(requestId);
+    window.clearTimeout(entry.timer);
+    entry.resolve(state);
+  }, []);
+
   const buildAdapter = useCallback((): EditorAdapter => ({
     kind: "superdoc",
     doc: undefined,
@@ -164,7 +181,17 @@ const IframeEditorPane: React.FC<Props> = ({
         pendingAnchorsRef.current.set(requestId, { resolve, timer });
         postCommand(buildAddComment(requestId, text));
       }),
-  }), [postCommand, settleAnchor]);
+    getDocumentState: () =>
+      new Promise<string | null>((resolve) => {
+        const requestId = crypto.randomUUID();
+        const timer = window.setTimeout(
+          () => settleDocState(requestId, null),
+          DOCSTATE_TIMEOUT_MS,
+        );
+        pendingDocStateRef.current.set(requestId, { resolve, timer });
+        postCommand(buildGetDocumentState(requestId));
+      }),
+  }), [postCommand, settleAnchor, settleDocState]);
   const buildAdapterRef = useRef(buildAdapter);
 
   // Keep the latest onError reachable from the stable `fail` callback without
@@ -279,6 +306,7 @@ const IframeEditorPane: React.FC<Props> = ({
     const controller = new AbortController();
     // Stable Map identity for the cleanup below (react-hooks/exhaustive-deps).
     const pendingAnchors = pendingAnchorsRef.current;
+    const pendingDocStates = pendingDocStateRef.current;
     const onMessage = (event: MessageEvent) => {
       const msg = parseSuperdocMessage(event, origin);
       if (!msg) return;
@@ -308,6 +336,9 @@ const IframeEditorPane: React.FC<Props> = ({
           break;
         case "superdoc:comment-created":
           settleAnchor(msg.payload.requestId, msg.payload.commentId);
+          break;
+        case "superdoc:document-state":
+          settleDocState(msg.payload.requestId, msg.payload.state);
           break;
         case "superdoc:selection":
           // Drives the comments tab's "anchored to selection" chip.
@@ -368,9 +399,13 @@ const IframeEditorPane: React.FC<Props> = ({
       window.clearTimeout(connectTimer);
       clearRenderWatchdog();
       controller.abort();
-      // Settle any in-flight anchor requests so awaiting callers don't hang.
+      // Settle any in-flight anchor / document-state requests so awaiting
+      // callers don't hang.
       for (const requestId of [...pendingAnchors.keys()]) {
         settleAnchor(requestId, null);
+      }
+      for (const requestId of [...pendingDocStates.keys()]) {
+        settleDocState(requestId, null);
       }
       onEditorReadyRef.current(null);
     };
@@ -378,7 +413,7 @@ const IframeEditorPane: React.FC<Props> = ({
     // watchdog for the remounted iframe). It only changes inside `retry`, never
     // on a normal re-render, so the mount-once guarantee still holds.
     // `settleAnchor` is a stable useCallback([]) — it never retriggers this.
-  }, [clearRenderWatchdog, origin, postCommand, reloadKey, settleAnchor]);
+  }, [clearRenderWatchdog, origin, postCommand, reloadKey, settleAnchor, settleDocState]);
 
   // Not `.ct-editor-panel` — that class forces height:100vh (for the legacy
   // full-page editors), which overflows the header'd column and adds a second

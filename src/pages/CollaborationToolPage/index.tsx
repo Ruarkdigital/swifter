@@ -681,46 +681,63 @@ const CollaborationToolPage: React.FC = () => {
         alt?.high ??
         item.suggestion.replacementText;
 
-      if (finalizing) {
-        if (typeof replacement === "string" && replacement.length > 0) {
-          // Both sides have now approved — apply the approved content to the
-          // shared SuperDoc immediately (propagates to both peers via Yjs).
-          adapter.replaceRedline(item.redline.redlineId, replacement);
-          // Auto-snapshot so the change can be reverted.
-          saveVersionSnapshot(`Applied AI suggestion (${tier})`, "ai-apply");
-        } else if (import.meta.env.DEV) {
-          // eslint-disable-next-line no-console
-          console.warn(
-            "[ai-redline] both sides approved but no alternativeLanguage / replacementText available; doc not mutated.",
-            item.redline.redlineId,
-          );
-        }
+      // Only a *finalizing* (second) approval writes the approved content to the
+      // shared SuperDoc — the first approval just records intent.
+      const applied =
+        finalizing && typeof replacement === "string" && replacement.length > 0;
+      if (applied) {
+        // Both sides have now approved — apply to the shared SuperDoc immediately
+        // (propagates to both peers via Yjs).
+        adapter.replaceRedline(item.redline.redlineId, replacement as string);
+        // Auto-snapshot so the change can be reverted.
+        saveVersionSnapshot(`Applied AI suggestion (${tier})`, "ai-apply");
+      } else if (finalizing && import.meta.env.DEV) {
+        // eslint-disable-next-line no-console
+        console.warn(
+          "[ai-redline] both sides approved but no alternativeLanguage / replacementText available; doc not mutated.",
+          item.redline.redlineId,
+        );
       }
 
       // Record this side's acceptance. The BE derives the bilateral state and
-      // returns it (with progress) on the next GET.
-      redlineTurn.resolve.mutate(
-        {
-          redlineId: item.redline.redlineId,
-          action: "modified",
-          tier,
-          docName,
-          baseVersionId: fileVersionsQuery.data?.activeVersionId ?? null,
-        },
-        {
-          onSuccess: () => {
-            persistedQuery.refetch();
+      // returns it (with progress) on the next GET. `documentState` persists the
+      // accepted document server-side; the BE reads it only on the finalizing
+      // accept, so we only capture it when we actually mutated the doc.
+      const submitResolve = (documentState?: string) =>
+        redlineTurn.resolve.mutate(
+          {
+            redlineId: item.redline.redlineId,
+            action: "modified",
+            tier,
+            docName,
+            baseVersionId: fileVersionsQuery.data?.activeVersionId ?? null,
+            documentState,
           },
-          onError: (error) => {
-            if (isVersionConflict(error)) {
-              toastHandler.error(
-                "Redline",
-                "This document changed since you loaded it. Reload the latest version, then try again.",
-              );
-            }
+          {
+            onSuccess: () => {
+              persistedQuery.refetch();
+            },
+            onError: (error) => {
+              if (isVersionConflict(error)) {
+                toastHandler.error(
+                  "Redline",
+                  "This document changed since you loaded it. Reload the latest version, then try again.",
+                );
+              }
+            },
           },
-        },
-      );
+        );
+
+      // Capture the post-apply Yjs snapshot from the iframe, then resolve. The
+      // iframe encodes AFTER the apply-redline it just received (messages are
+      // ordered), so the snapshot reflects the accepted change. Fall back to a
+      // plain resolve if there's no live doc / the adapter can't provide one.
+      const statePromise = applied ? adapter.getDocumentState?.() : undefined;
+      if (statePromise) {
+        void statePromise.then((state) => submitResolve(state ?? undefined));
+      } else {
+        submitResolve();
+      }
 
       // Optimistically flip the card: "awaiting other side", or resolved when
       // this was the finalizing approval.
@@ -845,11 +862,13 @@ const CollaborationToolPage: React.FC = () => {
       if (pending.length === 0) return;
 
       const resolutions: RedlineBatchItem[] = [];
+      // Tracks how many redlines this click actually wrote to the document — a
+      // snapshot is only worth persisting when at least one was applied.
+      let appliedCount = 0;
       if (action === "modified") {
         // Dual approval: record this side's approval for every pending redline,
         // but only write the document for those the OTHER side has already
         // approved (this click finalizes them). The rest wait for the other side.
-        let appliedCount = 0;
         for (const item of pending) {
           const finalizing =
             dualApprovalPhase(item.accepted, redlineTurn.mySide ?? undefined) ===
@@ -892,11 +911,13 @@ const CollaborationToolPage: React.FC = () => {
       const resolvedIds = new Set(resolutions.map((r) => r.redlineId));
       const nextState: AiItem["state"] =
         action === "modified" ? "approved" : "dismissed";
-      redlineTurn.batchResolve.mutate(
+      const submitBatch = (documentState?: string) =>
+        redlineTurn.batchResolve.mutate(
         {
           resolutions,
           docName,
           baseVersionId: fileVersionsQuery.data?.activeVersionId ?? null,
+          documentState,
         },
         {
           onSuccess: () => {
@@ -934,6 +955,16 @@ const CollaborationToolPage: React.FC = () => {
           },
         },
       );
+
+      // One snapshot for the whole batch, captured after every applied change
+      // lands in the doc (the iframe encodes its current Yjs state). Only worth
+      // it when this click actually mutated the document.
+      const statePromise = appliedCount > 0 ? adapter?.getDocumentState?.() : undefined;
+      if (statePromise) {
+        void statePromise.then((state) => submitBatch(state ?? undefined));
+      } else {
+        submitBatch();
+      }
     },
     [
       aiItems,

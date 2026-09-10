@@ -40,11 +40,12 @@ export type RedlineResolveInput = {
   /** Client's last-known active version id (advisory; BE verifies server-side). */
   baseVersionId?: string | null;
   /**
-   * Base64 Yjs document state (`Buffer.from(Y.encodeStateAsUpdate(ydoc)).toString("base64")`).
-   * Only populated when a live Y.Doc is available on the caller's side — this is
-   * NEVER true for the default shipped editor (SuperDoc iframe has no host-side
-   * Y.Doc). No call site in this repo currently supplies it; see the plan's
-   * scoping note in 260724-onj-PLAN.md.
+   * Base64 Yjs document state (`base64(Y.encodeStateAsUpdate(ydoc))`), persisted
+   * by the BE as the accepted document (full-replace, gated on `baseVersionId`).
+   * The SuperDoc iframe owns the Y.Doc, so the host fetches this on demand via
+   * the adapter's `getDocumentState()` (a postMessage round-trip) and supplies it
+   * only on a finalizing accept. `undefined` in document-only fallback — the BE
+   * treats it as optional and simply files no snapshot.
    */
   documentState?: string;
 };

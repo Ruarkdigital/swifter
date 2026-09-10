@@ -38,4 +38,10 @@ export type EditorAdapter = {
    *  turn-based redline negotiation to make the non-turn-holder read-only.
    *  Only the SuperDoc iframe adapter implements this. */
   setMode?: (mode: DocumentMode) => void;
+  /** Current Yjs document state as `base64(Y.encodeStateAsUpdate(ydoc))`, for
+   *  persisting an accepted document to the BE (redline resolve/batch-resolve
+   *  `documentState`). Resolves `null` when no live Y.Doc is available (the
+   *  editor is in document-only fallback) or the request times out. Only the
+   *  SuperDoc iframe adapter implements this — its Y.Doc lives in the iframe. */
+  getDocumentState?: () => Promise<string | null>;
 };
