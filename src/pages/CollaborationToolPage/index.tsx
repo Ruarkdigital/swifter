@@ -37,6 +37,7 @@ import {
   effectiveApprovalPhase,
   withLocalAcceptance,
   type AiRedlineSuggestion,
+  type PersistedSuggestion,
   type RedlineResolvedHolder,
   type RedlineAcceptance,
   type SuggestionProgress,
@@ -646,6 +647,57 @@ const CollaborationToolPage: React.FC = () => {
     if (!redlineTurn.turnGateReady) return;
     adapter.setMode(redlineTurn.isMyTurn ? "suggesting" : "viewing");
   }, [editorReady, redlineTurn.turnGateReady, redlineTurn.isMyTurn]);
+
+  // Reconcile the document against the authoritative dual-approval state.
+  //
+  // The click handlers apply a recommendation only when THIS click is detected
+  // as the finalizing (second) approval. In a live two-user session the second
+  // approver's client may not yet reflect the other side's acceptance at click
+  // time, so neither click is seen as finalizing and the replacement is never
+  // applied — the redline resolves on the BE but the document text is never
+  // updated. This effect closes that gap: whenever the polled state shows a
+  // redline is BOTH-accepted and its mark is still live in the document, the
+  // editable side applies the replacement (the change then propagates to the
+  // other peer via Yjs). Idempotent — a per-id guard plus the live-set check
+  // stop double-applies, and it no-ops once the mark is gone.
+  const reconciledRedlinesRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    const adapter = editorAdapterRef.current;
+    // Only the side that can currently edit may mutate the shared doc; the
+    // waiting (viewing) side receives the applied change through Yjs.
+    if (!adapter || !redlineTurn.canAct) return;
+    const live = new Set(adapter.extractRedlines().map((r) => r.redlineId));
+    for (const item of aiItems) {
+      const id = item.redline.redlineId;
+      // Accepted/modified only — never a rejection (a dismissed card can also
+      // read "resolved").
+      if (item.state !== "approved") continue;
+      if (reconciledRedlinesRef.current.has(id)) continue;
+      if (!live.has(id)) continue; // already applied / removed
+      const phase = effectiveApprovalPhase({
+        accepted: item.accepted,
+        resolvedByHolder: item.resolvedByHolder,
+        resolvedStatus: item.resolvedStatus,
+        mySide: redlineTurn.mySide ?? undefined,
+      });
+      if (phase !== "both") continue; // authoritatively both-accepted only
+      const alt = item.suggestion?.alternativeLanguage;
+      // `resolution` lives on PersistedSuggestion (a superset of the base type
+      // AiItem.suggestion is typed as); read the BE-chosen tier defensively.
+      const tier =
+        (item.suggestion as PersistedSuggestion | undefined)?.resolution?.tier ??
+        "medium";
+      const replacement =
+        alt?.[tier] ??
+        alt?.medium ??
+        alt?.low ??
+        alt?.high ??
+        item.suggestion?.replacementText;
+      if (typeof replacement !== "string" || replacement.length === 0) continue;
+      reconciledRedlinesRef.current.add(id);
+      adapter.replaceRedline(id, replacement);
+    }
+  }, [aiItems, redlineTurn.canAct, redlineTurn.mySide]);
 
   const handleApproveAi = useCallback(
     (item: AiItem, tier: "low" | "medium" | "high" = "medium") => {
