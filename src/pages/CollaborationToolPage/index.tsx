@@ -34,7 +34,7 @@ import {
   useAiRedlineSuggestions,
   usePersistedSuggestions,
   getRedlineResolvedHolder,
-  dualApprovalPhase,
+  effectiveApprovalPhase,
   withLocalAcceptance,
   type AiRedlineSuggestion,
   type RedlineResolvedHolder,
@@ -667,8 +667,19 @@ const CollaborationToolPage: React.FC = () => {
       // acceptance; it applies the replacement to the doc only when it is the
       // *finalizing* (second) approval — i.e. the other side already accepted.
       const mySide = redlineTurn.mySide;
+      // Use the SAME phase the card showed the user (effectiveApprovalPhase),
+      // not the raw bilateral-only check: when the BE returns a one-sided
+      // resolution without the `accepted` object, the raw check reads "open"
+      // and the finalizing approval never applies the text — the redline
+      // resolves but the document is never updated. The fallback matches the
+      // card's Approve button so the click does what it appears to do.
       const finalizing =
-        dualApprovalPhase(item.accepted, mySide ?? undefined) === "awaiting-me";
+        effectiveApprovalPhase({
+          accepted: item.accepted,
+          resolvedByHolder: item.resolvedByHolder,
+          resolvedStatus: item.resolvedStatus,
+          mySide: mySide ?? undefined,
+        }) === "awaiting-me";
 
       // Pick the user's chosen alternative-language tier (or fall back
       // through the others, then to the legacy `replacementText` field
@@ -871,8 +882,12 @@ const CollaborationToolPage: React.FC = () => {
         // approved (this click finalizes them). The rest wait for the other side.
         for (const item of pending) {
           const finalizing =
-            dualApprovalPhase(item.accepted, redlineTurn.mySide ?? undefined) ===
-            "awaiting-me";
+            effectiveApprovalPhase({
+              accepted: item.accepted,
+              resolvedByHolder: item.resolvedByHolder,
+              resolvedStatus: item.resolvedStatus,
+              mySide: redlineTurn.mySide ?? undefined,
+            }) === "awaiting-me";
           const alt = item.suggestion?.alternativeLanguage;
           const replacement =
             alt?.[tier] ??
