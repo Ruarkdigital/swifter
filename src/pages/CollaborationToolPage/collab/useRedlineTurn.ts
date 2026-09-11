@@ -35,6 +35,9 @@ export type RedlineResolveInput = {
   action: RedlineResolutionAction;
   /** Required by the BE when action === "modified". */
   tier?: "low" | "medium" | "high";
+  /** Which alternativeLanguage tier to apply on bilateral acceptance — the BE
+   *  records the applied text/tier from it (swagger: appliedTier). */
+  appliedTier?: "low" | "medium" | "high";
   /** Room/document name for the version-hint fields below. */
   docName?: string;
   /** Client's last-known active version id (advisory; BE verifies server-side). */
@@ -62,6 +65,8 @@ export type RedlineBatchItem = {
   action: RedlineResolutionAction;
   /** Required by the BE when action === "modified". */
   tier?: "low" | "medium" | "high";
+  /** Which alternativeLanguage tier to apply on bilateral acceptance. */
+  appliedTier?: "low" | "medium" | "high";
 };
 
 export type RedlineBatchResolveInput = {
@@ -99,6 +104,8 @@ type ApiEnvelope<T> = { status?: number; message?: string; data?: T };
 export type RedlineTurnScope = {
   /** Contract or MSA-contract id. */
   documentId: string | undefined;
+  /** Document (file) id — required by the resolve/batch-resolve request bodies. */
+  fileId?: string;
   /** Default false → /contracts; true → /msa-contracts. */
   isMsa?: boolean;
 };
@@ -125,8 +132,13 @@ export const redlineSideFromRole = (role: {
  * left out of the payload).
  */
 export const buildResolvePayload = (
-  input: { action: RedlineResolutionAction; tier?: "low" | "medium" | "high" },
+  input: {
+    action: RedlineResolutionAction;
+    tier?: "low" | "medium" | "high";
+    appliedTier?: "low" | "medium" | "high";
+  },
   scope: {
+    documentId?: string;
     docName?: string;
     baseVersionId?: string | null;
     documentState?: string;
@@ -134,6 +146,8 @@ export const buildResolvePayload = (
 ): Record<string, unknown> => {
   const payload: Record<string, unknown> = { action: input.action };
   if (input.tier !== undefined) payload.tier = input.tier;
+  if (input.appliedTier !== undefined) payload.appliedTier = input.appliedTier;
+  if (scope.documentId !== undefined) payload.documentId = scope.documentId;
   if (scope.docName !== undefined) payload.docName = scope.docName;
   if (scope.baseVersionId !== undefined)
     payload.baseVersionId = scope.baseVersionId;
@@ -162,12 +176,14 @@ export const buildUndoPayload = (scope: {
 export const buildBatchResolvePayload = (
   resolutions: RedlineBatchItem[],
   scope: {
+    documentId?: string;
     docName?: string;
     baseVersionId?: string | null;
     documentState?: string;
   },
 ): Record<string, unknown> => {
   const payload: Record<string, unknown> = { resolutions };
+  if (scope.documentId !== undefined) payload.documentId = scope.documentId;
   if (scope.docName !== undefined) payload.docName = scope.docName;
   if (scope.baseVersionId !== undefined)
     payload.baseVersionId = scope.baseVersionId;
@@ -183,7 +199,7 @@ export const isVersionConflict = (error: unknown): boolean =>
 /** How often the waiting side re-polls the turn endpoint (ms). */
 const WAITING_TURN_POLL_MS = 10000;
 
-export function useRedlineTurn({ documentId, isMsa }: RedlineTurnScope) {
+export function useRedlineTurn({ documentId, fileId, isMsa }: RedlineTurnScope) {
   const role = useUserRole();
   const qc = useQueryClient();
   const mySide = redlineSideFromRole(role);
@@ -253,14 +269,15 @@ export function useRedlineTurn({ documentId, isMsa }: RedlineTurnScope) {
       redlineId,
       action,
       tier,
+      appliedTier,
       docName,
       baseVersionId,
       documentState,
     }) => {
       if (!base) return null;
       const payload = buildResolvePayload(
-        { action, tier },
-        { docName, baseVersionId, documentState },
+        { action, tier, appliedTier },
+        { documentId: fileId, docName, baseVersionId, documentState },
       );
       const res = await postRequest({
         url: `${base}/ai/redline-suggestions/${redlineId}/resolve`,
@@ -321,6 +338,7 @@ export function useRedlineTurn({ documentId, isMsa }: RedlineTurnScope) {
       if (!base) throw new Error("Redline turn is not available for this role.");
       if (resolutions.length === 0) return null;
       const payload = buildBatchResolvePayload(resolutions, {
+        documentId: fileId,
         docName,
         baseVersionId,
         documentState,

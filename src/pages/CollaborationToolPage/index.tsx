@@ -34,7 +34,7 @@ import {
   useAiRedlineSuggestions,
   usePersistedSuggestions,
   getRedlineResolvedHolder,
-  effectiveApprovalPhase,
+  dualApprovalPhase,
   withLocalAcceptance,
   mergeAcceptance,
   type AiRedlineSuggestion,
@@ -48,7 +48,7 @@ import {
   isVersionConflict,
   type RedlineBatchItem,
 } from "./collab/useRedlineTurn";
-import TurnBanner from "./components/TurnBanner";
+import TurnControls from "./components/TurnControls";
 import PresenceAvatars from "./components/PresenceAvatars";
 import type { PresenceUser } from "./collab/superdocBridge";
 import type { ApiResponseError } from "@/types";
@@ -70,11 +70,7 @@ type AiItem = {
   state: "pending" | "approved" | "dismissed";
   /** #87 — which side resolved it: "manager" → Addressed, "vendor" → Resolved. */
   resolvedByHolder?: RedlineResolvedHolder;
-  /** Persisted resolution status — lets the card tell a one-sided accept
-   *  (awaiting the other side) apart from a fully-resolved redline when the
-   *  bilateral `accepted` object isn't present. */
-  resolvedStatus?: "pending" | "resolved";
-  /** Per-redline bilateral acceptance driving the dual-approval UI. */
+  /** Per-redline bilateral acceptance (BE-authoritative) driving the dual-approval UI. */
   accepted?: RedlineAcceptance;
 };
 
@@ -206,11 +202,15 @@ const CollaborationToolPage: React.FC = () => {
   const msaContractIdParam = searchParams.get("msaContractId") || undefined;
   const aiMutation = useAiRedlineSuggestions({
     documentId: msaContractIdParam || contractIdParam,
+    // BE RedlineAnalysisDTO requires the document (file) id in the request body.
+    fileId: searchParams.get("fileId") || undefined,
     isMsa: Boolean(msaContractIdParam),
   });
   // Turn-based redline negotiation (company side ⇄ vendor side).
   const redlineTurn = useRedlineTurn({
     documentId: msaContractIdParam || contractIdParam,
+    // Required by the resolve/batch-resolve request bodies.
+    fileId: searchParams.get("fileId") || undefined,
     isMsa: Boolean(msaContractIdParam),
   });
   // While it's the other side's turn, this viewer can't act — poll the persisted
@@ -224,6 +224,8 @@ const CollaborationToolPage: React.FC = () => {
     !redlineTurn.isFinalized;
   const persistedQuery = usePersistedSuggestions({
     documentId: msaContractIdParam || contractIdParam,
+    // GET list route requires the document (file) id in the path.
+    fileId: searchParams.get("fileId") || undefined,
     isMsa: Boolean(msaContractIdParam),
     pollWhileWaiting: isWaitingForOtherSide,
   });
@@ -608,12 +610,6 @@ const CollaborationToolPage: React.FC = () => {
           suggestion: s,
           state: resolutionToState(s.resolution?.action),
           resolvedByHolder: getRedlineResolvedHolder(s.resolution),
-          resolvedStatus:
-            s.resolution?.status === "resolved"
-              ? "resolved"
-              : s.resolution?.status === "pending"
-                ? "pending"
-                : undefined,
           accepted: s.accepted,
         })),
       );
@@ -668,12 +664,6 @@ const CollaborationToolPage: React.FC = () => {
         const mergedState = serverState !== "pending" ? serverState : p.state;
         const mergedHolder =
           getRedlineResolvedHolder(s.resolution) ?? p.resolvedByHolder;
-        const mergedResolvedStatus =
-          s.resolution?.status === "resolved"
-            ? "resolved"
-            : s.resolution?.status === "pending"
-              ? "pending"
-              : p.resolvedStatus;
         const rawAccepted = mergeAcceptance(p.accepted, s.accepted);
         const acceptedChanged =
           (rawAccepted?.status ?? undefined) !==
@@ -685,7 +675,6 @@ const CollaborationToolPage: React.FC = () => {
         if (
           mergedState === p.state &&
           mergedHolder === p.resolvedByHolder &&
-          mergedResolvedStatus === p.resolvedStatus &&
           mergedAccepted === p.accepted
         ) {
           return p;
@@ -695,7 +684,6 @@ const CollaborationToolPage: React.FC = () => {
           ...p,
           state: mergedState,
           resolvedByHolder: mergedHolder,
-          resolvedStatus: mergedResolvedStatus,
           accepted: mergedAccepted,
         };
       });
@@ -715,18 +703,16 @@ const CollaborationToolPage: React.FC = () => {
     adapter.setMode(redlineTurn.isMyTurn ? "suggesting" : "viewing");
   }, [editorReady, redlineTurn.turnGateReady, redlineTurn.isMyTurn]);
 
-  // Reconcile the document against the authoritative dual-approval state.
+  // Apply accepted recommendations to the document, client-side.
   //
-  // The click handlers apply a recommendation only when THIS click is detected
-  // as the finalizing (second) approval. In a live two-user session the second
-  // approver's client may not yet reflect the other side's acceptance at click
-  // time, so neither click is seen as finalizing and the replacement is never
-  // applied — the redline resolves on the BE but the document text is never
-  // updated. This effect closes that gap: whenever the polled state shows a
-  // redline is BOTH-accepted and its mark is still live in the document, the
-  // editable side applies the replacement (the change then propagates to the
-  // other peer via Yjs). Idempotent — a per-id guard plus the live-set check
-  // stop double-applies, and it no-ops once the mark is gone.
+  // The backend records dual-approval state but does NOT modify the document.
+  // So when both sides have approved a redline, THIS side (whichever currently
+  // holds the turn / can edit) writes the recommended text into the shared
+  // SuperDoc; the change then propagates to the other peer via Yjs. Driven off
+  // the authoritative both-accepted state rather than a single click, so it
+  // still fires when the pair is completed on the other client. Idempotent — a
+  // per-id guard plus the live-set check stop double-applies, and it no-ops once
+  // the mark is gone.
   const reconciledRedlinesRef = useRef<Set<string>>(new Set());
   useEffect(() => {
     const adapter = editorAdapterRef.current;
@@ -741,25 +727,25 @@ const CollaborationToolPage: React.FC = () => {
       if (item.state !== "approved") continue;
       if (reconciledRedlinesRef.current.has(id)) continue;
       if (!live.has(id)) continue; // already applied / removed
-      const phase = effectiveApprovalPhase({
-        accepted: item.accepted,
-        resolvedByHolder: item.resolvedByHolder,
-        resolvedStatus: item.resolvedStatus,
-        mySide: redlineTurn.mySide ?? undefined,
-      });
-      if (phase !== "both") continue; // authoritatively both-accepted only
+      // Apply only on the BE's authoritative "both accepted" signal.
+      const bothAccepted =
+        Boolean(item.accepted?.shouldRemove) ||
+        dualApprovalPhase(item.accepted, redlineTurn.mySide ?? undefined) ===
+          "both";
+      if (!bothAccepted) continue;
+      // Prefer the BE-recorded applied text; else derive from the applied (or
+      // resolved) tier's alternative language, then the legacy field.
+      const resolution = (item.suggestion as PersistedSuggestion | undefined)
+        ?.resolution;
       const alt = item.suggestion?.alternativeLanguage;
-      // `resolution` lives on PersistedSuggestion (a superset of the base type
-      // AiItem.suggestion is typed as); read the BE-chosen tier defensively.
-      const tier =
-        (item.suggestion as PersistedSuggestion | undefined)?.resolution?.tier ??
-        "medium";
+      const tier = resolution?.appliedTier ?? resolution?.tier ?? "medium";
       const replacement =
-        alt?.[tier] ??
-        alt?.medium ??
-        alt?.low ??
-        alt?.high ??
-        item.suggestion?.replacementText;
+        resolution?.appliedText ||
+        (alt?.[tier] ??
+          alt?.medium ??
+          alt?.low ??
+          alt?.high ??
+          item.suggestion?.replacementText);
       if (typeof replacement !== "string" || replacement.length === 0) continue;
       reconciledRedlinesRef.current.add(id);
       adapter.replaceRedline(id, replacement);
@@ -781,64 +767,21 @@ const CollaborationToolPage: React.FC = () => {
         );
         return;
       }
-      // Dual approval: a redline is written into the shared document only once
-      // BOTH sides have approved. This click records the current side's
-      // acceptance; it applies the replacement to the doc only when it is the
-      // *finalizing* (second) approval — i.e. the other side already accepted.
       const mySide = redlineTurn.mySide;
-      // Use the SAME phase the card showed the user (effectiveApprovalPhase),
-      // not the raw bilateral-only check: when the BE returns a one-sided
-      // resolution without the `accepted` object, the raw check reads "open"
-      // and the finalizing approval never applies the text — the redline
-      // resolves but the document is never updated. The fallback matches the
-      // card's Approve button so the click does what it appears to do.
-      const finalizing =
-        effectiveApprovalPhase({
-          accepted: item.accepted,
-          resolvedByHolder: item.resolvedByHolder,
-          resolvedStatus: item.resolvedStatus,
-          mySide: mySide ?? undefined,
-        }) === "awaiting-me";
 
-      // Pick the user's chosen alternative-language tier (or fall back
-      // through the others, then to the legacy `replacementText` field
-      // for older BE deployments).
-      const alt = item.suggestion.alternativeLanguage;
-      const replacement =
-        alt?.[tier] ??
-        alt?.medium ??
-        alt?.low ??
-        alt?.high ??
-        item.suggestion.replacementText;
-
-      // Only a *finalizing* (second) approval writes the approved content to the
-      // shared SuperDoc — the first approval just records intent.
-      const applied =
-        finalizing && typeof replacement === "string" && replacement.length > 0;
-      if (applied) {
-        // Both sides have now approved — apply to the shared SuperDoc immediately
-        // (propagates to both peers via Yjs).
-        adapter.replaceRedline(item.redline.redlineId, replacement as string);
-        // Auto-snapshot so the change can be reverted.
-        saveVersionSnapshot(`Applied AI suggestion (${tier})`, "ai-apply");
-      } else if (finalizing && import.meta.env.DEV) {
-        // eslint-disable-next-line no-console
-        console.warn(
-          "[ai-redline] both sides approved but no alternativeLanguage / replacementText available; doc not mutated.",
-          item.redline.redlineId,
-        );
-      }
-
-      // Record this side's acceptance. The BE derives the bilateral state and
-      // returns it (with progress) on the next GET. `documentState` persists the
-      // accepted document server-side; the BE reads it only on the finalizing
-      // accept, so we only capture it when we actually mutated the doc.
+      // The backend applies the accepted recommendation to the document (find +
+      // replace + version) from the `documentState` we submit — the FE no longer
+      // mutates the doc. Send `appliedTier` so the BE records which tier/text it
+      // applied. Capture the current Yjs snapshot (if the iframe can provide one)
+      // and submit it with the acceptance; the applied change reaches every
+      // editor via the backend.
       const submitResolve = (documentState?: string) =>
         redlineTurn.resolve.mutate(
           {
             redlineId: item.redline.redlineId,
             action: "modified",
             tier,
+            appliedTier: tier,
             docName,
             baseVersionId: fileVersionsQuery.data?.activeVersionId ?? null,
             documentState,
@@ -858,11 +801,7 @@ const CollaborationToolPage: React.FC = () => {
           },
         );
 
-      // Capture the post-apply Yjs snapshot from the iframe, then resolve. The
-      // iframe encodes AFTER the apply-redline it just received (messages are
-      // ordered), so the snapshot reflects the accepted change. Fall back to a
-      // plain resolve if there's no live doc / the adapter can't provide one.
-      const statePromise = applied ? adapter.getDocumentState?.() : undefined;
+      const statePromise = adapter.getDocumentState?.();
       if (statePromise) {
         void statePromise.then((state) => submitResolve(state ?? undefined));
       } else {
@@ -887,7 +826,6 @@ const CollaborationToolPage: React.FC = () => {
       );
     },
     [
-      saveVersionSnapshot,
       redlineTurn,
       toastHandler,
       docName,
@@ -958,7 +896,6 @@ const CollaborationToolPage: React.FC = () => {
                       resolvedByHolder: undefined,
                       // Clear the withdrawn acceptance so the poll-sync union
                       // doesn't resurrect it (BE has cleared it too).
-                      resolvedStatus: undefined,
                       accepted: undefined,
                     }
                   : p,
@@ -999,55 +936,21 @@ const CollaborationToolPage: React.FC = () => {
       const pending = aiItems.filter((i) => i.state === "pending");
       if (pending.length === 0) return;
 
-      const resolutions: RedlineBatchItem[] = [];
-      // Tracks how many redlines this click actually wrote to the document — a
-      // snapshot is only worth persisting when at least one was applied.
-      let appliedCount = 0;
-      if (action === "modified") {
-        // Dual approval: record this side's approval for every pending redline,
-        // but only write the document for those the OTHER side has already
-        // approved (this click finalizes them). The rest wait for the other side.
-        for (const item of pending) {
-          const finalizing =
-            effectiveApprovalPhase({
-              accepted: item.accepted,
-              resolvedByHolder: item.resolvedByHolder,
-              resolvedStatus: item.resolvedStatus,
-              mySide: redlineTurn.mySide ?? undefined,
-            }) === "awaiting-me";
-          const alt = item.suggestion?.alternativeLanguage;
-          const replacement =
-            alt?.[tier] ??
-            alt?.medium ??
-            alt?.low ??
-            alt?.high ??
-            item.suggestion?.replacementText;
-          if (
-            finalizing &&
-            adapter &&
-            typeof replacement === "string" &&
-            replacement.length > 0
-          ) {
-            adapter.replaceRedline(item.redline.redlineId, replacement);
-            appliedCount += 1;
-          }
-          resolutions.push({
-            redlineId: item.redline.redlineId,
-            action: "modified",
-            tier,
-          });
-        }
-        if (appliedCount > 0) {
-          saveVersionSnapshot(
-            `Applied ${appliedCount} AI suggestion${appliedCount === 1 ? "" : "s"} (${tier})`,
-            "ai-apply",
-          );
-        }
-      } else {
-        for (const item of pending) {
-          resolutions.push({ redlineId: item.redline.redlineId, action: "rejected" });
-        }
-      }
+      // Record this side's approval/rejection for every pending redline. The
+      // backend applies the bilateral-accepted ones to the document from the
+      // submitted `documentState`; the FE no longer mutates the doc itself.
+      const resolutions: RedlineBatchItem[] =
+        action === "modified"
+          ? pending.map((item) => ({
+              redlineId: item.redline.redlineId,
+              action: "modified" as const,
+              tier,
+              appliedTier: tier,
+            }))
+          : pending.map((item) => ({
+              redlineId: item.redline.redlineId,
+              action: "rejected" as const,
+            }));
       if (resolutions.length === 0) return;
 
       const resolvedIds = new Set(resolutions.map((r) => r.redlineId));
@@ -1098,10 +1001,10 @@ const CollaborationToolPage: React.FC = () => {
         },
       );
 
-      // One snapshot for the whole batch, captured after every applied change
-      // lands in the doc (the iframe encodes its current Yjs state). Only worth
-      // it when this click actually mutated the document.
-      const statePromise = appliedCount > 0 ? adapter?.getDocumentState?.() : undefined;
+      // Submit the current Yjs snapshot with the batch so the backend can apply
+      // the accepted redlines; not needed for a pure rejection batch.
+      const statePromise =
+        action === "modified" ? adapter?.getDocumentState?.() : undefined;
       if (statePromise) {
         void statePromise.then((state) => submitBatch(state ?? undefined));
       } else {
@@ -1113,7 +1016,6 @@ const CollaborationToolPage: React.FC = () => {
       redlineTurn,
       docName,
       fileVersionsQuery.data?.activeVersionId,
-      saveVersionSnapshot,
       toastHandler,
       persistedQuery,
     ],
@@ -1266,6 +1168,53 @@ const CollaborationToolPage: React.FC = () => {
             {fileName || "Document Editor"}
           </h1>
           <div className="ml-auto flex shrink-0 items-center gap-3">
+            {/* Redline turn controls — compact, tooltip-driven, shown in the
+                header while reviewing redlines so the negotiation status/actions
+                stay visible without a full-width in-panel banner. */}
+            {activeTab === "redline" && (
+              <>
+                <TurnControls
+                  mySide={redlineTurn.mySide}
+                  turn={redlineTurn.turn}
+                  isMyTurn={redlineTurn.isMyTurn}
+                  isFinalized={redlineTurn.isFinalized}
+                  pendingCount={
+                    aiItems.filter((i) => i.state === "pending").length
+                  }
+                  onSend={() =>
+                    redlineTurn.sendTurn.mutate(undefined, {
+                      onSuccess: () =>
+                        toastHandler.success(
+                          "Redline",
+                          "Document sent to the other side.",
+                        ),
+                      onError: (e) =>
+                        toastHandler.error(
+                          "Send redline turn",
+                          e as ApiResponseError,
+                        ),
+                    })
+                  }
+                  onFinalize={() =>
+                    redlineTurn.finalize.mutate(undefined, {
+                      onSuccess: () =>
+                        toastHandler.success(
+                          "Redline",
+                          "Redline negotiation finalized.",
+                        ),
+                      onError: (e) =>
+                        toastHandler.error(
+                          "Finalize redline",
+                          e as ApiResponseError,
+                        ),
+                    })
+                  }
+                  isSending={redlineTurn.sendTurn.isPending}
+                  isFinalizing={redlineTurn.finalize.isPending}
+                />
+                <div className="h-5 w-px bg-slate-200 dark:bg-slate-800" />
+              </>
+            )}
             {/* Live presence — peers only (self excluded); nothing renders when
                 you're alone. Sits to the left of Download in the header. */}
             <PresenceAvatars users={presenceUsers} />
@@ -1402,41 +1351,6 @@ const CollaborationToolPage: React.FC = () => {
           onAiRetry={runAiSuggestions}
           isMyTurn={redlineTurn.canAct}
           aiMySide={redlineTurn.mySide}
-          redlineTurnBanner={
-            <TurnBanner
-              mySide={redlineTurn.mySide}
-              turn={redlineTurn.turn}
-              isMyTurn={redlineTurn.isMyTurn}
-              isFinalized={redlineTurn.isFinalized}
-              pendingCount={
-                aiItems.filter((i) => i.state === "pending").length
-              }
-              onSend={() =>
-                redlineTurn.sendTurn.mutate(undefined, {
-                  onSuccess: () =>
-                    toastHandler.success(
-                      "Redline",
-                      "Document sent to the other side.",
-                    ),
-                  onError: (e) =>
-                    toastHandler.error("Send redline turn", e as ApiResponseError),
-                })
-              }
-              onFinalize={() =>
-                redlineTurn.finalize.mutate(undefined, {
-                  onSuccess: () =>
-                    toastHandler.success(
-                      "Redline",
-                      "Redline negotiation finalized.",
-                    ),
-                  onError: (e) =>
-                    toastHandler.error("Finalize redline", e as ApiResponseError),
-                })
-              }
-              isSending={redlineTurn.sendTurn.isPending}
-              isFinalizing={redlineTurn.finalize.isPending}
-            />
-          }
         />
         </div>
       </div>

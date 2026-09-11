@@ -22,6 +22,20 @@ describe("deriveProgressCounts", () => {
     ).toEqual({ cmAddressed: 3, pmAddressed: 1, resolved: 1 });
   });
 
+  it("takes the max when the BE fills cm_accept but leaves resolvedByManager at 0", () => {
+    // Current backend shape: a side accepted (cm_accept=1) but nothing is fully
+    // resolved yet (resolvedByManager=0). The header must show 1, not 0.
+    expect(
+      deriveProgressCounts({
+        resolvedByManager: 0,
+        resolvedByVendor: 0,
+        cm_accept: 1,
+        pm_accept: 0,
+        resolved: 0,
+      }),
+    ).toEqual({ cmAddressed: 1, pmAddressed: 0, resolved: 0 });
+  });
+
   it("falls back to `resolved` when `resolvedCount` is absent", () => {
     expect(
       deriveProgressCounts({ resolvedByManager: 2, resolvedByVendor: 2, resolved: 2 }),

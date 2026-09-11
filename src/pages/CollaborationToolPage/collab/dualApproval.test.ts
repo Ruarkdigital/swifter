@@ -68,49 +68,33 @@ describe("acceptanceActor", () => {
   });
 });
 
-describe("effectiveApprovalPhase (single-sided fallback)", () => {
-  it("prefers the bilateral accepted state when present", () => {
+describe("effectiveApprovalPhase (BE-authoritative projection)", () => {
+  it("projects the bilateral accepted state", () => {
     expect(
       effectiveApprovalPhase({
         accepted: { status: "cm_accepted" },
         mySide: "vendor",
       }),
     ).toBe("awaiting-me");
-  });
-
-  it("shows the other side an approve/reject request from a one-sided resolution", () => {
-    // CM accepted (no bilateral object) → the vendor must still see a request.
     expect(
       effectiveApprovalPhase({
-        resolvedByHolder: "manager",
-        resolvedStatus: "pending",
-        mySide: "vendor",
-      }),
-    ).toBe("awaiting-me");
-  });
-
-  it("tells the acting side it is awaiting the other, from a one-sided resolution", () => {
-    expect(
-      effectiveApprovalPhase({
-        resolvedByHolder: "manager",
-        resolvedStatus: "pending",
+        accepted: { status: "cm_accepted" },
         mySide: "manager",
       }),
     ).toBe("awaiting-other");
-  });
-
-  it("treats a resolved status as both-accepted", () => {
     expect(
       effectiveApprovalPhase({
-        resolvedByHolder: "vendor",
-        resolvedStatus: "resolved",
+        accepted: { status: "both_accepted" },
         mySide: "manager",
       }),
     ).toBe("both");
   });
 
-  it("is 'open' when nothing has been actioned", () => {
+  it("is 'open' when the BE has sent no acceptance (or it is pending)", () => {
     expect(effectiveApprovalPhase({ mySide: "manager" })).toBe("open");
+    expect(
+      effectiveApprovalPhase({ accepted: { status: "pending" }, mySide: "vendor" }),
+    ).toBe("open");
   });
 });
 
