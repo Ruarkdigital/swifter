@@ -292,6 +292,8 @@ export type PersistedResolution = {
 
 export type PersistedSuggestion = AiRedlineSuggestion & {
   resolution?: PersistedResolution;
+  /** Per-redline bilateral acceptance (dual-approval). */
+  accepted?: RedlineAcceptance;
 };
 
 /** Normalize `resolution.resolvedBy` (object or legacy string) to the holder. */
@@ -315,6 +317,130 @@ export const redlineStageLabel = (
   holder?: RedlineResolvedHolder,
 ): "Resolved" | "Addressed" => (holder === "vendor" ? "Resolved" : "Addressed");
 
+// ── Bilateral (dual-approval) acceptance ─────────────────────────────
+// The BE tracks, per redline, whether each side has accepted. A redline is
+// applied to the document only once BOTH the contract manager (CM) and the
+// vendor PM accept it; until then the other side sees a request to approve or
+// reject. Swagger schema: RedlineAcceptanceStatus (on each suggestion's
+// `accepted`).
+
+export type RedlineAcceptedByUser = { id?: string; name?: string };
+
+/** `pending` = nobody accepted; `cm_accepted`/`vendor_accepted` = one side
+ *  accepted, awaiting the other; `both_accepted` = apply. */
+export type RedlineAcceptanceState =
+  | "both_accepted"
+  | "cm_accepted"
+  | "vendor_accepted"
+  | "pending";
+
+export type RedlineAcceptance = {
+  redlineId?: string;
+  cmAccepted?: boolean;
+  vendorAccepted?: boolean;
+  cmAcceptedAt?: string | null;
+  vendorAcceptedAt?: string | null;
+  cmAcceptedBy?: RedlineAcceptedByUser | null;
+  vendorAcceptedBy?: RedlineAcceptedByUser | null;
+  status?: RedlineAcceptanceState;
+  /** True when both parties accepted — the client applies the replacement and
+   *  removes the redline from the document. */
+  shouldRemove?: boolean;
+};
+
+/**
+ * Which dual-approval step this viewer is on for a redline:
+ * - `open`: nobody has accepted — the normal pending suggestion.
+ * - `awaiting-me`: the other side accepted — show an approve/reject request.
+ * - `awaiting-other`: this viewer accepted — waiting on the other side.
+ * - `both`: both accepted — applied / resolved.
+ */
+export type DualApprovalPhase = "open" | "awaiting-me" | "awaiting-other" | "both";
+
+/** Map a bilateral-acceptance status onto the viewer's step. Observers (no
+ *  side) never get an actionable request, so a one-sided accept reads
+ *  `awaiting-other` for them. */
+export const dualApprovalPhase = (
+  accepted: RedlineAcceptance | undefined,
+  mySide: RedlineResolvedHolder | undefined,
+): DualApprovalPhase => {
+  const status = accepted?.status ?? "pending";
+  if (status === "both_accepted") return "both";
+  if (status === "pending") return "open";
+  const acceptedSide: RedlineResolvedHolder =
+    status === "cm_accepted" ? "manager" : "vendor";
+  if (!mySide) return "awaiting-other";
+  return acceptedSide === mySide ? "awaiting-other" : "awaiting-me";
+};
+
+/**
+ * The dual-approval phase for a viewer, preferring the bilateral `accepted`
+ * state but falling back to the single-sided resolution (holder + status) when
+ * the BE payload hasn't populated `accepted`. This fallback is what keeps the
+ * OTHER side's approve/reject request visible on a one-sided resolution — a
+ * redline actioned by one side must never read as "done" to the other.
+ */
+export const effectiveApprovalPhase = (input: {
+  accepted?: RedlineAcceptance;
+  resolvedByHolder?: RedlineResolvedHolder;
+  resolvedStatus?: "pending" | "resolved";
+  mySide: RedlineResolvedHolder | undefined;
+}): DualApprovalPhase => {
+  if (input.accepted) return dualApprovalPhase(input.accepted, input.mySide);
+  if (input.resolvedStatus === "resolved") return "both";
+  if (input.resolvedByHolder) {
+    return input.resolvedByHolder === input.mySide
+      ? "awaiting-other"
+      : "awaiting-me";
+  }
+  return "open";
+};
+
+/** The side that has already accepted (with who/when), for the one-sided
+ *  states. Returns null when zero or both sides have accepted. */
+export const acceptanceActor = (
+  accepted: RedlineAcceptance | undefined,
+): { holder: RedlineResolvedHolder; name?: string; at?: string } | null => {
+  if (accepted?.status === "cm_accepted") {
+    return {
+      holder: "manager",
+      name: accepted.cmAcceptedBy?.name ?? undefined,
+      at: accepted.cmAcceptedAt ?? undefined,
+    };
+  }
+  if (accepted?.status === "vendor_accepted") {
+    return {
+      holder: "vendor",
+      name: accepted.vendorAcceptedBy?.name ?? undefined,
+      at: accepted.vendorAcceptedAt ?? undefined,
+    };
+  }
+  return null;
+};
+
+/** Human label for a negotiating side. */
+export const redlineHolderLabel = (holder: RedlineResolvedHolder): string =>
+  holder === "vendor" ? "Vendor PM" : "Contract manager";
+
+/** Optimistically fold this viewer's acceptance into the bilateral state so the
+ *  card flips immediately, before the GET refetch confirms it. */
+export const withLocalAcceptance = (
+  accepted: RedlineAcceptance | undefined,
+  mySide: RedlineResolvedHolder,
+): RedlineAcceptance => {
+  const next: RedlineAcceptance = { ...accepted };
+  if (mySide === "manager") next.cmAccepted = true;
+  else next.vendorAccepted = true;
+  const both = Boolean(next.cmAccepted) && Boolean(next.vendorAccepted);
+  next.status = both
+    ? "both_accepted"
+    : next.cmAccepted
+      ? "cm_accepted"
+      : "vendor_accepted";
+  next.shouldRemove = both;
+  return next;
+};
+
 export type SuggestionProgress = {
   total?: number;
   pending?: number;
@@ -322,7 +448,42 @@ export type SuggestionProgress = {
   resolvedCount?: number;
   resolvedByManager?: number;
   resolvedByVendor?: number;
+  /** Suggestions accepted by the contract manager (company side). */
+  cm_accept?: number;
+  /** Suggestions accepted by the vendor PM. */
+  pm_accept?: number;
+  /** Both-accepted total. The GET also sends `resolvedCount`; either works. */
+  resolved?: number;
 };
+
+/**
+ * Per-side counts for the AI Polish header. Each side's "addressed" total is
+ * shown independently — who has acted on a recommendation — and "resolved" is
+ * the resolved/both-accepted total. All are computed by the backend; we only
+ * surface them.
+ *
+ * The per-side count comes from `resolvedByManager` / `resolvedByVendor`, which
+ * the live GET populates (a redline resolved by that side). `cm_accept` /
+ * `pm_accept` are the newer bilateral-accept counters and are used only as a
+ * fallback — the current backend leaves them at 0, so reading them made the
+ * header stick at "CM addressed: 0 / PM addressed: 0" even after a side acted.
+ */
+export type ProgressCounts = {
+  cmAddressed?: number;
+  pmAddressed?: number;
+  resolved?: number;
+};
+
+const firstNumber = (...values: Array<number | undefined>): number | undefined =>
+  values.find((v) => typeof v === "number");
+
+export const deriveProgressCounts = (
+  progress?: SuggestionProgress,
+): ProgressCounts => ({
+  cmAddressed: firstNumber(progress?.resolvedByManager, progress?.cm_accept),
+  pmAddressed: firstNumber(progress?.resolvedByVendor, progress?.pm_accept),
+  resolved: firstNumber(progress?.resolvedCount, progress?.resolved),
+});
 
 export type PersistedSuggestionsResponse = {
   suggestions: PersistedSuggestion[];
@@ -356,6 +517,7 @@ const parsePersistedBody = (body: PersistedApiBody): PersistedSuggestionsRespons
           riskLevel: (s.riskLevel as AiRiskLevel) ?? "medium",
           replacementText: typeof s.replacementText === "string" ? s.replacementText : undefined,
           resolution: s.resolution as PersistedResolution | undefined,
+          accepted: (s.accepted as RedlineAcceptance | null) ?? undefined,
         }))
     : [];
   return { suggestions, progress: data.progress ?? {} };
@@ -366,7 +528,14 @@ const parsePersistedBody = (body: PersistedApiBody): PersistedSuggestionsRespons
  * suggestions with their resolution state and aggregate progress counts.
  * When no suggestions have been generated yet, returns an empty array.
  */
-export function usePersistedSuggestions({ documentId, isMsa }: AiRedlineScope) {
+/** How often the waiting side re-fetches persisted suggestions (ms). */
+const WAITING_POLL_MS = 10000;
+
+export function usePersistedSuggestions({
+  documentId,
+  isMsa,
+  pollWhileWaiting = false,
+}: AiRedlineScope & { pollWhileWaiting?: boolean }) {
   const role = useUserRole();
   const url = documentId
     ? buildEndpoint({
@@ -386,5 +555,9 @@ export function usePersistedSuggestions({ documentId, isMsa }: AiRedlineScope) {
       return parsePersistedBody(res.data as PersistedApiBody);
     },
     staleTime: 30000,
+    // Poll only while waiting on the other side, and only when the tab is
+    // focused (refetchIntervalInBackground defaults false), so the other
+    // side's edits/approvals surface without a manual refresh.
+    refetchInterval: pollWhileWaiting ? WAITING_POLL_MS : false,
   });
 }

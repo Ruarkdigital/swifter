@@ -41,8 +41,11 @@ const ClaimsTabContent: React.FC<Props> = ({
   const getBasePath = () => {
     if (isContractVendorLike) return `/contract/vendor/contracts/${contractId}/claims`;
     if (isApprover) return `/contract/approver/contracts/${contractId}/claims`;
-    if (isManager) return `/contract/manager/contracts/${contractId}/claims`;
-    if (isAdmin || isViewOnly)
+    // QA #298: company/super admins read via the manager (org-scoped) endpoint,
+    // like the main contract fetch. The /contract/user endpoint is
+    // participant-scoped and returns empty for admins.
+    if (isManager || isAdmin) return `/contract/manager/contracts/${contractId}/claims`;
+    if (isViewOnly)
       return `/contract/user/contracts/${contractId}/claims`;
     return `/contract/user/contracts/${contractId}/claims`; // Default fallback
   };

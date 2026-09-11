@@ -1,5 +1,6 @@
 import React, { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { lazyWithRetry } from "@/lib/lazyWithRetry";
+import { cn } from "@/lib/utils";
 import { resolveEnvFileUrl } from "@/config";
 import { SEOWrapper } from "@/components/SEO";
 import SidebarPanel from "./components/SidebarPanel";
@@ -33,8 +34,12 @@ import {
   useAiRedlineSuggestions,
   usePersistedSuggestions,
   getRedlineResolvedHolder,
+  effectiveApprovalPhase,
+  withLocalAcceptance,
   type AiRedlineSuggestion,
+  type PersistedSuggestion,
   type RedlineResolvedHolder,
+  type RedlineAcceptance,
   type SuggestionProgress,
 } from "./collab/useAiRedlineSuggestions";
 import {
@@ -54,6 +59,12 @@ type AiItem = {
   state: "pending" | "approved" | "dismissed";
   /** #87 — which side resolved it: "manager" → Addressed, "vendor" → Resolved. */
   resolvedByHolder?: RedlineResolvedHolder;
+  /** Persisted resolution status — lets the card tell a one-sided accept
+   *  (awaiting the other side) apart from a fully-resolved redline when the
+   *  bilateral `accepted` object isn't present. */
+  resolvedStatus?: "pending" | "resolved";
+  /** Per-redline bilateral acceptance driving the dual-approval UI. */
+  accepted?: RedlineAcceptance;
 };
 
 type SidebarAttachment = {
@@ -186,14 +197,24 @@ const CollaborationToolPage: React.FC = () => {
     documentId: msaContractIdParam || contractIdParam,
     isMsa: Boolean(msaContractIdParam),
   });
-  const persistedQuery = usePersistedSuggestions({
-    documentId: msaContractIdParam || contractIdParam,
-    isMsa: Boolean(msaContractIdParam),
-  });
   // Turn-based redline negotiation (company side ⇄ vendor side).
   const redlineTurn = useRedlineTurn({
     documentId: msaContractIdParam || contractIdParam,
     isMsa: Boolean(msaContractIdParam),
+  });
+  // While it's the other side's turn, this viewer can't act — poll the persisted
+  // suggestions so the other side's edits/approvals appear without a manual
+  // refresh. `useRedlineTurn` polls its own endpoint on the same condition, so
+  // the turn flipping back is picked up too.
+  const isWaitingForOtherSide =
+    redlineTurn.isParticipant &&
+    redlineTurn.turnGateReady &&
+    !redlineTurn.isMyTurn &&
+    !redlineTurn.isFinalized;
+  const persistedQuery = usePersistedSuggestions({
+    documentId: msaContractIdParam || contractIdParam,
+    isMsa: Boolean(msaContractIdParam),
+    pollWhileWaiting: isWaitingForOtherSide,
   });
   const [aiItems, setAiItems] = useState<AiItem[]>([]);
   const [aiHasRun, setAiHasRun] = useState(false);
@@ -229,6 +250,10 @@ const CollaborationToolPage: React.FC = () => {
   // Room peers (self excluded by the iframe relay) — rendered as avatars in the
   // header beside the Download button. Empty until collaboration connects.
   const [presenceUsers, setPresenceUsers] = useState<PresenceUser[]>([]);
+  // Mobile layout: the editor and the sidebar can't sit side-by-side on a phone
+  // (the 420px sidebar overflows), so on small screens we show one at a time and
+  // toggle between them. On md+ both render side-by-side as before.
+  const [mobileView, setMobileView] = useState<"document" | "panel">("document");
 
   const { data: mentionables = [] } = useContractMentionables(contractId);
 
@@ -548,7 +573,6 @@ const CollaborationToolPage: React.FC = () => {
   useEffect(() => {
     if (activeTab !== "redline") return;
     if (aiHasRun) return;
-    if (!redlineTurn.canAct) return;
     if (persistedQuery.isLoading) return;
 
     const persisted = persistedQuery.data;
@@ -580,6 +604,13 @@ const CollaborationToolPage: React.FC = () => {
           suggestion: s,
           state: resolutionToState(s.resolution?.action),
           resolvedByHolder: getRedlineResolvedHolder(s.resolution),
+          resolvedStatus:
+            s.resolution?.status === "resolved"
+              ? "resolved"
+              : s.resolution?.status === "pending"
+                ? "pending"
+                : undefined,
+          accepted: s.accepted,
         })),
       );
       setAiProgress(persisted.progress);
@@ -587,8 +618,23 @@ const CollaborationToolPage: React.FC = () => {
       return;
     }
 
-    void runAiSuggestions();
+    // Nothing persisted yet. Only the side whose turn it is generates (POST) —
+    // the waiting side (and observers) load whatever the other side has already
+    // generated above and view it read-only, rather than being shown an empty
+    // "Generate suggestions" prompt.
+    if (redlineTurn.canAct) {
+      void runAiSuggestions();
+    }
   }, [activeTab, aiHasRun, runAiSuggestions, redlineTurn.canAct, persistedQuery.isLoading, persistedQuery.data]);
+
+  // Keep the header progress counts (CM/PM addressed, resolved) live. The
+  // rehydrate above seeds them once; this syncs them on every subsequent
+  // persisted refetch — e.g. after a side approves/rejects — so "PM addressed"
+  // updates without a full reload.
+  useEffect(() => {
+    const progress = persistedQuery.data?.progress;
+    if (progress) setAiProgress(progress);
+  }, [persistedQuery.data?.progress]);
 
   // Push the current turn's edit permission into the SuperDoc iframe. The init
   // payload sets "editing" once; here we correct it — "suggesting" on your turn,
@@ -601,6 +647,57 @@ const CollaborationToolPage: React.FC = () => {
     if (!redlineTurn.turnGateReady) return;
     adapter.setMode(redlineTurn.isMyTurn ? "suggesting" : "viewing");
   }, [editorReady, redlineTurn.turnGateReady, redlineTurn.isMyTurn]);
+
+  // Reconcile the document against the authoritative dual-approval state.
+  //
+  // The click handlers apply a recommendation only when THIS click is detected
+  // as the finalizing (second) approval. In a live two-user session the second
+  // approver's client may not yet reflect the other side's acceptance at click
+  // time, so neither click is seen as finalizing and the replacement is never
+  // applied — the redline resolves on the BE but the document text is never
+  // updated. This effect closes that gap: whenever the polled state shows a
+  // redline is BOTH-accepted and its mark is still live in the document, the
+  // editable side applies the replacement (the change then propagates to the
+  // other peer via Yjs). Idempotent — a per-id guard plus the live-set check
+  // stop double-applies, and it no-ops once the mark is gone.
+  const reconciledRedlinesRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    const adapter = editorAdapterRef.current;
+    // Only the side that can currently edit may mutate the shared doc; the
+    // waiting (viewing) side receives the applied change through Yjs.
+    if (!adapter || !redlineTurn.canAct) return;
+    const live = new Set(adapter.extractRedlines().map((r) => r.redlineId));
+    for (const item of aiItems) {
+      const id = item.redline.redlineId;
+      // Accepted/modified only — never a rejection (a dismissed card can also
+      // read "resolved").
+      if (item.state !== "approved") continue;
+      if (reconciledRedlinesRef.current.has(id)) continue;
+      if (!live.has(id)) continue; // already applied / removed
+      const phase = effectiveApprovalPhase({
+        accepted: item.accepted,
+        resolvedByHolder: item.resolvedByHolder,
+        resolvedStatus: item.resolvedStatus,
+        mySide: redlineTurn.mySide ?? undefined,
+      });
+      if (phase !== "both") continue; // authoritatively both-accepted only
+      const alt = item.suggestion?.alternativeLanguage;
+      // `resolution` lives on PersistedSuggestion (a superset of the base type
+      // AiItem.suggestion is typed as); read the BE-chosen tier defensively.
+      const tier =
+        (item.suggestion as PersistedSuggestion | undefined)?.resolution?.tier ??
+        "medium";
+      const replacement =
+        alt?.[tier] ??
+        alt?.medium ??
+        alt?.low ??
+        alt?.high ??
+        item.suggestion?.replacementText;
+      if (typeof replacement !== "string" || replacement.length === 0) continue;
+      reconciledRedlinesRef.current.add(id);
+      adapter.replaceRedline(id, replacement);
+    }
+  }, [aiItems, redlineTurn.canAct, redlineTurn.mySide]);
 
   const handleApproveAi = useCallback(
     (item: AiItem, tier: "low" | "medium" | "high" = "medium") => {
@@ -617,6 +714,25 @@ const CollaborationToolPage: React.FC = () => {
         );
         return;
       }
+      // Dual approval: a redline is written into the shared document only once
+      // BOTH sides have approved. This click records the current side's
+      // acceptance; it applies the replacement to the doc only when it is the
+      // *finalizing* (second) approval — i.e. the other side already accepted.
+      const mySide = redlineTurn.mySide;
+      // Use the SAME phase the card showed the user (effectiveApprovalPhase),
+      // not the raw bilateral-only check: when the BE returns a one-sided
+      // resolution without the `accepted` object, the raw check reads "open"
+      // and the finalizing approval never applies the text — the redline
+      // resolves but the document is never updated. The fallback matches the
+      // card's Approve button so the click does what it appears to do.
+      const finalizing =
+        effectiveApprovalPhase({
+          accepted: item.accepted,
+          resolvedByHolder: item.resolvedByHolder,
+          resolvedStatus: item.resolvedStatus,
+          mySide: mySide ?? undefined,
+        }) === "awaiting-me";
+
       // Pick the user's chosen alternative-language tier (or fall back
       // through the others, then to the legacy `replacementText` field
       // for older BE deployments).
@@ -627,12 +743,30 @@ const CollaborationToolPage: React.FC = () => {
         alt?.low ??
         alt?.high ??
         item.suggestion.replacementText;
-      if (typeof replacement === "string" && replacement.length > 0) {
-        adapter.replaceRedline(item.redline.redlineId, replacement);
-        // Auto-snapshot so the user can revert the AI-applied change.
+
+      // Only a *finalizing* (second) approval writes the approved content to the
+      // shared SuperDoc — the first approval just records intent.
+      const applied =
+        finalizing && typeof replacement === "string" && replacement.length > 0;
+      if (applied) {
+        // Both sides have now approved — apply to the shared SuperDoc immediately
+        // (propagates to both peers via Yjs).
+        adapter.replaceRedline(item.redline.redlineId, replacement as string);
+        // Auto-snapshot so the change can be reverted.
         saveVersionSnapshot(`Applied AI suggestion (${tier})`, "ai-apply");
-        // Audit-only; does not mutate the doc. Fire-and-forget (errors are
-        // handled below — a 409 surfaces a toast instead of vanishing).
+      } else if (finalizing && import.meta.env.DEV) {
+        // eslint-disable-next-line no-console
+        console.warn(
+          "[ai-redline] both sides approved but no alternativeLanguage / replacementText available; doc not mutated.",
+          item.redline.redlineId,
+        );
+      }
+
+      // Record this side's acceptance. The BE derives the bilateral state and
+      // returns it (with progress) on the next GET. `documentState` persists the
+      // accepted document server-side; the BE reads it only on the finalizing
+      // accept, so we only capture it when we actually mutated the doc.
+      const submitResolve = (documentState?: string) =>
         redlineTurn.resolve.mutate(
           {
             redlineId: item.redline.redlineId,
@@ -640,8 +774,12 @@ const CollaborationToolPage: React.FC = () => {
             tier,
             docName,
             baseVersionId: fileVersionsQuery.data?.activeVersionId ?? null,
+            documentState,
           },
           {
+            onSuccess: () => {
+              persistedQuery.refetch();
+            },
             onError: (error) => {
               if (isVersionConflict(error)) {
                 toastHandler.error(
@@ -652,17 +790,31 @@ const CollaborationToolPage: React.FC = () => {
             },
           },
         );
-      } else if (import.meta.env.DEV) {
-        // eslint-disable-next-line no-console
-        console.warn(
-          "[ai-redline] apply clicked but no alternativeLanguage / replacementText available; doc not mutated.",
-          item.redline.redlineId,
-        );
+
+      // Capture the post-apply Yjs snapshot from the iframe, then resolve. The
+      // iframe encodes AFTER the apply-redline it just received (messages are
+      // ordered), so the snapshot reflects the accepted change. Fall back to a
+      // plain resolve if there's no live doc / the adapter can't provide one.
+      const statePromise = applied ? adapter.getDocumentState?.() : undefined;
+      if (statePromise) {
+        void statePromise.then((state) => submitResolve(state ?? undefined));
+      } else {
+        submitResolve();
       }
+
+      // Optimistically flip the card: "awaiting other side", or resolved when
+      // this was the finalizing approval.
       setAiItems((prev) =>
         prev.map((p) =>
           p.redline.redlineId === item.redline.redlineId
-            ? { ...p, state: "approved", resolvedByHolder: redlineTurn.mySide ?? undefined }
+            ? {
+                ...p,
+                state: "approved",
+                resolvedByHolder: mySide ?? undefined,
+                accepted: mySide
+                  ? withLocalAcceptance(p.accepted, mySide)
+                  : p.accepted,
+              }
             : p,
         ),
       );
@@ -673,6 +825,7 @@ const CollaborationToolPage: React.FC = () => {
       toastHandler,
       docName,
       fileVersionsQuery.data?.activeVersionId,
+      persistedQuery,
     ],
   );
 
@@ -695,6 +848,9 @@ const CollaborationToolPage: React.FC = () => {
           baseVersionId: fileVersionsQuery.data?.activeVersionId ?? null,
         },
         {
+          onSuccess: () => {
+            persistedQuery.refetch();
+          },
           onError: (error) => {
             if (isVersionConflict(error)) {
               toastHandler.error(
@@ -706,7 +862,13 @@ const CollaborationToolPage: React.FC = () => {
         },
       );
     },
-    [redlineTurn, docName, fileVersionsQuery.data?.activeVersionId, toastHandler],
+    [
+      redlineTurn,
+      docName,
+      fileVersionsQuery.data?.activeVersionId,
+      toastHandler,
+      persistedQuery,
+    ],
   );
 
   const handleUndoAi = useCallback(
@@ -763,8 +925,21 @@ const CollaborationToolPage: React.FC = () => {
       if (pending.length === 0) return;
 
       const resolutions: RedlineBatchItem[] = [];
+      // Tracks how many redlines this click actually wrote to the document — a
+      // snapshot is only worth persisting when at least one was applied.
+      let appliedCount = 0;
       if (action === "modified") {
+        // Dual approval: record this side's approval for every pending redline,
+        // but only write the document for those the OTHER side has already
+        // approved (this click finalizes them). The rest wait for the other side.
         for (const item of pending) {
+          const finalizing =
+            effectiveApprovalPhase({
+              accepted: item.accepted,
+              resolvedByHolder: item.resolvedByHolder,
+              resolvedStatus: item.resolvedStatus,
+              mySide: redlineTurn.mySide ?? undefined,
+            }) === "awaiting-me";
           const alt = item.suggestion?.alternativeLanguage;
           const replacement =
             alt?.[tier] ??
@@ -772,18 +947,24 @@ const CollaborationToolPage: React.FC = () => {
             alt?.low ??
             alt?.high ??
             item.suggestion?.replacementText;
-          if (adapter && typeof replacement === "string" && replacement.length > 0) {
+          if (
+            finalizing &&
+            adapter &&
+            typeof replacement === "string" &&
+            replacement.length > 0
+          ) {
             adapter.replaceRedline(item.redline.redlineId, replacement);
-            resolutions.push({
-              redlineId: item.redline.redlineId,
-              action: "modified",
-              tier,
-            });
+            appliedCount += 1;
           }
+          resolutions.push({
+            redlineId: item.redline.redlineId,
+            action: "modified",
+            tier,
+          });
         }
-        if (resolutions.length > 0) {
+        if (appliedCount > 0) {
           saveVersionSnapshot(
-            `Applied ${resolutions.length} AI suggestions (${tier})`,
+            `Applied ${appliedCount} AI suggestion${appliedCount === 1 ? "" : "s"} (${tier})`,
             "ai-apply",
           );
         }
@@ -797,18 +978,28 @@ const CollaborationToolPage: React.FC = () => {
       const resolvedIds = new Set(resolutions.map((r) => r.redlineId));
       const nextState: AiItem["state"] =
         action === "modified" ? "approved" : "dismissed";
-      redlineTurn.batchResolve.mutate(
+      const submitBatch = (documentState?: string) =>
+        redlineTurn.batchResolve.mutate(
         {
           resolutions,
           docName,
           baseVersionId: fileVersionsQuery.data?.activeVersionId ?? null,
+          documentState,
         },
         {
           onSuccess: () => {
             setAiItems((prev) =>
               prev.map((p) =>
                 resolvedIds.has(p.redline.redlineId)
-                  ? { ...p, state: nextState, resolvedByHolder: redlineTurn.mySide ?? undefined }
+                  ? {
+                      ...p,
+                      state: nextState,
+                      resolvedByHolder: redlineTurn.mySide ?? undefined,
+                      accepted:
+                        action === "modified" && redlineTurn.mySide
+                          ? withLocalAcceptance(p.accepted, redlineTurn.mySide)
+                          : p.accepted,
+                    }
                   : p,
               ),
             );
@@ -831,6 +1022,16 @@ const CollaborationToolPage: React.FC = () => {
           },
         },
       );
+
+      // One snapshot for the whole batch, captured after every applied change
+      // lands in the doc (the iframe encodes its current Yjs state). Only worth
+      // it when this click actually mutated the document.
+      const statePromise = appliedCount > 0 ? adapter?.getDocumentState?.() : undefined;
+      if (statePromise) {
+        void statePromise.then((state) => submitBatch(state ?? undefined));
+      } else {
+        submitBatch();
+      }
     },
     [
       aiItems,
@@ -982,8 +1183,8 @@ const CollaborationToolPage: React.FC = () => {
             aria-label="Close editor and return to contract"
             className="inline-flex items-center gap-1.5 rounded-md px-2 py-1.5 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
           >
-            <ArrowLeft className="h-4 w-4" />
-            Back to contract
+            <ArrowLeft className="h-4 w-4 shrink-0" />
+            <span className="hidden sm:inline">Back to contract</span>
           </button>
           <div className="h-5 w-px bg-slate-200 dark:bg-slate-800" />
           <h1 className="truncate text-sm font-semibold text-slate-900 dark:text-white">
@@ -1007,13 +1208,53 @@ const CollaborationToolPage: React.FC = () => {
                 ) : (
                   <Download className="h-3.5 w-3.5" />
                 )}
-                {downloadLatestMutation.isPending ? "Downloading…" : "Download"}
+                <span className="hidden sm:inline">
+                  {downloadLatestMutation.isPending ? "Downloading…" : "Download"}
+                </span>
               </button>
             )}
           </div>
         </header>
+        {/* Mobile-only switch: the editor and the activity panel each take the
+            full width on a phone, so toggle between them. Hidden on md+ where
+            they sit side-by-side. */}
+        <div className="flex shrink-0 gap-1 border-b border-slate-200 p-1.5 md:hidden dark:border-slate-800">
+          <button
+            type="button"
+            onClick={() => setMobileView("document")}
+            aria-pressed={mobileView === "document"}
+            className={cn(
+              "flex-1 rounded-md px-3 py-1.5 text-sm font-semibold transition-colors",
+              mobileView === "document"
+                ? "bg-[#2a4467] text-white"
+                : "text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800",
+            )}
+          >
+            Document
+          </button>
+          <button
+            type="button"
+            onClick={() => setMobileView("panel")}
+            aria-pressed={mobileView === "panel"}
+            className={cn(
+              "flex-1 rounded-md px-3 py-1.5 text-sm font-semibold transition-colors",
+              mobileView === "panel"
+                ? "bg-[#2a4467] text-white"
+                : "text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800",
+            )}
+          >
+            Activity
+          </button>
+        </div>
         <div className="flex min-h-0 flex-1">
-          <div className="flex-1 max-w-7xl overflow-auto">
+          <div
+            className={cn(
+              "flex-1 max-w-7xl overflow-auto",
+              // On mobile, only show the editor in "document" view; always show
+              // it on md+ (side-by-side layout).
+              mobileView === "panel" ? "hidden md:block" : "block",
+            )}
+          >
             <Suspense fallback={<div className="ct-editor-panel" />}>
             {(() => {
               // SuperDoc is the default editor. TipTap/Yoopta stay reachable as
@@ -1041,6 +1282,15 @@ const CollaborationToolPage: React.FC = () => {
                 <IframeEditorPane
                   importMeta={importMeta}
                   collabMeta={collabMeta}
+                  // Seed the *initial* edit permission so redlining works the
+                  // moment the editor opens — the iframe honors this at
+                  // construction. Without it the editor starts in "editing"
+                  // (changes untracked, so the insertion/deletion redline
+                  // controls stay inactive) and only the live `setMode` effect
+                  // below could fix it. `canAct` is the same turn gate the
+                  // sidebar uses: "suggesting" for the side whose turn it is,
+                  // "viewing" for the waiting side / non-participants.
+                  documentMode={redlineTurn.canAct ? "suggesting" : "viewing"}
                   onEditorReady={handleEditorReady}
                   onPresenceChange={setPresenceUsers}
                 />
@@ -1049,6 +1299,7 @@ const CollaborationToolPage: React.FC = () => {
           </Suspense>
         </div>
         <SidebarPanel
+          className={cn(mobileView === "document" && "hidden md:flex")}
           comments={commentsFeed}
           activeTab={activeTab}
           onTabChange={handleTabChange}
@@ -1075,6 +1326,7 @@ const CollaborationToolPage: React.FC = () => {
           onAiFocus={handleFocusAi}
           onAiRetry={runAiSuggestions}
           isMyTurn={redlineTurn.canAct}
+          aiMySide={redlineTurn.mySide}
           redlineTurnBanner={
             <TurnBanner
               mySide={redlineTurn.mySide}

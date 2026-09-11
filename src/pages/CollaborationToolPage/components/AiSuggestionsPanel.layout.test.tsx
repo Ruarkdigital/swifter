@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import AiSuggestionsPanel from "./AiSuggestionsPanel";
 
@@ -85,5 +85,88 @@ describe("AiSuggestionsPanel inline layout (QA #257)", () => {
     );
 
     expect(screen.getByText("2 suggestions to review")).toBeInTheDocument();
+  });
+});
+
+describe("AiSuggestionsPanel dual-approval request (other side must be able to act)", () => {
+  // Regression: when one side approved a redline, the other side saw a
+  // finished, button-less card. The other side must get an approve/reject
+  // request — even on the single-sided resolution payload (no `accepted`).
+  const otherSideApproved = [
+    {
+      redline: { redlineId: "r1", kind: "insertion", text: "original text" },
+      suggestion: {
+        redlineId: "r1",
+        assessment: "",
+        suggestion: "Reject this limitation.",
+        riskLevel: "low",
+        alternativeLanguage: { medium: "Balanced replacement language." },
+      },
+      // As rehydrate maps a manager-side accept that isn't yet resolved:
+      state: "approved",
+      resolvedByHolder: "manager",
+      resolvedStatus: "pending",
+    },
+  ] as never;
+
+  it("shows the vendor an Approve & apply / Reject request for a CM-approved redline", () => {
+    render(
+      <AiSuggestionsPanel
+        open
+        variant="inline"
+        status="ready"
+        items={otherSideApproved}
+        mySide="vendor"
+        onApprove={noop}
+        onDismiss={noop}
+        onUndo={noop}
+        onRetry={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByRole("button", { name: /approve & apply/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^reject$/i })).toBeInTheDocument();
+    expect(screen.getByText(/approved this recommendation/i)).toBeInTheDocument();
+  });
+
+  it("invokes onApprove (the finalizing approval) when the vendor approves", () => {
+    const onApprove = vi.fn();
+    render(
+      <AiSuggestionsPanel
+        open
+        variant="inline"
+        status="ready"
+        items={otherSideApproved}
+        mySide="vendor"
+        onApprove={onApprove}
+        onDismiss={noop}
+        onUndo={noop}
+        onRetry={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /approve & apply/i }));
+    expect(onApprove).toHaveBeenCalledTimes(1);
+  });
+
+  it("tells the approving side it is awaiting the other, with no action button", () => {
+    render(
+      <AiSuggestionsPanel
+        open
+        variant="inline"
+        status="ready"
+        items={otherSideApproved}
+        mySide="manager"
+        onApprove={noop}
+        onDismiss={noop}
+        onUndo={noop}
+        onRetry={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText(/awaiting other side/i)).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /approve & apply/i }),
+    ).not.toBeInTheDocument();
   });
 });

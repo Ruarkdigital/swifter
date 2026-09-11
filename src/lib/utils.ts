@@ -15,13 +15,31 @@ export function cn(...inputs: ClassValue[]) {
  */
 export function formatCurrency(
   amount: number,
-  locale: Intl.LocaleOptions["region"],
-  currency: Intl.NumberFormatOptions["currency"]
+  locale?: Intl.LocaleOptions["region"],
+  currency?: Intl.NumberFormatOptions["currency"]
 ) {
+  // Currency display MUST be deterministic across users: `Intl.NumberFormat`
+  // renders the same currency differently per locale (USD is "$" in en-US but
+  // "US$" in en-CA; CAD is "CA$" vs "$"), so an omitted/undefined locale falls
+  // back to the viewer's own locale and the same contract value looks different
+  // for different logged-in users (QA #299). Always render in a fixed locale.
+  let resolvedLocale = locale;
+  let resolvedCurrency = currency;
+  // Tolerate the common two-arg misuse `formatCurrency(amount, currencyCode)`:
+  // when no currency is given but the locale slot holds an ISO 4217 code
+  // (three letters), treat it as the currency.
+  if (
+    resolvedCurrency == null &&
+    typeof resolvedLocale === "string" &&
+    /^[A-Za-z]{3}$/.test(resolvedLocale)
+  ) {
+    resolvedCurrency = resolvedLocale as Intl.NumberFormatOptions["currency"];
+    resolvedLocale = undefined;
+  }
   try {
-    return new Intl.NumberFormat(locale, {
+    return new Intl.NumberFormat(resolvedLocale || "en-US", {
       style: "currency",
-      currency: currency,
+      currency: resolvedCurrency,
     }).format(amount);
   } catch (error) {
     console.error("Error formatting currency:", error);
@@ -252,6 +270,29 @@ export function formatDateTZ(
   } catch {
     return "N/A";
   }
+}
+
+/**
+ * Render a stored value as a calendar date, immune to timezone shifting.
+ *
+ * A contract's effective/end dates are calendar dates, not instants, but the BE
+ * serializes them as midnight-ish ISO datetimes (often `…T00:00:00.000Z`).
+ * Formatting that instant in the viewer's own zone rolls the day back for
+ * viewers west of UTC — e.g. `2026-09-03T00:00:00Z` shows as "02 Sep 2026" in
+ * the Americas (QA #277). Take the date portion (`YYYY-MM-DD`) and render that
+ * via `formatDateTZ`'s date-only path (local midnight), so the day never shifts.
+ * Non-ISO strings and `Date` inputs fall back to `formatDateTZ` unchanged.
+ */
+export function formatCalendarDate(
+  dateInput: string | Date | undefined | null,
+  formatStr = "dd MMM yyyy"
+): string {
+  if (!dateInput) return "N/A";
+  if (typeof dateInput === "string") {
+    const match = dateInput.trim().match(/^(\d{4}-\d{2}-\d{2})/);
+    if (match) return formatDateTZ(match[1], formatStr);
+  }
+  return formatDateTZ(dateInput, formatStr);
 }
 
 /**

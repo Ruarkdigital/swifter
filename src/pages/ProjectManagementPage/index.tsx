@@ -1,4 +1,5 @@
 import React from "react";
+import * as XLSX from "xlsx";
 import { SEOWrapper } from "@/components/SEO";
 import { Button } from "@/components/ui/button";
 import { Share2, Plus } from "lucide-react";
@@ -64,8 +65,29 @@ const ProjectManagementPage: React.FC = () => {
     status: p.status,
   }));
 
+  // QA #293: the Export button had no handler. Export the loaded projects to an
+  // .xlsx workbook client-side (mirrors the Action Log tab's export). Values
+  // reuse the same formatting shown in the table.
+  const handleExport = () => {
+    if (!rows.length) return;
+    const exportRows = rows.map((r) => ({
+      "Project Name": r.name ?? "",
+      Budget: r.budget ?? "",
+      "Total Spend": r.totalSpend ?? "",
+      EAC: r.eac ?? "",
+      "Start Date": r.startDate ?? "",
+      "End Date": r.endDate ?? "",
+      Status: r.status ?? "",
+    }));
+    const worksheet = XLSX.utils.json_to_sheet(exportRows);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Projects");
+    const today = new Date().toISOString().slice(0, 10);
+    XLSX.writeFile(workbook, `projects-${today}.xlsx`);
+  };
+
   return (
-    <div className="space-y-8 pt-10">
+    <div className="space-y-6 sm:space-y-8 pt-6 sm:pt-10">
       <SEOWrapper
         title="Project Management - SwiftPro eProcurement Portal"
         description="Manage projects efficiently. Create, track active work, and review completed tasks."
@@ -73,21 +95,23 @@ const ProjectManagementPage: React.FC = () => {
         robots="noindex, nofollow"
       />
 
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100">Projects</h2>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 sm:gap-4">
           <Button
             data-testid="export-button"
             variant="outline"
             aria-label="Export projects"
-            className="rounded-xl"
+            className="flex-1 sm:flex-none rounded-xl"
+            onClick={handleExport}
+            disabled={rows.length === 0}
           >
             <Share2 className="mr-2 h-4 w-4" /> Export
           </Button>
           <Button
             data-testid="create-project-button"
             aria-label="Create Project"
-            className="rounded-xl"
+            className="flex-1 sm:flex-none rounded-xl"
             onClick={handleCreateClick}
           >
             <Plus className="mr-2 h-4 w-4" /> Create Project

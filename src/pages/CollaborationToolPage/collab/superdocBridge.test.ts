@@ -9,6 +9,7 @@ import {
   buildAddComment,
   buildFocusComment,
   buildSetMode,
+  buildGetDocumentState,
 } from "./superdocBridge";
 
 const ORIGIN = "https://superdoc.example.com";
@@ -247,6 +248,43 @@ describe("anchored-comment messages", () => {
     expect(
       parseSuperdocMessage(evt({ type: "superdoc:comment-created", payload: { commentId: "c1" } }), ORIGIN),
     ).toBeNull();
+  });
+
+  it("accepts superdoc:document-state with a string or null state", () => {
+    expect(
+      parseSuperdocMessage(
+        evt({ type: "superdoc:document-state", payload: { requestId: "q1", state: "AAEC" } }),
+        ORIGIN,
+      ),
+    ).toEqual({ type: "superdoc:document-state", payload: { requestId: "q1", state: "AAEC" } });
+    expect(
+      parseSuperdocMessage(
+        evt({ type: "superdoc:document-state", payload: { requestId: "q1", state: null } }),
+        ORIGIN,
+      ),
+    ).toEqual({ type: "superdoc:document-state", payload: { requestId: "q1", state: null } });
+  });
+
+  it("coerces a non-string document-state to null (document-only fallback)", () => {
+    expect(
+      parseSuperdocMessage(
+        evt({ type: "superdoc:document-state", payload: { requestId: "q1" } }),
+        ORIGIN,
+      ),
+    ).toEqual({ type: "superdoc:document-state", payload: { requestId: "q1", state: null } });
+  });
+
+  it("rejects superdoc:document-state without a requestId", () => {
+    expect(
+      parseSuperdocMessage(evt({ type: "superdoc:document-state", payload: { state: "AAEC" } }), ORIGIN),
+    ).toBeNull();
+  });
+
+  it("builds a get-document-state command", () => {
+    expect(buildGetDocumentState("q1")).toEqual({
+      type: "superdoc:get-document-state",
+      payload: { requestId: "q1" },
+    });
   });
 
   it("builds add-comment and focus-comment commands", () => {

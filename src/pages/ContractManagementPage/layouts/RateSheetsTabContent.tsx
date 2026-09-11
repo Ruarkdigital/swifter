@@ -1151,9 +1151,12 @@ const RateSheetsTabContent: React.FC<Props> = ({
     if (isContractVendorLike) return `/contract/vendor/${entitySegment}/${contractId}/ratesheets`;
     if (isApprover)
       return `/contract/approver/${entitySegment}/${contractId}/ratesheets`;
-    if (isManager)
+    // QA #298: company/super admins read via the manager (org-scoped) endpoint,
+    // like the main contract fetch. The /contract/user endpoint is
+    // participant-scoped and returns empty for admins.
+    if (isManager || isAdmin)
       return `/contract/manager/${entitySegment}/${contractId}/ratesheets`;
-    if (isAdmin || isViewOnly)
+    if (isViewOnly)
       return `/contract/user/${entitySegment}/${contractId}/ratesheets`;
     return `/contract/user/${entitySegment}/${contractId}/ratesheets`;
   }, [

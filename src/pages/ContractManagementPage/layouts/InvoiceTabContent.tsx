@@ -39,8 +39,11 @@ const InvoiceTabContent: React.FC<Props> = ({
   const getBasePath = () => {
     if (isContractVendorLike) return `/contract/vendor/contracts/${contractId}/invoice`;
     if (isApprover) return `/contract/approver/contracts/${contractId}/invoice`;
-    if (isManager) return `/contract/manager/contracts/${contractId}/invoice`;
-    if (isAdmin || isViewOnly)
+    // QA #298: company/super admins read via the manager (org-scoped) endpoint,
+    // like the main contract fetch. The /contract/user endpoint is
+    // participant-scoped and returns empty for admins.
+    if (isManager || isAdmin) return `/contract/manager/contracts/${contractId}/invoice`;
+    if (isViewOnly)
       return `/contract/user/contracts/${contractId}/invoice`;
     return `/contract/user/contracts/${contractId}/invoice`; // Default fallback
   };
@@ -67,7 +70,7 @@ const InvoiceTabContent: React.FC<Props> = ({
   // Only manager/approver have this endpoint; vendor doesn't, so we skip it.
   const financialStatementBase = isApprover
     ? `/contract/approver/contracts/${contractId}`
-    : isManager
+    : isManager || isAdmin
       ? `/contract/manager/contracts/${contractId}`
       : null;
 

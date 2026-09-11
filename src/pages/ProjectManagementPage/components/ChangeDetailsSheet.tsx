@@ -11,7 +11,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { ArrowLeft, Share2, Eye, Download, Pencil } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
+import { ArrowLeft, Share2, Eye, Download, Pencil, Loader2 } from "lucide-react";
 import { formatFileSize, getFileExtension, getFileIcon } from "@/lib/fileUtils";
 import { DataTable } from "@/components/layouts/DataTable";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -21,7 +27,9 @@ import {
   useProjectContracts,
   useCompleteProject,
   useUpdateProject,
+  useExportProject,
   type Project,
+  type ProjectExportType,
 } from "../hooks/useProjectApi";
 import { useToastHandler } from "@/hooks/useToaster";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -267,9 +275,45 @@ const ChangeDetailsSheet: React.FC<Props> = ({
 
   const completeMutation = useCompleteProject(projectId);
   const updateMutation = useUpdateProject(projectId);
+  const exportMutation = useExportProject(projectId);
 
   const project = projectRes?.data?.data;
   const isCompleted = project?.status === "completed";
+
+  // QA #294 — export the project via the BE endpoint (PDF or DOCX). The
+  // response is a binary stream; save it with the project name + extension.
+  const handleExport = React.useCallback(
+    async (exportType: ProjectExportType) => {
+      if (!projectId || exportMutation.isPending) return;
+      try {
+        const data = await exportMutation.mutateAsync(exportType);
+        const mime =
+          exportType === "pdf"
+            ? "application/pdf"
+            : "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+        const blob = new Blob([data], { type: mime });
+        const objectUrl = window.URL.createObjectURL(blob);
+        const safeName = (project?.name ?? "project")
+          .trim()
+          .replace(/[^\w.-]+/g, "-")
+          .replace(/^-+|-+$/g, "") || "project";
+        const link = document.createElement("a");
+        link.href = objectUrl;
+        link.download = `${safeName}.${exportType}`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(objectUrl);
+        toast.success(
+          "Export complete",
+          `Project exported as ${exportType.toUpperCase()}`
+        );
+      } catch (err) {
+        toast.error("Export failed", err as ApiResponseError);
+      }
+    },
+    [projectId, exportMutation, project?.name, toast]
+  );
 
   const sheetProps =
     typeof open === "boolean" ? { open, onOpenChange } : undefined;
@@ -342,9 +386,31 @@ const ChangeDetailsSheet: React.FC<Props> = ({
                 </SheetTitle>
               </div>
               <div className="flex items-center gap-2 mr-10">
-                <Button variant="outline" size="sm">
-                  <Share2 className="mr-2 h-4 w-4" /> Export
-                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      aria-label="Export project"
+                      disabled={!projectId || exportMutation.isPending}
+                    >
+                      {exportMutation.isPending ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <Share2 className="mr-2 h-4 w-4" />
+                      )}{" "}
+                      Export
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onSelect={() => handleExport("pdf")}>
+                      Export as PDF
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onSelect={() => handleExport("docx")}>
+                      Export as Word (DOCX)
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </div>
           </SheetHeader>

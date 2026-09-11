@@ -122,4 +122,94 @@ test.describe("Business Divisions", () => {
     await expect(page.getByTestId("edit-division-dialog")).toBeVisible();
     await expect(page.getByRole("heading", { name: "Edit Division" })).toBeVisible();
   });
+
+  test("shows linked projects and contracts in division details sheet", async ({ page }) => {
+    await seedAuth(page);
+
+    await page.route("**/contract/manager/business-division/stats", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ message: "ok", data: { totalDivisions: 1 } }),
+      });
+    });
+
+    await page.route("**/contract/manager/business-division?page=1&limit=10**", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          message: "ok",
+          data: {
+            docs: [
+              {
+                _id: "div-1",
+                name: "Ontario Operations",
+                location: "Toronto",
+                totalProjects: 1,
+                totalContracts: 1,
+                totalProjectValue: 1200000,
+                totalContractValue: 900000,
+              },
+            ],
+            totalDocs: 1,
+            page: 1,
+            limit: 10,
+            totalPages: 1,
+          },
+        }),
+      });
+    });
+
+    await page.route("**/contract/manager/business-division/div-1", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          message: "ok",
+          data: {
+            _id: "div-1",
+            businessId: "DIV-001",
+            name: "Ontario Operations",
+            location: "Toronto",
+            totalProjects: 1,
+            totalContracts: 1,
+            totalProjectValue: 1200000,
+            totalContractValue: 900000,
+            createdAt: "2025-01-15T10:00:00.000Z",
+            projects: [
+              {
+                _id: "proj-1",
+                projectId: "PRJ-001",
+                title: "North Plant Upgrade",
+                budget: 1200000,
+                status: "active",
+              },
+            ],
+            contracts: [
+              {
+                _id: "con-1",
+                contractId: "CON-001",
+                title: "Electrical Works Contract",
+                contractValue: 900000,
+                currency: "USD",
+                status: "completed",
+              },
+            ],
+          },
+        }),
+      });
+    });
+
+    await page.goto("/dashboard/business-divisions");
+
+    await page.getByRole("button", { name: "View" }).first().click();
+    await expect(page.getByRole("heading", { name: "Business Division Details" })).toBeVisible();
+
+    await expect(page.getByText("North Plant Upgrade")).toBeVisible();
+    await expect(page.getByText("PRJ-001")).toBeVisible();
+    await expect(page.getByText("Electrical Works Contract")).toBeVisible();
+    await expect(page.getByText("CON-001")).toBeVisible();
+    await expect(page.getByText("Jan 15, 2025")).toBeVisible();
+  });
 });

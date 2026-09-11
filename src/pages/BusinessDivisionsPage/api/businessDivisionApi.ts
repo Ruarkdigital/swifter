@@ -1,7 +1,25 @@
 import { getRequest, postRequest, putRequest } from "@/lib/axiosInstance";
 
+export type BusinessDivisionProject = {
+  _id: string;
+  projectId?: string;
+  title?: string;
+  budget?: number;
+  status?: string;
+};
+
+export type BusinessDivisionContract = {
+  _id: string;
+  contractId?: string;
+  title?: string;
+  contractValue?: number | null;
+  currency?: string | null;
+  status?: string;
+};
+
 export type BusinessDivision = {
   _id: string;
+  businessId?: string;
   name: string;
   location: string;
   totalProjects?: number;
@@ -9,6 +27,10 @@ export type BusinessDivision = {
   totalProjectValue?: number;
   totalContractValue?: number;
   company?: string;
+  projects?: BusinessDivisionProject[];
+  contracts?: BusinessDivisionContract[];
+  createdAt?: string;
+  updatedAt?: string;
 };
 
 export type ListBusinessDivisionsQuery = {

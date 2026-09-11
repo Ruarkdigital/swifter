@@ -40,11 +40,12 @@ export type RedlineResolveInput = {
   /** Client's last-known active version id (advisory; BE verifies server-side). */
   baseVersionId?: string | null;
   /**
-   * Base64 Yjs document state (`Buffer.from(Y.encodeStateAsUpdate(ydoc)).toString("base64")`).
-   * Only populated when a live Y.Doc is available on the caller's side — this is
-   * NEVER true for the default shipped editor (SuperDoc iframe has no host-side
-   * Y.Doc). No call site in this repo currently supplies it; see the plan's
-   * scoping note in 260724-onj-PLAN.md.
+   * Base64 Yjs document state (`base64(Y.encodeStateAsUpdate(ydoc))`), persisted
+   * by the BE as the accepted document (full-replace, gated on `baseVersionId`).
+   * The SuperDoc iframe owns the Y.Doc, so the host fetches this on demand via
+   * the adapter's `getDocumentState()` (a postMessage round-trip) and supplies it
+   * only on a finalizing accept. `undefined` in document-only fallback — the BE
+   * treats it as optional and simply files no snapshot.
    */
   documentState?: string;
 };
@@ -179,6 +180,9 @@ export const buildBatchResolvePayload = (
 export const isVersionConflict = (error: unknown): boolean =>
   (error as { response?: { status?: number } })?.response?.status === 409;
 
+/** How often the waiting side re-polls the turn endpoint (ms). */
+const WAITING_TURN_POLL_MS = 10000;
+
 export function useRedlineTurn({ documentId, isMsa }: RedlineTurnScope) {
   const role = useUserRole();
   const qc = useQueryClient();
@@ -201,6 +205,16 @@ export function useRedlineTurn({ documentId, isMsa }: RedlineTurnScope) {
       return (res.data as ApiEnvelope<RedlineTurn>)?.data ?? null;
     },
     staleTime: 15000,
+    // While it's the other side's turn, poll so the hand-back (and any turn
+    // change) is picked up without a manual refresh. No polling on your own
+    // turn — your own mutations already invalidate — or once finalized. Only
+    // when the tab is focused (refetchIntervalInBackground defaults false).
+    refetchInterval: (q) => {
+      const turn = q.state.data;
+      if (!turn || turn.status === "finalized") return false;
+      const myTurn = Boolean(mySide && turn.holder === mySide);
+      return myTurn ? false : WAITING_TURN_POLL_MS;
+    },
   });
 
   const invalidate = () => qc.invalidateQueries({ queryKey });

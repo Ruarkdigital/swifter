@@ -28,6 +28,10 @@ export type SuperdocInbound =
   | {
       type: "superdoc:comment-created";
       payload: { requestId: string; commentId: string | null };
+    }
+  | {
+      type: "superdoc:document-state";
+      payload: { requestId: string; state: string | null };
     };
 
 /** The single message the host sends to the iframe. */
@@ -155,6 +159,17 @@ export function parseSuperdocMessage(
         },
       };
     }
+    case "superdoc:document-state": {
+      const p = (data.payload ?? {}) as { requestId?: unknown; state?: unknown };
+      if (typeof p.requestId !== "string" || !p.requestId) return null;
+      return {
+        type: "superdoc:document-state",
+        payload: {
+          requestId: p.requestId,
+          state: typeof p.state === "string" ? p.state : null,
+        },
+      };
+    }
     default:
       return null;
   }
@@ -180,7 +195,8 @@ export type SuperdocCommand =
   | { type: "superdoc:focus-redline"; payload: { redlineId: string } }
   | { type: "superdoc:add-comment"; payload: { requestId: string; text: string } }
   | { type: "superdoc:focus-comment"; payload: { commentId: string } }
-  | { type: "superdoc:set-mode"; payload: { documentMode: DocumentMode } };
+  | { type: "superdoc:set-mode"; payload: { documentMode: DocumentMode } }
+  | { type: "superdoc:get-document-state"; payload: { requestId: string } };
 
 export function buildApplyRedline(redlineId: string, replacement: string): SuperdocCommand {
   return { type: "superdoc:apply-redline", payload: { redlineId, replacement } };
@@ -206,4 +222,13 @@ export function buildFocusComment(commentId: string): SuperdocCommand {
  *  own permissions without a reload — cross-repo dependency. */
 export function buildSetMode(documentMode: DocumentMode): SuperdocCommand {
   return { type: "superdoc:set-mode", payload: { documentMode } };
+}
+
+/** Ask the iframe for the current Yjs document state, so the host can persist it
+ *  to the BE on redline accept (the `documentState` field on resolve /
+ *  batch-resolve). The iframe replies with `superdoc:document-state` carrying the
+ *  same requestId and `base64(Y.encodeStateAsUpdate(ydoc))` (or `null` when there
+ *  is no live Y.Doc). Cross-repo dependency — the SuperDoc app must handle it. */
+export function buildGetDocumentState(requestId: string): SuperdocCommand {
+  return { type: "superdoc:get-document-state", payload: { requestId } };
 }
