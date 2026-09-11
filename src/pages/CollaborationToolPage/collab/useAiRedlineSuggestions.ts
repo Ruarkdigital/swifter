@@ -441,6 +441,31 @@ export const withLocalAcceptance = (
   return next;
 };
 
+/** Union a viewer's optimistic acceptance with the server's authoritative
+ *  state: keep a just-made local accept the BE hasn't echoed yet, and adopt the
+ *  other side's accept once the BE reports it. Status/`shouldRemove` are
+ *  recomputed from the merged flags; the BE's who/when identity fields win. A
+ *  withdrawn (undone) acceptance must be cleared locally before merging, so it
+ *  does not resurrect here. */
+export const mergeAcceptance = (
+  local: RedlineAcceptance | undefined,
+  server: RedlineAcceptance | undefined,
+): RedlineAcceptance | undefined => {
+  const cm = Boolean(server?.cmAccepted) || Boolean(local?.cmAccepted);
+  const vendor =
+    Boolean(server?.vendorAccepted) || Boolean(local?.vendorAccepted);
+  if (!cm && !vendor) return server ?? local;
+  const both = cm && vendor;
+  return {
+    ...local,
+    ...server,
+    cmAccepted: cm,
+    vendorAccepted: vendor,
+    status: both ? "both_accepted" : cm ? "cm_accepted" : "vendor_accepted",
+    shouldRemove: both,
+  };
+};
+
 export type SuggestionProgress = {
   total?: number;
   pending?: number;
@@ -495,14 +520,23 @@ type PersistedApiBody = {
   message?: string;
   data?: {
     suggestions?: Array<Record<string, unknown>>;
+    /** Some deployments key the persisted list `redlineAnalysis` (the same
+     *  shape as the generate response, with `resolution`/`acceptance` folded
+     *  in) instead of `suggestions`. Accept either. */
+    redlineAnalysis?: Array<Record<string, unknown>>;
     progress?: SuggestionProgress;
   };
 };
 
 const parsePersistedBody = (body: PersistedApiBody): PersistedSuggestionsResponse => {
   const data = body?.data ?? {};
-  const suggestions: PersistedSuggestion[] = Array.isArray(data.suggestions)
+  const rows = Array.isArray(data.suggestions)
     ? data.suggestions
+    : Array.isArray(data.redlineAnalysis)
+      ? data.redlineAnalysis
+      : undefined;
+  const suggestions: PersistedSuggestion[] = rows
+    ? rows
         .filter((s) => Boolean(s?.redlineId))
         .map((s) => ({
           redlineId: s.redlineId as string,
@@ -517,7 +551,12 @@ const parsePersistedBody = (body: PersistedApiBody): PersistedSuggestionsRespons
           riskLevel: (s.riskLevel as AiRiskLevel) ?? "medium",
           replacementText: typeof s.replacementText === "string" ? s.replacementText : undefined,
           resolution: s.resolution as PersistedResolution | undefined,
-          accepted: (s.accepted as RedlineAcceptance | null) ?? undefined,
+          // BE sends the bilateral dual-approval state under `acceptance`;
+          // older payloads used `accepted`. Read either — dropping it discards
+          // the authoritative `both_accepted`/`shouldRemove` signal.
+          accepted:
+            ((s.acceptance ?? s.accepted) as RedlineAcceptance | null) ??
+            undefined,
         }))
     : [];
   return { suggestions, progress: data.progress ?? {} };

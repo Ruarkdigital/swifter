@@ -36,6 +36,7 @@ import {
   getRedlineResolvedHolder,
   effectiveApprovalPhase,
   withLocalAcceptance,
+  mergeAcceptance,
   type AiRedlineSuggestion,
   type PersistedSuggestion,
   type RedlineResolvedHolder,
@@ -52,6 +53,16 @@ import PresenceAvatars from "./components/PresenceAvatars";
 import type { PresenceUser } from "./collab/superdocBridge";
 import type { ApiResponseError } from "@/types";
 import type { Version } from "./components/VersionHistoryModal";
+
+/** Map a persisted `resolution.action` to a card state. Shared by the initial
+ *  rehydrate and the live poll-sync effect. */
+const resolutionToState = (
+  status?: string,
+): "pending" | "approved" | "dismissed" => {
+  if (status === "accepted" || status === "modified") return "approved";
+  if (status === "rejected") return "dismissed";
+  return "pending";
+};
 
 type AiItem = {
   redline: RedlineSpan;
@@ -577,13 +588,6 @@ const CollaborationToolPage: React.FC = () => {
 
     const persisted = persistedQuery.data;
     if (persisted && persisted.suggestions.length > 0) {
-      const resolutionToState = (
-        status?: string,
-      ): AiItem["state"] => {
-        if (status === "accepted" || status === "modified") return "approved";
-        if (status === "rejected") return "dismissed";
-        return "pending";
-      };
       // #189: the persisted GET payload has no `kind`, so recover the real
       // insertion/deletion classification from the live editor redlines
       // (keyed by redlineId) instead of labelling every suggestion an
@@ -635,6 +639,69 @@ const CollaborationToolPage: React.FC = () => {
     const progress = persistedQuery.data?.progress;
     if (progress) setAiProgress(progress);
   }, [persistedQuery.data?.progress]);
+
+  // Keep per-redline dual-approval state live after the initial rehydrate.
+  //
+  // The rehydrate above runs once (`aiHasRun` guard). But in a live two-user
+  // session the OTHER side's acceptance arrives later, via the 10s poll and the
+  // post-resolve refetch — and without this it never reaches `aiItems`, so the
+  // reconcile effect never sees `phase === "both"` and the replacement is never
+  // applied. This merges the latest persisted state into the matching cards.
+  //
+  // BE-authoritative, but a just-made local optimistic accept the server hasn't
+  // echoed yet is kept (unioned in), so an approved card never flickers back to
+  // a pending request. An explicit Undo clears the local acceptance first, so it
+  // correctly reopens rather than resurrecting here.
+  useEffect(() => {
+    if (!aiHasRun) return;
+    const persisted = persistedQuery.data?.suggestions;
+    if (!persisted || persisted.length === 0) return;
+    const byId = new Map(persisted.map((s) => [s.redlineId, s] as const));
+    setAiItems((prev) => {
+      let changed = false;
+      const next = prev.map((p) => {
+        const s = byId.get(p.redline.redlineId);
+        if (!s) return p;
+        const serverState = resolutionToState(s.resolution?.action);
+        // Adopt the server's resolution when it has one; otherwise keep this
+        // side's optimistic state (server still catching up).
+        const mergedState = serverState !== "pending" ? serverState : p.state;
+        const mergedHolder =
+          getRedlineResolvedHolder(s.resolution) ?? p.resolvedByHolder;
+        const mergedResolvedStatus =
+          s.resolution?.status === "resolved"
+            ? "resolved"
+            : s.resolution?.status === "pending"
+              ? "pending"
+              : p.resolvedStatus;
+        const rawAccepted = mergeAcceptance(p.accepted, s.accepted);
+        const acceptedChanged =
+          (rawAccepted?.status ?? undefined) !==
+            (p.accepted?.status ?? undefined) ||
+          Boolean(rawAccepted?.cmAccepted) !== Boolean(p.accepted?.cmAccepted) ||
+          Boolean(rawAccepted?.vendorAccepted) !==
+            Boolean(p.accepted?.vendorAccepted);
+        const mergedAccepted = acceptedChanged ? rawAccepted : p.accepted;
+        if (
+          mergedState === p.state &&
+          mergedHolder === p.resolvedByHolder &&
+          mergedResolvedStatus === p.resolvedStatus &&
+          mergedAccepted === p.accepted
+        ) {
+          return p;
+        }
+        changed = true;
+        return {
+          ...p,
+          state: mergedState,
+          resolvedByHolder: mergedHolder,
+          resolvedStatus: mergedResolvedStatus,
+          accepted: mergedAccepted,
+        };
+      });
+      return changed ? next : prev;
+    });
+  }, [persistedQuery.data, aiHasRun]);
 
   // Push the current turn's edit permission into the SuperDoc iframe. The init
   // payload sets "editing" once; here we correct it — "suggesting" on your turn,
@@ -885,7 +952,15 @@ const CollaborationToolPage: React.FC = () => {
             setAiItems((prev) =>
               prev.map((p) =>
                 p.redline.redlineId === item.redline.redlineId
-                  ? { ...p, state: "pending", resolvedByHolder: undefined }
+                  ? {
+                      ...p,
+                      state: "pending",
+                      resolvedByHolder: undefined,
+                      // Clear the withdrawn acceptance so the poll-sync union
+                      // doesn't resurrect it (BE has cleared it too).
+                      resolvedStatus: undefined,
+                      accepted: undefined,
+                    }
                   : p,
               ),
             );
