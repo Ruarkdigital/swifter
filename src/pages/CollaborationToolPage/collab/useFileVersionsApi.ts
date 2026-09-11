@@ -1,5 +1,5 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
-import { getRequest } from "@/lib/axiosInstance";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { getRequest, postRequest } from "@/lib/axiosInstance";
 import type { Version, VersionKind } from "../components/VersionHistoryModal";
 
 // Backend version row returned by GET /file/versions/{docName}. Swagger
@@ -14,6 +14,8 @@ type BeFileVersion = {
   snapshotKind?: "full" | "delta";
   previousVersionId?: string | null;
   isActive?: boolean;
+  restorable?: boolean;
+  restorePath?: string;
   updatedBy?: string;
   createdAt: string;
 };
@@ -56,6 +58,11 @@ const toUiVersion = (v: BeFileVersion): Version => ({
   label: labelFromVersion(v),
   kind: kindFromSource(v.source, v.snapshotKind),
   source: "be",
+  // A version is restorable when the BE says so AND hands us a path to POST
+  // to. The active version isn't restorable (restoring the current state is a
+  // no-op), which the BE reflects by omitting the flag/path on that row.
+  restorable: Boolean(v.restorable && v.restorePath),
+  restorePath: v.restorePath,
 });
 
 /**
@@ -125,6 +132,33 @@ export function useDownloadLatestCollab() {
       link.click();
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
+    },
+  });
+}
+
+/**
+ * Restores a server-persisted version, making it the new active version.
+ *
+ * POSTs to the `restorePath` the BE hands back on each version row. That path
+ * is relative to the `/contract` API group (same convention as the GET above),
+ * so we self-prefix `/contract`. On success the versions list is invalidated
+ * so the newly-active version surfaces immediately.
+ */
+export function useRestoreVersion() {
+  const queryClient = useQueryClient();
+  return useMutation<void, unknown, { restorePath: string; docName: string }>({
+    mutationKey: ["collab-version-restore"],
+    mutationFn: async ({ restorePath }) => {
+      if (!restorePath) throw new Error("restorePath required");
+      await postRequest({
+        url: `/contract${restorePath}`,
+        payload: {},
+      });
+    },
+    onSuccess: (_data, { docName }) => {
+      queryClient.invalidateQueries({
+        queryKey: ["collab-file-versions", docName],
+      });
     },
   });
 }

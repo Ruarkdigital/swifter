@@ -61,6 +61,11 @@ interface SidebarPanelProps {
   versions: Version[];
   onRestoreVersion: (versionId: string) => void;
   isLoadingVersions?: boolean;
+  /** Id of the version the live document is currently based on (highlighted
+   *  as "Current" in the timeline). */
+  activeVersionId?: string | null;
+  /** Id of the version currently being restored (drives its pending state). */
+  restoringVersionId?: string | null;
   // AI / Redline
   aiStatus: "idle" | "loading" | "ready" | "error" | "empty";
   aiItems: AiItem[];
@@ -118,6 +123,8 @@ const SidebarPanel: React.FC<SidebarPanelProps> = ({
   versions,
   onRestoreVersion,
   isLoadingVersions = false,
+  activeVersionId = null,
+  restoringVersionId = null,
   aiStatus,
   aiItems,
   aiErrorMessage,
@@ -236,6 +243,8 @@ const SidebarPanel: React.FC<SidebarPanelProps> = ({
               versions={versions}
               onRestore={onRestoreVersion}
               isLoading={isLoadingVersions}
+              activeVersionId={activeVersionId}
+              restoringVersionId={restoringVersionId}
             />
           </Suspense>
         )}

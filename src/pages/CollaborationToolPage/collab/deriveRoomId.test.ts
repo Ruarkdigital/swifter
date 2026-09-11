@@ -2,7 +2,10 @@ import { describe, it, expect } from "vitest";
 import { deriveRoomId } from "./deriveRoomId";
 
 describe("deriveRoomId", () => {
-  it("keeps two contracts that share a document name independent", () => {
+  it("keys by the document id, ignoring the contract", () => {
+    // The room is the document's own id (`fileId`); the contract is not part
+    // of the key, so the same document resolves to the same room regardless of
+    // which contract context it's opened from.
     const a = deriveRoomId({
       contractId: "contract-A",
       fileId: "file-1",
@@ -13,10 +16,11 @@ describe("deriveRoomId", () => {
       fileId: "file-1",
       fileName: "NDA.docx",
     });
-    expect(a).not.toBe(b);
+    expect(a).toBe("file-1");
+    expect(b).toBe("file-1");
   });
 
-  it("returns the same room when the same contract reopens the same document", () => {
+  it("returns the same room when the same document is reopened", () => {
     const first = deriveRoomId({
       contractId: "contract-A",
       fileId: "file-1",
@@ -41,10 +45,10 @@ describe("deriveRoomId", () => {
     ).toBe("pinned-room");
   });
 
-  it("scopes by contract using fileName when no fileId is present", () => {
+  it("uses fileName as the document key when no fileId is present", () => {
     expect(
       deriveRoomId({ contractId: "contract-A", fileName: "NDA.docx" }),
-    ).toBe("contract-A:NDA.docx");
+    ).toBe("NDA.docx");
   });
 
   it("falls back to the document identifier when no contractId is supplied", () => {
