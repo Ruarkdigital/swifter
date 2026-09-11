@@ -10,6 +10,7 @@ import {
   buildFocusComment,
   buildSetMode,
   buildGetDocumentState,
+  superdocDocName,
 } from "./superdocBridge";
 
 const ORIGIN = "https://superdoc.example.com";
@@ -136,6 +137,30 @@ describe("parseSuperdocMessage", () => {
     expect(
       parseSuperdocMessage(evt({ type: "superdoc:presence" }), ORIGIN),
     ).toEqual({ type: "superdoc:presence", payload: { users: [] } });
+  });
+});
+
+describe("superdocDocName", () => {
+  it("suffixes the bare room id with -superdoc", () => {
+    expect(superdocDocName("room-1")).toBe("room-1-superdoc");
+  });
+
+  it("matches the `?doc=` room buildInitPayload sends over the WS", () => {
+    // The BE stores collab versions/snapshots under the WS doc name, so the
+    // HTTP version-history docName MUST equal what the iframe joins. If these
+    // two ever diverge, the versions endpoint queries an empty doc.
+    const roomId = "6a174958:6aa29edb";
+    const msg = buildInitPayload({
+      docBytes: new ArrayBuffer(0),
+      fileName: "deal.docx",
+      fileType: "DOCX",
+      documentMode: "editing",
+      user: { name: "Ada", email: "ada@x.com" },
+      roomId,
+      wsUrl: "ws://localhost:1234",
+      token: "tok",
+    });
+    expect(superdocDocName(roomId)).toBe(msg.payload.roomId);
   });
 });
 

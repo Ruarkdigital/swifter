@@ -29,6 +29,7 @@ import { deriveRoomId } from "./collab/deriveRoomId";
 import {
   useFileVersions,
   useDownloadLatestCollab,
+  useRestoreVersion,
 } from "./collab/useFileVersionsApi";
 import {
   useAiRedlineSuggestions,
@@ -49,8 +50,11 @@ import {
   type RedlineBatchItem,
 } from "./collab/useRedlineTurn";
 import TurnControls from "./components/TurnControls";
+import EditorModeToggle, {
+  type EditableMode,
+} from "./components/EditorModeToggle";
 import PresenceAvatars from "./components/PresenceAvatars";
-import type { PresenceUser } from "./collab/superdocBridge";
+import { superdocDocName, type PresenceUser } from "./collab/superdocBridge";
 import type { ApiResponseError } from "@/types";
 import type { Version } from "./components/VersionHistoryModal";
 
@@ -229,6 +233,10 @@ const CollaborationToolPage: React.FC = () => {
     isMsa: Boolean(msaContractIdParam),
     pollWhileWaiting: isWaitingForOtherSide,
   });
+  // Suggesting ⇄ Editing: when the viewer can edit, they choose whether their
+  // typing is tracked (suggesting) or written directly (editing). Read-only
+  // ("viewing") is forced when they can't act, regardless of this preference.
+  const [editorMode, setEditorMode] = useState<EditableMode>("editing");
   const [aiItems, setAiItems] = useState<AiItem[]>([]);
   const [aiHasRun, setAiHasRun] = useState(false);
   const [aiNoRedlines, setAiNoRedlines] = useState(false);
@@ -369,12 +377,31 @@ const CollaborationToolPage: React.FC = () => {
   // latest-snapshot download (GET /collab-export/{docName}/download).
   // The fallback room id "collab:editor" is excluded so we don't pin a
   // shared global key on the BE when no real document is loaded.
+  //
+  // The docName MUST match the `?doc=` the active editor sends over the WS —
+  // that's the key the BE stores collab versions/snapshots/redline-turns under.
+  // The default SuperDoc iframe joins the `-superdoc`-suffixed room
+  // (superdocDocName / buildInitPayload), so HTTP calls must use the same
+  // suffixed name or they query an empty doc and no versions return. The
+  // legacy `?editor=tiptap|yoopta` escape hatches join the bare room, so keep
+  // the bare name for them.
+  const usesSuperdocEditor =
+    searchParams.get("editor") !== "tiptap" &&
+    searchParams.get("editor") !== "yoopta";
   const docName =
     collabMeta.roomId && collabMeta.roomId !== "collab:editor"
-      ? collabMeta.roomId
+      ? usesSuperdocEditor
+        ? superdocDocName(collabMeta.roomId)
+        : collabMeta.roomId
       : undefined;
   const fileVersionsQuery = useFileVersions(docName);
   const downloadLatestMutation = useDownloadLatestCollab();
+  const restoreVersionMutation = useRestoreVersion();
+  // Id of the BE version currently being restored (drives the row's pending
+  // state); null when no restore is in flight.
+  const [restoringVersionId, setRestoringVersionId] = useState<string | null>(
+    null,
+  );
 
   // Merge BE-fetched versions on top of in-memory Yjs snapshots. BE
   // entries carry `source: "be"` so the Versions tab knows to suppress
@@ -532,6 +559,42 @@ const CollaborationToolPage: React.FC = () => {
 
   const handleRestoreVersion = useCallback(
     (versionId: string) => {
+      const version = versions.find((v) => v.id === versionId);
+
+      // BE-persisted version: POST to the server-provided restore path. The BE
+      // makes it the new active version; we refetch the list and ask the user
+      // to reload so the editor rehydrates from the restored snapshot (the live
+      // Y.Doc in the iframe isn't retroactively rewritten by a server restore).
+      if (version?.source === "be") {
+        if (!version.restorable || !version.restorePath || !docName) {
+          toastHandler.error(
+            "Restore unavailable",
+            "This version can't be restored.",
+          );
+          return;
+        }
+        setRestoringVersionId(versionId);
+        restoreVersionMutation.mutate(
+          { restorePath: version.restorePath, docName },
+          {
+            onSuccess: () => {
+              toastHandler.success(
+                "Version restored",
+                "This version is now the active document. Reload to view it in the editor.",
+              );
+            },
+            onError: (err) => {
+              const message =
+                err instanceof Error ? err.message : "Could not restore version.";
+              toastHandler.error("Restore failed", message);
+            },
+            onSettled: () => setRestoringVersionId(null),
+          },
+        );
+        return;
+      }
+
+      // Local Y.Doc snapshot: restore client-side, in place.
       const adapter = editorAdapterRef.current;
       if (!adapter) return;
       try {
@@ -553,7 +616,7 @@ const CollaborationToolPage: React.FC = () => {
         toastHandler.error("Version restore failed", message);
       }
     },
-    [getVersionSnapshot, toastHandler],
+    [versions, docName, restoreVersionMutation, getVersionSnapshot, toastHandler],
   );
 
   // ── AI redline suggestion handlers ──────────────────────────────────
@@ -691,17 +754,17 @@ const CollaborationToolPage: React.FC = () => {
     });
   }, [persistedQuery.data, aiHasRun]);
 
-  // Push the current turn's edit permission into the SuperDoc iframe. The init
-  // payload sets "editing" once; here we correct it — "suggesting" on your turn,
-  // "viewing" while you wait. Runs after the editor mounts and on every flip.
-  // Only participants with authoritative turn state drive this; non-participants
-  // keep the editor's default mode (pre-existing behavior).
+  // Push the current edit permission into the SuperDoc iframe. When the viewer
+  // can act, honour their Suggesting/Editing choice; otherwise force read-only
+  // "viewing". Runs after the editor mounts and on every turn/mode flip. Only
+  // participants with authoritative turn state drive this; non-participants keep
+  // the editor's default mode (pre-existing behavior).
   useEffect(() => {
     const adapter = editorAdapterRef.current;
     if (!adapter?.setMode) return;
     if (!redlineTurn.turnGateReady) return;
-    adapter.setMode(redlineTurn.isMyTurn ? "suggesting" : "viewing");
-  }, [editorReady, redlineTurn.turnGateReady, redlineTurn.isMyTurn]);
+    adapter.setMode(redlineTurn.canAct ? editorMode : "viewing");
+  }, [editorReady, redlineTurn.turnGateReady, redlineTurn.canAct, editorMode]);
 
   // Apply accepted recommendations to the document, client-side.
   //
@@ -1168,6 +1231,14 @@ const CollaborationToolPage: React.FC = () => {
             {fileName || "Document Editor"}
           </h1>
           <div className="ml-auto flex shrink-0 items-center gap-3">
+            {/* Suggesting ⇄ Editing — shown whenever the viewer can edit, so
+                free authoring doesn't have to be tracked as a redline. */}
+            {redlineTurn.canAct && (
+              <>
+                <EditorModeToggle mode={editorMode} onChange={setEditorMode} />
+                <div className="h-5 w-px bg-slate-200 dark:bg-slate-800" />
+              </>
+            )}
             {/* Redline turn controls — compact, tooltip-driven, shown in the
                 header while reviewing redlines so the negotiation status/actions
                 stay visible without a full-width in-panel banner. */}
@@ -1312,9 +1383,9 @@ const CollaborationToolPage: React.FC = () => {
                   // (changes untracked, so the insertion/deletion redline
                   // controls stay inactive) and only the live `setMode` effect
                   // below could fix it. `canAct` is the same turn gate the
-                  // sidebar uses: "suggesting" for the side whose turn it is,
-                  // "viewing" for the waiting side / non-participants.
-                  documentMode={redlineTurn.canAct ? "suggesting" : "viewing"}
+                  // sidebar uses; the acting side opens in their chosen editor
+                  // mode (editing by default), everyone else in "viewing".
+                  documentMode={redlineTurn.canAct ? editorMode : "viewing"}
                   onEditorReady={handleEditorReady}
                   onPresenceChange={setPresenceUsers}
                 />
@@ -1339,6 +1410,8 @@ const CollaborationToolPage: React.FC = () => {
           versions={versions}
           onRestoreVersion={handleRestoreVersion}
           isLoadingVersions={fileVersionsQuery.isLoading}
+          activeVersionId={fileVersionsQuery.data?.activeVersionId ?? null}
+          restoringVersionId={restoringVersionId}
           aiStatus={aiStatus}
           aiItems={aiItems}
           aiProgress={aiProgress}
