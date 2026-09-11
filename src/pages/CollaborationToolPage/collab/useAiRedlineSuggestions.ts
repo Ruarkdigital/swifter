@@ -115,20 +115,32 @@ const buildEndpoint = ({
   isManager,
   isVendor,
   isProjectManager,
+  redlineDocumentId,
 }: {
   documentId: string;
   isMsa: boolean;
   isManager: boolean;
   isVendor: boolean;
   isProjectManager: boolean;
+  /**
+   * The document (file) id. The GET list route requires it in the path
+   * (`.../{contractId}/ai/{documentId}/redline-suggestions`); the POST generate
+   * route omits it here and carries it in the body instead (RedlineAnalysisDTO).
+   */
+  redlineDocumentId?: string;
 }): string | null => {
   const resource = isMsa ? "msa-contracts" : "contracts";
+  const role = isManager
+    ? "manager"
+    : isVendor || isProjectManager
+      ? "vendor"
+      : null;
+  if (!role) return null;
   // axios baseURL is /api/v1/dev — swagger paths live under /contract.
-  const prefix = "/contract";
-  if (isManager) return `${prefix}/manager/${resource}/${documentId}/ai/redline-suggestions`;
-  if (isVendor || isProjectManager)
-    return `${prefix}/vendor/${resource}/${documentId}/ai/redline-suggestions`;
-  return null;
+  const aiPath = redlineDocumentId
+    ? `ai/${redlineDocumentId}/redline-suggestions`
+    : "ai/redline-suggestions";
+  return `/contract/${role}/${resource}/${documentId}/${aiPath}`;
 };
 
 /**
@@ -230,7 +242,11 @@ const mergeAnalyses = (parts: AiRedlineAnalysis[]): AiRedlineAnalysis => {
  * Body:     { redlines: RedlineSpan[] }  (≤ BATCH_SIZE spans per request)
  * 200 data: { summary, riskLevel, overallSuggestion, redlineAnalysis: [...] }
  */
-export function useAiRedlineSuggestions({ documentId, isMsa }: AiRedlineScope) {
+export function useAiRedlineSuggestions({
+  documentId,
+  fileId,
+  isMsa,
+}: AiRedlineScope & { fileId?: string }) {
   const role = useUserRole();
   const url = documentId
     ? buildEndpoint({
@@ -243,7 +259,7 @@ export function useAiRedlineSuggestions({ documentId, isMsa }: AiRedlineScope) {
     : null;
 
   return useMutation<AiRedlineAnalysis, unknown, RedlineSpan[]>({
-    mutationKey: ["ai-redline-suggestions", url],
+    mutationKey: ["ai-redline-suggestions", url, fileId],
     mutationFn: async (redlines) => {
       if (!url) {
         return {
@@ -255,10 +271,15 @@ export function useAiRedlineSuggestions({ documentId, isMsa }: AiRedlineScope) {
       }
       // Send at most BATCH_SIZE redlines per request, one batch at a time, then
       // merge the per-batch analyses. A batch failure rejects the whole
-      // mutation (preserving the panel's error/Retry behaviour).
+      // mutation (preserving the panel's error/Retry behaviour). The BE's
+      // RedlineAnalysisDTO is `.strict()` and requires the document (file) id in
+      // the body — send exactly { documentId, redlines }.
       const parts: AiRedlineAnalysis[] = [];
       for (const batch of chunkRedlines(redlines, BATCH_SIZE)) {
-        const res = await postRequest({ url, payload: { redlines: batch } });
+        const res = await postRequest({
+          url,
+          payload: { documentId: fileId, redlines: batch },
+        });
         parts.push(parseAnalysisBody(res.data as ApiResponseBody));
       }
       return mergeAnalyses(parts);
@@ -288,6 +309,14 @@ export type PersistedResolution = {
         at?: string;
       }
     | string;
+  /** Which alternativeLanguage tier was applied on bilateral acceptance. */
+  appliedTier?: "low" | "medium" | "high";
+  /** The exact text the BE recorded as applied to the document — authoritative
+   *  replacement string, preferred over re-deriving from alternativeLanguage. */
+  appliedText?: string;
+  /** When/who applied the suggestion (audit). */
+  appliedAt?: string;
+  appliedBy?: { id?: string; name?: string } | string;
 };
 
 export type PersistedSuggestion = AiRedlineSuggestion & {
@@ -374,27 +403,16 @@ export const dualApprovalPhase = (
 };
 
 /**
- * The dual-approval phase for a viewer, preferring the bilateral `accepted`
- * state but falling back to the single-sided resolution (holder + status) when
- * the BE payload hasn't populated `accepted`. This fallback is what keeps the
- * OTHER side's approve/reject request visible on a one-sided resolution — a
- * redline actioned by one side must never read as "done" to the other.
+ * The dual-approval phase for a viewer, driven solely by the BE-authoritative
+ * bilateral `accepted` state. The BE now owns turn + dual-approval, so the FE is
+ * a thin projection of it — there is no single-sided-resolution fallback to
+ * second-guess. `dualApprovalPhase` returns "open" when `accepted` is absent or
+ * still `pending`, so an un-acted redline reads as a normal pending suggestion.
  */
 export const effectiveApprovalPhase = (input: {
   accepted?: RedlineAcceptance;
-  resolvedByHolder?: RedlineResolvedHolder;
-  resolvedStatus?: "pending" | "resolved";
   mySide: RedlineResolvedHolder | undefined;
-}): DualApprovalPhase => {
-  if (input.accepted) return dualApprovalPhase(input.accepted, input.mySide);
-  if (input.resolvedStatus === "resolved") return "both";
-  if (input.resolvedByHolder) {
-    return input.resolvedByHolder === input.mySide
-      ? "awaiting-other"
-      : "awaiting-me";
-  }
-  return "open";
-};
+}): DualApprovalPhase => dualApprovalPhase(input.accepted, input.mySide);
 
 /** The side that has already accepted (with who/when), for the one-sided
  *  states. Returns null when zero or both sides have accepted. */
@@ -441,6 +459,31 @@ export const withLocalAcceptance = (
   return next;
 };
 
+/** Union a viewer's optimistic acceptance with the server's authoritative
+ *  state: keep a just-made local accept the BE hasn't echoed yet, and adopt the
+ *  other side's accept once the BE reports it. Status/`shouldRemove` are
+ *  recomputed from the merged flags; the BE's who/when identity fields win. A
+ *  withdrawn (undone) acceptance must be cleared locally before merging, so it
+ *  does not resurrect here. */
+export const mergeAcceptance = (
+  local: RedlineAcceptance | undefined,
+  server: RedlineAcceptance | undefined,
+): RedlineAcceptance | undefined => {
+  const cm = Boolean(server?.cmAccepted) || Boolean(local?.cmAccepted);
+  const vendor =
+    Boolean(server?.vendorAccepted) || Boolean(local?.vendorAccepted);
+  if (!cm && !vendor) return server ?? local;
+  const both = cm && vendor;
+  return {
+    ...local,
+    ...server,
+    cmAccepted: cm,
+    vendorAccepted: vendor,
+    status: both ? "both_accepted" : cm ? "cm_accepted" : "vendor_accepted",
+    shouldRemove: both,
+  };
+};
+
 export type SuggestionProgress = {
   total?: number;
   pending?: number;
@@ -462,11 +505,13 @@ export type SuggestionProgress = {
  * the resolved/both-accepted total. All are computed by the backend; we only
  * surface them.
  *
- * The per-side count comes from `resolvedByManager` / `resolvedByVendor`, which
- * the live GET populates (a redline resolved by that side). `cm_accept` /
- * `pm_accept` are the newer bilateral-accept counters and are used only as a
- * fallback — the current backend leaves them at 0, so reading them made the
- * header stick at "CM addressed: 0 / PM addressed: 0" even after a side acted.
+ * The per-side count lives in one of two counters, and which one the backend
+ * populates has changed over time: older deployments filled `resolvedByManager`
+ * / `resolvedByVendor` (leaving `cm_accept` / `pm_accept` at 0), while the
+ * current backend fills `cm_accept` / `pm_accept` (leaving `resolvedByManager`
+ * at 0). Reading a single one as primary sticks the header at 0 whenever the BE
+ * populates the other — so take the MAX of the pair: whichever the BE reports
+ * wins, and 0-vs-N yields N.
  */
 export type ProgressCounts = {
   cmAddressed?: number;
@@ -477,11 +522,17 @@ export type ProgressCounts = {
 const firstNumber = (...values: Array<number | undefined>): number | undefined =>
   values.find((v) => typeof v === "number");
 
+/** Max of the defined numbers, or undefined when none are numbers. */
+const maxNumber = (...values: Array<number | undefined>): number | undefined => {
+  const nums = values.filter((v): v is number => typeof v === "number");
+  return nums.length > 0 ? Math.max(...nums) : undefined;
+};
+
 export const deriveProgressCounts = (
   progress?: SuggestionProgress,
 ): ProgressCounts => ({
-  cmAddressed: firstNumber(progress?.resolvedByManager, progress?.cm_accept),
-  pmAddressed: firstNumber(progress?.resolvedByVendor, progress?.pm_accept),
+  cmAddressed: maxNumber(progress?.resolvedByManager, progress?.cm_accept),
+  pmAddressed: maxNumber(progress?.resolvedByVendor, progress?.pm_accept),
   resolved: firstNumber(progress?.resolvedCount, progress?.resolved),
 });
 
@@ -495,14 +546,23 @@ type PersistedApiBody = {
   message?: string;
   data?: {
     suggestions?: Array<Record<string, unknown>>;
+    /** Some deployments key the persisted list `redlineAnalysis` (the same
+     *  shape as the generate response, with `resolution`/`acceptance` folded
+     *  in) instead of `suggestions`. Accept either. */
+    redlineAnalysis?: Array<Record<string, unknown>>;
     progress?: SuggestionProgress;
   };
 };
 
 const parsePersistedBody = (body: PersistedApiBody): PersistedSuggestionsResponse => {
   const data = body?.data ?? {};
-  const suggestions: PersistedSuggestion[] = Array.isArray(data.suggestions)
+  const rows = Array.isArray(data.suggestions)
     ? data.suggestions
+    : Array.isArray(data.redlineAnalysis)
+      ? data.redlineAnalysis
+      : undefined;
+  const suggestions: PersistedSuggestion[] = rows
+    ? rows
         .filter((s) => Boolean(s?.redlineId))
         .map((s) => ({
           redlineId: s.redlineId as string,
@@ -517,7 +577,12 @@ const parsePersistedBody = (body: PersistedApiBody): PersistedSuggestionsRespons
           riskLevel: (s.riskLevel as AiRiskLevel) ?? "medium",
           replacementText: typeof s.replacementText === "string" ? s.replacementText : undefined,
           resolution: s.resolution as PersistedResolution | undefined,
-          accepted: (s.accepted as RedlineAcceptance | null) ?? undefined,
+          // BE sends the bilateral dual-approval state under `acceptance`;
+          // older payloads used `accepted`. Read either — dropping it discards
+          // the authoritative `both_accepted`/`shouldRemove` signal.
+          accepted:
+            ((s.acceptance ?? s.accepted) as RedlineAcceptance | null) ??
+            undefined,
         }))
     : [];
   return { suggestions, progress: data.progress ?? {} };
@@ -533,19 +598,23 @@ const WAITING_POLL_MS = 10000;
 
 export function usePersistedSuggestions({
   documentId,
+  fileId,
   isMsa,
   pollWhileWaiting = false,
-}: AiRedlineScope & { pollWhileWaiting?: boolean }) {
+}: AiRedlineScope & { fileId?: string; pollWhileWaiting?: boolean }) {
   const role = useUserRole();
-  const url = documentId
-    ? buildEndpoint({
-        documentId,
-        isMsa: Boolean(isMsa),
-        isManager: role.isManager,
-        isVendor: role.isVendor,
-        isProjectManager: role.isProjectManager,
-      })
-    : null;
+  // The GET list route requires both the contract id and the document (file) id.
+  const url =
+    documentId && fileId
+      ? buildEndpoint({
+          documentId,
+          isMsa: Boolean(isMsa),
+          isManager: role.isManager,
+          isVendor: role.isVendor,
+          isProjectManager: role.isProjectManager,
+          redlineDocumentId: fileId,
+        })
+      : null;
 
   return useQuery<PersistedSuggestionsResponse>({
     queryKey: ["ai-redline-suggestions-persisted", url],
@@ -554,6 +623,9 @@ export function usePersistedSuggestions({
       const res = await getRequest({ url: url! });
       return parsePersistedBody(res.data as PersistedApiBody);
     },
+    // Fail fast — don't retry a 4xx (e.g. a validation error) three times per
+    // load/poll and hammer the endpoint.
+    retry: false,
     staleTime: 30000,
     // Poll only while waiting on the other side, and only when the tab is
     // focused (refetchIntervalInBackground defaults false), so the other

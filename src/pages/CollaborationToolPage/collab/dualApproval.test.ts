@@ -3,6 +3,7 @@ import {
   acceptanceActor,
   dualApprovalPhase,
   effectiveApprovalPhase,
+  mergeAcceptance,
   redlineHolderLabel,
   withLocalAcceptance,
 } from "./useAiRedlineSuggestions";
@@ -67,49 +68,33 @@ describe("acceptanceActor", () => {
   });
 });
 
-describe("effectiveApprovalPhase (single-sided fallback)", () => {
-  it("prefers the bilateral accepted state when present", () => {
+describe("effectiveApprovalPhase (BE-authoritative projection)", () => {
+  it("projects the bilateral accepted state", () => {
     expect(
       effectiveApprovalPhase({
         accepted: { status: "cm_accepted" },
         mySide: "vendor",
       }),
     ).toBe("awaiting-me");
-  });
-
-  it("shows the other side an approve/reject request from a one-sided resolution", () => {
-    // CM accepted (no bilateral object) → the vendor must still see a request.
     expect(
       effectiveApprovalPhase({
-        resolvedByHolder: "manager",
-        resolvedStatus: "pending",
-        mySide: "vendor",
-      }),
-    ).toBe("awaiting-me");
-  });
-
-  it("tells the acting side it is awaiting the other, from a one-sided resolution", () => {
-    expect(
-      effectiveApprovalPhase({
-        resolvedByHolder: "manager",
-        resolvedStatus: "pending",
+        accepted: { status: "cm_accepted" },
         mySide: "manager",
       }),
     ).toBe("awaiting-other");
-  });
-
-  it("treats a resolved status as both-accepted", () => {
     expect(
       effectiveApprovalPhase({
-        resolvedByHolder: "vendor",
-        resolvedStatus: "resolved",
+        accepted: { status: "both_accepted" },
         mySide: "manager",
       }),
     ).toBe("both");
   });
 
-  it("is 'open' when nothing has been actioned", () => {
+  it("is 'open' when the BE has sent no acceptance (or it is pending)", () => {
     expect(effectiveApprovalPhase({ mySide: "manager" })).toBe("open");
+    expect(
+      effectiveApprovalPhase({ accepted: { status: "pending" }, mySide: "vendor" }),
+    ).toBe("open");
   });
 });
 
@@ -133,5 +118,56 @@ describe("withLocalAcceptance", () => {
     expect(next.vendorAccepted).toBe(true);
     expect(next.status).toBe("both_accepted");
     expect(next.shouldRemove).toBe(true);
+  });
+});
+
+describe("mergeAcceptance", () => {
+  it("adopts the other side's accept the server reports (local optimism + server truth → both)", () => {
+    const local = withLocalAcceptance(undefined, "manager"); // cm_accepted
+    const server = { status: "vendor_accepted", vendorAccepted: true } as const;
+    const merged = mergeAcceptance(local, server);
+    expect(merged?.cmAccepted).toBe(true);
+    expect(merged?.vendorAccepted).toBe(true);
+    expect(merged?.status).toBe("both_accepted");
+    expect(merged?.shouldRemove).toBe(true);
+  });
+
+  it("keeps a fresh local accept the server has not echoed yet", () => {
+    const local = withLocalAcceptance(undefined, "vendor"); // vendor_accepted
+    const merged = mergeAcceptance(local, { status: "pending" });
+    expect(merged?.vendorAccepted).toBe(true);
+    expect(merged?.status).toBe("vendor_accepted");
+    expect(merged?.shouldRemove).toBe(false);
+  });
+
+  it("takes the server's both-accepted state when there is no local optimism", () => {
+    const server = {
+      status: "both_accepted",
+      cmAccepted: true,
+      vendorAccepted: true,
+      shouldRemove: true,
+    } as const;
+    const merged = mergeAcceptance(undefined, server);
+    expect(merged?.status).toBe("both_accepted");
+    expect(merged?.shouldRemove).toBe(true);
+  });
+
+  it("does not resurrect a withdrawn acceptance once local state is cleared", () => {
+    // After Undo, local `accepted` is cleared and the BE has cleared it too.
+    const merged = mergeAcceptance(undefined, undefined);
+    expect(merged).toBeUndefined();
+  });
+
+  it("prefers the server's who/when identity fields", () => {
+    const local = withLocalAcceptance(undefined, "manager");
+    const server = {
+      status: "cm_accepted",
+      cmAccepted: true,
+      cmAcceptedBy: { id: "1", name: "Kings" },
+      cmAcceptedAt: "2026-09-10T20:47:54.149Z",
+    } as const;
+    const merged = mergeAcceptance(local, server);
+    expect(merged?.cmAcceptedBy?.name).toBe("Kings");
+    expect(merged?.cmAcceptedAt).toBe("2026-09-10T20:47:54.149Z");
   });
 });
