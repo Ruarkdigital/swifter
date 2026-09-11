@@ -39,7 +39,6 @@ type AiItem = {
   suggestion?: AiRedlineSuggestion;
   state: "pending" | "approved" | "dismissed";
   resolvedByHolder?: RedlineResolvedHolder;
-  resolvedStatus?: "pending" | "resolved";
   accepted?: RedlineAcceptance;
 };
 
@@ -83,9 +82,6 @@ interface SidebarPanelProps {
   aiMySide?: RedlineResolvedHolder | null;
   /** Server-side progress counts (addressedCount, resolvedCount). */
   aiProgress?: SuggestionProgress;
-  /** Rendered above the suggestions on the Redline tab (turn status + Send /
-   *  Finalize). Built by the page with `useRedlineTurn` data. */
-  redlineTurnBanner?: React.ReactNode;
 }
 
 const fallbackComments: Feed[] = [
@@ -134,7 +130,6 @@ const SidebarPanel: React.FC<SidebarPanelProps> = ({
   isMyTurn = true,
   aiMySide,
   aiProgress,
-  redlineTurnBanner,
 }) => {
   const avatarPublic = "/assets/collaboration/avatar-user.png";
   const commentsFeed: CommentsFeedItem[] = useFallbackFeed ? fallbackComments : comments;
@@ -215,9 +210,6 @@ const SidebarPanel: React.FC<SidebarPanelProps> = ({
           // a flex child defaults to `min-height: auto`, which refuses to
           // shrink below its content and defeats the inner overflow-y-auto.
           <div className="flex h-full min-h-0 flex-col">
-            {redlineTurnBanner ? (
-              <div className="px-5 pt-4">{redlineTurnBanner}</div>
-            ) : null}
             <Suspense fallback={fallbackNode}>
               <AiSuggestionsPanel
                 open={true}

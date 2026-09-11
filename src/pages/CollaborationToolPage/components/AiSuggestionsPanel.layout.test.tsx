@@ -91,7 +91,7 @@ describe("AiSuggestionsPanel inline layout (QA #257)", () => {
 describe("AiSuggestionsPanel dual-approval request (other side must be able to act)", () => {
   // Regression: when one side approved a redline, the other side saw a
   // finished, button-less card. The other side must get an approve/reject
-  // request — even on the single-sided resolution payload (no `accepted`).
+  // request. Driven by the BE-authoritative bilateral `accepted` state.
   const otherSideApproved = [
     {
       redline: { redlineId: "r1", kind: "insertion", text: "original text" },
@@ -102,10 +102,10 @@ describe("AiSuggestionsPanel dual-approval request (other side must be able to a
         riskLevel: "low",
         alternativeLanguage: { medium: "Balanced replacement language." },
       },
-      // As rehydrate maps a manager-side accept that isn't yet resolved:
+      // The BE reports a manager-side accept awaiting the vendor:
       state: "approved",
       resolvedByHolder: "manager",
-      resolvedStatus: "pending",
+      accepted: { status: "cm_accepted", cmAccepted: true },
     },
   ] as never;
 

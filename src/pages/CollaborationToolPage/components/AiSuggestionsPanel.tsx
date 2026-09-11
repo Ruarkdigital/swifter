@@ -1,6 +1,12 @@
 import React, { useState } from "react";
 import { Sparkles, X, Check, RotateCw, Play, ChevronDown, ChevronUp } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+  TooltipProvider,
+} from "@/components/ui/tooltip";
 import type { RedlineSpan } from "../collab/redlineScan";
 import {
   acceptanceActor,
@@ -26,10 +32,7 @@ type Item = {
   state: "pending" | "approved" | "dismissed";
   /** #87 — who resolved it: "vendor" → "Resolved", else "Addressed". */
   resolvedByHolder?: RedlineResolvedHolder;
-  /** Persisted resolution status — fallback for the dual-approval phase when
-   *  the bilateral `accepted` object isn't present. */
-  resolvedStatus?: "pending" | "resolved";
-  /** Per-redline bilateral acceptance driving the dual-approval UI. */
+  /** Per-redline bilateral acceptance (BE-authoritative) driving the dual-approval UI. */
   accepted?: RedlineAcceptance;
 };
 
@@ -167,16 +170,13 @@ const SuggestionCard: React.FC<SuggestionCardProps> = ({
   mySide,
 }) => {
   const { suggestion } = item;
-  // Dual approval: a redline needs BOTH sides' approval. `phase` is derived from
-  // the bilateral `accepted` state when the BE sends it, and otherwise falls
-  // back to the single-sided resolution so the OTHER side always gets an
-  // approve/reject request (never a dead, button-less card). A dismissed
+  // Dual approval: a redline needs BOTH sides' approval. `phase` is a thin
+  // projection of the BE-authoritative bilateral `accepted` state, so the OTHER
+  // side always gets an approve/reject request until both accept. A dismissed
   // (rejected) card keeps the legacy display.
   const isDismissed = item.state === "dismissed";
   const phase = effectiveApprovalPhase({
     accepted: item.accepted,
-    resolvedByHolder: item.resolvedByHolder,
-    resolvedStatus: item.resolvedStatus,
     mySide: mySide ?? undefined,
   });
   const showBilateral = !isDismissed && phase !== "open";
@@ -684,70 +684,84 @@ const AiSuggestionsPanel: React.FC<AiSuggestionsPanelProps> = ({
         </div>
       </div>
 
-      {/* Bulk-approve toolbar — a non-scrolling sub-header so it never overlaps
-          the cards (it previously sat `sticky` inside the scroll area). */}
+      {/* Bulk-resolve toolbar — a non-scrolling sub-header so it never overlaps
+          the cards. Minimalized: a labelled count, a compact tier segmented
+          control, and icon-only Reject / Approve actions with tooltips. */}
       {status === "ready" && onResolveAll && remaining > 0 && (
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-slate-200 bg-slate-50/80 px-5 py-2.5 dark:border-slate-800 dark:bg-slate-900/40">
-          <span className="text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-            Resolve all {remaining}
-          </span>
-          <div className="flex gap-0.5 rounded-lg border border-slate-200 bg-white p-0.5 dark:border-slate-700 dark:bg-slate-900">
-            {TIER_ORDER.map((t) => (
-              <button
-                key={t}
-                type="button"
-                title={TIER_HINT[t]}
-                onClick={() => setBulkTier(t)}
-                className={cn(
-                  "rounded-md px-2.5 py-1 text-[11px] font-semibold transition-colors",
-                  t === bulkTier
-                    ? "bg-indigo-600 text-white shadow-sm"
-                    : "text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800",
-                )}
-              >
-                {TIER_LABEL[t]}
-              </button>
-            ))}
+        <TooltipProvider delayDuration={200}>
+          <div className="flex items-center gap-2 border-b border-slate-200 bg-slate-50/80 px-5 py-2 dark:border-slate-800 dark:bg-slate-900/40">
+            <span className="text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+              Resolve all
+            </span>
+            <span className="inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-slate-200 px-1.5 text-[11px] font-semibold tabular-nums text-slate-600 dark:bg-slate-700 dark:text-slate-200">
+              {remaining}
+            </span>
+            <div className="flex gap-0.5 rounded-lg border border-slate-200 bg-white p-0.5 dark:border-slate-700 dark:bg-slate-900">
+              {TIER_ORDER.map((t) => (
+                <Tooltip key={t}>
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      onClick={() => setBulkTier(t)}
+                      aria-pressed={t === bulkTier}
+                      className={cn(
+                        "rounded-md px-2 py-1 text-[11px] font-semibold transition-[transform,background-color,color] duration-150 ease-out active:scale-[0.96]",
+                        t === bulkTier
+                          ? "bg-indigo-600 text-white shadow-sm"
+                          : "text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800",
+                      )}
+                    >
+                      {TIER_LABEL[t]}
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent>{TIER_HINT[t]}</TooltipContent>
+                </Tooltip>
+              ))}
+            </div>
+            <div className="ml-auto flex items-center gap-1">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    disabled={!isMyTurn}
+                    onClick={() => onResolveAll("rejected", bulkTier)}
+                    aria-label="Reject all pending suggestions"
+                    className={cn(
+                      "inline-flex h-7 w-7 items-center justify-center rounded-md transition-[transform,background-color,color] duration-150 ease-out active:scale-[0.94] disabled:pointer-events-none disabled:opacity-40",
+                      "text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800",
+                    )}
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  {isMyTurn ? "Reject all pending" : "Waiting for your turn"}
+                </TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    disabled={!isMyTurn}
+                    onClick={() => onResolveAll("modified", bulkTier)}
+                    aria-label="Approve all pending suggestions"
+                    className={cn(
+                      "inline-flex h-7 w-7 items-center justify-center rounded-md text-white transition-[transform,background-color] duration-150 ease-out active:scale-[0.94] disabled:pointer-events-none disabled:opacity-40",
+                      "bg-indigo-600 hover:bg-indigo-700",
+                    )}
+                  >
+                    <Check className="h-4 w-4" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  {isMyTurn
+                    ? `Approve all (${TIER_LABEL[bulkTier].toLowerCase()}) — applied once both sides approve`
+                    : "Waiting for your turn"}
+                </TooltipContent>
+              </Tooltip>
+            </div>
           </div>
-          <div className="ml-auto flex gap-2">
-            <button
-              type="button"
-              disabled={!isMyTurn}
-              onClick={() => onResolveAll("rejected", bulkTier)}
-              title={
-                isMyTurn
-                  ? "Reject every pending suggestion"
-                  : "Waiting for your turn"
-              }
-              className={cn(
-                "rounded-md border px-2.5 py-1 text-[11px] font-semibold transition active:scale-[0.98]",
-                isMyTurn
-                  ? "border-slate-300 text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
-                  : "cursor-not-allowed border-slate-200 text-slate-400 dark:border-slate-800 dark:text-slate-500",
-              )}
-            >
-              Reject all
-            </button>
-            <button
-              type="button"
-              disabled={!isMyTurn}
-              onClick={() => onResolveAll("modified", bulkTier)}
-              title={
-                isMyTurn
-                  ? `Approve every pending suggestion (${TIER_LABEL[bulkTier].toLowerCase()}) — applied once both sides approve`
-                  : "Waiting for your turn"
-              }
-              className={cn(
-                "inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-[11px] font-semibold text-white transition active:scale-[0.98]",
-                isMyTurn
-                  ? "bg-indigo-600 hover:bg-indigo-700"
-                  : "cursor-not-allowed bg-slate-300 dark:bg-slate-700",
-              )}
-            >
-              <Check className="h-3 w-3" /> Approve all
-            </button>
-          </div>
-        </div>
+        </TooltipProvider>
       )}
 
       <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3">

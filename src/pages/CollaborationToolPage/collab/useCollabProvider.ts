@@ -383,6 +383,15 @@ export function createCollabProvider(config: CollabConfig): CollabProvider {
       const states = provider.awareness.getStates();
       const entries: AwarenessEntry[] = [];
       const seen = new Set<string>();
+      // Seed with our own identity so a stale entry from a previous session of
+      // ours (an old client id a refresh left in awareness until it times out)
+      // is excluded too — not just the current client id, which would otherwise
+      // render our own ghost as a peer.
+      const selfUser = (states.get(localId) as { user?: CollabUser } | null)
+        ?.user;
+      if (selfUser?.name) {
+        seen.add(`${selfUser.name}|${selfUser.avatarUrl ?? ""}`);
+      }
       states.forEach((state, clientId) => {
         if (clientId === localId) return;
         const user = (state as { user?: CollabUser } | null)?.user;
