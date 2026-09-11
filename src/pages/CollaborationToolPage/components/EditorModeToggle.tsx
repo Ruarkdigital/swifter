@@ -19,9 +19,9 @@ const SEG =
   "inline-flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-semibold transition-[transform,background-color,color] duration-150 ease-out active:scale-[0.96]";
 
 /**
- * Suggesting ⇄ Editing switch (Word/Docs style). In "suggesting" the user's
- * edits are recorded as tracked changes (reviewable redlines); in "editing"
- * they write the document directly (untracked). Shown only while the viewer can
+ * Suggest ⇄ Edit switch (Word/Docs style). In "suggesting" the user's edits
+ * are recorded as tracked changes (reviewable redlines); in "editing" they
+ * write the document directly (untracked). Shown only while the viewer can
  * actually edit — the read-only ("viewing") state has nothing to toggle.
  */
 const EditorModeToggle: React.FC<EditorModeToggleProps> = ({
@@ -45,11 +45,11 @@ const EditorModeToggle: React.FC<EditorModeToggleProps> = ({
               )}
             >
               <PencilLine className="h-3.5 w-3.5 shrink-0" />
-              <span className="hidden sm:inline">Suggesting</span>
+              <span className="hidden sm:inline">Suggest</span>
             </button>
           </TooltipTrigger>
           <TooltipContent>
-            Suggesting — your edits are tracked as reviewable changes
+            Suggest — your edits are tracked as reviewable changes
           </TooltipContent>
         </Tooltip>
         <Tooltip>
@@ -66,11 +66,11 @@ const EditorModeToggle: React.FC<EditorModeToggleProps> = ({
               )}
             >
               <Pencil className="h-3.5 w-3.5 shrink-0" />
-              <span className="hidden sm:inline">Editing</span>
+              <span className="hidden sm:inline">Edit</span>
             </button>
           </TooltipTrigger>
           <TooltipContent>
-            Editing — write the document directly, without tracking changes
+            Edit — write the document directly, without tracking changes
           </TooltipContent>
         </Tooltip>
       </div>

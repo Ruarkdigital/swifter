@@ -19,10 +19,15 @@ export interface Version {
   /** Classifier used by the Versions tab to render an icon / colour
    *  for each entry without re-parsing the label text. */
   kind?: VersionKind;
-  /** Origin of the entry. "local" rows have a Y.Doc snapshot and can
-   *  be restored client-side; "be" rows come from the backend version
-   *  endpoint and only support download-latest (no per-version restore). */
+  /** Origin of the entry. "local" rows have a Y.Doc snapshot and are
+   *  restored client-side; "be" rows come from the backend version
+   *  endpoint and restore via `restorePath`. */
   source?: "local" | "be";
+  /** BE rows only: whether the server allows restoring to this version. */
+  restorable?: boolean;
+  /** BE rows only: server-provided path to POST to restore this version
+   *  (relative to the `/contract` API group, e.g. `/file/versions/…`). */
+  restorePath?: string;
 }
 
 interface VersionHistoryModalProps {
