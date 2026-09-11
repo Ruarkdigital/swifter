@@ -49,6 +49,9 @@ import {
   type RedlineBatchItem,
 } from "./collab/useRedlineTurn";
 import TurnControls from "./components/TurnControls";
+import EditorModeToggle, {
+  type EditableMode,
+} from "./components/EditorModeToggle";
 import PresenceAvatars from "./components/PresenceAvatars";
 import type { PresenceUser } from "./collab/superdocBridge";
 import type { ApiResponseError } from "@/types";
@@ -229,6 +232,10 @@ const CollaborationToolPage: React.FC = () => {
     isMsa: Boolean(msaContractIdParam),
     pollWhileWaiting: isWaitingForOtherSide,
   });
+  // Suggesting ⇄ Editing: when the viewer can edit, they choose whether their
+  // typing is tracked (suggesting) or written directly (editing). Read-only
+  // ("viewing") is forced when they can't act, regardless of this preference.
+  const [editorMode, setEditorMode] = useState<EditableMode>("suggesting");
   const [aiItems, setAiItems] = useState<AiItem[]>([]);
   const [aiHasRun, setAiHasRun] = useState(false);
   const [aiNoRedlines, setAiNoRedlines] = useState(false);
@@ -691,17 +698,17 @@ const CollaborationToolPage: React.FC = () => {
     });
   }, [persistedQuery.data, aiHasRun]);
 
-  // Push the current turn's edit permission into the SuperDoc iframe. The init
-  // payload sets "editing" once; here we correct it — "suggesting" on your turn,
-  // "viewing" while you wait. Runs after the editor mounts and on every flip.
-  // Only participants with authoritative turn state drive this; non-participants
-  // keep the editor's default mode (pre-existing behavior).
+  // Push the current edit permission into the SuperDoc iframe. When the viewer
+  // can act, honour their Suggesting/Editing choice; otherwise force read-only
+  // "viewing". Runs after the editor mounts and on every turn/mode flip. Only
+  // participants with authoritative turn state drive this; non-participants keep
+  // the editor's default mode (pre-existing behavior).
   useEffect(() => {
     const adapter = editorAdapterRef.current;
     if (!adapter?.setMode) return;
     if (!redlineTurn.turnGateReady) return;
-    adapter.setMode(redlineTurn.isMyTurn ? "suggesting" : "viewing");
-  }, [editorReady, redlineTurn.turnGateReady, redlineTurn.isMyTurn]);
+    adapter.setMode(redlineTurn.canAct ? editorMode : "viewing");
+  }, [editorReady, redlineTurn.turnGateReady, redlineTurn.canAct, editorMode]);
 
   // Apply accepted recommendations to the document, client-side.
   //
@@ -1168,6 +1175,14 @@ const CollaborationToolPage: React.FC = () => {
             {fileName || "Document Editor"}
           </h1>
           <div className="ml-auto flex shrink-0 items-center gap-3">
+            {/* Suggesting ⇄ Editing — shown whenever the viewer can edit, so
+                free authoring doesn't have to be tracked as a redline. */}
+            {redlineTurn.canAct && (
+              <>
+                <EditorModeToggle mode={editorMode} onChange={setEditorMode} />
+                <div className="h-5 w-px bg-slate-200 dark:bg-slate-800" />
+              </>
+            )}
             {/* Redline turn controls — compact, tooltip-driven, shown in the
                 header while reviewing redlines so the negotiation status/actions
                 stay visible without a full-width in-panel banner. */}
@@ -1312,9 +1327,9 @@ const CollaborationToolPage: React.FC = () => {
                   // (changes untracked, so the insertion/deletion redline
                   // controls stay inactive) and only the live `setMode` effect
                   // below could fix it. `canAct` is the same turn gate the
-                  // sidebar uses: "suggesting" for the side whose turn it is,
-                  // "viewing" for the waiting side / non-participants.
-                  documentMode={redlineTurn.canAct ? "suggesting" : "viewing"}
+                  // sidebar uses; the acting side opens in their chosen editor
+                  // mode (suggesting by default), everyone else in "viewing".
+                  documentMode={redlineTurn.canAct ? editorMode : "viewing"}
                   onEditorReady={handleEditorReady}
                   onPresenceChange={setPresenceUsers}
                 />
