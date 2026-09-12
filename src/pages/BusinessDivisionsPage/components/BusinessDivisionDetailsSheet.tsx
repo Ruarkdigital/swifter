@@ -127,7 +127,7 @@ const ProjectRow = ({ project }: { project: BusinessDivisionProject }) => (
   <div className="flex items-center justify-between gap-4 px-4 py-3 font-quicksand">
     <div className="flex min-w-0 flex-col">
       <p className="truncate text-sm font-semibold text-[#111827] dark:text-slate-100">
-        {safeText(project.title)}
+        {safeText(project.name ?? project.title)}
       </p>
       <p className="truncate text-xs text-[#6B7280] dark:text-slate-400">
         {safeText(project.projectId)}
