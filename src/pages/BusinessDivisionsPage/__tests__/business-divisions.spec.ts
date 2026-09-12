@@ -181,7 +181,8 @@ test.describe("Business Divisions", () => {
               {
                 _id: "proj-1",
                 projectId: "PRJ-001",
-                title: "North Plant Upgrade",
+                // The API returns the project's display name as `name`.
+                name: "North Plant Upgrade",
                 budget: 1200000,
                 status: "active",
               },

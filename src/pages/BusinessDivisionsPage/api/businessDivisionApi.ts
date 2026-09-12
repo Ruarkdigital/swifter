@@ -3,6 +3,9 @@ import { getRequest, postRequest, putRequest } from "@/lib/axiosInstance";
 export type BusinessDivisionProject = {
   _id: string;
   projectId?: string;
+  /** The project's display name. The API returns this as `name`; `title` is
+   *  kept as a fallback for any older payload shape. */
+  name?: string;
   title?: string;
   budget?: number;
   status?: string;
