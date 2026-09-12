@@ -173,7 +173,6 @@ const VENDOR_KPI_ROWS: Array<{
   { key: "avgResponseTime", label: "Avg. Response Time", variant: "success" },
   { key: "qualityScore", label: "Quality Score" },
   { key: "onTimeDelivery", label: "On-Time Delivery" },
-  { key: "customerSatisfaction", label: "Customer Satisfaction", variant: "success" },
 ];
 
 export const ACTIVITY_SERIES = [
