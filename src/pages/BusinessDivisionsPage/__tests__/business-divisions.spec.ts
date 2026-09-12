@@ -193,7 +193,7 @@ test.describe("Business Divisions", () => {
                 title: "Electrical Works Contract",
                 contractValue: 900000,
                 currency: "USD",
-                status: "completed",
+                status: "publish",
               },
             ],
           },
@@ -206,10 +206,26 @@ test.describe("Business Divisions", () => {
     await page.getByRole("button", { name: "View" }).first().click();
     await expect(page.getByRole("heading", { name: "Business Division Details" })).toBeVisible();
 
+    // Project Budget replaces the old "Total Project Value" label.
+    await expect(page.getByText("Project Budget")).toBeVisible();
+    await expect(page.getByText("Jan 15, 2025")).toBeVisible();
+
+    // Projects tab is the default; its rows are visible up-front.
     await expect(page.getByText("North Plant Upgrade")).toBeVisible();
     await expect(page.getByText("PRJ-001")).toBeVisible();
-    await expect(page.getByText("Electrical Works Contract")).toBeVisible();
+
+    // Contracts live behind their own tab.
+    await page.getByRole("tab", { name: /Contracts/ }).click();
+    const contractLink = page.getByRole("link", { name: /Electrical Works Contract/ });
+    await expect(contractLink).toBeVisible();
     await expect(page.getByText("CON-001")).toBeVisible();
-    await expect(page.getByText("Jan 15, 2025")).toBeVisible();
+    // Raw "publish" status renders with the system label "Published".
+    await expect(page.getByText("Published")).toBeVisible();
+
+    // The contract name links straight to the contract detail page.
+    await expect(contractLink).toHaveAttribute(
+      "href",
+      "/dashboard/contract-management/con-1",
+    );
   });
 });
