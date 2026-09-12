@@ -88,7 +88,7 @@ const BusinessDivisionsPageContent = () => {
       "Location",
       "Total Projects",
       "Total Contracts",
-      "Budget",
+      "Total Budget",
       "Total Contract Value",
     ];
 
@@ -187,7 +187,7 @@ const BusinessDivisionsPageContent = () => {
       {
         header: () => (
           <div className="w-[100px] py-2 text-center text-sm font-semibold text-[#2A4467] dark:text-blue-300 font-quicksand">
-            Budget
+            Total Budget
           </div>
         ),
         accessorKey: "totalProjectValue",
