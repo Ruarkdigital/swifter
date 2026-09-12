@@ -1,5 +1,6 @@
 import React from "react";
 import type { File as ContractDocument } from "@/types";
+import { resolveEnvFileUrl } from "@/config";
 import { formatFileSize, getFileExtension, getFileIcon } from "@/lib/fileUtils";
 import { DocumentViewer } from "@/components/ui/DocumentViewer";
 import { useNavigate } from "react-router-dom";
@@ -95,8 +96,12 @@ const DocumentsList: React.FC<Props> = ({
 
   const handleDownload = (doc: Doc) => {
     if (!doc.url) return;
+    // A stored file URL bakes in whatever API host was active when the file
+    // was uploaded. Re-home it onto the env-configured base (VITE_API_BASE_URL)
+    // so the download always targets the current environment rather than a
+    // hardcoded/stale host.
     const a = window.document.createElement("a");
-    a.href = doc.url;
+    a.href = resolveEnvFileUrl(doc.url);
     a.download = doc.name;
     window.document.body.appendChild(a);
     a.click();
