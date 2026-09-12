@@ -78,6 +78,12 @@ export const getNavigationForRole = (
           }
         : undefined,
       {
+        icon: Building2,
+        title: "Business Divisions",
+        to: "/dashboard/business-divisions",
+        active: currentPath.startsWith("/dashboard/business-divisions"),
+      },
+      {
         icon: User2,
         title: "Profile",
         to: "/dashboard/profile",
@@ -117,6 +123,12 @@ export const getNavigationForRole = (
             ],
           }
         : undefined,
+      {
+        icon: Building2,
+        title: "Business Divisions",
+        to: "/dashboard/business-divisions",
+        active: currentPath.startsWith("/dashboard/business-divisions"),
+      },
       {
         icon: User2,
         title: "Profile",
