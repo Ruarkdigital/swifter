@@ -207,8 +207,8 @@ test.describe("Business Divisions", () => {
     await page.getByRole("button", { name: "View" }).first().click();
     await expect(page.getByRole("heading", { name: "Business Division Details" })).toBeVisible();
 
-    // Project Budget replaces the old "Total Project Value" label.
-    await expect(page.getByText("Project Budget")).toBeVisible();
+    // "Total Project Budget" replaces the old "Total Project Value" label.
+    await expect(page.getByText("Total Project Budget")).toBeVisible();
     await expect(page.getByText("Jan 15, 2025")).toBeVisible();
 
     // Projects tab is the default; its rows are visible up-front.

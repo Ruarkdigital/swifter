@@ -28,14 +28,20 @@ const formatCompactCurrency = (value?: number) => {
 };
 
 const BusinessDivisionsPage = () => {
-  const { isCompanyAdmin } = useUserRole();
-  if (!isCompanyAdmin) {
+  // Company admins manage divisions. Contract Managers / Procurement (the
+  // manager bundle) also get access — they need the business-division info
+  // (all project & contract data) — but as a read-only view: create/edit
+  // actions stay company-admin only (gated below).
+  const { isCompanyAdmin, isManager } = useUserRole();
+  if (!isCompanyAdmin && !isManager) {
     return <Navigate to="/dashboard" replace />;
   }
   return <BusinessDivisionsPageContent />;
 };
 
 const BusinessDivisionsPageContent = () => {
+  // Only company admins may create/edit divisions; managers get a read-only view.
+  const { isCompanyAdmin } = useUserRole();
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
     pageSize: 10,
@@ -241,18 +247,20 @@ const BusinessDivisionsPageContent = () => {
                 />
                 Export
               </Button>
-              <CreateDivisionDialog
-                trigger={
-                  <Button className="flex-1 justify-center gap-2 rounded-xl bg-[#2A4467] px-4 text-base font-semibold text-white font-quicksand hover:bg-[#1f3552] sm:flex-none">
-                    <img
-                      src="/assets/business-divisions/icon-plus.svg"
-                      alt=""
-                      className="h-4 w-4"
-                    />
-                    Create Division
-                  </Button>
-                }
-              />
+              {isCompanyAdmin && (
+                <CreateDivisionDialog
+                  trigger={
+                    <Button className="flex-1 justify-center gap-2 rounded-xl bg-[#2A4467] px-4 text-base font-semibold text-white font-quicksand hover:bg-[#1f3552] sm:flex-none">
+                      <img
+                        src="/assets/business-divisions/icon-plus.svg"
+                        alt=""
+                        className="h-4 w-4"
+                      />
+                      Create Division
+                    </Button>
+                  }
+                />
+              )}
             </div>
           </div>
 
@@ -334,18 +342,20 @@ const BusinessDivisionsPageContent = () => {
               <p className="text-2xl font-semibold text-[#6B6B6B] dark:text-slate-400 font-quicksand">
                 No Division Yet
               </p>
-              <CreateDivisionDialog
-                trigger={
-                  <Button className="gap-2 rounded-xl bg-[#2A4467] px-4 text-base font-semibold text-white font-quicksand hover:bg-[#1f3552]">
-                    <img
-                      src="/assets/business-divisions/icon-plus.svg"
-                      alt=""
-                      className="h-4 w-4"
-                    />
-                    Create Division
-                  </Button>
-                }
-              />
+              {isCompanyAdmin && (
+                <CreateDivisionDialog
+                  trigger={
+                    <Button className="gap-2 rounded-xl bg-[#2A4467] px-4 text-base font-semibold text-white font-quicksand hover:bg-[#1f3552]">
+                      <img
+                        src="/assets/business-divisions/icon-plus.svg"
+                        alt=""
+                        className="h-4 w-4"
+                      />
+                      Create Division
+                    </Button>
+                  }
+                />
+              )}
             </div>
           </div>
         )}
@@ -357,10 +367,14 @@ const BusinessDivisionsPageContent = () => {
           if (!nextOpen) setSelectedDivisionId(null);
         }}
         divisionId={selectedDivisionId}
-        onEditDivision={(division) => {
-          setEditingDivision(division);
-          setEditOpen(true);
-        }}
+        onEditDivision={
+          isCompanyAdmin
+            ? (division) => {
+                setEditingDivision(division);
+                setEditOpen(true);
+              }
+            : undefined
+        }
       />
       <CreateDivisionDialog
         mode="edit"
