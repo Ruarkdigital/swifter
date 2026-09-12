@@ -277,7 +277,7 @@ const BusinessDivisionDetailsSheet = ({
                   value={isLoading ? "—" : safeText(division?.totalProjects ?? 0)}
                 />
                 <InfoItem
-                  label="Project Budget"
+                  label="Total Project Budget"
                   value={
                     isLoading ? "—" : formatCompactCurrency(division?.totalProjectValue)
                   }
@@ -338,20 +338,24 @@ const BusinessDivisionDetailsSheet = ({
               </Tabs>
             </div>
 
-            <div className="border-t border-[#E5E7EB] p-6 dark:border-slate-700">
-              <Button
-                type="button"
-                className="h-[52px] w-full rounded-xl bg-[#F3F4F6] text-base font-semibold text-[#111827] font-quicksand hover:bg-[#E5E7EB] dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
-                disabled={isLoading || !division}
-                onClick={() => {
-                  if (!division) return;
-                  onOpenChange(false);
-                  onEditDivision?.(division);
-                }}
-              >
-                Edit Business Division
-              </Button>
-            </div>
+            {/* Edit is an admin-only action; read-only viewers (e.g. CMs) are
+                not given an `onEditDivision` handler, so the footer is hidden. */}
+            {onEditDivision && (
+              <div className="border-t border-[#E5E7EB] p-6 dark:border-slate-700">
+                <Button
+                  type="button"
+                  className="h-[52px] w-full rounded-xl bg-[#F3F4F6] text-base font-semibold text-[#111827] font-quicksand hover:bg-[#E5E7EB] dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
+                  disabled={isLoading || !division}
+                  onClick={() => {
+                    if (!division) return;
+                    onOpenChange(false);
+                    onEditDivision(division);
+                  }}
+                >
+                  Edit Business Division
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       </SheetContent>
