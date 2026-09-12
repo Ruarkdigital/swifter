@@ -221,16 +221,16 @@ const BusinessDivisionsPageContent = () => {
         canonical="/dashboard/business-divisions"
         robots="noindex, nofollow"
       />
-      <div className="flex flex-1 flex-col px-8 py-12">
+      <div className="flex flex-1 flex-col px-4 py-6 sm:px-8 sm:py-12">
         <div className="flex flex-col gap-6">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <h2 className="text-2xl font-semibold text-[#0F0F0F] dark:text-slate-100 font-quicksand">
               Business Divisions
             </h2>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 sm:gap-4">
               <Button
                 variant="outline"
-                className="gap-2 rounded-xl border-[#E5E7EB] dark:border-slate-700 bg-white dark:bg-slate-900 px-4 text-base font-semibold text-[#6B6B6B] dark:text-slate-400 font-quicksand"
+                className="flex-1 justify-center gap-2 rounded-xl border-[#E5E7EB] dark:border-slate-700 bg-white dark:bg-slate-900 px-4 text-base font-semibold text-[#6B6B6B] dark:text-slate-400 font-quicksand sm:flex-none"
                 onClick={handleExport}
                 disabled={divisions.length === 0}
               >
@@ -243,7 +243,7 @@ const BusinessDivisionsPageContent = () => {
               </Button>
               <CreateDivisionDialog
                 trigger={
-                  <Button className="gap-2 rounded-xl bg-[#2A4467] px-4 text-base font-semibold text-white font-quicksand hover:bg-[#1f3552]">
+                  <Button className="flex-1 justify-center gap-2 rounded-xl bg-[#2A4467] px-4 text-base font-semibold text-white font-quicksand hover:bg-[#1f3552] sm:flex-none">
                     <img
                       src="/assets/business-divisions/icon-plus.svg"
                       alt=""
@@ -257,7 +257,7 @@ const BusinessDivisionsPageContent = () => {
           </div>
 
           <div className="flex items-center">
-            <div className="flex w-[347px] items-center justify-between rounded-lg border border-[#E5E7EB] dark:border-slate-700 bg-white dark:bg-slate-900 p-6">
+            <div className="flex w-full items-center justify-between rounded-lg border border-[#E5E7EB] dark:border-slate-700 bg-white dark:bg-slate-900 p-6 sm:w-[347px]">
               <div className="flex flex-col gap-2">
                 <p className="text-sm font-medium text-[#6B6B6B] dark:text-slate-400 font-quicksand">
                   All Business Divisions
@@ -279,11 +279,11 @@ const BusinessDivisionsPageContent = () => {
 
         {hasDivisions ? (
           <div className="mt-8 w-full overflow-hidden rounded-xl border border-[#E5E7EB] dark:border-slate-700 bg-white dark:bg-slate-900">
-            <div className="flex h-[72px] items-center gap-6 border-b border-[#E9E9EB] dark:border-slate-700 px-6">
+            <div className="flex flex-col gap-3 border-b border-[#E9E9EB] dark:border-slate-700 px-4 py-3 sm:h-[72px] sm:flex-row sm:items-center sm:gap-6 sm:px-6 sm:py-0">
               <p className="text-base font-semibold text-[#0F0F0F] dark:text-slate-100 font-quicksand">
                 Business Divisions
               </p>
-              <div className="flex h-12 w-[300px] items-center gap-2 rounded-lg border border-[#E5E7EB] dark:border-slate-700 px-[15px] font-quicksand">
+              <div className="flex h-12 w-full items-center gap-2 rounded-lg border border-[#E5E7EB] dark:border-slate-700 px-[15px] font-quicksand sm:w-[300px]">
                 <div className="flex items-center p-[3px]">
                   <Search
                     className="h-[15px] w-[15px] text-[#6B6B6B] dark:text-slate-400"
