@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -7,9 +8,14 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, X } from "lucide-react";
-import { formatDateTZ } from "@/lib/utils";
+import { ArrowLeft, ChevronRight, X } from "lucide-react";
+import { cn, formatDateTZ } from "@/lib/utils";
+import {
+  ContractStatusBadge,
+  type Status as ContractStatus,
+} from "@/pages/ContractManagementPage/components/StatusBadge";
 import {
   businessDivisionApi,
   type BusinessDivision,
@@ -50,89 +56,144 @@ const safeText = (value: unknown) => {
   return text.length > 0 ? text : "—";
 };
 
-const StatusPill = ({ status }: { status?: string }) => {
+/** Project status pill — mirrors the colours the Project Management table uses
+ *  (active → green, completed → blue, pending → yellow, cancelled → red) so a
+ *  project's status reads identically wherever it appears. */
+const ProjectStatusPill = ({ status }: { status?: string }) => {
   const label = String(status ?? "").trim();
   if (!label) return <span className="text-sm text-[#9CA3AF] dark:text-slate-400">—</span>;
 
   const key = label.toLowerCase();
   const tone =
-    key.includes("complete") || key.includes("active") || key.includes("approved")
-      ? "bg-[#ECFDF3] text-[#027A48] dark:bg-emerald-950 dark:text-emerald-300"
-      : key.includes("pending") || key.includes("draft") || key.includes("progress")
-        ? "bg-[#FFFAEB] text-[#B54708] dark:bg-amber-950 dark:text-amber-300"
-        : key.includes("reject") || key.includes("cancel") || key.includes("terminat")
-          ? "bg-[#FEF3F2] text-[#B42318] dark:bg-red-950 dark:text-red-300"
-          : "bg-[#F2F4F7] text-[#344054] dark:bg-slate-800 dark:text-slate-300";
+    key === "active"
+      ? "bg-green-100 text-green-700"
+      : key === "completed"
+        ? "bg-blue-100 text-blue-700"
+        : key === "pending"
+          ? "bg-yellow-100 text-yellow-700"
+          : key === "cancelled" || key === "terminated"
+            ? "bg-red-100 text-red-700"
+            : "bg-slate-100 text-slate-700";
 
   return (
     <span
-      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize font-quicksand ${tone}`}
+      className={cn(
+        "inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium capitalize font-quicksand",
+        tone,
+      )}
     >
       {label.replace(/_/g, " ")}
     </span>
   );
 };
 
-const ListSection = ({
-  title,
-  count,
+/** Scroll container shared by both tabs — handles loading / empty / list. */
+const TabListShell = ({
   isLoading,
+  count,
   emptyLabel,
   children,
 }: {
-  title: string;
-  count: number;
   isLoading: boolean;
+  count: number;
   emptyLabel: string;
   children: ReactNode;
 }) => {
   return (
-    <div className="flex flex-col gap-3 font-quicksand">
-      <div className="flex items-center gap-2">
-        <p className="text-sm font-semibold text-[#111827] dark:text-slate-100">{title}</p>
-        <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[#F3F4F6] px-1.5 text-xs font-bold text-[#374151] dark:bg-slate-800 dark:text-slate-300">
-          {isLoading ? "—" : count}
-        </span>
-      </div>
-      <div className="overflow-hidden rounded-xl border border-[#E5E7EB] dark:border-slate-700">
-        {isLoading ? (
-          <div className="p-4 text-sm text-[#9CA3AF] dark:text-slate-400">Loading…</div>
-        ) : count === 0 ? (
-          <div className="p-4 text-sm text-[#9CA3AF] dark:text-slate-400">{emptyLabel}</div>
-        ) : (
-          <div className="max-h-60 divide-y divide-[#F3F4F6] overflow-y-auto dark:divide-slate-800">
-            {children}
-          </div>
-        )}
-      </div>
+    <div className="overflow-hidden rounded-xl border border-[#E5E7EB] dark:border-slate-700">
+      {isLoading ? (
+        <div className="p-4 text-sm text-[#9CA3AF] dark:text-slate-400">Loading…</div>
+      ) : count === 0 ? (
+        <div className="p-6 text-center text-sm text-[#9CA3AF] dark:text-slate-400">
+          {emptyLabel}
+        </div>
+      ) : (
+        <div className="max-h-[22rem] divide-y divide-[#F3F4F6] overflow-y-auto dark:divide-slate-800">
+          {children}
+        </div>
+      )}
     </div>
   );
 };
 
-const ListRow = ({
-  title,
-  subtitle,
-  value,
-  status,
+/** Count chip shown inside a tab trigger. */
+const CountChip = ({ isLoading, count }: { isLoading: boolean; count: number }) => (
+  <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[#E5E7EB] px-1.5 text-xs font-bold text-[#374151] dark:bg-slate-700 dark:text-slate-200">
+    {isLoading ? "—" : count}
+  </span>
+);
+
+const ProjectRow = ({ project }: { project: BusinessDivisionProject }) => (
+  <div className="flex items-center justify-between gap-4 px-4 py-3 font-quicksand">
+    <div className="flex min-w-0 flex-col">
+      <p className="truncate text-sm font-semibold text-[#111827] dark:text-slate-100">
+        {safeText(project.title)}
+      </p>
+      <p className="truncate text-xs text-[#6B7280] dark:text-slate-400">
+        {safeText(project.projectId)}
+      </p>
+    </div>
+    <div className="flex shrink-0 items-center gap-3">
+      <p className="text-sm font-bold text-[#111827] dark:text-slate-100">
+        {formatCompactCurrency(project.budget)}
+      </p>
+      <ProjectStatusPill status={project.status} />
+    </div>
+  </div>
+);
+
+const ContractRow = ({
+  contract,
+  onNavigate,
 }: {
-  title: string;
-  subtitle: string;
-  value: string;
-  status?: string;
+  contract: BusinessDivisionContract;
+  onNavigate: () => void;
 }) => {
-  return (
-    <div className="flex items-center justify-between gap-4 px-4 py-3 font-quicksand">
+  const inner = (
+    <>
       <div className="flex min-w-0 flex-col">
-        <p className="truncate text-sm font-semibold text-[#111827] dark:text-slate-100">
-          {title}
+        <p
+          className={cn(
+            "truncate text-sm font-semibold text-[#111827] dark:text-slate-100",
+            contract._id &&
+              "group-hover:text-[#2A4467] group-hover:underline dark:group-hover:text-blue-300",
+          )}
+        >
+          {safeText(contract.title)}
         </p>
-        <p className="truncate text-xs text-[#6B7280] dark:text-slate-400">{subtitle}</p>
+        <p className="truncate text-xs text-[#6B7280] dark:text-slate-400">
+          {safeText(contract.contractId)}
+        </p>
       </div>
       <div className="flex shrink-0 items-center gap-3">
-        <p className="text-sm font-bold text-[#111827] dark:text-slate-100">{value}</p>
-        <StatusPill status={status} />
+        <p className="text-sm font-bold text-[#111827] dark:text-slate-100">
+          {formatCompactCurrency(contract.contractValue ?? 0)}
+        </p>
+        <ContractStatusBadge status={contract.status as ContractStatus | undefined} />
+        {contract._id && (
+          <ChevronRight className="h-4 w-4 text-[#9CA3AF] dark:text-slate-500" />
+        )}
       </div>
-    </div>
+    </>
+  );
+
+  // Only linkable when we have the contract's id to route to.
+  if (!contract._id) {
+    return (
+      <div className="flex items-center justify-between gap-4 px-4 py-3 font-quicksand">
+        {inner}
+      </div>
+    );
+  }
+
+  return (
+    <Link
+      to={`/dashboard/contract-management/${contract._id}`}
+      onClick={onNavigate}
+      className="group flex items-center justify-between gap-4 px-4 py-3 font-quicksand transition-colors hover:bg-[#F9FAFB] focus:bg-[#F9FAFB] focus:outline-none dark:hover:bg-slate-800/60 dark:focus:bg-slate-800/60"
+    >
+      {inner}
+    </Link>
   );
 };
 
@@ -216,7 +277,7 @@ const BusinessDivisionDetailsSheet = ({
                   value={isLoading ? "—" : safeText(division?.totalProjects ?? 0)}
                 />
                 <InfoItem
-                  label="Total Project Value"
+                  label="Project Budget"
                   value={
                     isLoading ? "—" : formatCompactCurrency(division?.totalProjectValue)
                   }
@@ -235,39 +296,46 @@ const BusinessDivisionDetailsSheet = ({
                 </div>
               </div>
 
-              <ListSection
-                title="Projects"
-                count={projects.length}
-                isLoading={isLoading}
-                emptyLabel="No projects linked to this division yet."
-              >
-                {projects.map((project: BusinessDivisionProject) => (
-                  <ListRow
-                    key={project._id}
-                    title={safeText(project.title)}
-                    subtitle={safeText(project.projectId)}
-                    value={formatCompactCurrency(project.budget)}
-                    status={project.status}
-                  />
-                ))}
-              </ListSection>
+              <Tabs defaultValue="projects" className="gap-4 font-quicksand">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="projects" className="gap-2">
+                    Projects
+                    <CountChip isLoading={isLoading} count={projects.length} />
+                  </TabsTrigger>
+                  <TabsTrigger value="contracts" className="gap-2">
+                    Contracts
+                    <CountChip isLoading={isLoading} count={contracts.length} />
+                  </TabsTrigger>
+                </TabsList>
 
-              <ListSection
-                title="Contracts"
-                count={contracts.length}
-                isLoading={isLoading}
-                emptyLabel="No contracts linked to this division yet."
-              >
-                {contracts.map((contract: BusinessDivisionContract) => (
-                  <ListRow
-                    key={contract._id}
-                    title={safeText(contract.title)}
-                    subtitle={safeText(contract.contractId)}
-                    value={formatCompactCurrency(contract.contractValue ?? 0)}
-                    status={contract.status}
-                  />
-                ))}
-              </ListSection>
+                <TabsContent value="projects">
+                  <TabListShell
+                    isLoading={isLoading}
+                    count={projects.length}
+                    emptyLabel="No projects linked to this division yet."
+                  >
+                    {projects.map((project) => (
+                      <ProjectRow key={project._id} project={project} />
+                    ))}
+                  </TabListShell>
+                </TabsContent>
+
+                <TabsContent value="contracts">
+                  <TabListShell
+                    isLoading={isLoading}
+                    count={contracts.length}
+                    emptyLabel="No contracts linked to this division yet."
+                  >
+                    {contracts.map((contract) => (
+                      <ContractRow
+                        key={contract._id}
+                        contract={contract}
+                        onNavigate={() => onOpenChange(false)}
+                      />
+                    ))}
+                  </TabListShell>
+                </TabsContent>
+              </Tabs>
             </div>
 
             <div className="border-t border-[#E5E7EB] p-6 dark:border-slate-700">
